@@ -194,7 +194,7 @@ Item {
   readonly property bool barVertical: barPosition === "left" || barPosition === "right"
   readonly property int defaultBarSize: barVertical ? Style.bar.sizeVertical : Style.bar.sizeHorizontal
   function marginsFor(screenName) {
-    return Delivery.deckMargins(barPosition, Delivery.barThickness(barRef, screenName, defaultBarSize), edgeSpacing)
+    return Delivery.deckMargins(barPosition, Delivery.barReach(barRef, screenName, defaultBarSize), edgeSpacing)
   }
   readonly property int notificationWidth: Style.space(380)
 
