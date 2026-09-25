@@ -70,3 +70,28 @@ grep -F 'hl.dsp.focus({ window = "address:0xrecent" })' "$dispatch_log" >/dev/nu
   fail "app focus picks the window focused last"
 
 pass "app focus picks the window focused last among several"
+
+clients_json='[
+  {"address":"0x561019ece480","class":"kitty","initialClass":"kitty","initialTitle":"kitty"},
+  {"address":"0xother","class":"kitty","initialClass":"kitty","initialTitle":"kitty"}
+]'
+rm -f "$dispatch_log"
+PATH="$mock_bin:$PATH" OMARCHY_TEST_CLIENTS_JSON="$clients_json" \
+  OMARCHY_TEST_FOCUS_DISPATCH="$dispatch_log" \
+  bash "$ROOT/bin/omarchy-hyprland-focus-app" 'address:0x561019ece480'
+
+grep -F 'hl.dsp.focus({ window = "address:0x561019ece480" })' "$dispatch_log" >/dev/null || \
+  fail "app focus by address dispatches that window"
+
+pass "app focus by address targets that window and no other"
+
+rm -f "$dispatch_log"
+if PATH="$mock_bin:$PATH" OMARCHY_TEST_CLIENTS_JSON="$clients_json" \
+  OMARCHY_TEST_FOCUS_DISPATCH="$dispatch_log" \
+  bash "$ROOT/bin/omarchy-hyprland-focus-app" 'address:0xdead'; then
+  fail "app focus by address accepts a window that is not open"
+fi
+
+[[ ! -e $dispatch_log ]] || fail "app focus by address leaves focus unchanged when the window is gone"
+
+pass "app focus by address refuses a stale window"
