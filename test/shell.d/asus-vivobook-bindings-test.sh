@@ -25,7 +25,7 @@ local function bindings(vendor, product)
   return result
 end
 local supported = bindings("ASUSTeK COMPUTER INC.", "ASUS Vivobook S 16 M5606UA_M5606UA")
-assert(supported.XF86Bluetooth.panel == "omarchy.emojis")
+assert(supported.XF86Launch2.panel == "omarchy.emojis")
 assert(supported["code:192"].panel == "omarchy.audio")
 assert(supported.XF86Launch1.menu == "hardware")
 for _, identity in ipairs({
@@ -38,3 +38,15 @@ for _, identity in ipairs({
 end
 LUA
 pass "Vivobook hotkeys apply only to the tested vendor and model"
+
+require_command systemd-hwdb
+stage=$(mktemp -d)
+trap 'rm -rf "$stage"' EXIT
+mkdir -p "$stage/etc/udev/hwdb.d"
+cp "$ROOT/default/udev/asus-vivobook-m5606-keyboard.hwdb" "$stage/etc/udev/hwdb.d/90-test.hwdb"
+systemd-hwdb --root="$stage" update
+match='evdev:name:Asus WMI hotkeys:dmi:bvnBIOS:bvr1:bd01:svnASUSTeKCOMPUTERINC.:pnASUSVivobookS16M5606UA_M5606UA:pvr1:'
+[[ $(systemd-hwdb --root="$stage" query "$match") == "KEYBOARD_KEY_7e=prog2" ]] || fail "emoji scan maps to a non-rfkill key"
+[[ -z $(systemd-hwdb --root="$stage" query "${match/M5606UA_M5606UA/M5606WA_M5606WA}") ]] || fail "hwdb does not remap another model"
+[[ -z $(systemd-hwdb --root="$stage" query "${match/Asus WMI hotkeys/Other keyboard}") ]] || fail "hwdb does not remap another keyboard"
+pass "compiled hwdb maps only the verified emoji scan code"
