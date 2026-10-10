@@ -93,6 +93,15 @@ You start Signal with `Super + Shift + G`. It's not part of the base install, so
 
 You start mpv via the application launcher (`Super + Space`) or just double-click on a video in the file manager.
 
+Omarchy's controls follow your active theme while the player stays open. Move the pointer near the bottom for playback, seeking and volume, or use the menu beside the file name for audio tracks, subtitles, chapters, devices, history and keybindings. Controls hide after inactivity, including while paused.
+
+Press `Tab` to focus the controls, `Enter` to activate a button and `Escape` to return to normal playback keys. `a` opens the audio picker; `#` cycles audio tracks and `j` cycles subtitles. Your own mpv keybindings take precedence.
+
+`Ctrl + F9` cycles solid, uniform translucent and gradient controls. `F10` pins or unpins them. To persist a choice, edit `~/.config/mpv/script-opts/omarchy-controls.conf` and set `surface_mode` to `solid`, `translucent` or `gradient`. This file also contains opacity, font and corner settings. Light themes use a stronger backing for readable dark text. Native selection menus remain solid.
+
+Existing mpv configurations are preserved during upgrades. To opt in, first back up `~/.config/mpv`, then copy the Omarchy scripts and script-option files from `/usr/share/omarchy/config/mpv/` into your config after checking for conflicting controllers. Set `osc=no`, `border=no` and `osd-bar=no` in the global part of your `mpv.conf`; preserve your other preferences. Refresh the current Omarchy theme once to generate the palette, then reopen mpv. Disable any alternative controller yourself before activating these controls. Later theme changes apply live without reopening the player.
+
+
 ## Omacut
 
 [Omacut](https://github.com/omacom-io/omacut) is Omarchy's own dead-simple video trimmer. When all you need is to cut the start and end off a clip, it beats firing up a full video editor.
