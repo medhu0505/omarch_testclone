@@ -47,6 +47,9 @@ local function format_time(t)
   if t >= 3600 then return string.format('%d:%02d:%02d', math.floor(t/3600), math.floor(t/60)%60, t%60) end
   return string.format('%02d:%02d', math.floor(t/60), t%60)
 end
+local function format_speed(s)
+  return string.format('%.2fx', math.floor((s or 1)*100 + 1e-9)/100)
+end
 local function hit(r) return mx >= r.x and mx <= r.x+r.w and my >= r.y and my <= r.y+r.h end
 local function menu(name)
   keyboard=false; reveal_until=0; last_move=0
@@ -619,7 +622,7 @@ render = function()
   button('audio',right,by,compact and 34 or 92,compact and '' or 'Audio','audio',function() menu('select-aid') end)
   if W >= 450 then
   right=right-8-64
-  button('speed',right,by,64,string.format('%gx',number('speed',1)),nil,function()
+  button('speed',right,by,64,format_speed(number('speed',1)),nil,function()
     local speed=number('speed',1); mp.set_property_number('speed',speed>=2 and .5 or speed+.25)
   end)
   end
