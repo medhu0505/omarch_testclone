@@ -11,7 +11,7 @@ const overlay = read('shell/Ui/OverlayWindow.qml')
 
 // Closing must unmap, not leave a surface on an output that may disappear.
 assert(
-  overlay.includes('visible: shown && !!targetScreen && !!targetMonitor') &&
+  overlay.includes('visible: shown && !!targetScreen && !!targetMonitor && reservedSpaceSettled') &&
     overlay.includes('anchors { top: true; left: true; bottom: true; right: true }') &&
     !overlay.includes('implicitWidth: 1') && !overlay.includes('WlrLayer.Bottom'),
   'closed overlays unmap instead of parking a surface'
@@ -170,11 +170,27 @@ for (const file of Object.keys(overlays)) {
   assert(namespace && unanimated.includes(namespace[1]), `${file} is exempt from Hyprland's layer animation`)
 }
 
-// Cooperative focus is off unless the overlay and the user both ask for it.
-assert(overlay.includes('property bool cooperativeFocus: false'), 'overlays keep exclusive focus by default')
+// Cooperative focus is off unless the overlay asks for it, and "auto" only
+// turns it on while something other than the bar reserves screen space.
+assert(overlay.includes('property var cooperativeFocus: false'), 'overlays keep exclusive focus by default')
+const competingBody = /readonly property bool competingSurface: \{([\s\S]*?)\n  \}/.exec(overlay)[1]
+const competingSurface = new Function('monitorReservedSpace', 'ownReservedSpace', competingBody)
+assert(!competingSurface([0, 26, 0, 0], [0, 26, 0, 0]), 'the bar alone is not a competing surface')
+assert(!competingSurface([0, 27, 0, 0], [0, 26, 0, 0]), 'a pixel of rounding is not a competing surface')
+assert(competingSurface([0, 26, 0, 300], [0, 26, 0, 0]), 'a keyboard reserving the bottom edge competes')
+assert(competingSurface([0, 60, 0, 0], [0, 26, 0, 0]), 'more than the bar on its own edge competes')
+assert(competingSurface([0, 26, 0, 0], undefined), 'reserved space the shell cannot account for competes')
+assert(!competingSurface([0, 0, 0, 0], [0, 26, 0, 0]), 'a hidden or absent reservation never competes')
+const cooperativeExpression = /readonly property bool cooperative: ([^\n]+)/.exec(overlay)[1]
+const isCooperative = new Function('cooperativeFocus', 'competingSurface', `return ${cooperativeExpression}`)
+assert(isCooperative(true, false), 'true cooperates with nothing competing')
+assert(isCooperative('auto', true), 'auto cooperates while a surface competes')
+assert(!isCooperative('auto', false), 'auto is stock with nothing competing')
+assert(!isCooperative(false, true), 'false never cooperates, whatever competes')
+assert(!isCooperative(undefined, true), 'a plugin handed no setting never cooperates')
 const cooperatingExpression = /readonly property bool cooperating: ([^\n]+)/.exec(overlay)[1]
 const WlrKeyboardFocus = { None: 0, Exclusive: 1, OnDemand: 2 }
-const cooperating = new Function('shown', 'cooperativeFocus', 'shownKeyboardFocus', 'WlrKeyboardFocus', `return ${cooperatingExpression}`)
+const cooperating = new Function('shown', 'cooperative', 'shownKeyboardFocus', 'WlrKeyboardFocus', `return ${cooperatingExpression}`)
 assert(cooperating(true, true, WlrKeyboardFocus.Exclusive, WlrKeyboardFocus), 'a shown overlay that opted in cooperates')
 assert(!cooperating(true, false, WlrKeyboardFocus.Exclusive, WlrKeyboardFocus), 'an overlay that did not opt in never cooperates')
 assert(!cooperating(false, true, WlrKeyboardFocus.Exclusive, WlrKeyboardFocus), 'a closed overlay does not cooperate')
@@ -224,13 +240,16 @@ assert(
 
 // A cooperative overlay sits beside reserved space instead of covering it.
 assert(
-  overlay.includes('exclusionMode: cooperativeFocus ? ExclusionMode.Normal : ExclusionMode.Ignore'),
+  overlay.includes('exclusionMode: cooperative ? ExclusionMode.Normal : ExclusionMode.Ignore') &&
+    overlay.includes('readonly property var reservedSpace: cooperative ? monitorReservedSpace : [0, 0, 0, 0]'),
   'only cooperative overlays leave reserved space uncovered'
 )
-const reservedBody = /readonly property var reservedSpace: \{([\s\S]*?)\n  \}/.exec(overlay)[1]
+const reservedBody = /readonly property var monitorReservedSpace: \{([\s\S]*?)\n  \}/.exec(overlay)[1]
 const reservedSpace = new Function('cooperativeFocus', 'targetMonitor', reservedBody)
 assertDeepEqual(reservedSpace(false, { lastIpcObject: { reserved: [0, 26, 0, 300] } }), [0, 0, 0, 0],
-  'stock overlays still measure against the whole screen')
+  'stock overlays never read reserved space')
+assertDeepEqual(reservedSpace('auto', { lastIpcObject: { reserved: [0, 26, 0, 300] } }), [0, 26, 0, 300],
+  'an auto overlay reads reserved space to decide')
 assertDeepEqual(reservedSpace(true, { lastIpcObject: { reserved: [0, 26, 0, 300] } }), [0, 26, 0, 300],
   'a cooperative overlay reads the reserved space Hyprland reports')
 assertDeepEqual(reservedSpace(true, { lastIpcObject: {} }), [0, 0, 0, 0],
@@ -243,18 +262,38 @@ assert(readyReserving(true, true, 1200, 424, tablet, tabletMonitor, 1.6, [0, 26,
 assert(!readyReserving(true, true, 1200, 724, tablet, tabletMonitor, 1.6, [0, 26, 0, 300]),
   'a stale reserved space keeps content transparent until Hyprland is asked again')
 assert(
-  overlay.includes('onWidthChanged: if (shown && cooperativeFocus) Hyprland.refreshMonitors()') &&
-    overlay.includes('onHeightChanged: if (shown && cooperativeFocus) Hyprland.refreshMonitors()'),
+  overlay.includes('onWidthChanged: if (shown && cooperativeFocus !== false) Hyprland.refreshMonitors()') &&
+    overlay.includes('onHeightChanged: if (shown && cooperativeFocus !== false) Hyprland.refreshMonitors()'),
   'a keyboard appearing or leaving refreshes the reserved space'
+)
+const settledExpression = /readonly property bool reservedSpaceSettled: ([^\n]+)/.exec(overlay)[1]
+const settled = new Function('cooperativeFocus', 'reservedSpaceFresh', `return ${settledExpression}`)
+assert(settled(false, false) && settled(true, false), 'only an auto overlay waits on reserved space before mapping')
+assert(!settled('auto', false) && settled('auto', true), 'an auto overlay maps once Hyprland has answered')
+assert(
+  /onShownChanged: \{\n    reservedSpaceFresh = false/.test(overlay) &&
+    /running: window\.shown && !window\.reservedSpaceSettled\n    onTriggered: window\.reservedSpaceFresh = true/.test(overlay),
+  'every open asks again, and an answer that never comes does not hold the overlay back'
+)
+assert(
+  /enabled: window\.shown && window\.cooperativeFocus === "auto"\n    function onRawEvent\(event\) \{\n      if \(event\.name === "openlayer" \|\| event\.name === "closelayer"\) Hyprland\.refreshMonitors\(\)/.test(overlay),
+  'an open auto overlay looks again when a layer surface comes or goes'
 )
 
 const shellQml = read('shell/shell.qml')
-const switchExpression = /readonly property bool overlaysCooperativeFocus: ([^\n]+\n[^\n]+)/.exec(shellQml)[1]
-const cooperativeSwitch = new Function('shellConfig', 'Util', `return ${switchExpression}`)
+const switchBody = /readonly property var overlaysCooperativeFocus: \{([\s\S]*?)\n  \}/.exec(shellQml)[1]
+const cooperativeSwitch = new Function('shellConfig', 'Util', switchBody)
 const plainObject = { isPlainObject: (value) => !!value && typeof value === 'object' && !Array.isArray(value) }
-assert(!cooperativeSwitch({ version: 1 }, plainObject), 'cooperative focus is off without a shell.json setting')
-assert(!cooperativeSwitch({ overlays: { cooperativeFocus: 'yes' } }, plainObject), 'cooperative focus needs an explicit true')
-assert(cooperativeSwitch({ overlays: { cooperativeFocus: true } }, plainObject), 'shell.json turns cooperative focus on')
+assertEqual(cooperativeSwitch({ version: 1 }, plainObject), 'auto', 'cooperative focus is automatic without a shell.json setting')
+assertEqual(cooperativeSwitch({ overlays: { cooperativeFocus: 'yes' } }, plainObject), 'auto', 'an unknown setting falls back to automatic')
+assertEqual(cooperativeSwitch({ overlays: { cooperativeFocus: true } }, plainObject), true, 'shell.json turns cooperative focus on')
+assertEqual(cooperativeSwitch({ overlays: { cooperativeFocus: false } }, plainObject), false, 'shell.json turns cooperative focus off')
+const barReservedBody = /readonly property var barReservedSpace: \{([\s\S]*?)\n  \}/.exec(shellQml)[1]
+const barReserved = new Function('bar', barReservedBody)
+assertDeepEqual(barReserved({ position: 'top', barSize: 26, barHidden: false }), [0, 26, 0, 0], 'a top bar reserves the top edge')
+assertDeepEqual(barReserved({ position: 'left', barSize: 40 }), [40, 0, 0, 0], 'a side bar reserves its own edge')
+assertDeepEqual(barReserved({ position: 'bottom', barSize: 26, barHidden: true }), [0, 0, 0, 0], 'a hidden bar reserves nothing')
+assertDeepEqual(barReserved(null), [0, 0, 0, 0], 'no bar reserves nothing')
 
 const dismissPaths = {
   'shell/plugins/menu/Menu.qml': 'cancel',
@@ -266,7 +305,8 @@ for (const file of Object.keys(overlays)) {
   const qml = read(file)
   if (dismissPaths[file]) {
     assert(
-      qml.includes('cooperativeFocus: !!root.shell && root.shell.overlaysCooperativeFocus === true') &&
+      qml.includes('cooperativeFocus: root.shell ? root.shell.overlaysCooperativeFocus : false') &&
+        qml.includes('ownReservedSpace: root.shell ? root.shell.barReservedSpace : [0, 0, 0, 0]') &&
         qml.includes(`onDismissRequested: root.${dismissPaths[file]}()`),
       `${file} cooperates only on the user's setting and dismisses through its own ${dismissPaths[file]} path`
     )

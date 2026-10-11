@@ -20,8 +20,22 @@ PanelWindow {
   // holds Exclusive only until keyboard focus arrives, then settles on OnDemand,
   // which lets those surfaces be reached. Off by default: an overlay opts in
   // only where yielding the pointer is safe, never for a password prompt.
-  property bool cooperativeFocus: false
-  readonly property bool cooperating: shown && cooperativeFocus && shownKeyboardFocus === WlrKeyboardFocus.Exclusive
+  // true always cooperates. "auto" cooperates only while something other than
+  // the shell's own bar reserves space on the overlay's output, which is what a
+  // docked on-screen keyboard does, and is stock everywhere else.
+  property var cooperativeFocus: false
+  // What the shell itself reserves, in Hyprland's order, so "auto" does not
+  // mistake the bar for a competing surface.
+  property var ownReservedSpace: [0, 0, 0, 0]
+  readonly property bool competingSurface: {
+    for (var i = 0; i < 4; i++) {
+      // Fractional scales round the two sides separately; allow a pixel.
+      if (monitorReservedSpace[i] - (Number(ownReservedSpace && ownReservedSpace[i]) || 0) > 1) return true
+    }
+    return false
+  }
+  readonly property bool cooperative: cooperativeFocus === true || (cooperativeFocus === "auto" && competingSurface)
+  readonly property bool cooperating: shown && cooperative && shownKeyboardFocus === WlrKeyboardFocus.Exclusive
   property bool focusHeld: false
   // Asks the owner to dismiss through its own cancel path: a click landed on
   // another output, or keyboard focus left.
@@ -38,13 +52,15 @@ PanelWindow {
     return null
   }
 
-  // A cooperative overlay also leaves alone the space other surfaces reserve,
-  // so it sits above an on-screen keyboard instead of running underneath it.
-  // Hyprland reports that space as [left, top, right, bottom].
-  readonly property var reservedSpace: {
-    var reserved = cooperativeFocus && targetMonitor && targetMonitor.lastIpcObject ? targetMonitor.lastIpcObject.reserved : null
+  // Hyprland reports the space surfaces reserve as [left, top, right, bottom].
+  // Only an overlay that may cooperate reads it.
+  readonly property var monitorReservedSpace: {
+    var reserved = cooperativeFocus !== false && targetMonitor && targetMonitor.lastIpcObject ? targetMonitor.lastIpcObject.reserved : null
     return reserved && reserved.length === 4 ? reserved : [0, 0, 0, 0]
   }
+  // A cooperative overlay also leaves that space alone, so it sits above an
+  // on-screen keyboard instead of running underneath it.
+  readonly property var reservedSpace: cooperative ? monitorReservedSpace : [0, 0, 0, 0]
 
   // Wait for fullscreen geometry as well as scale so no smaller opening frame
   // is stretched across the output. Fractional scale uses units of 1/120;
@@ -75,14 +91,46 @@ PanelWindow {
   // Live monitor scaling does not emit a Hyprland monitor event, so its cached
   // scale can lag behind Qt. Refresh on opening and on scale changes while open.
   onShownChanged: {
+    reservedSpaceFresh = false
     targetScreen = shown ? focusedScreen() : null
     if (shown) Hyprland.refreshMonitors()
+  }
+
+  // The reserved space cached from before the overlay opened may predate a
+  // keyboard. An overlay that starts stock and turns cooperative while its
+  // first size is still being settled keeps the full screen and covers it, so
+  // "auto" maps only once Hyprland has answered the refresh above.
+  property bool reservedSpaceFresh: false
+  readonly property bool reservedSpaceSettled: cooperativeFocus !== "auto" || reservedSpaceFresh
+  Connections {
+    target: window.targetMonitor
+    enabled: window.shown && !window.reservedSpaceFresh
+    // Next turn, so the bindings reading the answer settle before the map.
+    function onLastIpcObjectChanged() {
+      Qt.callLater(function() { if (window.shown) window.reservedSpaceFresh = true })
+    }
+  }
+  // Never hold an overlay back for an answer that does not come.
+  Timer {
+    interval: 250
+    running: window.shown && !window.reservedSpaceSettled
+    onTriggered: window.reservedSpaceFresh = true
   }
   onDevicePixelRatioChanged: if (shown) Hyprland.refreshMonitors()
   // A keyboard appearing or leaving resizes a cooperative overlay; the reserved
   // space cached from Hyprland lags behind in the same way.
-  onWidthChanged: if (shown && cooperativeFocus) Hyprland.refreshMonitors()
-  onHeightChanged: if (shown && cooperativeFocus) Hyprland.refreshMonitors()
+  onWidthChanged: if (shown && cooperativeFocus !== false) Hyprland.refreshMonitors()
+  onHeightChanged: if (shown && cooperativeFocus !== false) Hyprland.refreshMonitors()
+
+  // A stock-sized overlay is not resized by a keyboard that arrives after it
+  // opened, so "auto" asks again when a layer surface comes or goes.
+  Connections {
+    target: Hyprland
+    enabled: window.shown && window.cooperativeFocus === "auto"
+    function onRawEvent(event) {
+      if (event.name === "openlayer" || event.name === "closelayer") Hyprland.refreshMonitors()
+    }
+  }
 
   Connections {
     target: Quickshell
@@ -98,11 +146,11 @@ PanelWindow {
     }
   }
 
-  visible: shown && !!targetScreen && !!targetMonitor
+  visible: shown && !!targetScreen && !!targetMonitor && reservedSpaceSettled
   screen: targetScreen
   anchors { top: true; left: true; bottom: true; right: true }
   color: "transparent"
-  exclusionMode: cooperativeFocus ? ExclusionMode.Normal : ExclusionMode.Ignore
+  exclusionMode: cooperative ? ExclusionMode.Normal : ExclusionMode.Ignore
   WlrLayershell.layer: shownLayer
   WlrLayershell.keyboardFocus: cooperating && focusHeld ? WlrKeyboardFocus.OnDemand : shownKeyboardFocus
 

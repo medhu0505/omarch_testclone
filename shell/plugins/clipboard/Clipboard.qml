@@ -316,7 +316,8 @@ Item {
   OverlayWindow {
     id: panel
     shown: root.opened
-    cooperativeFocus: !!root.shell && root.shell.overlaysCooperativeFocus === true
+    cooperativeFocus: root.shell ? root.shell.overlaysCooperativeFocus : false
+    ownReservedSpace: root.shell ? root.shell.barReservedSpace : [0, 0, 0, 0]
     onDismissRequested: root.close()
     WlrLayershell.namespace: "omarchy-clipboard"
 
