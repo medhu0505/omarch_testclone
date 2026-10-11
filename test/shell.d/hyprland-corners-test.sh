@@ -26,7 +26,7 @@ pass "corners start out following the theme"
 
 run omarchy-hyprland-corners rounded
 [[ $(run omarchy-hyprland-corners) == "rounded" ]] || fail "rounded corners are reported"
-cmp -s "$ROOT/default/hypr/toggles/corners-rounded.lua" "$toggles_dir/corners-rounded.lua" || fail "rounded corners are loaded after the theme"
+cmp -s "$ROOT/default/hypr/toggles/corners-rounded.lua" "$toggles_dir/corners-rounded.lua" || fail "rounded corners are saved as a toggle"
 grep -qx 'hyprctl reload' "$tmpdir/commands.log" || fail "new corners reload Hyprland"
 pass "rounded corners override the theme"
 
@@ -56,3 +56,41 @@ pass "corners follow XDG_STATE_HOME"
 [[ $(grep -E '^\s*rounding(_power)? =' "$ROOT/default/hypr/toggles/corners-rounded.lua") == "$(grep -E '^\s*rounding(_power)? =' "$ROOT/themes/solitude/hyprland.lua")" ]] ||
   fail "rounded corners match Solitude's"
 pass "rounded corners match Solitude's"
+
+# A failed save keeps the corners already chosen.
+run omarchy-hyprland-corners rounded
+chmod a-w "$toggles_dir"
+if run omarchy-hyprland-corners sharp 2>/dev/null; then
+  chmod u+w "$toggles_dir"
+  fail "a failed save is reported"
+fi
+chmod u+w "$toggles_dir"
+[[ $(run omarchy-hyprland-corners) == "rounded" ]] || fail "a failed save keeps the corners already chosen"
+pass "a failed save keeps the corners already chosen"
+run omarchy-hyprland-corners theme
+
+# Hyprland loads the theme, then every toggle in name order: the corners win
+# over the theme, and no-gaps still squares them.
+if command -v lua >/dev/null; then
+  toggle_load() {
+    local dir="$tmpdir/load"
+    rm -rf "$dir"
+    mkdir -p "$dir"
+    for toggle in "$@"; do cp "$ROOT/default/hypr/toggles/$toggle.lua" "$dir/"; done
+    ROOT="$ROOT" DIR="$dir" lua - <<'LUA'
+package.path = os.getenv("ROOT") .. "/?.lua;" .. os.getenv("DIR") .. "/?.lua;" .. package.path
+local rounding
+hl = { config = function(config) if config.decoration and config.decoration.rounding then rounding = config.decoration.rounding end end }
+hl.config({ decoration = { rounding = 10 } }) -- the theme
+require("default.hypr.require_all").files(os.getenv("DIR"), nil, { reload = true })
+print(rounding)
+LUA
+  }
+  [[ $(toggle_load) == "10" ]] || fail "theme corners keep the theme's rounding"
+  [[ $(toggle_load corners-rounded) == "6" ]] || fail "rounded corners override the theme's rounding"
+  [[ $(toggle_load corners-sharp) == "0" ]] || fail "sharp corners override the theme's rounding"
+  [[ $(toggle_load corners-rounded window-no-gaps) == "0" ]] || fail "no-gaps squares rounded corners"
+  pass "corners load after the theme, and no-gaps still squares them"
+else
+  skip "lua is not installed"
+fi
