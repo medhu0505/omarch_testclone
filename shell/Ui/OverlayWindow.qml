@@ -34,7 +34,7 @@ PanelWindow {
     }
     return false
   }
-  readonly property bool cooperative: cooperativeFocus === true || (cooperativeFocus === "auto" && competingSurface)
+  readonly property bool cooperative: cooperativeFocus === true || (cooperativeFocus === "auto" && competingSurface && cooperationSettled)
   readonly property bool cooperating: shown && cooperative && shownKeyboardFocus === WlrKeyboardFocus.Exclusive
   property bool focusHeld: false
   // Asks the owner to dismiss through its own cancel path: a click landed on
@@ -68,6 +68,7 @@ PanelWindow {
   readonly property bool contentReady: shown && backingWindowVisible && !!targetScreen
     && width === targetScreen.width - reservedSpace[0] - reservedSpace[2] && height === targetScreen.height - reservedSpace[1] - reservedSpace[3]
     && !!targetMonitor && Math.round(devicePixelRatio * 120) === Math.round(targetMonitor.scale * 120)
+    && cooperationSettled
   property bool contentRevealed: false
 
   onContentReadyChanged: {
@@ -92,28 +93,36 @@ PanelWindow {
   // scale can lag behind Qt. Refresh on opening and on scale changes while open.
   onShownChanged: {
     reservedSpaceFresh = false
+    openingSizeSettled = false
     targetScreen = shown ? focusedScreen() : null
     if (shown) Hyprland.refreshMonitors()
   }
 
-  // The reserved space cached from before the overlay opened may predate a
-  // keyboard. An overlay that starts stock and turns cooperative while its
-  // first size is still being settled keeps the full screen and covers it, so
-  // "auto" maps only once Hyprland has answered the refresh above.
+  // "auto" opens exactly as a stock overlay does, so it has the keyboard from
+  // the first keystroke, and decides whether to cooperate afterwards. Two
+  // things have to be in first. The reserved space cached from before the
+  // overlay opened may predate a keyboard, so Hyprland must have answered the
+  // refresh above. And an overlay that turns cooperative while its first size
+  // is still being settled keeps the full screen and covers the keyboard, so
+  // that size must have arrived. Content stays transparent until both have.
   property bool reservedSpaceFresh: false
-  readonly property bool reservedSpaceSettled: cooperativeFocus !== "auto" || reservedSpaceFresh
+  property bool openingSizeSettled: false
+  readonly property bool openingSize: shown && backingWindowVisible && !!targetScreen
+    && width === targetScreen.width && height === targetScreen.height
+  onOpeningSizeChanged: if (openingSize) openingSizeSettled = true
+  readonly property bool cooperationSettled: cooperativeFocus !== "auto" || (reservedSpaceFresh && openingSizeSettled)
   Connections {
     target: window.targetMonitor
     enabled: window.shown && !window.reservedSpaceFresh
-    // Next turn, so the bindings reading the answer settle before the map.
+    // Next turn, so the bindings reading the answer settle first.
     function onLastIpcObjectChanged() {
       Qt.callLater(function() { if (window.shown) window.reservedSpaceFresh = true })
     }
   }
-  // Never hold an overlay back for an answer that does not come.
+  // Never hold content back for an answer that does not come.
   Timer {
     interval: 250
-    running: window.shown && !window.reservedSpaceSettled
+    running: window.shown && window.cooperativeFocus === "auto" && !window.reservedSpaceFresh
     onTriggered: window.reservedSpaceFresh = true
   }
   onDevicePixelRatioChanged: if (shown) Hyprland.refreshMonitors()
@@ -157,7 +166,7 @@ PanelWindow {
     }
   }
 
-  visible: shown && !!targetScreen && !!targetMonitor && reservedSpaceSettled
+  visible: shown && !!targetScreen && !!targetMonitor
   screen: targetScreen
   anchors { top: true; left: true; bottom: true; right: true }
   color: "transparent"

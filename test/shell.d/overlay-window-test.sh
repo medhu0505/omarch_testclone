@@ -11,14 +11,15 @@ const overlay = read('shell/Ui/OverlayWindow.qml')
 
 // Closing must unmap, not leave a surface on an output that may disappear.
 assert(
-  overlay.includes('visible: shown && !!targetScreen && !!targetMonitor && reservedSpaceSettled') &&
+  overlay.includes('visible: shown && !!targetScreen && !!targetMonitor') &&
     overlay.includes('anchors { top: true; left: true; bottom: true; right: true }') &&
     !overlay.includes('implicitWidth: 1') && !overlay.includes('WlrLayer.Bottom'),
   'closed overlays unmap instead of parking a surface'
 )
 
 const readyExpression = /readonly property bool contentReady: ([^\n]*(?:\n    &&[^\n]*)*)/.exec(overlay)[1]
-const readyReserving = new Function('shown', 'backingWindowVisible', 'width', 'height', 'targetScreen', 'targetMonitor', 'devicePixelRatio', 'reservedSpace', `return ${readyExpression}`)
+const readySettling = new Function('shown', 'backingWindowVisible', 'width', 'height', 'targetScreen', 'targetMonitor', 'devicePixelRatio', 'reservedSpace', 'cooperationSettled', `return ${readyExpression}`)
+const readyReserving = (...args) => readySettling(...args, true)
 const ready = (...args) => readyReserving(...args, [0, 0, 0, 0])
 const screen = { name: 'eDP-1', width: 1200, height: 750 }
 const monitor = { name: 'eDP-1', scale: 1.6 }
@@ -182,7 +183,8 @@ assert(competingSurface([0, 60, 0, 0], [0, 26, 0, 0]), 'more than the bar on its
 assert(competingSurface([0, 26, 0, 0], undefined), 'reserved space the shell cannot account for competes')
 assert(!competingSurface([0, 0, 0, 0], [0, 26, 0, 0]), 'a hidden or absent reservation never competes')
 const cooperativeExpression = /readonly property bool cooperative: ([^\n]+)/.exec(overlay)[1]
-const isCooperative = new Function('cooperativeFocus', 'competingSurface', `return ${cooperativeExpression}`)
+const isCooperativeSettled = new Function('cooperativeFocus', 'competingSurface', 'cooperationSettled', `return ${cooperativeExpression}`)
+const isCooperative = (mode, competing) => isCooperativeSettled(mode, competing, true)
 assert(isCooperative(true, false), 'true cooperates with nothing competing')
 assert(isCooperative('auto', true), 'auto cooperates while a surface competes')
 assert(!isCooperative('auto', false), 'auto is stock with nothing competing')
@@ -266,14 +268,26 @@ assert(
     overlay.includes('onHeightChanged: if (shown && cooperativeFocus !== false) Hyprland.refreshMonitors()'),
   'a keyboard appearing or leaving refreshes the reserved space'
 )
-const settledExpression = /readonly property bool reservedSpaceSettled: ([^\n]+)/.exec(overlay)[1]
-const settled = new Function('cooperativeFocus', 'reservedSpaceFresh', `return ${settledExpression}`)
-assert(settled(false, false) && settled(true, false), 'only an auto overlay waits on reserved space before mapping')
-assert(!settled('auto', false) && settled('auto', true), 'an auto overlay maps once Hyprland has answered')
+// "auto" opens as a stock overlay and decides afterwards, so it has the
+// keyboard from the first keystroke.
+const settledExpression = /readonly property bool cooperationSettled: ([^\n]+)/.exec(overlay)[1]
+const settled = new Function('cooperativeFocus', 'reservedSpaceFresh', 'openingSizeSettled', `return ${settledExpression}`)
+assert(settled(false, false, false) && settled(true, false, false), 'only an auto overlay has a decision to wait for')
+assert(!settled('auto', true, false), 'an auto overlay waits for its first size before deciding')
+assert(!settled('auto', false, true), 'an auto overlay waits for Hyprland to answer before deciding')
+assert(settled('auto', true, true), 'an auto overlay decides once both are in')
+assert(!isCooperativeSettled('auto', true, false), 'a competing surface does not turn an unsettled auto overlay cooperative')
+assert(isCooperativeSettled('auto', true, true) && isCooperativeSettled(true, false, false), 'settled auto and explicit true cooperate')
+const openingExpression = /readonly property bool openingSize: ([^\n]*(?:\n    &&[^\n]*)*)/.exec(overlay)[1]
+const openingSize = new Function('shown', 'backingWindowVisible', 'targetScreen', 'width', 'height', `return ${openingExpression}`)
+assert(openingSize(true, true, { width: 1200, height: 750 }, 1200, 750), 'the first size has arrived at the full screen')
+assert(!openingSize(true, true, { width: 1200, height: 750 }, 500, 500) && !openingSize(true, false, { width: 1200, height: 750 }, 1200, 750),
+  'a default or unmapped size is not the first size')
+assert(!readySettling(true, true, 1200, 750, screen, monitor, 1.6, [0, 0, 0, 0], false), 'content stays transparent until an auto overlay has decided')
 assert(
-  /onShownChanged: \{\n    reservedSpaceFresh = false/.test(overlay) &&
-    /running: window\.shown && !window\.reservedSpaceSettled\n    onTriggered: window\.reservedSpaceFresh = true/.test(overlay),
-  'every open asks again, and an answer that never comes does not hold the overlay back'
+  /onShownChanged: \{\n    reservedSpaceFresh = false\n    openingSizeSettled = false/.test(overlay) &&
+    /running: window\.shown && window\.cooperativeFocus === "auto" && !window\.reservedSpaceFresh\n    onTriggered: window\.reservedSpaceFresh = true/.test(overlay),
+  'every open decides afresh, and an answer that never comes does not hold content back'
 )
 assert(
   /running: window\.shown && window\.cooperative && window\.backingWindowVisible && !window\.contentReady\n    onTriggered: Hyprland\.refreshMonitors\(\)/.test(overlay),
