@@ -38,7 +38,7 @@ Pressing `Super + L` again turns the workspace floating, where windows overlap f
 
  ![navigation-scrolling-layout](images/navigation-scrolling-layout.webp)
 
-The choice is per workspace, and it sticks. So you can keep workspace 1 on dwindle for browsing and workspace 2 on scrolling for code, and they'll come back that way after a restart. (The same toggle is under _Trigger > Toggle > Workspace Layout_ in the Omarchy menu).
+The choice is per workspace, and it sticks. So you can keep workspace 1 on dwindle for browsing and workspace 2 on scrolling for code, and they'll come back that way after a restart. (The same toggle is under _Trigger > Appearance > Workspace Layout_ in the Omarchy menu).
 
 If you wish to use the scrolling layout as the default, you can set that in `~/.config/hypr/looknfeel.lua`:
 
