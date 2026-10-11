@@ -95,6 +95,8 @@ You start mpv via the application launcher (`Super + Space`) or just double-clic
 
 Omarchy's controls follow your active theme while the player stays open. Move the pointer near the bottom for playback, seeking and volume, or use the menu beside the file name for audio tracks, subtitles, chapters, devices, history and keybindings. Controls hide after inactivity, including while paused.
 
+Buttons and tooltips follow the desktop's corner rounding while the player stays open. Set `corner_radius=-1` in `omarchy-controls.conf` to follow the desktop, `0` for square corners, or a positive value for a fixed radius.
+
 Press `Tab` to focus the controls, `Enter` to activate a button and `Escape` to return to normal playback keys. `a` opens the audio picker; `#` cycles audio tracks and `j` cycles subtitles. Your own mpv keybindings take precedence.
 
 Choose Transparency from the three-dot menu, or use `Ctrl + F9` to cycle solid, uniform translucent and gradient controls. The choice applies to the current player. To persist a choice, edit `~/.config/mpv/script-opts/omarchy-controls.conf` and set `surface_mode` to `solid`, `translucent` or `gradient`. This file also contains opacity, font and corner settings. Light themes use a stronger backing for readable dark text. Native selection menus remain solid.

@@ -1,6 +1,7 @@
 -- Reload Omarchy's generated palette without restarting playback.
 -- The custom controller observes user-data; built-in menus observe script-opts.
 local msg = require 'mp.msg'
+local utils = require 'mp.utils'
 local options = {theme_file = '~/.local/state/omarchy/current/theme/mpv-theme.conf'}
 require('mp.options').read_options(options, 'omarchy-theme')
 local path = mp.command_native({'expand-path', options.theme_file})
@@ -98,6 +99,36 @@ local function reload_theme()
   last_contents, last_warning = contents, nil
   msg.verbose('Applied Omarchy palette from ' .. path)
 end
+
+-- Match the shell's Style.cornerRadius source, including user overrides.
+-- Keep geometry separate from color selection: a player-only palette never
+-- changes the desktop's window/control shape.
+local rounding_request, rounding_timeout
+local function reload_rounding()
+  if rounding_request then return end
+  rounding_request = mp.command_native_async({name='subprocess',
+    args={'hyprctl', '-j', 'getoption', 'decoration:rounding'},
+    capture_stdout=true, capture_stderr=true, playback_only=false}, function(success, result)
+    rounding_request = nil
+    if rounding_timeout then rounding_timeout:kill() end
+    if not success or not result or result.status ~= 0 then return end
+    local data = utils.parse_json(result.stdout)
+    local radius = type(data) == 'table' and data.int
+    if type(radius) ~= 'number' or radius < 0 or radius == math.huge then return end
+    if mp.get_property_native('user-data/omarchy/corner-radius') ~= radius then
+      mp.set_property_native('user-data/omarchy/corner-radius', radius)
+    end
+  end)
+  rounding_timeout = mp.add_timeout(1.5, function()
+    if rounding_request then mp.abort_async_command(rounding_request) end
+  end)
+end
+reload_rounding()
+mp.add_periodic_timer(2, reload_rounding)
+mp.register_script_message('reload-omarchy-rounding', reload_rounding)
+mp.register_event('shutdown', function()
+  if rounding_request then mp.abort_async_command(rounding_request) end
+end)
 
 reload_theme()
 -- mpv has no portable file-watcher API. Read this small local file once per

@@ -1,7 +1,7 @@
 -- Original mpv controller, using Hype's compact surfaces and Omarchy palette.
 local assdraw = require 'mp.assdraw'
 local input = require 'mp.input'
-local opts = {font='JetBrainsMono Nerd Font', hide_timeout=2.5, corner_radius=0, visibility='auto',
+local opts = {font='JetBrainsMono Nerd Font', hide_timeout=2.5, corner_radius=-1, visibility='auto',
   surface_mode='gradient', surface_opacity=.55, gradient_inner_opacity=.05, gradient_outer_opacity=.55,
   light_surface_opacity=.92, light_gradient_inner_opacity=.82, light_gradient_outer_opacity=.97, debug=false}
 require('mp.options').read_options(opts, 'omarchy-controls')
@@ -12,6 +12,7 @@ local overlay = mp.create_osd_overlay('ass-events')
 local palette = {background='#1a1b26', foreground='#c0caf5', accent='#7aa2f7',
   panel='#1e202c', button='#24283b', hover='#293a52', border='#3f4355',
   muted='#838aa8', error='#f7768e'}
+local corner_radius = math.max(0, opts.corner_radius)
 local surface_cache={}
 local W, H, scale = 960, 620, 1
 local regions, seekbar, volume_slider = {}, nil, nil
@@ -410,6 +411,7 @@ render = function()
   end
   local a = assdraw.ass_new()
   local function box(x,y,w,h,fill,radius,border,opacity,border_opacity)
+    radius=math.max(0,math.min(radius or 0,w/2,h/2))
     local alpha=math.floor((1-math.max(0,math.min(1,opacity or 1)))*255+.5)
     a:new_event(); a:append('{\\pos(0,0)\\an7\\bord0\\shad0\\1c&H'..color(fill)..'&\\1a&H'..string.format('%02X',alpha)..'&}')
     a:draw_start()
@@ -448,7 +450,8 @@ render = function()
     end
     a:new_event(); a:append(entry.data)
   end
-  local function gradient_rect(x,y,w,h,fill)
+  local function gradient_rect(x,y,w,h,fill,radius)
+    radius=math.max(0,math.min(radius or 0,w/2,h/2))
     -- Clip a full rectangle into adjacent bands. Drawing one-pixel shapes
     -- anti-aliases their edges and makes light backgrounds unexpectedly dim.
     local steps=math.ceil(h/2)
@@ -460,7 +463,10 @@ render = function()
       a:new_event()
       a:append(string.format('{\\pos(0,0)\\an7\\bord0\\shad0\\clip(%d,%d,%d,%d)\\1c&H%s&\\1a&H%02X&}',
         math.floor(x),y1,math.ceil(x+w),y2,color(fill),alpha))
-      a:draw_start(); a:rect_cw(x,y,x+w,y+h); a:draw_stop()
+      a:draw_start()
+      if radius > 0 then a:round_rect_cw(x,y,x+w,y+h,radius)
+      else a:rect_cw(x,y,x+w,y+h) end
+      a:draw_stop()
     end
   end
   local function panel(y,h)
@@ -522,16 +528,16 @@ render = function()
     end
   end
   local function button_surface(id,x,y,w,h,fill,border,hot)
-    local key=table.concat({x,y,w,h,scale,fill,border,tostring(hot),opts.corner_radius,
+    local key=table.concat({x,y,w,h,scale,fill,border,tostring(hot),corner_radius,
       surface_mode,uniform_opacity,inner_opacity,outer_opacity},':')
     cached_surface('button-'..id,key,function()
       local opacity=surface_opacity(y+h/2)
       local border_opacity=surface_mode == 'solid' and 1 or hot and .9 or math.max(.25,opacity)
-      if surface_mode == 'gradient' and not hot and opts.corner_radius == 0 then
-        gradient_rect(x,y,w,h,fill)
-        box(x,y,w,h,fill,0,border,0,border_opacity)
+      if surface_mode == 'gradient' and not hot then
+        gradient_rect(x,y,w,h,fill,corner_radius)
+        box(x,y,w,h,fill,corner_radius,border,0,border_opacity)
       else
-        box(x,y,w,h,fill,opts.corner_radius,border,hot and math.max(.65,opacity) or opacity,border_opacity)
+        box(x,y,w,h,fill,corner_radius,border,hot and math.max(.65,opacity) or opacity,border_opacity)
       end
     end)
   end
@@ -559,7 +565,7 @@ render = function()
         fullscreen='Fullscreen'..key_hint('f','cycle fullscreen')}
       if help[id] and y > header then
         local tw=math.min(W-24,#help[id]*7.4+20)
-        box((W-tw)/2,bottom-34,tw,28,palette.panel,opts.corner_radius,palette.border)
+        box((W-tw)/2,bottom-34,tw,28,palette.panel,corner_radius,palette.border)
         text(W/2,bottom-20,help[id],12,palette.foreground,5)
       end
     end
@@ -638,9 +644,9 @@ render = function()
     local ratio=math.max(0,math.min(1,number('volume')/math.max(1,number('volume-max',130))))
     box(vx,vy-2,vw,4,palette.button,1,nil,surface_opacity(vy))
     if ratio > 0 then box(vx,vy-2,vw*ratio,4,palette.accent,1) end
-    box(vx+vw*ratio-3,vy-5,6,10,palette.accent,opts.corner_radius)
+    box(vx+vw*ratio-3,vy-5,6,10,palette.accent,corner_radius)
     if mp.get_time() < volume_feedback_until or dragging == 'volume-slider' or inside and hit(volume_slider) or keyboard and focused_id=='volume-slider' then
-      box(vx-8,by-27,vw+16,22,palette.panel,opts.corner_radius,palette.border)
+      box(vx-8,by-27,vw+16,22,palette.panel,corner_radius,palette.border)
       text(vx+vw/2,by-16,string.format('%d%%',number('volume')),12,palette.foreground,5)
     end
   else volume_slider=nil end
@@ -664,6 +670,13 @@ mp.observe_property('mouse-pos','native',function(_,pos)
   mx,my,inside=x,y,pos.hover
   if dragging then update_drag() end
   if visibility_mode ~= 'never' or dragging then render() end
+end)
+mp.observe_property('user-data/omarchy/corner-radius','number',function(_,radius)
+  if opts.corner_radius < 0 and radius and radius >= 0 and radius < math.huge then
+    corner_radius=radius
+  end
+  if opts.debug then mp.set_property_native('user-data/omarchy/control-corner-radius',corner_radius) end
+  render()
 end)
 mp.observe_property('user-data/omarchy/theme','native',function(_,colors)
   if colors then
