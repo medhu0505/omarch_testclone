@@ -404,6 +404,7 @@ var GUARD_READERS = [
   "omarchy-default-dictation",
   "omarchy-dns",
   "omarchy-hyprland-corners",
+  "omarchy-hyprland-window-transparency",
   "omarchy-hyprland-workspace-layout-default"
 ]
 
