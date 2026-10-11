@@ -57,6 +57,12 @@ toggle() {
     PATH="$stub_dir:$ROOT/bin:$PATH" "$@" "$ROOT/bin/omarchy-hyprland-workspace-layout-toggle"
 }
 
+toggle_back() {
+  env HOME="$home_dir" XDG_STATE_HOME="$home_dir/.local/state" \
+    HYPRCTL_LOG="$log_file" NOTIFICATION_LOG="$notification_log" \
+    PATH="$stub_dir:$ROOT/bin:$PATH" "$ROOT/bin/omarchy-hyprland-workspace-layout-toggle" "$@"
+}
+
 saved_mode() {
   sed -n 's/.*mode = "\([a-z]*\)".*/\1/p' "$layout_file" 2>/dev/null
 }
@@ -95,6 +101,19 @@ toggle
 [[ $(saved_mode) == "dwindle" ]] || fail "floating cycles back to dwindle" "saved: $(cat "$layout_file")"
 applied dwindle || fail "dwindle is applied immediately" "$(cat "$log_file")"
 pass "floating cycles back to dwindle"
+
+# Super + Alt + L walks the same cycle the other way.
+toggle_back back
+[[ $(saved_mode) == "floating" ]] || fail "back from dwindle is floating" "saved: $(cat "$layout_file")"
+toggle_back back
+[[ $(saved_mode) == "scrolling" ]] || fail "back from floating is scrolling" "saved: $(cat "$layout_file")"
+toggle_back back
+[[ $(saved_mode) == "dwindle" ]] || fail "back from scrolling is dwindle" "saved: $(cat "$layout_file")"
+if toggle_back sideways 2>/dev/null; then
+  fail "an unknown direction is refused"
+fi
+[[ $(saved_mode) == "dwindle" ]] || fail "a refused direction changes nothing" "saved: $(cat "$layout_file")"
+pass "the layout cycles backwards too"
 
 # Files written before floating existed name a layout rather than a mode.
 : >"$log_file"

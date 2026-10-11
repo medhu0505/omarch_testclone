@@ -1,6 +1,13 @@
 #!/bin/bash
 
 # omarchy:summary=Cycle the current active workspace through the dwindle, scrolling, and floating layouts
+# omarchy:args=[back]
+
+DIRECTION=${1:-next}
+if [[ $DIRECTION != "next" && $DIRECTION != "back" ]]; then
+  echo "Usage: omarchy-hyprland-workspace-layout-toggle [back]" >&2
+  exit 1
+fi
 
 ACTIVE_WORKSPACE=$(hyprctl activeworkspace -j | jq -r '.id')
 # Named workspaces report a negative id, and Hyprland reads a leading "-" as a
@@ -12,11 +19,19 @@ MODE_FILE="$MODES_DIR/$ACTIVE_WORKSPACE.lua"
 
 CURRENT_MODE=$(omarchy-hyprland-workspace-layout-current)
 
-case "$CURRENT_MODE" in
-  dwindle) NEW_MODE=scrolling ;;
-  scrolling) NEW_MODE=floating ;;
-  *) NEW_MODE=dwindle ;;
-esac
+if [[ $DIRECTION == "back" ]]; then
+  case "$CURRENT_MODE" in
+    dwindle) NEW_MODE=floating ;;
+    floating) NEW_MODE=scrolling ;;
+    *) NEW_MODE=dwindle ;;
+  esac
+else
+  case "$CURRENT_MODE" in
+    dwindle) NEW_MODE=scrolling ;;
+    scrolling) NEW_MODE=floating ;;
+    *) NEW_MODE=dwindle ;;
+  esac
+fi
 
 APPLY="o.workspace_mode({ workspace = \"$ACTIVE_WORKSPACE\", mode = \"$NEW_MODE\" })"
 
