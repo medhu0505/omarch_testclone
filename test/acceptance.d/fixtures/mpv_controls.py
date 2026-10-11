@@ -88,7 +88,7 @@ def test():
           artifact.mkdir(parents=True,exist_ok=True)
           # Property events can precede the compositor's next presented frame.
           time.sleep(.25)
-          subprocess.run(['grim',str(path)],check=True)
+          subprocess.run(['grim',str(path)],check=True,timeout=10)
           shutil.copyfile(path,artifact / ('success-mpv-' + Path(path).name))
         assert prop('osd-dimensions')['w'] > 0
         dims=prop('osd-dimensions')

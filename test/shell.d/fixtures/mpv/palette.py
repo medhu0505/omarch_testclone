@@ -110,6 +110,11 @@ def test():
               if line and not line.startswith('#')) if '-' not in k}
 
         wait_palette(parsed(dark))
+        # Theme publication can precede the first decoded paused frame.
+        deadline=time.monotonic()+10
+        while property('time-pos') is None and time.monotonic()<deadline:
+          time.sleep(.05)
+        assert property('time-pos') is not None, 'Paused playback did not initialize'
         second_command('keypress','a')
         deadline=time.monotonic()+3
         while second_property('volume') != 51 and time.monotonic()<deadline:time.sleep(.05)

@@ -97,7 +97,9 @@ Omarchy's controls follow your active theme while the player stays open. Move th
 
 Press `Tab` to focus the controls, `Enter` to activate a button and `Escape` to return to normal playback keys. `a` opens the audio picker; `#` cycles audio tracks and `j` cycles subtitles. Your own mpv keybindings take precedence.
 
-`Ctrl + F9` cycles solid, uniform translucent and gradient controls. `F10` pins or unpins them. To persist a choice, edit `~/.config/mpv/script-opts/omarchy-controls.conf` and set `surface_mode` to `solid`, `translucent` or `gradient`. This file also contains opacity, font and corner settings. Light themes use a stronger backing for readable dark text. Native selection menus remain solid.
+Choose Transparency from the three-dot menu, or use `Ctrl + F9` to cycle solid, uniform translucent and gradient controls. The choice applies to the current player. To persist a choice, edit `~/.config/mpv/script-opts/omarchy-controls.conf` and set `surface_mode` to `solid`, `translucent` or `gradient`. This file also contains opacity, font and corner settings. Light themes use a stronger backing for readable dark text. Native selection menus remain solid.
+
+`Delete` cycles automatic, always-visible and hidden controls. Hidden controls stay hidden during seeks and file changes. `F10` pins or unpins them. Bottom-positioned subtitles move above visible controls and return to your configured margin when the controls hide.
 
 Existing mpv configurations are preserved during upgrades. To opt in, first back up `~/.config/mpv`, then copy the Omarchy scripts and script-option files from `/usr/share/omarchy/config/mpv/` into your config after checking for conflicting controllers. Set `osc=no`, `border=no` and `osd-bar=no` in the global part of your `mpv.conf`; preserve your other preferences. Refresh the current Omarchy theme once to generate the palette, then reopen mpv. Disable any alternative controller yourself before activating these controls. Later theme changes apply live without reopening the player.
 
