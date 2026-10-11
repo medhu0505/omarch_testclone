@@ -1,3 +1,8 @@
+-- Send letters by keycode: Hyprland resolves key names against the active
+-- layout, so "V" fails with "send_key_state: key not found" on layouts without
+-- Latin letters (e.g. Russian). Keycodes are evdev + 8, as in code: binds.
+local LAYOUT_INDEPENDENT_KEYS = { A = "code:38", C = "code:54", V = "code:55", X = "code:53" }
+
 -- Send with explicit mods to the focused surface by omitting the window target,
 -- so universal clipboard shortcuts reach both normal windows and focused
 -- layer-shell surfaces such as Omarchy panels. A virtual keyboard (wtype) won't
@@ -6,6 +11,8 @@
 -- synthetic key state stuck/repeating.
 -- https://github.com/hyprwm/Hyprland/discussions/14099
 local function send_shortcut_once(mods, key)
+  key = LAYOUT_INDEPENDENT_KEYS[key] or key
+
   return function()
     hl.dispatch(hl.dsp.send_key_state({ mods = mods, key = key, state = "down" }))
 
