@@ -194,8 +194,8 @@ assert(
 const triggerItems = defaultItems.filter(item => item.parent === 'trigger')
 assertEqual(
   triggerItems[0].id,
-  'trigger.emoji',
-  'menu lists Emoji first under Trigger'
+  'trigger.toggle',
+  'menu lists Toggle first under Trigger'
 )
 assertEqual(
   defaultById['trigger.emoji'].action,
@@ -377,7 +377,7 @@ assertEqual(
   'menu exposes Menu Bar transparency as a toggle'
 )
 const triggerIds = triggerItems.map(item => item.id)
-const appearanceLabels = ['Menu Bar', 'Battery Percentage', 'Workspace Layout', 'Window Gaps', 'Animations', '1-Window Ratio']
+const appearanceLabels = ['Animations', 'Menu Bar', 'Battery Percentage', 'Window Gaps', '1-Window Ratio', 'Workspace Layout', 'Herdr Theme Sync']
 assertEqual(triggerIds.indexOf('trigger.appearance'), triggerIds.indexOf('trigger.toggle') + 1, 'menu places Appearance right after Toggle')
 assertDeepEqual(
   defaultItems.filter(item => item.parent === 'trigger.appearance').map(item => item.label),
