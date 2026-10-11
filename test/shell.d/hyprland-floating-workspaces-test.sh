@@ -455,3 +455,12 @@ assert(bar and bar.bar_color == "rgb(223344)", "titlebars missed the theme with 
   fail "titlebars follow the theme when XDG_STATE_HOME points elsewhere"
 fi
 pass "titlebars follow the theme when XDG_STATE_HOME points elsewhere"
+
+run_node_test <<'JS'
+const widget = require('fs').readFileSync(path.join(root, 'shell/plugins/bar/widgets/Workspaces.qml'), 'utf8')
+assert(widget.includes('function onFocusedWorkspaceChanged() { root.showFocusedMode() }'), 'a workspace switch shows the cached layout instead of running the script')
+assert(/function showFocusedMode\(\) \{[\s\S]*?root\.modeCache\[root\.focusedWorkspaceId\(\)\][\s\S]*?else readMode\(\)/.test(widget), 'only an uncached workspace reads its layout')
+assert(/function refresh\(\) \{\s*\n\s*root\.modeCache = \(\{\}\)/.test(widget), 'a refresh request drops every cached layout')
+assert(widget.includes('String(event.name) === "configreloaded") root.refresh()'), 'a config reload drops every cached layout')
+assert(widget.includes('root.modeProcGeneration !== root.modeGeneration) return'), 'a read that predates a refresh is not cached')
+JS
