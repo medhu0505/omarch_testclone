@@ -2,17 +2,53 @@
 
 # omarchy:summary=Prompt for confirmation before starting an update
 
-gum style --border normal --padding "1 2" \
-  "Ready to update?" \
-  "" \
-  "• You cannot stop the update once you start!" \
-  "• Make sure you're connected to power or have a full battery" \
-  "" \
+# A metered link (a phone hotspot, or one the user marked as limited) gets one
+# warning per network. Confirming on it once records the NetworkManager profile,
+# so that network never asks again while a different one still does.
+metered_networks="$HOME/.local/state/omarchy/update-metered-networks"
+
+metered_uuid=""
+metered_name=""
+device=$(ip route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i <= NF; i++) if ($i == "dev") { print $(i + 1); exit } }')
+
+if [[ -n $device && $(nmcli -g GENERAL.METERED device show "$device" 2>/dev/null) == yes* ]]; then
+  uuid=$(nmcli -g GENERAL.CON-UUID device show "$device" 2>/dev/null)
+
+  if [[ -n $uuid ]] && ! grep -qxF "$uuid" "$metered_networks" 2>/dev/null; then
+    metered_uuid=$uuid
+    metered_name=$(nmcli -g GENERAL.CONNECTION device show "$device" 2>/dev/null | sed 's/\\:/:/g')
+  fi
+fi
+
+lines=(
+  "Ready to update?"
+  ""
+  "• You cannot stop the update once you start!"
+  "• Make sure you're connected to power or have a full battery"
+)
+
+if [[ -n $metered_uuid ]]; then
+  lines+=(
+    "• ${metered_name:-This network} is a mobile hotspot or limited data plan."
+    "  Updates can use a lot of data. You won't be asked about this network again."
+  )
+fi
+
+lines+=(
+  ""
   "What's new: https://github.com/omacom/omarchy/releases/latest"
+)
+
+gum style --border normal --padding "1 2" "${lines[@]}"
 
 echo
 
 if ! gum confirm "Continue with update?"; then
   echo "Update cancelled"
   exit 1
+fi
+
+if [[ -n $metered_uuid ]]; then
+  mkdir -p "${metered_networks%/*}"
+  printf '%s\n' "$metered_uuid" >>"$metered_networks"
 fi
