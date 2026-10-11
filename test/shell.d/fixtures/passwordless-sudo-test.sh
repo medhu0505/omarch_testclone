@@ -89,6 +89,7 @@ case "$name" in
       TEST_EUID=0 /usr/bin/bash -p "$@"
     else
       [[ ${2:-} != __status ]] || exit "${TEST_STATUS:-3}"
+      [[ ${2:-} != __enable || ${TEST_ENABLE_FAIL:-0} != 1 ]] || exit 1
     fi
     ;;
   gum)
