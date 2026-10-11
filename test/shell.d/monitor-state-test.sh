@@ -107,6 +107,18 @@ lone_ghost='[
   { "name": "eDP-1", "description": "", "make": "", "model": "", "availableModes": [], "mirrorOf": "none", "disabled": false, "focused": true, "width": 0, "height": 0 }
 ]'
 
+# A panel disabled since boot can report modes without an EDID identity. Its
+# modes are what separate it from a ghost, so it has to stay selectable.
+dsi_without_edid='[
+  { "name": "DSI-1", "description": "", "make": "", "model": "", "availableModes": ["1080x2340@60.00Hz"], "mirrorOf": "none", "disabled": true, "focused": false, "width": 0, "height": 0 },
+  { "name": "DP-1", "description": "Dell Inc. DELL U2720Q", "make": "Dell Inc.", "model": "DELL U2720Q", "availableModes": ["2560x1440@60.00Hz"], "mirrorOf": "none", "disabled": false, "focused": true, "width": 2560, "height": 1440 }
+]'
+
+disabled_external='[
+  { "name": "eDP-1", "description": "AU Optronics 0x1234", "make": "AU Optronics", "model": "0x1234", "availableModes": ["1920x1080@60.00Hz"], "mirrorOf": "none", "disabled": false, "focused": true, "width": 1920, "height": 1080 },
+  { "name": "HDMI-A-1", "description": "LG Electronics LG TV", "make": "LG Electronics", "model": "LG TV", "availableModes": ["3840x2160@60.00Hz"], "mirrorOf": "none", "disabled": true, "focused": false, "width": 0, "height": 0 }
+]'
+
 laptop_name() {
   printf '%s\n' "$1" >"$monitors_file"
   FAKE_MONITORS="$monitors_file" PATH="$test_bin:$PATH" \
@@ -196,6 +208,20 @@ assert_line 3 eDP-1 "monitor state reports the only internal connector enabled"
 [[ ${state_lines[7]-} == '[]' ]] ||
   fail "monitor state omits an empty internal connector with no real panel beside it" "actual: ${state_lines[7]-<missing>}"
 pass "monitor state omits an empty internal connector with no real panel beside it"
+
+monitor_state "$dsi_without_edid"
+assert_line_count "monitor state answers every line with an internal panel that has modes but no EDID"
+assert_line 1 DSI-1 "monitor state names an internal panel that has modes but no EDID"
+[[ ${state_lines[7]-} == '[{"name":"DSI-1","enabled":false,"focused":false,"width":0,"height":0},{"name":"DP-1","enabled":true,"focused":true,"width":2560,"height":1440}]' ]] ||
+  fail "monitor state keeps a disabled internal panel that has modes but no EDID" "actual: ${state_lines[7]-<missing>}"
+pass "monitor state keeps a disabled internal panel that has modes but no EDID"
+
+monitor_state "$disabled_external"
+assert_line_count "monitor state answers every line with a disabled external"
+assert_line 2 HDMI-A-1 "monitor state names a disabled external"
+[[ ${state_lines[7]-} == '[{"name":"eDP-1","enabled":true,"focused":true,"width":1920,"height":1080},{"name":"HDMI-A-1","enabled":false,"focused":false,"width":0,"height":0}]' ]] ||
+  fail "monitor state keeps an external the user turned off" "actual: ${state_lines[7]-<missing>}"
+pass "monitor state keeps an external the user turned off"
 
 assert_laptop "$extended" eDP-1 "laptop display is the internal monitor"
 assert_laptop "$clamshell" eDP-1 "laptop display stays the disabled internal panel"
