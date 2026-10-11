@@ -37,8 +37,9 @@ function keyboard.vconsole()
 end
 
 -- Choices whose console keymap is plain US but whose desktop layout is not:
--- Korean keeps US letters, and Lao is non-Latin, so US still leads.
-local desktop_overrides = { kr = true, la = true }
+-- Korean keeps US letters, and Lao is non-Latin, so US still leads. Azerbaijani
+-- is Latin, so it leads on its own; kbd has no Azerbaijani console keymap.
+local desktop_overrides = { az = true, kr = true, la = true }
 
 function keyboard.installed()
   local values = keyboard.vconsole()
