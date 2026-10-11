@@ -98,7 +98,7 @@
   "trigger.appearance.battery-percentage": {"icon":"󰁹","label":"Battery Percentage","when":"omarchy-hw-laptop","action":"omarchy-shell omarchy.power togglePercentage"},
   "trigger.appearance.workspace-layout": {"icon":"󱂬","label":"Workspace Layout","title":"Default Workspace Layout"},
   "trigger.appearance.window-gaps": {"icon":"","label":"Window Gaps","action":"omarchy-hyprland-window-gaps-toggle"},
-  "trigger.appearance.animations": {"icon":"󰕟","label":"Animations","action":"omarchy-toggle-animations"},
+  "trigger.appearance.animations": {"icon":"󰗘","label":"Animations","action":"omarchy-toggle-animations"},
   "trigger.appearance.one-window-ratio": {"icon":"","label":"1-Window Ratio","action":"omarchy-hyprland-window-single-square-aspect-toggle"},
   "trigger.appearance.workspace-layout.dwindle": {"icon":"󱓻","label":"Tiling","checked":"[[ $(omarchy-hyprland-workspace-layout-default) == \"dwindle\" ]]","action":"omarchy-hyprland-workspace-layout-default dwindle"},
   "trigger.appearance.workspace-layout.scrolling": {"icon":"󰝥","label":"Scrolling","checked":"[[ $(omarchy-hyprland-workspace-layout-default) == \"scrolling\" ]]","action":"omarchy-hyprland-workspace-layout-default scrolling"},
