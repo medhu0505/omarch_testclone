@@ -365,7 +365,7 @@ assert(
 )
 assertDeepEqual(
   defaultItems.filter(item => item.parent === 'trigger.appearance.top-bar').map(item => item.label),
-  ['Hide', 'Show', 'Position', 'Transparency'],
+  ['Hide Bar', 'Show Bar', 'Position Bar', 'Transparent Bar', 'Opaque Bar'],
   'menu gathers the Menu Bar under Trigger > Appearance'
 )
 assert(
@@ -384,10 +384,16 @@ assert(
   ['top', 'bottom', 'left', 'right'].every(position => defaultById[`trigger.appearance.top-bar.position.${position}`].action === `omarchy-bar position ${position}`),
   'menu lists all Menu Bar positions under Position'
 )
-assertEqual(
-  defaultById['trigger.appearance.top-bar.transparency'].action,
-  'omarchy-bar transparent toggle',
-  'menu exposes Menu Bar transparency as a toggle'
+assert(
+  defaultById['trigger.appearance.top-bar.transparent'].action === 'omarchy-bar transparent true'
+    && defaultById['trigger.appearance.top-bar.opaque'].action === 'omarchy-bar transparent false'
+    && defaultById['trigger.appearance.top-bar.transparent'].when === '! ' + defaultById['trigger.appearance.top-bar.opaque'].when,
+  'menu offers Transparent Bar while the bar is opaque and Opaque Bar while it is transparent'
+)
+assertDeepEqual(
+  ['top', 'bottom', 'left', 'right'].map(position => defaultById[`trigger.appearance.top-bar.position.${position}`].label),
+  ['Top Bar', 'Bottom Bar', 'Left Bar', 'Right Bar'],
+  'menu names each position after the bar'
 )
 const triggerIds = triggerItems.map(item => item.id)
 const appearanceLabels = ['Animations', 'Menu Bar', 'Battery Percentage', 'Window Gaps', '1-Window Ratio', 'Workspace Layout', 'Herdr Theme Sync']
