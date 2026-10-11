@@ -72,35 +72,32 @@ printf 'o.workspace_mode({ workspace = "4", mode = "floating" })\n' >"$modes_dir
   fail "a saved floating mode is reported, though Hyprland cannot report it"
 pass "the layout of a workspace comes from its saved mode before Hyprland's"
 
-# --- Float All Workspaces -----------------------------------------------------
+# --- The default layout -------------------------------------------------------
 
-printf 'hl.workspace_rule({ workspace = "1", layout = "scrolling" })\n' >"$modes_dir/1.lua"
-run omarchy-toggle-floating-workspaces
+[[ $(run omarchy-hyprland-workspace-layout-default) == "dwindle" ]] || fail "the default layout starts as tiling"
+run omarchy-hyprland-workspace-layout-default scrolling
+grep -qxF 'o.workspace_mode({ default = "scrolling" })' "$modes_dir/default.lua" ||
+  fail "the default layout is saved" "$(cat "$modes_dir/default.lua" 2>&1)"
+[[ $(run omarchy-hyprland-workspace-layout-default) == "scrolling" ]] || fail "the saved default is reported"
+grep -qx 'reload' "$fake/hyprctl.log" || fail "a new default reloads Hyprland"
+grep -qF 'omarchy-shell -q omarchy.workspaces refresh' "$fake/commands.log" || fail "a new default refreshes the bar"
+pass "the default layout is saved, applied, and shown"
 
-[[ -f $modes_dir/all.lua ]] || fail "turning floating on everywhere saves it"
-grep -qF 'o.workspace_mode({ default = "floating" })' "$modes_dir/all.lua" ||
-  fail "floating everywhere is saved as the default mode" "$(cat "$modes_dir/all.lua")"
-[[ ! -e $modes_dir/1.lua && ! -e $modes_dir/4.lua ]] ||
-  fail "every workspace floats, including those with a layout of their own" "$(ls "$modes_dir")"
-[[ -f $modes_dir/before-floating/1.lua ]] || fail "a workspace's own layout is set aside, not lost"
-grep -qx 'reload' "$fake/hyprctl.log" || fail "turning floating on everywhere reloads Hyprland"
+run omarchy-hyprland-workspace-layout-default floating
 [[ $(run omarchy-hyprland-workspace-layout-current 2) == "floating" ]] ||
-  fail "a workspace with no layout of its own floats once floating is on everywhere"
-pass "Float All Workspaces floats every workspace and sets their own layouts aside"
-
-# Super + L while floating everywhere gives one workspace a layout of its own.
+  fail "a workspace without a layout of its own follows the default"
+[[ $(run omarchy-hyprland-workspace-layout-current 4) == "floating" ]] ||
+  fail "a saved floating workspace still reports floating"
 printf 'o.workspace_mode({ workspace = "4", mode = "dwindle" })\n' >"$modes_dir/4.lua"
 [[ $(run omarchy-hyprland-workspace-layout-current 4) == "dwindle" ]] ||
-  fail "a workspace given its own layout keeps it while floating is on everywhere"
+  fail "a workspace given its own layout keeps it under a floating default"
+pass "workspaces without a layout of their own follow the default, others keep theirs"
 
-run omarchy-toggle-floating-workspaces
-[[ ! -e $modes_dir/all.lua ]] || fail "turning floating off everywhere removes it"
-grep -qF 'layout = "scrolling"' "$modes_dir/1.lua" ||
-  fail "the layout a workspace had before comes back"
-grep -qF 'mode = "dwindle"' "$modes_dir/4.lua" ||
-  fail "a layout chosen while floating everywhere wins over the one set aside" "$(cat "$modes_dir/4.lua")"
-[[ ! -e $modes_dir/before-floating ]] || fail "nothing is left set aside"
-pass "turning Float All Workspaces off brings back each workspace's own layout"
+if run omarchy-hyprland-workspace-layout-default sideways 2>/dev/null; then
+  fail "an unknown default layout is refused"
+fi
+[[ $(run omarchy-hyprland-workspace-layout-default) == "floating" ]] || fail "a refused default leaves the saved one alone"
+pass "an unknown default layout is refused"
 rm -f "$modes_dir"/*.lua
 
 # --- The workspace mode in Hyprland --------------------------------------------
@@ -286,10 +283,10 @@ assert(#s.rules == 0, "window rules were added with nothing floating")
 fi
 pass "nothing changes for a session where no workspace floats"
 
-# Float All Workspaces floats every regular workspace without a mode of its own,
+# A floating default floats every regular workspace without a mode of its own,
 # and leaves special workspaces and those with their own layout alone.
 mkdir -p "$modes_dir"
-printf 'o.workspace_mode({ default = "floating" })\n' >"$modes_dir/all.lua"
+printf 'o.workspace_mode({ default = "floating" })\n' >"$modes_dir/default.lua"
 printf 'o.workspace_mode({ workspace = "2", mode = "dwindle" })\n' >"$modes_dir/2.lua"
 
 if ! run_lua '
@@ -325,11 +322,22 @@ assert(s.config["general.resize_on_border"] == false, "a tiled workspace lost th
 assert(s.config["decoration.shadow.enabled"] == true, "floating windows got no shadows to tell them apart")
 assert(#s.rules >= 3, "the floating window rules were not added")
 ' TITLEBARS_INSTALLED=1; then
-  fail "Float All Workspaces floats every regular workspace without a layout of its own"
+  fail "a floating default floats every regular workspace without a layout of its own"
 fi
-pass "Float All Workspaces floats every regular workspace without a layout of its own"
+pass "a floating default floats every regular workspace without a layout of its own"
 
-# Turning it off is a fresh start with no default, and the windows it floated
+# A tiled default is Hyprland's own layout for workspaces without a rule.
+rm -f "$modes_dir"/*.lua
+printf 'o.workspace_mode({ default = "scrolling" })\n' >"$modes_dir/default.lua"
+if ! run_lua '
+require("default.hypr.workspace-layouts")
+assert(state().config["general.layout"] == "scrolling", "a scrolling default did not set the layout: " .. tostring(state().config["general.layout"]))
+'; then
+  fail "a scrolling default is Hyprland's default layout"
+fi
+pass "a scrolling default is Hyprland's default layout"
+
+# Moving the default away from floating is a fresh start, and the windows it floated
 # have to be given back even though nothing names their workspace any more. With
 # no workspace given a layout of its own, no saved mode is left to start the mode.
 rm -f "$modes_dir"/*.lua

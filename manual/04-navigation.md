@@ -38,7 +38,7 @@ Pressing `Super + L` again turns the workspace floating, where windows overlap f
 
  ![navigation-scrolling-layout](images/navigation-scrolling-layout.webp)
 
-The choice is per workspace, and it sticks. So you can keep workspace 1 on dwindle for browsing and workspace 2 on scrolling for code, and they'll come back that way after a restart. (The same toggle is under _Trigger > Appearance > Workspace Layout_ in the Omarchy menu).
+The choice is per workspace, and it sticks. So you can keep workspace 1 on dwindle for browsing and workspace 2 on scrolling for code, and they'll come back that way after a restart.
 
 If you wish to use the scrolling layout as the default, you can set that in `~/.config/hypr/looknfeel.lua`:
 
@@ -54,7 +54,7 @@ hl.config({
 
 A floating workspace works like a traditional desktop: windows overlap, and you move and size them yourself. Each window gets a titlebar in your theme's colors, with buttons to maximize and close. Click a window to bring it forward. Resize it from any edge or corner. Double-click a titlebar to maximize the window while keeping the top bar in view, and again to get its old size back.
 
-To make every workspace float, turn on _Trigger > Toggle > Float All Workspaces_ in the Omarchy menu. `Super + L` still gives a single workspace its own layout, and turning floating everywhere off brings back the layouts your workspaces had before.
+New workspaces, and any you haven't given a layout of their own with `Super + L`, use the default layout. Pick it under _Trigger > Appearance > Workspace Layout_: Tiling, Scrolling, or Floating. `omarchy-hyprland-workspace-layout-default scrolling` sets it from a terminal.
 
 ### Grouping windows
 

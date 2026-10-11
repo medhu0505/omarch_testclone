@@ -241,10 +241,14 @@ end
 function o.workspace_mode(spec)
   watch()
 
-  -- The default for every workspace that has no mode of its own, set by Float
-  -- All Workspaces. It is applied once the saved modes have all loaded.
+  -- The default for every workspace that has no mode of its own, chosen under
+  -- Trigger > Appearance > Workspace Layout. A tiled default is Hyprland's own
+  -- layout; a floating one is arranged once the saved modes have all loaded.
   if spec.default then
     default_mode = spec.default
+    if spec.default ~= "floating" then
+      hl.config({ general = { layout = spec.default } })
+    end
     return
   end
 
@@ -357,11 +361,11 @@ end
 
 -- Runs once every saved mode has loaded. A reload is a fresh start on this side
 -- but not for the windows, so each one is brought in line with the modes as they
--- now stand: turning Float All Workspaces off has to give back what it floated,
--- even though nothing names those workspaces any more.
+-- now stand: moving the default away from floating has to give back what it
+-- floated, even though nothing names those workspaces any more.
 function M.apply()
-  -- Turning Float All Workspaces off can leave no saved mode at all to start
-  -- the watchers, while the windows it floated still carry its tags.
+  -- A default that no longer floats can leave no saved mode at all to start the
+  -- watchers, while the windows it floated still carry its tags.
   local leftovers = #hl.get_windows({ tag = FLOATED_TAG }) > 0 or #hl.get_windows({ tag = WORKSPACE_TAG }) > 0
 
   if anything_floats() or leftovers then

@@ -83,7 +83,7 @@ BarWidget {
     }
   }
 
-  // Super + L and Float All Workspaces change the mode without a focus change,
+  // Super + L and the default layout change the mode without a focus change,
   // so they ask every bar to read it again.
   ShellIpc {
     target: "omarchy.workspaces"
