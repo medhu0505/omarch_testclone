@@ -118,7 +118,11 @@ PanelWindow {
       // A closing overlay loses focus too, and has already cleared shown.
       if (!window.shown || !window.visible || !window.cooperating) return
       if (active) window.focusHeld = true
-      else if (window.focusHeld) window.dismissRequested()
+      // Dismissing unmaps the window, which changes the very property this
+      // handler is reporting. Do it on the next turn, outside that binding.
+      else if (window.focusHeld) Qt.callLater(function() {
+        if (window.shown && window.cooperating && !focusProbe.active) window.dismissRequested()
+      })
     }
   }
 

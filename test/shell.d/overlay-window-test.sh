@@ -187,7 +187,14 @@ assertEqual(focusMode(true, true, WlrKeyboardFocus.Exclusive, WlrKeyboardFocus),
 assertEqual(focusMode(false, true, WlrKeyboardFocus.None, WlrKeyboardFocus), WlrKeyboardFocus.None, 'an overlay waiting on its content stays keyboard-free')
 
 const activeBody = /onActiveChanged: \{([\s\S]*?)\n    \}/.exec(overlay)[1]
-const changeActive = new Function('window', 'active', activeBody)
+const focusProbe = { active: false }
+const nextTurn = []
+const changeActiveNow = new Function('window', 'active', 'focusProbe', 'Qt', activeBody)
+const changeActive = (window, active) => {
+  focusProbe.active = active
+  changeActiveNow(window, active, focusProbe, { callLater: (fn) => nextTurn.push(fn) })
+  nextTurn.splice(0).forEach((fn) => fn())
+}
 let dismissals = 0
 const cooperative = { shown: true, visible: true, cooperating: true, focusHeld: false, dismissRequested() { dismissals++ } }
 changeActive(cooperative, false)
@@ -197,6 +204,13 @@ assert(cooperative.focusHeld, 'keyboard focus arriving releases exclusive pointe
 changeActive(cooperative, false)
 assertEqual(dismissals, 1, 'losing the keyboard asks the owner to dismiss')
 assert(cooperative.focusHeld, 'a dismissed overlay does not return to exclusive and take focus back')
+dismissals = 0
+focusProbe.active = false
+changeActiveNow(cooperative, false, focusProbe, { callLater: (fn) => nextTurn.push(fn) })
+assertEqual(dismissals, 0, 'dismissal waits for the next turn, outside the focus binding')
+focusProbe.active = true
+nextTurn.splice(0).forEach((fn) => fn())
+assertEqual(dismissals, 0, 'focus that came straight back cancels the dismissal')
 dismissals = 0
 changeActive({ ...cooperative, shown: false }, false)
 changeActive({ ...cooperative, visible: false }, false)
