@@ -26,17 +26,15 @@ assertEqual(registry.registryRevision, 0, 'failed registry mutations do not publ
 const barSource = fs.readFileSync(path.join(root, 'shell/plugins/bar/Bar.qml'), 'utf8')
 const bar = {
   root: {
-    shell: { mutateShellConfig: () => false },
-    requestedTransparent: false
+    shell: { mutateShellConfig: () => false }
   },
   normalizePosition: value => value
 }
 vm.createContext(bar)
-for (const name of ['setBarPosition', 'toggleTransparency', 'dropBarModule']) {
+for (const name of ['setBarPosition', 'dropBarModule']) {
   vm.runInContext(barSource.match(new RegExp('  function ' + name + '\\([^\\n]*\\) \\{[\\s\\S]*?\\n  \\}'))[0], bar)
 }
 assertEqual(bar.setBarPosition('bottom'), false, 'bar position returns persistence failure')
-assertEqual(bar.toggleTransparency(), false, 'bar transparency returns persistence failure')
 assertEqual(bar.dropBarModule({ region: 'left', moduleName: 'example.widget' }, 'right', ''), false, 'bar drop returns persistence failure')
 JS
 
@@ -73,9 +71,7 @@ def functions(source, names, indent=2):
     return '\n'.join(re.search(r' ' * indent + r'function ' + name + r'\([^\n]*\).*?\n' + r' ' * indent + r'\}', source, re.S).group() for name in names)
 qml = (root / 'test/shell.d/fixtures/shell-config-mutation/shell.qml').read_text()
 qml = qml.replace('// MUTATION_FUNCTIONS', functions(source, ['mutateShellConfig', 'updateEntryInline']).replace('Util.', 'shell.util.'))
-qml = qml.replace('// IPC_FUNCTIONS', functions(source, ['toggleBarTransparency', 'setPluginEnabled'], 4))
-bar = (root / 'shell/plugins/bar/Bar.qml').read_text()
-qml = qml.replace('// BAR_FUNCTIONS', functions(bar, ['toggleTransparency']).replace('root.shell', 'fixtureBar.host').replace('root.', 'fixtureBar.').replace('Util.', 'shell.util.'))
+qml = qml.replace('// IPC_FUNCTIONS', functions(source, ['setPluginEnabled'], 4))
 registry = (root / 'shell/services/PluginRegistry.qml').read_text()
 qml = qml.replace('// REGISTRY_FUNCTIONS', functions(registry, ['setEnabled', 'ensureConfigShape', 'findEntryLocation', 'findBarLocation', 'barEntryId', 'removeDisabled']).replace('Util.', 'shell.util.'))
 (fixture / 'shell.qml').write_text(qml)
@@ -208,27 +204,7 @@ assert config == {'version':1, 'plugins':[], 'bar':{'position':'bottom'}}, confi
 PY
 pass "genuinely missing config can be created from defaults"
 
-# Keep the bar's requestedTransparent at false while editing disk underneath it.
-printf '%s\n' '{"version":1,"bar":{"transparent":true},"plugins":[{"id":"example.service"},{"id":"example.other","keep":42}]}' > "$config"
-[[ $(qs -p "$fixture" ipc call config-test toggleBarTransparency) == "ok" ]] || fail "fresh transparency toggle succeeds"
-python3 - "$config" <<'PY'
-import json, sys
-config = json.load(open(sys.argv[1]))
-assert config['bar']['transparent'] is False, config
-assert config['plugins'][1] == {'id':'example.other', 'keep':42}, config
-PY
-[[ $(qs -p "$fixture" ipc call config-test toggleBarTransparency) == "ok" ]] || fail "sequential transparency toggle succeeds"
-python3 - "$config" <<'PY'
-import json, sys
-assert json.load(open(sys.argv[1]))['bar']['transparent'] is True
-PY
-pass "transparency IPC toggles fresh disk state despite stale bar properties"
-qs -p "$fixture" ipc call config-test barAvailable false >/dev/null
-[[ $(qs -p "$fixture" ipc call config-test toggleBarTransparency) == "no-bar" ]] || fail "absent bar still returns no-bar"
-qs -p "$fixture" ipc call config-test legacyBar >/dev/null
-[[ $(qs -p "$fixture" ipc call config-test toggleBarTransparency) == "ok" ]] || fail "legacy void-returning bar toggle succeeds"
-qs -p "$fixture" ipc call config-test barAvailable true >/dev/null
-pass "transparency IPC preserves missing-bar and legacy bar responses"
+printf '%s\n' '{"version":1,"plugins":[{"id":"example.service"},{"id":"example.other","keep":42}]}' > "$config"
 qs -p "$fixture" ipc call config-test noop > "$fixture/result"
 python3 - "$fixture/result" "$fixture/expected-memory" <<'PY'
 import json, sys
@@ -236,8 +212,6 @@ json.dump(json.load(open(sys.argv[1]))['config'], open(sys.argv[2], 'w'))
 PY
 cp "$config" "$fixture/valid"
 assert_ipc_failure() {
-  [[ $(qs -p "$fixture" ipc call config-test toggleBarTransparency) == "could not update shell config" ]] ||
-    fail "transparency IPC reports persistence failure"
   [[ $(qs -p "$fixture" ipc call config-test setPluginEnabled example.service false) == "could not update shell config" ]] ||
     fail "known plugin disable IPC reports persistence failure"
   qs -p "$fixture" ipc call config-test noop > "$fixture/result"
@@ -249,19 +223,19 @@ PY
 printf '%s' '{' > "$config"
 assert_ipc_failure
 [[ $(cat "$config") == "{" ]] || fail "failed IPC mutations retain malformed file"
-pass "toggle and known plugin disable IPC report invalid-file failures without publishing state"
+pass "known plugin disable IPC reports invalid-file failures without publishing state"
 cp "$fixture/valid" "$config"
 if (( EUID != 0 )); then
   chmod 000 "$config"
   assert_ipc_failure
   chmod 600 "$config"
   cmp "$config" "$fixture/valid"
-  pass "toggle and plugin disable IPC report read failures"
+  pass "plugin disable IPC reports read failures"
   chmod 500 "$(dirname "$config")"
   assert_ipc_failure
   chmod 700 "$(dirname "$config")"
   cmp "$config" "$fixture/valid"
-  pass "toggle and plugin disable IPC report atomic write failures"
+  pass "plugin disable IPC reports atomic write failures"
 else
   skip "IPC permission failure cases require an unprivileged user"
 fi

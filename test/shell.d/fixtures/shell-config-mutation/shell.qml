@@ -9,7 +9,6 @@ ShellRoot {
   property var builtinShellConfig: ({ version: 1, plugins: [] })
   property var defaultsConfig: builtinShellConfig
   property var shellConfig: builtinShellConfig
-  property var bar: fixtureBar
   property var pluginRegistry: fixtureRegistry
   property var util: ({
     isPlainObject: function(value) { return value && typeof value === "object" && !Array.isArray(value) },
@@ -22,14 +21,6 @@ ShellRoot {
   FileView { id: externalWriter; path: shell.userConfigPath; blockWrites: true }
 
   Component.onCompleted: shellConfig = JSON.parse(userConfigFile.text())
-
-  QtObject {
-    id: fixtureBar
-    property var host: shell
-    property bool requestedTransparent: false
-    function setRequestedTransparency(value) { requestedTransparent = value }
-    // BAR_FUNCTIONS
-  }
 
   QtObject {
     id: fixtureRegistry
@@ -47,8 +38,6 @@ ShellRoot {
   IpcHandler {
     target: "config-test"
     // IPC_FUNCTIONS
-    function barAvailable(value: bool): void { shell.bar = value ? fixtureBar : null }
-    function legacyBar(): void { shell.bar = { toggleTransparency: function() {} } }
     function mutate(): string {
       return JSON.stringify({ ok: shell.mutateShellConfig(function(config) {
         config.bar = config.bar || {}
