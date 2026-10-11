@@ -131,9 +131,25 @@ def test():
         command('keypress','ESC');wait('user-data/mpv/console/open',False)
         assert prop('user-data/omarchy/visibility-mode')=='always'
         wait('user-data/omarchy/controls-visible',True)
-        # Enter the same menu as the three-dot button, then select each mode.
+        # The native menu and appearance controls have separate hitboxes.
+        move('menu');command('keydown','MBTN_LEFT');time.sleep(.1);command('keyup','MBTN_LEFT')
+        wait('user-data/mpv/console/open',True)
+        capture('native-menu')
+        command('keypress','ESC');wait('user-data/mpv/console/open',False)
+        wait('user-data/omarchy/controls-visible',True)
+        move('appearance');command('keydown','MBTN_LEFT');time.sleep(.1);command('keyup','MBTN_LEFT')
+        wait('user-data/mpv/console/open',True)
+        capture('appearance-menu')
+        command('keypress','ENTER');time.sleep(.2)
+        capture('theme-menu')
+        for character in 'Flexoki':command('keypress',character)
+        command('keypress','ENTER');wait('user-data/omarchy/theme-selection','flexoki-light')
+        wait('user-data/mpv/console/open',False)
+        command('script-message','set-omarchy-theme','automatic')
+        wait('user-data/omarchy/theme-selection','automatic')
+        # Appearance > Transparency still offers all three modes.
         for expected in ('solid','translucent','gradient'):
-          command('script-binding','omarchy_controls/controls-menu');wait('user-data/mpv/console/open',True)
+          command('script-binding','omarchy_controls/appearance-menu');wait('user-data/mpv/console/open',True)
           command('keypress','DOWN');command('keypress','ENTER');time.sleep(.2)
           capture('transparency-menu')
           search={'solid':'Solid','translucent':'Uniform','gradient':'Gradient'}[expected]

@@ -1,6 +1,8 @@
 -- Original mpv controller, using Hype's compact surfaces and Omarchy palette.
 local assdraw = require 'mp.assdraw'
 local input = require 'mp.input'
+-- Palette glyph adapted from the omarchy.org SVG supplied by Miguel.
+local appearance_path=[[m 2 12 b 2 6.71457 6.51697 2.5 12 2.5 b 17.483 2.5 22 6.71457 22 12 b 22 13.8878 21.4937 15.1519 20.4345 15.8123 b 19.4491 16.4266 18.2002 16.3605 17.1496 16.2236 b 16.7813 16.1757 16.397 16.1121 16.0307 16.0515 b 15.8617 16.0235 15.6965 15.9962 15.5384 15.9713 b 15.0184 15.8895 14.5499 15.8295 14.1335 15.8234 b 13.298 15.8112 12.8925 16.0091 12.671 16.4526 b 12.539 16.7171 12.5395 17.0363 12.6858 17.4705 b 12.8149 17.8538 13.0214 18.2277 13.2435 18.63 b 13.2828 18.7012 13.3226 18.7734 13.3626 18.8465 b 13.4857 19.0721 13.6169 19.3217 13.7077 19.5624 b 13.7926 19.7875 13.8875 20.117 13.8161 20.466 b 13.7303 20.8858 13.4434 21.1713 13.0891 21.3241 b 12.7768 21.4588 12.3992 21.5 12 21.5 b 6.51697 21.5 2 17.2854 2 12 m 10.25 6.25 b 9.42157 6.25 8.75 6.92157 8.75 7.75 b 8.75 8.57843 9.42157 9.25 10.25 9.25 b 11.0784 9.25 11.75 8.57843 11.75 7.75 b 11.75 6.92157 11.0784 6.25 10.25 6.25 m 7.25 10.5 b 6.42157 10.5 5.75 11.1716 5.75 12 b 5.75 12.8284 6.42157 13.5 7.25 13.5 b 8.07843 13.5 8.75 12.8284 8.75 12 b 8.75 11.1716 8.07843 10.5 7.25 10.5 m 15.25 7.75 b 14.4216 7.75 13.75 8.42157 13.75 9.25 b 13.75 10.0784 14.4216 10.75 15.25 10.75 b 16.0784 10.75 16.75 10.0784 16.75 9.25 b 16.75 8.42157 16.0784 7.75 15.25 7.75]]
 local opts = {font='JetBrainsMono Nerd Font', hide_timeout=2.5, corner_radius=-1, visibility='auto',
   surface_mode='gradient', surface_opacity=.55, gradient_inner_opacity=.05, gradient_outer_opacity=.55,
   light_surface_opacity=.92, light_gradient_inner_opacity=.82, light_gradient_outer_opacity=.97, debug=false}
@@ -23,7 +25,7 @@ local last_move, visible = mp.get_time(), true
 local visibility_mode='auto'
 local reveal_until, milliseconds, show_total = mp.get_time()+3, false, true
 local volume_feedback_until=0
-local render, request_render, deadline_timer, set_visibility, controls_menu
+local render, request_render, deadline_timer, set_visibility, appearance_menu
 local render_count,seek_requests=0,0
 local last_drag_seek
 local input_visible, input_width, input_height
@@ -55,7 +57,7 @@ local function hit(r) return mx >= r.x and mx <= r.x+r.w and my >= r.y and my <=
 local function menu(name)
   keyboard=false; reveal_until=0; last_move=0
   mp.disable_key_bindings('omarchy-keyboard')
-  if name == 'menu' then controls_menu()
+  if name == 'appearance' then appearance_menu()
   else mp.commandv('script-binding','select/'..name) end
 end
 local function wake() last_move = mp.get_time(); render() end
@@ -291,17 +293,18 @@ local function transparency_menu()
   input.select({prompt='Controls transparency:',items=items,default_item=selected,
     submit=function(index) set_surface_mode(modes[index],true) end})
 end
-controls_menu=function()
-  -- Keep the full built-in player menu intact as mpv adds new features.
-  input.select({prompt='Player controls:',keep_open=true,default_item=1,
-    items={'Player menu · tracks, history, devices, key bindings',
-       'Transparency · '..surface_labels[surface_mode]..' · Ctrl+F9'},
+appearance_menu=function()
+  local theme=prop('user-data/omarchy/theme-selection','automatic')
+  input.select({prompt='Appearance:',keep_open=true,default_item=1,
+    items={'Theme · '..(theme == 'automatic' and 'Automatic' or theme),
+      'Transparency · '..surface_labels[surface_mode]..' · Ctrl+F9'},
     submit=function(index)
-      if index == 1 then mp.commandv('script-binding','select/menu')
+      if index == 1 then mp.commandv('script-message-to','omarchy_theme','select-omarchy-theme')
       elseif index == 2 then transparency_menu() end
     end})
 end
 mp.add_key_binding(nil,'controls-menu',function() menu('menu') end)
+mp.add_key_binding(nil,'appearance-menu',function() menu('appearance') end)
 mp.add_key_binding(nil,'transparency-menu',transparency_menu)
 mp.add_key_binding('Ctrl+F9','cycle-transparency',function()
   for i,mode in ipairs(modes) do
@@ -507,6 +510,10 @@ render = function()
       a:move_to(x-5,y-7); a:line_to(x+7,y); a:line_to(x-5,y+7); a:draw_stop()
     elseif name == 'pause' then lines(x,y,{{-4,-7,-4,7},{4,-7,4,7}},fg)
     elseif name == 'fullscreen' then lines(x,y,{{-7,-2,-7,-7},{-7,-7,-2,-7},{2,-7,7,-7},{7,-7,7,-2},{7,2,7,7},{7,7,2,7},{-2,7,-7,7},{-7,7,-7,2}},fg)
+    elseif name == 'appearance' then
+      a:new_event()
+      a:append(string.format('{\\pos(%.3f,%.3f)\\an7\\bord0\\shad0\\fscx83.333\\fscy83.333\\1c&H%s&}',x-10,y-10,color(fg)))
+      a:append('{\\p1}'..appearance_path..'{\\p0}')
     elseif name == 'more' then
       for dx=-6,6,6 do box(x+dx-1,y-1,2,2,fg) end
     elseif name == 'prev' or name == 'next' then
@@ -552,6 +559,7 @@ render = function()
     if label ~= '' then text(x+(glyph and 33 or w/2),y+17,label,15,fg,glyph and 4 or 5) end
     if hot then
       local help={menu='Menu · history, devices, key bindings, help',
+        appearance='Appearance · theme and transparency',
         prev='Previous playlist entry'..key_hint('<','playlist-prev'),
         next='Next playlist entry'..key_hint('>','playlist-next'),
         play='Play / pause'..key_hint('SPACE','cycle pause','Space'),
@@ -563,7 +571,7 @@ render = function()
         speed='Playback speed'..key_hint('[','multiply speed','[ / ]'),
         volume='Mute'..key_hint('m','cycle mute')..' · scroll to adjust volume',
         fullscreen='Fullscreen'..key_hint('f','cycle fullscreen')}
-      if help[id] and y > header then
+      if help[id] then
         local tw=math.min(W-24,#help[id]*7.4+20)
         box((W-tw)/2,bottom-34,tw,28,palette.panel,corner_radius,palette.border)
         text(W/2,bottom-20,help[id],12,palette.foreground,5)
@@ -572,9 +580,10 @@ render = function()
   end
   panel(0,header)
   if surface_mode ~= 'gradient' then box(0,header-1,W,1,palette.border) end
-  local title_right=W-104
+  local title_right=W-146
   text(18,header/2,prop('filename',prop('media-title','Drop a video to play')),16,palette.foreground,4,{18,0,title_right,header})
   regions[#regions+1]={id='title',x=18,y=0,w=title_right-18,h=header,action=function() mp.commandv('script-binding','stats/display-page-5') end}
+  button('appearance',W-133,7,34,'','appearance',function() menu('appearance') end)
   button('menu',W-91,7,34,'','more',function() menu('menu') end)
   button('fullscreen',W-49,7,34,'','fullscreen',function() mp.commandv('cycle','fullscreen') end)
   panel(bottom,footer)

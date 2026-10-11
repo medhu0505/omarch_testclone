@@ -50,12 +50,13 @@ def test():
         f'--script={SCRIPTS}/omarchy-theme.lua',
         f'--script-opts=omarchy-theme-theme_file={theme},unrelated-value=kept',
         'av://lavfi:testsrc2=size=640x360:rate=24']
-      player = subprocess.Popen(args, stdout=log, stderr=subprocess.STDOUT)
+      environment = {**os.environ, 'OMARCHY_PATH': str(ROOT), 'PATH': str(ROOT / 'bin') + os.pathsep + os.environ['PATH']}
+      player = subprocess.Popen(args, stdout=log, stderr=subprocess.STDOUT, env=environment)
       second_ipc = home / 'second.sock'
       override = home / 'input.conf'
       override.write_text('a set volume 51\n')
       second_log = (home / 'second.log').open('w')
-      second = subprocess.Popen([args[0], f'--input-conf={override}'] + [f'--input-ipc-server={second_ipc}' if a.startswith('--input-ipc-server=') else a for a in args[1:]], stdout=second_log, stderr=subprocess.STDOUT)
+      second = subprocess.Popen([args[0], f'--input-conf={override}'] + [f'--input-ipc-server={second_ipc}' if a.startswith('--input-ipc-server=') else a for a in args[1:]], stdout=second_log, stderr=subprocess.STDOUT, env=environment)
       try:
         deadline = time.monotonic() + 10
         while not ipc.exists() and time.monotonic() < deadline:
@@ -97,10 +98,11 @@ def test():
         def second_property(name):
           return second_command('get_property', name)
 
-        def wait_palette(expected):
+        def wait_palette(expected, second_expected=None):
+          if second_expected is None: second_expected = expected
           deadline = time.monotonic() + 5
           while time.monotonic() < deadline:
-            if property('user-data/omarchy/theme') == expected and second_property('user-data/omarchy/theme') == expected:
+            if property('user-data/omarchy/theme') == expected and second_property('user-data/omarchy/theme') == second_expected:
               return
             time.sleep(.05)
           raise AssertionError(f'Palette did not reload: {log_path.read_text()}')
@@ -126,11 +128,31 @@ def test():
         command('set_property', 'mute', True)
         before_position = property('time-pos')
         pid = player.pid
+        command('script-message', 'set-omarchy-theme', 'nord')
+        wait_palette(parsed(dark))
+        deadline=time.monotonic()+5
+        while property('user-data/omarchy/theme-selection') != 'nord' and time.monotonic()<deadline:time.sleep(.05)
+        assert property('user-data/omarchy/theme-selection') == 'nord'
         # Replace the file atomically, as Omarchy replaces the theme directory.
         replacement = home / 'replacement'
         replacement.write_text(light)
         replacement.replace(theme)
+        wait_palette(parsed(dark), parsed(light))
+        assert second_property('user-data/omarchy/theme-selection') == 'automatic'
+        for invalid in ('missing-theme-for-test', '../nord', f"nord;touch {home / 'sentinel'}"):
+          command('script-message', 'set-omarchy-theme', invalid)
+          time.sleep(.1)
+          assert property('user-data/omarchy/theme') == parsed(dark)
+          assert property('user-data/omarchy/theme-selection') == 'nord'
+          assert not (home / 'sentinel').exists()
+        command('script-message', 'set-omarchy-theme', 'flexoki-light')
         wait_palette(parsed(light))
+        command('script-message', 'set-omarchy-theme', 'nord')
+        command('script-message', 'set-omarchy-theme', 'automatic')
+        wait_palette(parsed(light))
+        time.sleep(.3)
+        assert property('user-data/omarchy/theme-selection') == 'automatic'
+        assert property('user-data/omarchy/theme') == parsed(light)
         assert property('osd-color').lower().endswith(parsed(light)['foreground'][1:].lower())
         assert property('pause') is True and player.pid == pid
         assert property('volume') == 37 and property('mute') is True
