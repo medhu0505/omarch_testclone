@@ -118,7 +118,7 @@ local subscriptions = {}
 local plugin_loads = 0
 local titlebar_config = nil
 local buttons = {}
-local config = { ["input.follow_mouse"] = 1, ["general.resize_on_border"] = false, ["decoration.shadow.enabled"] = false }
+local config = { ["input.follow_mouse"] = 1, ["decoration.shadow.enabled"] = false }
 local rules = {}
 local placed = {}
 local active = { id = 1 }
@@ -310,13 +310,11 @@ assert(not scratch.floating and #scratch.tags == 0, "a window on a special works
 assert(not fullscreen.floating, "a fullscreen window was floated")
 assert(has_tag(fullscreen, "omarchy-floating-workspace"), "a fullscreen window on a floating workspace got no titlebar tag")
 
--- Pointer focus and edge resizing follow the active workspace.
+-- Pointer focus follows the active workspace.
 assert(s.config["input.follow_mouse"] == 0, "a floating workspace focused on hover")
-assert(s.config["general.resize_on_border"] == true, "a floating workspace did not resize from its edges")
 s.active.id = 2
 s.subscriptions["workspace.active"][1]()
 assert(s.config["input.follow_mouse"] == 1, "a tiled workspace lost the user focus setting")
-assert(s.config["general.resize_on_border"] == false, "a tiled workspace lost the user resize setting")
 
 -- Shadows only for windows on floating workspaces, when the user has none.
 assert(s.config["decoration.shadow.enabled"] == true, "floating windows got no shadows to tell them apart")
