@@ -98,7 +98,7 @@ pass "scrolling cycles to floating"
 # dwindle entirely. The apply matters as much as the file: without it the saved
 # mode says dwindle while the screen stays floating.
 toggle
-[[ $(saved_mode) == "dwindle" ]] || fail "floating cycles back to dwindle" "saved: $(cat "$layout_file")"
+[[ ! -e $layout_file ]] || fail "floating cycles back to dwindle, the default, which the workspace follows again" "saved: $(cat "$layout_file")"
 applied dwindle || fail "dwindle is applied immediately" "$(cat "$log_file")"
 pass "floating cycles back to dwindle"
 
@@ -108,12 +108,25 @@ toggle_back back
 toggle_back back
 [[ $(saved_mode) == "scrolling" ]] || fail "back from floating is scrolling" "saved: $(cat "$layout_file")"
 toggle_back back
-[[ $(saved_mode) == "dwindle" ]] || fail "back from scrolling is dwindle" "saved: $(cat "$layout_file")"
+[[ ! -e $layout_file ]] || fail "back from scrolling is dwindle, the default" "saved: $(cat "$layout_file")"
 if toggle_back sideways 2>/dev/null; then
   fail "an unknown direction is refused"
 fi
-[[ $(saved_mode) == "dwindle" ]] || fail "a refused direction changes nothing" "saved: $(cat "$layout_file")"
+[[ ! -e $layout_file ]] || fail "a refused direction changes nothing" "saved: $(cat "$layout_file")"
 pass "the layout cycles backwards too"
+
+# Cycling onto the default forgets the workspace's own layout, so it follows a
+# later change of the default too; any other layout is saved as its own.
+printf 'o.workspace_mode({ default = "floating" })\n' >"${layout_file%/*}/default.lua"
+printf 'o.workspace_mode({ workspace = "3", mode = "scrolling" })\n' >"$layout_file"
+: >"$log_file"
+toggle
+[[ ! -e $layout_file ]] || fail "cycling onto the default forgets the workspace's own layout" "saved: $(cat "$layout_file")"
+applied floating || fail "the default layout is still applied at once" "$(cat "$log_file")"
+toggle
+[[ $(saved_mode) == "dwindle" ]] || fail "cycling on from the default saves the next layout" "saved: $(cat "$layout_file" 2>&1)"
+rm -f "${layout_file%/*}/default.lua"
+pass "a workspace cycled onto the default follows it again"
 
 # Files written before floating existed name a layout rather than a mode.
 : >"$log_file"

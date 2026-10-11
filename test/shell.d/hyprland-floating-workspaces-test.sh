@@ -29,6 +29,7 @@ case "$1" in
   monitors) cat "$FAKE/monitors.json" ;;
   workspaces) cat "$FAKE/workspaces.json" ;;
   plugin) printf '[]\n' ;;
+  getoption) printf '{"option": "%s", "str": "%s"}\n' "$2" "${HYPRCTL_LAYOUT:-dwindle}" ;;
   *) printf '%s\n' "$*" >>"$FAKE/hyprctl.log" ;;
 esac
 EOF
@@ -75,6 +76,8 @@ pass "the layout of a workspace comes from its saved mode before Hyprland's"
 # --- The default layout -------------------------------------------------------
 
 [[ $(run omarchy-hyprland-workspace-layout-default) == "dwindle" ]] || fail "the default layout starts as tiling"
+[[ $(HYPRCTL_LAYOUT=scrolling run omarchy-hyprland-workspace-layout-default) == "scrolling" ]] ||
+  fail "without a saved default, Hyprland's own layout is the default"
 run omarchy-hyprland-workspace-layout-default scrolling
 grep -qxF 'o.workspace_mode({ default = "scrolling" })' "$modes_dir/default.lua" ||
   fail "the default layout is saved" "$(cat "$modes_dir/default.lua" 2>&1)"

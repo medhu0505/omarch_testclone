@@ -44,6 +44,10 @@ fi
 
 if (( ! APPLIED )); then
   omarchy-notification-send -g 󱂬 "Workspace layout needs a Hyprland reload"
+elif [[ $NEW_MODE == "$(omarchy-hyprland-workspace-layout-default)" ]] && rm -f "$MODE_FILE"; then
+  # Cycled onto the default, a workspace goes back to following it, so a later
+  # change of the default reaches it too.
+  omarchy-notification-send -g 󱂬 "Workspace layout set to $NEW_MODE"
 elif mkdir -p "$MODES_DIR" && printf '%s\n' "$APPLY" >"$MODE_FILE"; then
   omarchy-notification-send -g 󱂬 "Workspace layout set to $NEW_MODE"
 else
