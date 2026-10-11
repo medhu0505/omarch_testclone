@@ -194,8 +194,8 @@ assert(
 const triggerItems = defaultItems.filter(item => item.parent === 'trigger')
 assertEqual(
   triggerItems[0].id,
-  'trigger.emoji',
-  'menu lists Emoji first under Trigger'
+  'trigger.appearance',
+  'menu lists Appearance first under Trigger'
 )
 assertEqual(
   defaultById['trigger.emoji'].action,
@@ -363,22 +363,76 @@ assert(
   !defaultById['trigger.toggle.direct-boot'] && !defaultById['trigger.toggle.passwordless-sudo'],
   'menu removes the relocated toggles from Trigger > Toggle'
 )
+assertDeepEqual(
+  defaultItems.filter(item => item.parent === 'trigger.appearance.top-bar').map(item => item.label),
+  ['Hide Bar', 'Show Bar', 'Position Bar', 'Transparent Bar', 'Opaque Bar', 'Indicators'],
+  'menu gathers the Menu Bar under Trigger > Appearance'
+)
 assert(
-  defaultById['style.bar.position'].kind === 'menu',
+  defaultById['trigger.appearance.top-bar.hide'].when === '! omarchy-toggle-enabled bar-off'
+    && defaultById['trigger.appearance.top-bar.show'].when === 'omarchy-toggle-enabled bar-off'
+    && defaultById['trigger.appearance.top-bar.hide'].action === 'omarchy-toggle-bar'
+    && defaultById['trigger.appearance.top-bar.show'].action === 'omarchy-toggle-bar',
+  'menu offers Hide while the Menu Bar shows and Show while it is hidden'
+)
+assert(!defaultItems.some(item => item.id.startsWith('style.bar')), 'menu no longer keeps the Menu Bar under Style')
+assert(
+  defaultById['trigger.appearance.top-bar.position'].kind === 'menu',
   'menu groups Menu Bar positions in a submenu'
 )
 assert(
-  ['top', 'bottom', 'left', 'right'].every(position => defaultById[`style.bar.position.${position}`].action === `omarchy-bar position ${position}`),
+  ['top', 'bottom', 'left', 'right'].every(position => defaultById[`trigger.appearance.top-bar.position.${position}`].action === `omarchy-bar position ${position}`),
   'menu lists all Menu Bar positions under Position'
 )
-assertEqual(
-  defaultById['style.bar.transparency'].action,
-  'omarchy-bar transparent toggle',
-  'menu exposes Menu Bar transparency as a toggle'
+assert(
+  defaultById['trigger.appearance.top-bar.transparent'].action === 'omarchy-bar transparent true'
+    && defaultById['trigger.appearance.top-bar.opaque'].action === 'omarchy-bar transparent false'
+    && defaultById['trigger.appearance.top-bar.transparent'].when === '! ' + defaultById['trigger.appearance.top-bar.opaque'].when,
+  'menu offers Transparent Bar while the bar is opaque and Opaque Bar while it is transparent'
+)
+assertDeepEqual(
+  defaultItems.filter(item => item.parent === 'trigger.appearance.top-bar.indicators').map(item => item.label),
+  ['Battery Percentage', 'Clock'],
+  'menu gathers bar indicator options under Menu Bar > Indicators'
+)
+const clockModel = requireFromRoot('shell/plugins/panels/clock/Model.js')
+const clockRows = defaultItems.filter(item => item.parent === 'trigger.appearance.top-bar.indicators.clock')
+// Each row hands bash its format, so ask bash what it hands over.
+const clockRowFormats = key => clockRows
+  .filter(item => item.action.startsWith(`omarchy-bar set omarchy.clock ${key} `))
+  .map(item => require('child_process').execFileSync('bash', ['-c', item.action.replace(`omarchy-bar set omarchy.clock ${key} `, 'printf %s ')], { encoding: 'utf8' }))
+assertDeepEqual(clockRowFormats('format'), clockModel.clockFormats(false), 'menu spells out every horizontal clock format')
+assertDeepEqual(clockRowFormats('verticalFormat'), clockModel.clockFormats(true), 'menu spells out every vertical clock format')
+assert(
+  clockRows.every(item => item.checked && item.checked.includes('$(omarchy-bar get omarchy.clock ') && item.when.includes('$(omarchy-bar position)')),
+  'menu checks the current clock format and offers only the formats for the bar orientation'
+)
+assertDeepEqual(
+  ['top', 'bottom', 'left', 'right'].map(position => defaultById[`trigger.appearance.top-bar.position.${position}`].label),
+  ['Top Bar', 'Bottom Bar', 'Left Bar', 'Right Bar'],
+  'menu names each position after the bar'
+)
+assertDeepEqual(
+  defaultItems.filter(item => item.parent === 'trigger.appearance.window-corners').map(item => [item.label, item.action]),
+  [['Theme Corners', 'omarchy-hyprland-corners theme'], ['Sharp Corners', 'omarchy-hyprland-corners sharp'], ['Rounded Corners', 'omarchy-hyprland-corners rounded']],
+  'menu picks window corners from Appearance > Window Corners'
+)
+const triggerIds = triggerItems.map(item => item.id)
+const appearanceLabels = ['Animations', 'Menu Bar', 'Window Gaps', 'Window Corners', '1-Window Ratio', 'Workspace Layout', 'Herdr Theme Sync']
+assertEqual(triggerIds.indexOf('trigger.toggle'), triggerIds.indexOf('trigger.appearance') + 1, 'menu places Toggle right after Appearance')
+assertDeepEqual(
+  defaultItems.filter(item => item.parent === 'trigger.appearance').map(item => item.label),
+  appearanceLabels,
+  'menu gathers the look of the desktop under Trigger > Appearance'
 )
 assert(
+  !defaultItems.some(item => item.parent === 'trigger.toggle' && appearanceLabels.includes(item.label)),
+  'menu leaves the appearance entries out of Trigger > Toggle'
+)
+assertEqual(triggerIds.indexOf('trigger.clipboard-history'), triggerIds.indexOf('trigger.emoji') + 1, 'menu places Clipboard History right after Emoji')
+assert(
   !defaultItems.some(item => item.id.startsWith('style.background-intro'))
-    && defaultById['trigger.toggle.animations'].action === 'omarchy-toggle-animations',
+    && defaultById['trigger.appearance.animations'].action === 'omarchy-toggle-animations',
   'menu uses the existing animations toggle without separate background intro controls'
 )
 assertDeepEqual(
@@ -673,6 +727,11 @@ assert(
 assert(
   /onPositionChanged: function\(mouse\) \{\s*root\.selectFromPointer\(row\.index, row, mouse\)\s*\}/.test(menuQml),
   'menu row hover routes through pointer movement gate'
+)
+assert(
+  /dmenuSaved = dmenuSelected\s*\n\s*if \(dmenuOnChange\.length > 0\)/.test(menuQml)
+    && /root\.dmenuSaved = root\.dmenuSelected\s*\n\s*\} else \{\s*root\.dmenuSelected = root\.dmenuSaved/.test(menuQml),
+  'a failed immediate change restores the confirmed checks, even after reopening onto queued ones'
 )
 assert(
   /onEntered: root\.selectFromPointer\(row\.index, row, \{\s*x: mouseArea\.mouseX,\s*y: mouseArea\.mouseY\s*\}\)/.test(menuQml),
