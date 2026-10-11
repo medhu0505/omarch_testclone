@@ -363,16 +363,29 @@ assert(
   !defaultById['trigger.toggle.direct-boot'] && !defaultById['trigger.toggle.passwordless-sudo'],
   'menu removes the relocated toggles from Trigger > Toggle'
 )
+assertDeepEqual(
+  defaultItems.filter(item => item.parent === 'trigger.appearance.top-bar').map(item => item.label),
+  ['Hide', 'Show', 'Position', 'Transparency'],
+  'menu gathers the Menu Bar under Trigger > Appearance'
+)
 assert(
-  defaultById['style.bar.position'].kind === 'menu',
+  defaultById['trigger.appearance.top-bar.hide'].when === '! omarchy-toggle-enabled bar-off'
+    && defaultById['trigger.appearance.top-bar.show'].when === 'omarchy-toggle-enabled bar-off'
+    && defaultById['trigger.appearance.top-bar.hide'].action === 'omarchy-toggle-bar'
+    && defaultById['trigger.appearance.top-bar.show'].action === 'omarchy-toggle-bar',
+  'menu offers Hide while the Menu Bar shows and Show while it is hidden'
+)
+assert(!defaultItems.some(item => item.id.startsWith('style.bar')), 'menu no longer keeps the Menu Bar under Style')
+assert(
+  defaultById['trigger.appearance.top-bar.position'].kind === 'menu',
   'menu groups Menu Bar positions in a submenu'
 )
 assert(
-  ['top', 'bottom', 'left', 'right'].every(position => defaultById[`style.bar.position.${position}`].action === `omarchy-bar position ${position}`),
+  ['top', 'bottom', 'left', 'right'].every(position => defaultById[`trigger.appearance.top-bar.position.${position}`].action === `omarchy-bar position ${position}`),
   'menu lists all Menu Bar positions under Position'
 )
 assertEqual(
-  defaultById['style.bar.transparency'].action,
+  defaultById['trigger.appearance.top-bar.transparency'].action,
   'omarchy-bar transparent toggle',
   'menu exposes Menu Bar transparency as a toggle'
 )
