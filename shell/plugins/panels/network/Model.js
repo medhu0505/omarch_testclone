@@ -261,23 +261,57 @@ function activeLinkIsHotspot(metered, entries) {
   return false
 }
 
-// Prints `metered\t<value>` and then the cached scan for the interface in $1.
-// `scan dump` reads what the last scan left behind; it never starts one.
+// Prints the interface's metering, its active profile and that profile's own
+// metered setting as `key\tvalue` lines, then the cached scan for the
+// interface in $1. `scan dump` reads what the last scan left behind; it never
+// starts one.
 var hotspotScanScript =
-  "printf 'metered\\t%s\\n' \"$(nmcli -g GENERAL.METERED device show \"$1\" 2>/dev/null)\";" +
+  "uuid=$(nmcli -g GENERAL.CON-UUID device show \"$1\" 2>/dev/null);" +
+  " printf 'metered\\t%s\\n' \"$(nmcli -g GENERAL.METERED device show \"$1\" 2>/dev/null)\";" +
+  " printf 'connection\\t%s\\n' \"$uuid\";" +
+  " [ -n \"$uuid\" ] && printf 'limit\\t%s\\n' \"$(nmcli -g connection.metered connection show uuid \"$uuid\" 2>/dev/null)\";" +
   " iw dev \"$1\" scan dump -u 2>/dev/null"
 
 function parseHotspotScan(raw) {
-  var text = String(raw || "")
-  var newline = text.indexOf("\n")
-  var first = newline === -1 ? text : text.substring(0, newline)
-  var metered = first.indexOf("metered\t") === 0 ? first.substring(8).trim() : ""
-  var entries = parseIwScanDump(newline === -1 ? "" : text.substring(newline + 1))
+  var lines = String(raw || "").split("\n")
+  var header = {}
+  var i = 0
+  for (; i < lines.length && !/^BSS /.test(lines[i]); i++) {
+    var tab = lines[i].indexOf("\t")
+    if (tab !== -1) header[lines[i].substring(0, tab)] = lines[i].substring(tab + 1).trim()
+  }
+  var entries = parseIwScanDump(lines.slice(i).join("\n"))
+  var metered = header.metered || ""
   return {
     metered: metered,
+    connection: header.connection || "",
+    limit: header.limit || "",
     ssids: hotspotSsids(entries),
     active: activeLinkIsHotspot(metered, entries)
   }
+}
+
+// A hotspot gets NetworkManager's metered flag, the switch other software
+// already honors, but only while its profile has no setting of its own: an
+// explicit yes or no is the user's and stays.
+function shouldLimitHotspot(scan) {
+  var value = scan || {}
+  return !!value.active && !!value.connection && value.limit === "unknown"
+}
+
+// Writes connection.metered ($2) on profile $1 and reapplies it to interface
+// $3, so the running link changes without reconnecting. With $4 set, a
+// profile that already has its own setting is left alone.
+var meteredScript =
+  "if [ -n \"$4\" ] && [ \"$(nmcli -g connection.metered connection show uuid \"$1\")\" != unknown ]; then exit 0; fi;" +
+  " nmcli connection modify uuid \"$1\" connection.metered \"$2\" && nmcli device reapply \"$3\""
+
+function dataLimitTooltip(metered) {
+  return isMetered(metered) ? "Don't limit this network" : "Limit data on this network"
+}
+
+function speedTestTooltip(hotspot) {
+  return hotspot ? "Run a speed test (uses mobile data)" : "Run a speed test"
 }
 
 function throughputState(previous, next, now) {
@@ -516,6 +550,10 @@ if (typeof module !== "undefined") {
     activeLinkIsHotspot: activeLinkIsHotspot,
     hotspotScanScript: hotspotScanScript,
     parseHotspotScan: parseHotspotScan,
+    shouldLimitHotspot: shouldLimitHotspot,
+    meteredScript: meteredScript,
+    dataLimitTooltip: dataLimitTooltip,
+    speedTestTooltip: speedTestTooltip,
     connectivityState: connectivityState,
     captivePortalUrl: captivePortalUrl,
     formatHeaderSpeed: formatHeaderSpeed,

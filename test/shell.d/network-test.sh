@@ -372,7 +372,29 @@ assertEqual(
   false,
   'network leaves an ordinary associated link alone'
 )
-assertDeepEqual(network.parseHotspotScan(''), { metered: '', ssids: {}, active: false }, 'network falls back to ordinary Wi-Fi when the scan fails')
+assertDeepEqual(
+  network.parseHotspotScan(''),
+  { metered: '', connection: '', limit: '', ssids: {}, active: false },
+  'network falls back to ordinary Wi-Fi when the scan fails'
+)
+
+const limitScan = network.parseHotspotScan('metered\tyes (guessed)\nconnection\tphone-uuid\nlimit\tunknown\n' + scanDump)
+assertEqual(limitScan.connection, 'phone-uuid', 'network reads the active profile ahead of the scan')
+assertEqual(limitScan.limit, 'unknown', 'network reads the profile metered setting ahead of the scan')
+assertEqual(limitScan.ssids['Redmi Note 13'], true, 'network still parses the scan after the header')
+assertEqual(network.shouldLimitHotspot(limitScan), true, 'network limits a hotspot whose profile has no metered setting')
+assertEqual(network.shouldLimitHotspot(Object.assign({}, limitScan, { limit: 'no' })), false, 'network never overrides a profile set to unlimited')
+assertEqual(network.shouldLimitHotspot(Object.assign({}, limitScan, { limit: 'yes' })), false, 'network leaves an already limited profile alone')
+assertEqual(network.shouldLimitHotspot(Object.assign({}, limitScan, { active: false })), false, 'network does not limit an ordinary network')
+assertEqual(network.shouldLimitHotspot(Object.assign({}, limitScan, { connection: '' })), false, 'network needs a profile to limit')
+assert(/connection\.metered\)?[^;]*!= unknown/.test(network.meteredScript), 'network rechecks the profile before limiting it on its own')
+assert(/nmcli device reapply "\$3"/.test(network.meteredScript), 'network reapplies the setting without reconnecting')
+assertEqual(network.dataLimitTooltip('yes (guessed)'), "Don't limit this network", 'network offers to lift the limit on a metered hotspot')
+assertEqual(network.dataLimitTooltip('no'), 'Limit data on this network', 'network offers to limit an unmetered hotspot')
+assertEqual(network.speedTestTooltip(true), 'Run a speed test (uses mobile data)', 'network warns that a speed test uses hotspot data')
+assertEqual(network.speedTestTooltip(false), 'Run a speed test', 'network keeps the plain speed test tooltip elsewhere')
+assert(/autoLimitedConnection !== scan\.connection/.test(panelSource), 'network limits a profile on its own only once')
+assert(/else if \(headerIndex === dataHeaderIndex\) toggleDataLimit\(\)/.test(panelSource), 'network reaches the data limit action from the keyboard')
 
 assertEqual(network.connectionIcon('wifi', 80, 'full', true), network.hotspotIcon, 'network draws the chain for a hotspot link')
 assertEqual(network.connectionIcon('wifi', 80, 'portal', true), '󰤩', 'network keeps the alert glyph for a hotspot behind a captive portal')

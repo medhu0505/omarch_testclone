@@ -76,6 +76,13 @@ Panel {
   // active Wi-Fi link is one (see Model.parseHotspotScan).
   property var hotspotSsids: ({})
   property bool activeHotspot: false
+  // The active Wi-Fi profile, the link's live metering, and the profile's own
+  // connection.metered setting, which is what the data-limit action writes.
+  property string hotspotConnection: ""
+  property string hotspotMetered: ""
+  // The profile the panel last limited on its own, so a refused write is not
+  // retried on every refresh.
+  property string autoLimitedConnection: ""
   property bool scanning: false
   property bool wifiStationAvailable: false
   property string dnsProvider: ""
@@ -135,12 +142,15 @@ Panel {
   // radio to switch. On a wired box it would otherwise sit there reading
   // "off" beside a perfectly live Ethernet connection.
   readonly property bool canToggleWifi: networkManagerAvailable && wifiStationAvailable
+  readonly property bool canLimitData: hotspot && hotspotConnection !== ""
   readonly property int qrHeaderIndex: canShareWifi ? 0 : -1
   readonly property int speedHeaderIndex: canRunSpeedTest ? (canShareWifi ? 1 : 0) : -1
-  readonly property int toggleHeaderIndex: canToggleWifi ? (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) : -1
-  readonly property int headerActionCount: (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) + (canToggleWifi ? 1 : 0)
+  readonly property int dataHeaderIndex: canLimitData ? (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) : -1
+  readonly property int toggleHeaderIndex: canToggleWifi ? (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) + (canLimitData ? 1 : 0) : -1
+  readonly property int headerActionCount: (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) + (canLimitData ? 1 : 0) + (canToggleWifi ? 1 : 0)
   readonly property bool qrHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === qrHeaderIndex
   readonly property bool speedHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === speedHeaderIndex
+  readonly property bool dataHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === dataHeaderIndex
   readonly property bool toggleHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === toggleHeaderIndex
   readonly property string toggleHint: Networking.wifiEnabled ? "Turn Wi-Fi off" : "Turn Wi-Fi on"
   readonly property var dnsProviders: ["DHCP", "Cloudflare", "Google", "Custom"]
@@ -232,6 +242,7 @@ Panel {
   function activateHeader() {
     if (headerIndex === qrHeaderIndex) summonWifiQr()
     else if (headerIndex === speedHeaderIndex) summonSpeedTest()
+    else if (headerIndex === dataHeaderIndex) toggleDataLimit()
     else if (headerIndex === toggleHeaderIndex) toggleNetwork()
   }
 
@@ -609,6 +620,8 @@ Panel {
     if (!wifiDevice || !wifiDevice.name) {
       hotspotSsids = ({})
       activeHotspot = false
+      hotspotConnection = ""
+      hotspotMetered = ""
       return
     }
     if (hotspotProc.running) return
@@ -620,7 +633,28 @@ Panel {
     var scan = Model.parseHotspotScan(raw)
     hotspotSsids = scan.ssids
     activeHotspot = scan.active
+    hotspotConnection = scan.connection
+    hotspotMetered = scan.metered
     syncWifiNetworks()
+
+    if (Model.shouldLimitHotspot(scan) && autoLimitedConnection !== scan.connection) {
+      autoLimitedConnection = scan.connection
+      setMetered(scan.connection, "yes", true)
+    }
+  }
+
+  function setMetered(connection, value, onlyIfUnset) {
+    if (!connection || !wifiDevice || meteredProc.running) return
+    meteredProc.command = ["bash", "-c", Model.meteredScript, "omarchy-network-metered",
+      connection, value, wifiDevice.name, onlyIfUnset ? "1" : ""]
+    meteredProc.running = true
+  }
+
+  // Sets this profile only. Other software that honors NetworkManager's flag
+  // (package managers, sync clients) follows it from there.
+  function toggleDataLimit() {
+    if (!canLimitData) return
+    setMetered(hotspotConnection, Model.isMetered(hotspotMetered) ? "no" : "yes", false)
   }
 
   function formatHeaderSpeed(mbps) {
@@ -989,6 +1023,11 @@ Panel {
   }
 
   Process {
+    id: meteredProc
+    onExited: root.scanHotspots()
+  }
+
+  Process {
     id: hotspotProc
     stdout: StdioCollector {
       waitForEnd: true
@@ -1304,7 +1343,7 @@ Panel {
             id: speedAction
             visible: root.canRunSpeedTest
             iconText: "󰓅"
-            tooltipText: "Run a speed test"
+            tooltipText: Model.speedTestTooltip(root.hotspot)
             foreground: root.bar.foreground
             fontFamily: root.bar.fontFamily
             fontSize: Style.font.subtitle * 1.5
@@ -1312,6 +1351,25 @@ Panel {
             Layout.alignment: Qt.AlignVCenter
             onHovered: function(on) { if (on) root.setHeaderCursor(root.speedHeaderIndex) }
             onClicked: root.summonSpeedTest()
+          }
+
+          // nf-md-download_lock. Lit while NetworkManager treats the hotspot
+          // as metered; clicking flips this profile's own setting.
+          Button {
+            id: dataAction
+            visible: root.canLimitData
+            iconText: "󱌠"
+            tooltipText: Model.dataLimitTooltip(root.hotspotMetered)
+            active: Model.isMetered(root.hotspotMetered)
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            iconSize: Style.font.subtitle * 1.5
+            horizontalPadding: Style.space(5)
+            verticalPadding: Style.space(2)
+            hasCursor: root.dataHeaderHasCursor
+            Layout.alignment: Qt.AlignVCenter
+            onHovered: function(on) { if (on) root.setHeaderCursor(root.dataHeaderIndex) }
+            onClicked: root.toggleDataLimit()
           }
 
           ToggleSwitch {
