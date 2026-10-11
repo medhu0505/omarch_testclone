@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
+import qs.Commons
 import "BatteryModel.js" as BatteryModel
 
 Item {
@@ -12,9 +13,11 @@ Item {
 
   readonly property int batteryThreshold: 10
   property string pendingPowerSource: ""
-  // Bound to power-profiles-daemon over D-Bus; updates arrive as change
-  // signals, so nothing polls the daemon.
-  readonly property string activePowerProfile: profileName(PowerProfiles.profile)
+  // Follows power-profiles-daemon's change signals, so nothing polls it.
+  // Quickshell never attaches that listener if the daemon failed when the
+  // shell started, so a one-off read on startup, on a power source change and
+  // after omarchy-powerprofiles-set (which asks for it over IPC) recovers.
+  property string activePowerProfile: ""
   readonly property bool powerSaverOnBattery: UPower.onBattery && activePowerProfile === "power-saver"
 
   PersistentProperties {
@@ -57,6 +60,20 @@ Item {
     powerProfileProcess.running = true
   }
 
+  function refreshPowerProfile() {
+    if (!powerProfileReadProcess.running) powerProfileReadProcess.running = true
+  }
+
+  function parseActiveProfile(text) {
+    // busctl --json=short prints {"type":"s","data":"balanced"}; an empty or
+    // malformed reply (daemon not running) reads as no active profile.
+    try {
+      return String(JSON.parse(text).data || "").trim()
+    } catch (e) {
+      return ""
+    }
+  }
+
   function profileName(profile) {
     switch (profile) {
       case PowerProfile.PowerSaver: return "power-saver"
@@ -71,7 +88,33 @@ Item {
     id: powerProfileProcess
     onExited: {
       if (root.pendingPowerSource !== "") root.runPendingPowerProfile()
+      root.refreshPowerProfile()
     }
+  }
+
+  Process {
+    id: powerProfileReadProcess
+    // Read the property straight from the daemon rather than via
+    // `powerprofilesctl get`. That is a PyGObject script, and spawning a Python
+    // interpreter for it trips a CPython 3.14 shutdown race
+    // (python/cpython#124619): the GLib D-Bus worker thread re-enters the
+    // interpreter after finalization and the process dies with SIGSEGV.
+    command: ["busctl", "--json=short", "get-property", "net.hadess.PowerProfiles", "/net/hadess/PowerProfiles", "net.hadess.PowerProfiles", "ActiveProfile"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.activePowerProfile = root.parseActiveProfile(text)
+    }
+  }
+
+  Connections {
+    target: PowerProfiles
+    function onProfileChanged() { root.activePowerProfile = root.profileName(PowerProfiles.profile) }
+  }
+
+  ShellIpc {
+    target: "battery"
+
+    function refreshPowerProfile(): void { root.refreshPowerProfile() }
   }
 
   Timer {
@@ -87,6 +130,9 @@ Item {
     function onOnBatteryChanged() {
       root.checkBattery()
       root.applyPowerProfile()
+      root.refreshPowerProfile()
     }
   }
+
+  Component.onCompleted: root.refreshPowerProfile()
 }
