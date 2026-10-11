@@ -17,6 +17,7 @@ Item {
   readonly property string home: Quickshell.env("HOME")
   readonly property string stateHome: home + "/.local/state"
   readonly property string currentBackgroundLink: stateHome + "/omarchy/current/background"
+  readonly property string currentThemeBackgrounds: stateHome + "/omarchy/current/theme/backgrounds"
 
   property string currentBackground: ""
   property string displayedBackground: ""
@@ -89,6 +90,36 @@ Item {
     if (!readlinkProc.running) readlinkProc.running = true
   }
 
+  // The desktop must never be left without a wallpaper. A path that stops
+  // loading, say one that ran through a theme since replaced, is resolved
+  // again from the background link, which a theme switch always repoints.
+  // Only a different path is taken, so a file that is there but unreadable
+  // cannot loop. Resolving runs out of process, so a background chosen in the
+  // meantime wins over what it finds; if that one fails too, it is resolved
+  // in turn once the running lookup is done.
+  property string failedBackground: ""
+  property int recoverVersion: -1
+
+  function recoverBackground(failedPath) {
+    if (!failedPath || failedPath !== displayedBackground) return
+    failedBackground = failedPath
+    if (recoverProc.running) return
+    recoverVersion = backgroundVersion
+    recoverProc.running = true
+  }
+
+  function finishRecovery(path) {
+    path = String(path || "").trim()
+    var failedPath = failedBackground
+    failedBackground = ""
+    if (recoverVersion !== backgroundVersion) {
+      recoverBackground(failedPath)
+      return
+    }
+    if (!path || path === failedPath) return
+    setBackground(path, true)
+  }
+
   function setBackground(path, instant) {
     transitionBackground("", path, path, instant, instant)
   }
@@ -109,6 +140,7 @@ Item {
     requestNativeSize(finalPath)
     currentBackground = finalPath
     backgroundVersion += 1
+    failedBackground = ""
     revealStartedVersion = -1
 
     revealAnimation.stop()
@@ -256,6 +288,21 @@ Item {
     command: ["readlink", "-f", root.currentBackgroundLink]
     stdout: StdioCollector {
       onStreamFinished: root.setBackground(String(text || "").trim(), false)
+    }
+  }
+
+  // The link's target when it exists, or else the theme's first background,
+  // so a link left dangling still finds a wallpaper.
+  Process {
+    id: recoverProc
+    command: [
+      "bash", "-c",
+      'target=$(readlink -f "$1"); if [[ -e $target ]]; then echo "$target"; else ' +
+      'find "$2" -maxdepth 1 -type f \\( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \\) | sort | head -n 1; fi',
+      "resolve", root.currentBackgroundLink, root.currentThemeBackgrounds
+    ]
+    stdout: StdioCollector {
+      onStreamFinished: root.finishRecovery(text)
     }
   }
 
@@ -426,16 +473,20 @@ Item {
         cached: true
         constrainDecode: true
         decodeSize: panel.decodeSize(panel.displayedPath)
+        onFailedChanged: {
+          if (!failed) return
+          var failedPath = path
+          // Changing the chosen variant synchronously reenters Image.failed.
+          Qt.callLater(function() {
+            if (!base.failed || base.path !== failedPath) return
+            // A broken alternative is local to this output. Only a failed
+            // default should resolve the shared selection from the state link.
+            if (failedPath === root.displayedBackground) root.recoverBackground(failedPath)
+            else panel.rejectVariant(failedPath)
+          })
+        }
         onReadyChanged: {
           panel.readyFrames = 0
-        }
-      }
-
-      Connections {
-        target: base.current
-        ignoreUnknownSignals: true
-        function onStatusChanged() {
-          if (base.current && base.current.status === Image.Error) panel.rejectVariant(panel.displayedPath)
         }
       }
 

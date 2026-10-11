@@ -51,6 +51,27 @@ transition.backgroundPanels.instances[1].backgroundReady = true
 vm.runInContext('finishTransition()', transition)
 assert(!transition.finishingTransition && !transition.incomingBackground && !transition.preparedBackground, 'transition releases its frames after all outputs are ready')
 assertDeepEqual(Object.keys(transition.nativeSizes).sort(), ['default', 'portrait', 'wide'], 'size pruning retains variants for future screen changes and removes snapshots')
+const recover = backgroundQml.match(/  function recoverBackground\(failedPath\) \{[\s\S]*?\n  \}/)[0]
+const finishRecovery = backgroundQml.match(/  function finishRecovery\(path\) \{[\s\S]*?\n  \}/)[0]
+const recovery = {
+  displayedBackground: 'default', backgroundVersion: 1, failedBackground: '', recoverVersion: -1,
+  recoverProc: {running: false}, selections: [],
+  setBackground(path, instant) { recovery.selections.push([path, instant]) }
+}
+vm.createContext(recovery)
+vm.runInContext(recover + '\n' + finishRecovery + '\nrecoverBackground("wide")', recovery)
+assert(!recovery.recoverProc.running, 'a failed alternative cannot start shared background recovery')
+vm.runInContext('recoverBackground("default"); finishRecovery("default")', recovery)
+assertEqual(recovery.selections.length, 0, 'an unreadable default does not loop when recovery resolves the same path')
+recovery.recoverProc.running = false
+vm.runInContext('recoverBackground("default"); finishRecovery("replacement")', recovery)
+assertDeepEqual(recovery.selections, [['replacement', true]], 'a failed default instantly restores the current saved selection')
+recovery.recoverProc.running = false
+vm.runInContext('recoverBackground("default")', recovery)
+recovery.backgroundVersion += 1
+recovery.displayedBackground = 'newer-selection'
+vm.runInContext('finishRecovery("stale-selection")', recovery)
+assertEqual(recovery.selections.length, 1, 'a stale recovery cannot overwrite a newer background selection')
 assertEqual(choose(resolutions, 'default', 10000, 5625, 1), '8k', 'largest image wins when all require enlargement')
 assertEqual(choose([image('huge', 8000, 8000), image('right-shape', 1280, 720)], 'default', 1920, 1080, 1), 'right-shape', 'aspect ratio takes precedence over resolution')
 assertEqual(choose([], 'default', 1920, 1080, 1), 'default', 'empty groups fall back to the default')

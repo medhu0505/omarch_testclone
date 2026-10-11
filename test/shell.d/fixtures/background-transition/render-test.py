@@ -47,6 +47,12 @@ image("new/wide.png", "160x90", "yellow")
 image("new/portrait.png", "90x160", "cyan")
 image("decoy.png", "100x100", "magenta")
 
+# A failed default must resolve the real saved selection, then choose variants.
+state = work / ".local/state/omarchy/current"
+state.mkdir(parents=True, exist_ok=True)
+(state / "background").unlink(missing_ok=True)
+(state / "background").symlink_to(images / "old.png")
+
 
 class DelayedImage(SimpleHTTPRequestHandler):
   def log_message(self, *args):
@@ -140,6 +146,7 @@ try:
   )
   (work / "runtime.log").write_text(result.stdout)
   assert result.returncode == 0 and "PASS rendered transition" in result.stdout and "FAIL" not in result.stdout, result.stdout
+  assert not any(error in result.stdout for error in ("Binding loop", "ReferenceError", "TypeError")), result.stdout
   assert (work / "waiting").exists(), "displayed portrait frame never exercised Image.Loading"
 
   # Sample the center and edges of both outputs: old pixels must be the
@@ -148,7 +155,9 @@ try:
                         ("captured", (b"\xff\0\0", b"\0\0\xff")),
                         ("held", (b"\xff\xff\0", b"\0\xff\xff")),
                         ("finished", (b"\xff\xff\0", b"\0\xff\xff")),
-                        ("reloaded", (b"\xff\0\xff", b"\xff\0\0"))):
+                        ("reloaded", (b"\xff\0\xff", b"\xff\0\0")),
+                        ("variant-fallback", (b"\0\x80\0", b"\xff\0\0")),
+                        ("recovered", (b"\xff\0\0", b"\0\0\xff"))):
     for points, color in ((("5,5", "80,45", "155,85"), colors[0]),
                           (("185,5", "225,80", "265,155"), colors[1])):
       for point in points:

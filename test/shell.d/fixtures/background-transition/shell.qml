@@ -54,6 +54,19 @@ ShellRoot {
     }
   }
 
+  Process {
+    id: removeVariant
+    command: ["rm", test.images + "new/wide.png"]
+    onExited: function(exitCode) {
+      if (exitCode !== 0) test.fail("could not remove the wide variant")
+      else {
+        test.step = 10
+        // Keep the known catalog so the real Image.Error path is exercised.
+        background.displayedVersion += 1
+      }
+    }
+  }
+
   Timer {
     interval: 50
     repeat: true
@@ -124,6 +137,23 @@ ShellRoot {
       } else if (test.step === 8 && background.ready &&
                  /wide.png$/.test(wide.displayedPath) && /portrait.png$/.test(portrait.displayedPath)) {
         test.capture("reloaded", function() {
+          test.step = 9
+          removeVariant.running = true
+        })
+      } else if (test.step === 10 && background.ready &&
+                 wide.displayedPath === test.images + "new.png" && /portrait.png$/.test(portrait.displayedPath)) {
+        if (background.currentBackground !== test.images + "new.png") {
+          test.fail("a failed variant changed the shared selection")
+          return
+        }
+        test.capture("variant-fallback", function() {
+          background.setBackground(test.images + "missing.png", true)
+          test.step = 11
+        })
+      } else if (test.step === 11 && background.ready &&
+                 background.currentBackground === test.images + "old.png" &&
+                 /wide.png$/.test(wide.displayedPath) && /portrait.png$/.test(portrait.displayedPath)) {
+        test.capture("recovered", function() {
           console.log("PASS rendered transition")
           Qt.quit()
         })
