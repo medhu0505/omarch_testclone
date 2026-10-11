@@ -102,6 +102,15 @@ Item {
     sessionLock.locked = true
   }
 
+  // A lock Quickshell declines leaves the request with nothing in flight, and
+  // every later lock() would report it done, so the next one tries again.
+  function retryStalledLock() {
+    if (!lockRequested || pendingSessionLock || sessionLock.locked || sessionLock.secure) return
+
+    logEvent("lock-stalled: retrying")
+    queueSessionLock()
+  }
+
   // ext-session-lock outlives its client, and a restart carries no lock over, so
   // a session locked this early is an orphan behind Hyprland's failsafe. Outputs
   // are often still absent here, so ask until the answer means something.
@@ -834,6 +843,7 @@ Item {
     function lock(): string {
       if (!root.passwordPamConfigured) return "missing-pam"
       if (!root.locked && !root.beginLock()) return "failed"
+      root.retryStalledLock()
       return "ok"
     }
 
