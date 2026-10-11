@@ -17,6 +17,9 @@ entry() {
 entry WhatsApp 'omarchy-launch-webapp https://web.whatsapp.com/' >"$apps/WhatsApp.desktop"
 entry Outlook 'omarchy-launch-webapp "https://outlook.office.com/mail/"' >"$apps/Outlook.desktop"
 entry Local 'omarchy-launch-webapp https://localhost:47990 --ignore-certificate-errors' >"$apps/Local.desktop"
+# What the installer writes for https://example.com/a$b%c: the URL quoted as an
+# Exec argument, then escaped again as desktop file text.
+entry Escaped 'omarchy-launch-webapp "https://example.com/a\\$b%%c"' >"$apps/Escaped.desktop"
 { entry Named 'omarchy-launch-webapp https://named.example/'; echo 'StartupWMClass=mine'; } >"$apps/Named.desktop"
 entry Linked 'omarchy-launch-webapp https://linked.example/' >"$tmpdir/dotfiles/Linked.desktop"
 ln -s "$tmpdir/dotfiles/Linked.desktop" "$apps/Linked.desktop"
@@ -31,6 +34,8 @@ done
 grep -Fxq 'StartupWMClass=chrome-outlook.office.com__mail_-Default' "$apps/Outlook.desktop" ||
   fail "a quoted web app URL names its window" "$(cat "$apps/Outlook.desktop")"
 [[ $(grep -c '^StartupWMClass=' "$apps/WhatsApp.desktop") == 1 ]] || fail "a second run adds nothing"
+grep -Fxq 'StartupWMClass=chrome-example.com__a$b%c-Default' "$apps/Escaped.desktop" ||
+  fail "an escaped URL is decoded before naming its window" "$(cat "$apps/Escaped.desktop")"
 pass "web app launchers name their windows once"
 
 ! grep -q '^StartupWMClass=' "$apps/Local.desktop" || fail "a custom command is left alone" "$(cat "$apps/Local.desktop")"
