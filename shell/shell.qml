@@ -1524,7 +1524,12 @@ ShellRoot {
       shell.pluginReloadPending = true
       return
     }
-    if (typeof Qt.clearComponentCache === "function") Qt.clearComponentCache()
+    // The QML engine caches compiled components by URL for its whole lifetime
+    // and exposes no way to clear that cache (Qt.clearComponentCache is not a
+    // member of the QML Qt object, so the old guarded call was a no-op). Fresh
+    // code therefore has to arrive via fresh component URLs: rescan() re-links
+    // every plugin into a new load directory, so entryPointUrl() changes and
+    // the engine recompiles, including relative imports.
     shell.pluginRegistry.rescan()
   }
 

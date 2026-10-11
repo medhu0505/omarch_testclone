@@ -63,8 +63,8 @@ ShellRoot {
     return value
   }
 
-  function block(kind, source, payload) {
-    return "===" + kind + "::" + source + "===\n"
+  function block(kind, source, payload, load) {
+    return "===" + kind + "::" + source + (load ? "::" + load : "") + "===\n"
       + (typeof payload === "string" ? payload : JSON.stringify(payload))
       + "\n=== EOM ===\n"
   }
@@ -458,6 +458,20 @@ ShellRoot {
     root.assertEqual(registry.localPluginIdForPath(registry.pluginsDir + "/.clone.abc123/manifest.json"), "", "hidden staging and backup dirs are ignored")
 
     root.assertTrue(changeCount > 0, "registry emits change notifications")
+
+    // A scan line may carry a per-rescan load dir after the source dir. The
+    // entry point must resolve through it, so an edit produces a fresh URL the
+    // engine recompiles. A two-field line with no load dir still resolves
+    // through the source dir.
+    registry.parseScanOutput(block("thirdparty", "/third/regression", manifest("third.regression", ["panel"], { panel: "Panel.qml" }), "/load/rev-a/regression"))
+    root.assertEqual(registry.installedPlugins["third.regression"].__sourceDir, "/third/regression", "a load-dir line keeps the source dir")
+    root.assertEqual(registry.installedPlugins["third.regression"].__loadDir, "/load/rev-a/regression", "a load-dir line records the per-rescan dir")
+    root.assertEqual(registry.entryPointUrl(registry.installedPlugins["third.regression"], "panel"), "file:///load/rev-a/regression/Panel.qml", "entryPointUrl loads through the per-rescan dir")
+
+    registry.parseScanOutput(block("thirdparty", "/third/legacy", manifest("third.legacy", ["panel"], { panel: "Panel.qml" })))
+    root.assertEqual(registry.installedPlugins["third.legacy"].__loadDir, "/third/legacy", "a two-field line falls back to the source dir")
+    root.assertEqual(registry.entryPointUrl(registry.installedPlugins["third.legacy"], "panel"), "file:///third/legacy/Panel.qml", "a two-field line resolves through the source dir")
+
     writeResult()
   }
 
