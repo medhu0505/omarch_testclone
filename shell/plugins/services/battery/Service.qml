@@ -18,6 +18,9 @@ Item {
   // shell started, so a one-off read on startup, on a power source change and
   // after omarchy-powerprofiles-set (which asks for it over IPC) recovers.
   property string activePowerProfile: ""
+  property bool powerProfileReadPending: false
+  property int powerProfileSignals: 0
+  property int powerProfileReadSignals: 0
   readonly property bool powerSaverOnBattery: UPower.onBattery && activePowerProfile === "power-saver"
 
   PersistentProperties {
@@ -61,7 +64,15 @@ Item {
   }
 
   function refreshPowerProfile() {
-    if (!powerProfileReadProcess.running) powerProfileReadProcess.running = true
+    // A read already running may have sampled the profile before the change
+    // this refresh is for, so run another once it finishes.
+    if (powerProfileReadProcess.running) {
+      powerProfileReadPending = true
+      return
+    }
+    powerProfileReadPending = false
+    powerProfileReadSignals = powerProfileSignals
+    powerProfileReadProcess.running = true
   }
 
   function parseActiveProfile(text) {
@@ -102,13 +113,24 @@ Item {
     command: ["busctl", "--json=short", "get-property", "net.hadess.PowerProfiles", "/net/hadess/PowerProfiles", "net.hadess.PowerProfiles", "ActiveProfile"]
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: root.activePowerProfile = root.parseActiveProfile(text)
+      onStreamFinished: {
+        // A change signal that arrived during the read is newer than it.
+        if (root.powerProfileReadSignals === root.powerProfileSignals)
+          root.activePowerProfile = root.parseActiveProfile(text)
+      }
+    }
+    onExited: {
+      // Deferred: the process still reports running while it signals exit.
+      if (root.powerProfileReadPending) Qt.callLater(root.refreshPowerProfile)
     }
   }
 
   Connections {
     target: PowerProfiles
-    function onProfileChanged() { root.activePowerProfile = root.profileName(PowerProfiles.profile) }
+    function onProfileChanged() {
+      root.powerProfileSignals++
+      root.activePowerProfile = root.profileName(PowerProfiles.profile)
+    }
   }
 
   ShellIpc {

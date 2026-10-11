@@ -148,7 +148,10 @@ assert(
 assert(
   batteryService.includes('property string activePowerProfile') &&
     batteryService.includes('UPower.onBattery && activePowerProfile === "power-saver"') &&
-    batteryService.includes('function onProfileChanged() { root.activePowerProfile = root.profileName(PowerProfiles.profile) }') &&
+    /function onProfileChanged\(\) \{\s*root\.powerProfileSignals\+\+\s*root\.activePowerProfile = root\.profileName\(PowerProfiles\.profile\)/.test(batteryService) &&
+    batteryService.includes('if (root.powerProfileReadSignals === root.powerProfileSignals)') &&
+    /if \(powerProfileReadProcess\.running\) \{\s*powerProfileReadPending = true/.test(batteryService) &&
+    batteryService.includes('if (root.powerProfileReadPending) Qt.callLater(root.refreshPowerProfile)') &&
     batteryService.includes('case PowerProfile.PowerSaver: return "power-saver"') &&
     batteryService.includes('"get-property", "net.hadess.PowerProfiles", "/net/hadess/PowerProfiles", "net.hadess.PowerProfiles", "ActiveProfile"') &&
     !batteryService.includes('["powerprofilesctl"') &&
