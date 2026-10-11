@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# omarchy:summary=Give terminals and GTK apps a see-through, blurred background while windows are glassy
+# omarchy:summary=Give terminals, btop, and GTK apps a see-through background while windows are glassy
 # omarchy:args=[theme-dir]
 # omarchy:hidden=true
 
@@ -95,6 +95,11 @@ glass foot.ini '[colors-dark]' \
   '^[[:space:]]*blur[[:space:]]*=' 'blur=yes' || status=1
 glass kitty.conf '' \
   '^[[:space:]]*background_opacity[[:space:]]' 'background_opacity 0.65' || status=1
+# btop paints its own background over the terminal's glass. An empty main_bg
+# uses the terminal background; the last theme value wins, so removing the
+# block restores the theme's colour without changing btop's user config.
+glass btop.theme '' \
+  '^[[:space:]]*theme\[main_bg\][[:space:]]*=[[:space:]]*""' 'theme[main_bg]=""' || status=1
 # GTK only asks Hyprland for blur under a CSS backdrop-filter, which Ghostty
 # takes as custom CSS and reloads live; its background-blur speaks only KDE's
 # blur protocol.

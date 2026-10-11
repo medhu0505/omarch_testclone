@@ -13,13 +13,13 @@ state_home="$tmpdir/state"
 toggles_dir="$state_home/omarchy/toggles/hypr"
 mkdir -p "$stub_dir" "$home_dir"
 
-for command in hyprctl omarchy-notification-send omarchy-restart-terminal omarchy-theme-set-foot; do
+for command in hyprctl omarchy-notification-send omarchy-restart-terminal omarchy-theme-set-foot omarchy-restart-btop; do
   printf '#!/bin/bash\nprintf "%%s\\n" "%s $*" >>"%s/commands.log"\n' "$command" "$tmpdir" >"$stub_dir/$command"
 done
 chmod +x "$stub_dir"/*
 
 run() {
-  HOME="$home_dir" XDG_STATE_HOME="$state_home" XDG_CONFIG_HOME="$home_dir/.config" OMARCHY_PATH="$ROOT" PATH="$stub_dir:$ROOT/bin:$PATH" "$@"
+  HOME="$home_dir" XDG_RUNTIME_DIR="$tmpdir" XDG_STATE_HOME="$state_home" XDG_CONFIG_HOME="$home_dir/.config" OMARCHY_PATH="$ROOT" PATH="$stub_dir:$ROOT/bin:$PATH" "$@"
 }
 
 [[ $(run omarchy-hyprland-window-transparency) == "transparent" ]] || fail "windows start out transparent"
@@ -29,6 +29,7 @@ run omarchy-hyprland-window-transparency glassy
 [[ $(run omarchy-hyprland-window-transparency) == "glassy" ]] || fail "glassy windows are reported"
 cmp -s "$ROOT/default/hypr/toggles/window-glassy.lua" "$toggles_dir/window-glassy.lua" || fail "glassy windows are loaded after the theme"
 grep -qx 'hyprctl reload' "$tmpdir/commands.log" || fail "new transparency reloads Hyprland"
+grep -q '^omarchy-restart-btop ' "$tmpdir/commands.log" || fail "new transparency reloads running btop windows"
 pass "glassy windows override the theme"
 
 run omarchy-hyprland-window-transparency opaque
@@ -104,6 +105,7 @@ printf '[colors.primary]\nbackground = "#000000"\n' >"$theme_dir/alacritty.toml"
 printf '[colors-dark]\nbackground=000000\n' >"$theme_dir/foot.ini"
 printf 'background #000000\n' >"$theme_dir/kitty.conf"
 printf 'background = #000000\nbackground-opacity = 0.9\n' >"$theme_dir/ghostty.conf"
+printf 'theme[main_bg]="#102030"\ntheme[main_fg]="#ffffff"\n' >"$theme_dir/btop.theme"
 cp -r "$theme_dir" "$tmpdir/theme-before"
 
 run omarchy-hyprland-window-transparency glassy
@@ -113,6 +115,9 @@ grep -qx 'opacity = 0.65' "$theme_dir/alacritty.toml" || fail "glassy alacritty 
 grep -qx 'alpha=0.65' "$theme_dir/foot.ini" && grep -qx 'blur=yes' "$theme_dir/foot.ini" || fail "glassy foot is see-through and asks for blur"
 grep -qx 'background_opacity 0.65' "$theme_dir/kitty.conf" || fail "glassy kitty is see-through"
 (( $(grep -c 'omarchy-glass begin' "$theme_dir/foot.ini") == 1 )) || fail "glassy terminals get the glass once"
+[[ $(grep '^theme\[main_bg\]=' "$theme_dir/btop.theme" | tail -1) == 'theme[main_bg]=""' ]] || fail "glassy btop uses the terminal background"
+(( $(grep -c 'omarchy-glass begin' "$theme_dir/btop.theme") == 1 )) || fail "glassy btop gets the glass once"
+pass "btop follows the glassy terminal background"
 (( $(grep -c 'background-opacity' "$theme_dir/ghostty.conf") == 1 )) &&
   grep -qx 'background-opacity = 0.9' "$theme_dir/ghostty.conf" || fail "a theme's own terminal opacity is kept"
 grep -qx "gtk-custom-css = $ROOT/default/gtk/glass.css" "$theme_dir/ghostty.conf" ||
@@ -161,6 +166,14 @@ grep -qx 'background #000000' "$bare_dir/kitty.conf" || fail "glassy ends the li
 HOME="$home_dir" XDG_STATE_HOME="$tmpdir/no-glass" OMARCHY_PATH="$ROOT" PATH="$stub_dir:$ROOT/bin:$PATH" omarchy-theme-set-glass "$bare_dir"
 cmp -s "$tmpdir/bare-before.conf" "$bare_dir/kitty.conf" || fail "leaving glassy restores a file without a final newline"
 pass "leaving glassy restores a file without a final newline byte for byte"
+
+btop_dir="$tmpdir/transparent-btop-theme"
+mkdir -p "$btop_dir"
+printf 'theme[main_bg]=""\n' >"$btop_dir/btop.theme"
+cp "$btop_dir/btop.theme" "$tmpdir/btop-before.theme"
+run omarchy-theme-set-glass "$btop_dir"
+cmp -s "$tmpdir/btop-before.theme" "$btop_dir/btop.theme" || fail "btop themes already using the terminal background are kept"
+pass "btop themes already using the terminal background are kept"
 
 ghostty_dir="$tmpdir/ghostty-theme"
 mkdir -p "$ghostty_dir"
