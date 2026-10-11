@@ -483,10 +483,12 @@ for (const name of ['focusedWorkspaceId', 'showFocusedMode', 'readMode', 'refres
   widget[name] = () => call(widget, hyprland, proc, qt, widget.readMode)
 }
 const start = () => { if (proc.running) proc.runs.push(proc.command[1]) }
+// Quickshell still reports the process running while it signals exit, so a
+// retry has to be deferred until after the handler returns.
 const finish = output => {
   streamFinished(widget, hyprland, proc, qt, widget.readMode, output)
-  proc.running = false
   exited(widget, hyprland, proc, qt, widget.readMode)
+  proc.running = false
   while (deferred.length) deferred.shift()()
 }
 const focus = id => { hyprland.focusedWorkspace = { id }; widget.showFocusedMode(); start() }
