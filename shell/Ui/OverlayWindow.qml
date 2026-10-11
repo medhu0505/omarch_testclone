@@ -122,6 +122,17 @@ PanelWindow {
   onWidthChanged: if (shown && cooperativeFocus !== false) Hyprland.refreshMonitors()
   onHeightChanged: if (shown && cooperativeFocus !== false) Hyprland.refreshMonitors()
 
+  // Quickshell drops a refresh requested while another is in flight, so the
+  // answer to a resize can be the reserved space from before it, and nothing
+  // then asks again. Content waits on the two agreeing: keep asking until
+  // they do, rather than leave an overlay that is open but never revealed.
+  Timer {
+    interval: 100
+    repeat: true
+    running: window.shown && window.cooperative && window.backingWindowVisible && !window.contentReady
+    onTriggered: Hyprland.refreshMonitors()
+  }
+
   // A stock-sized overlay is not resized by a keyboard that arrives after it
   // opened, so "auto" asks again when a layer surface comes or goes.
   Connections {

@@ -276,6 +276,10 @@ assert(
   'every open asks again, and an answer that never comes does not hold the overlay back'
 )
 assert(
+  /running: window\.shown && window\.cooperative && window\.backingWindowVisible && !window\.contentReady\n    onTriggered: Hyprland\.refreshMonitors\(\)/.test(overlay),
+  'a cooperative overlay keeps asking until its size and the reserved space agree'
+)
+assert(
   /enabled: window\.shown && window\.cooperativeFocus === "auto"\n    function onRawEvent\(event\) \{\n      if \(event\.name === "openlayer" \|\| event\.name === "closelayer"\) Hyprland\.refreshMonitors\(\)/.test(overlay),
   'an open auto overlay looks again when a layer surface comes or goes'
 )
