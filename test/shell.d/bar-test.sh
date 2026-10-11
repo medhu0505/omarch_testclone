@@ -98,6 +98,17 @@ assert(
 // own visibility would rebuild every widget, closing any open panel.
 assert(!/active: [^\n]*visible/.test(moduleList), 'bar keeps its widgets while the bar window is remapped')
 assert(!/ModuleList \{\s*visible:/.test(barSource), 'bar picks the center arrangement on show with shown, not visible')
+// Each orientation shows either the unanchored center list or the anchored
+// pair, never both. `shown` defaults to true, so a list that lost its binding
+// would load beside the other arrangement and mount every widget twice.
+const centerArrangements = (barSource.match(/ModuleList \{[^}]*?region: "center"/g) || [])
+  .map(function(list) { return (list.match(/shown: (!?)centerRoot\.hasAnchor\b/) || [])[1] })
+  .filter(function(choice) { return choice !== undefined })
+assert(
+  centerArrangements.filter(function(choice) { return choice === '!' }).length === 2 &&
+    centerArrangements.filter(function(choice) { return choice === '' }).length === 4,
+  'bar shows one center arrangement at a time in each orientation'
+)
 
 // A center module is mounted twice — drawn copy plus zero-size placeholder —
 // and the order they register in is not stable across a live reconfiguration,
