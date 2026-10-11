@@ -21,7 +21,7 @@ Item {
   property bool powerProfileReadPending: false
   property int powerProfileSignals: 0
   property int powerProfileReadSignals: 0
-  readonly property bool powerSaverOnBattery: UPower.onBattery && activePowerProfile === "power-saver"
+  readonly property bool powerSaverOnBattery: BatteryModel.isPowerSaverOnBattery(UPower.onBattery, activePowerProfile)
 
   PersistentProperties {
     id: persisted
@@ -75,16 +75,6 @@ Item {
     powerProfileReadProcess.running = true
   }
 
-  function parseActiveProfile(text) {
-    // busctl --json=short prints {"type":"s","data":"balanced"}; an empty or
-    // malformed reply (daemon not running) reads as no active profile.
-    try {
-      return String(JSON.parse(text).data || "").trim()
-    } catch (e) {
-      return ""
-    }
-  }
-
   function profileName(profile) {
     switch (profile) {
       case PowerProfile.PowerSaver: return "power-saver"
@@ -113,11 +103,7 @@ Item {
     command: ["busctl", "--json=short", "get-property", "net.hadess.PowerProfiles", "/net/hadess/PowerProfiles", "net.hadess.PowerProfiles", "ActiveProfile"]
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: {
-        // A change signal that arrived during the read is newer than it.
-        if (root.powerProfileReadSignals === root.powerProfileSignals)
-          root.activePowerProfile = root.parseActiveProfile(text)
-      }
+      onStreamFinished: root.activePowerProfile = BatteryModel.profileAfterRead(root.activePowerProfile, text, root.powerProfileReadSignals, root.powerProfileSignals)
     }
     onExited: {
       // Deferred: the process still reports running while it signals exit.
