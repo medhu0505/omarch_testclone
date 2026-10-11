@@ -51,9 +51,15 @@ function connectivityState(kind, connectivity, states, checksEnabled) {
   return "unknown"
 }
 
-function connectionIcon(kind, signalStrength, connectivity) {
+// nf-md-link, the chain phones draw for a hotspot, from the same Material
+// family as the row's lock.
+var hotspotIcon = "󰌷"
+
+// A captive or limited link keeps the alert glyph: signing in matters more
+// than knowing the link is a phone.
+function connectionIcon(kind, signalStrength, connectivity, hotspot) {
   var restricted = connectivity === "portal" || connectivity === "limited"
-  if (kind === "wifi") return restricted ? "󰤩" : wifiIconFor(signalStrength)
+  if (kind === "wifi") return restricted ? "󰤩" : (hotspot ? hotspotIcon : wifiIconFor(signalStrength))
   if (kind === "ethernet") return restricted ? "󰈂" : "󰈀"
   return "󰤮"
 }
@@ -162,6 +168,116 @@ function parseKeyValue(raw) {
     next[key] = key === "ssid" ? decodeIwSsid(value) : value.trim()
   }
   return next
+}
+
+// Quickshell's WifiNetwork carries no beacon elements, so hotspot detection
+// reads the kernel's cached scan (`iw dev <iface> scan dump -u`). Without -u,
+// iw drops the vendor elements this depends on.
+//
+// Two advertisements count:
+// - Apple OUI 00:17:f2 type 0x06 is the Personal Hotspot element. Other
+//   Apple types (AirPlay and so on) are ordinary Wi-Fi. Many Android phones,
+//   Xiaomi included, send it too.
+// - Microsoft OUI 00:50:f2 type 0x11 is the Network Cost element. Its first
+//   byte is the cost level: Fixed (0x02) or Variable (0x04) is a portable
+//   hotspot; Unknown (0x00) and Unrestricted (0x01) are not.
+// Interworking "Chargeable Public" alone is not enough: carrier and venue
+// networks send it too.
+function vendorElementIsHotspot(oui, bytes) {
+  var type = bytes[0]
+  if (oui === "00:17:f2") return type === 0x06
+  if (oui === "00:50:f2") return type === 0x11 && (bytes[1] === 0x02 || bytes[1] === 0x04)
+  return false
+}
+
+function hexBytes(text) {
+  var bytes = []
+  var tokens = String(text || "").trim().split(/\s+/)
+  for (var i = 0; i < tokens.length; i++) {
+    if (/^[0-9a-f]{2}$/i.test(tokens[i])) bytes.push(parseInt(tokens[i], 16))
+  }
+  return bytes
+}
+
+function scanLineIsHotspot(line) {
+  var vendor = line.match(/^\s*Vendor specific: OUI ([0-9a-f:]{8}), data:(.*)$/i)
+  if (vendor) return vendorElementIsHotspot(vendor[1].toLowerCase(), hexBytes(vendor[2]))
+
+  // iw names Microsoft's OUI itself and strips the type into the label.
+  var ms = line.match(/^\s*MS\/WiFi 0x([0-9a-f]+), data:(.*)$/i)
+  if (ms) return vendorElementIsHotspot("00:50:f2", [parseInt(ms[1], 16)].concat(hexBytes(ms[2])))
+
+  return false
+}
+
+function parseIwScanDump(raw) {
+  var entries = []
+  var current = null
+  var lines = String(raw || "").split("\n")
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i]
+    var bss = line.match(/^BSS ([0-9a-f:]{17})/i)
+    if (bss) {
+      current = { ssid: "", bssid: bss[1].toLowerCase(), hotspot: false, associated: /-- associated/.test(line) }
+      entries.push(current)
+      continue
+    }
+    if (!current) continue
+
+    var ssid = line.match(/^\tSSID: (.*)$/)
+    if (ssid) current.ssid = decodeIwSsid(ssid[1])
+    else if (scanLineIsHotspot(line)) current.hotspot = true
+  }
+
+  return entries
+}
+
+// SSID is the only key a Quickshell row has, so one hotspot BSSID marks every
+// row with that name.
+function hotspotSsids(entries) {
+  var ssids = {}
+  var list = Array.isArray(entries) ? entries : []
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].hotspot && list[i].ssid) ssids[list[i].ssid] = true
+  }
+  return ssids
+}
+
+// NetworkManager reports "yes (guessed)" when an Android phone sends
+// ANDROID_METERED over DHCP, which covers hotspots whose beacon says nothing.
+function isMetered(value) {
+  return /^yes\b/.test(String(value || "").trim())
+}
+
+// The active link is a hotspot when NetworkManager calls it metered or the
+// associated BSS advertised itself as one.
+function activeLinkIsHotspot(metered, entries) {
+  if (isMetered(metered)) return true
+  var list = Array.isArray(entries) ? entries : []
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].associated) return !!list[i].hotspot
+  }
+  return false
+}
+
+// Prints `metered\t<value>` and then the cached scan for the interface in $1.
+// `scan dump` reads what the last scan left behind; it never starts one.
+var hotspotScanScript =
+  "printf 'metered\\t%s\\n' \"$(nmcli -g GENERAL.METERED device show \"$1\" 2>/dev/null)\";" +
+  " iw dev \"$1\" scan dump -u 2>/dev/null"
+
+function parseHotspotScan(raw) {
+  var text = String(raw || "")
+  var newline = text.indexOf("\n")
+  var first = newline === -1 ? text : text.substring(0, newline)
+  var metered = first.indexOf("metered\t") === 0 ? first.substring(8).trim() : ""
+  var entries = parseIwScanDump(newline === -1 ? "" : text.substring(newline + 1))
+  return {
+    metered: metered,
+    ssids: hotspotSsids(entries),
+    active: activeLinkIsHotspot(metered, entries)
+  }
 }
 
 function throughputState(previous, next, now) {
@@ -299,7 +415,7 @@ function formatPingLatency(ms, hasSamples) {
   return value.toFixed(value > 0 && value < 10 ? 1 : 0) + " ms"
 }
 
-function wifiRow(network) {
+function wifiRow(network, hotspot) {
   if (!network) return null
   // Primitives only: rows become list-model data, so a WifiNetwork here puts a
   // live QObject wrapper in every delegate's var property. NetworkManager churn
@@ -311,7 +427,8 @@ function wifiRow(network) {
     known: !!network.known,
     ssid: network.name || "",
     signal: Math.round((network.signalStrength || 0) * 100),
-    security: network.security
+    security: network.security,
+    hotspot: !!hotspot
   }
 }
 
@@ -392,6 +509,13 @@ if (typeof module !== "undefined") {
     connectionIcon: connectionIcon,
     connectedSignalStrength: connectedSignalStrength,
     parseActiveApSignal: parseActiveApSignal,
+    hotspotIcon: hotspotIcon,
+    parseIwScanDump: parseIwScanDump,
+    hotspotSsids: hotspotSsids,
+    isMetered: isMetered,
+    activeLinkIsHotspot: activeLinkIsHotspot,
+    hotspotScanScript: hotspotScanScript,
+    parseHotspotScan: parseHotspotScan,
     connectivityState: connectivityState,
     captivePortalUrl: captivePortalUrl,
     formatHeaderSpeed: formatHeaderSpeed,

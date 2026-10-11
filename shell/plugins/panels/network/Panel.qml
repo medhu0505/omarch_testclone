@@ -72,6 +72,10 @@ Panel {
   readonly property var wifiNetworkObjects: wifiDevice && wifiDevice.networks ? wifiDevice.networks.values : []
   readonly property var connectedWifiNetwork: findConnectedWifiNetwork()
   property var wifiNetworks: []
+  // SSIDs whose cached beacon advertised a phone hotspot, and whether the
+  // active Wi-Fi link is one (see Model.parseHotspotScan).
+  property var hotspotSsids: ({})
+  property bool activeHotspot: false
   property bool scanning: false
   property bool wifiStationAvailable: false
   property string dnsProvider: ""
@@ -506,7 +510,8 @@ Panel {
   }, connectivityChecksEnabled)
   readonly property bool hasCaptivePortal: connectivity === "portal"
   readonly property bool restricted: hasCaptivePortal || connectivity === "limited"
-  readonly property string icon: Model.connectionIcon(kind, signalStrength, connectivity)
+  readonly property bool hotspot: kind === "wifi" && activeHotspot
+  readonly property string icon: Model.connectionIcon(kind, signalStrength, connectivity, hotspot)
   // Keyed on the device rather than the SSID: on an OWE transition-mode
   // network the listed network comes and goes with every scan while the link
   // stays up, and a real network switch already passes through "disconnected".
@@ -514,7 +519,10 @@ Panel {
     ? kind + ":" + wifiDevice.name
     : (kind === "ethernet" && wiredDevice ? kind + ":" + wiredDevice.name : "")
 
-  onConnectionKeyChanged: Qt.callLater(checkConnectivity)
+  onConnectionKeyChanged: {
+    Qt.callLater(checkConnectivity)
+    Qt.callLater(scanHotspots)
+  }
   onConnectivityChecksEnabledChanged: Qt.callLater(checkConnectivity)
   onHasCaptivePortalChanged: {
     if (hasCaptivePortal && opened && passwordSsid === "") {
@@ -591,6 +599,27 @@ Panel {
         setScannerEnabled(true)
       }
     }
+    syncWifiNetworks()
+    scanHotspots()
+  }
+
+  // Reads the cached beacons and NetworkManager's metered guess for the Wi-Fi
+  // interface. A failed or empty dump leaves every row as ordinary Wi-Fi.
+  function scanHotspots() {
+    if (!wifiDevice || !wifiDevice.name) {
+      hotspotSsids = ({})
+      activeHotspot = false
+      return
+    }
+    if (hotspotProc.running) return
+    hotspotProc.command = ["bash", "-c", Model.hotspotScanScript, "omarchy-network-hotspot", wifiDevice.name]
+    hotspotProc.running = true
+  }
+
+  function updateHotspots(raw) {
+    var scan = Model.parseHotspotScan(raw)
+    hotspotSsids = scan.ssids
+    activeHotspot = scan.active
     syncWifiNetworks()
   }
 
@@ -701,7 +730,7 @@ Panel {
       var network = networks[i]
       if (!network) continue
       checkActionCompletion(network)
-      var row = Model.wifiRow(network)
+      var row = Model.wifiRow(network, !!hotspotSsids[network.name || ""] || (!!network.connected && activeHotspot))
       if (row) nets.push(row)
     }
     wifiNetworks = Model.sortWifiRows(nets)
@@ -953,7 +982,18 @@ Panel {
     id: scanDone
     interval: 1500
     repeat: false
-    onTriggered: root.syncWifiNetworks()
+    onTriggered: {
+      root.syncWifiNetworks()
+      root.scanHotspots()
+    }
+  }
+
+  Process {
+    id: hotspotProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.updateHotspots(text)
+    }
   }
 
   Process {
@@ -1081,7 +1121,7 @@ Panel {
     text: root.icon
     active: root.restricted
     tooltipText: root.hasCaptivePortal ? "Sign in to this network"
-      : (root.restricted ? "Limited internet access" : "")
+      : (root.restricted ? "Limited internet access" : (root.hotspot ? "Mobile hotspot" : ""))
 
     onPressed: function(b) {
       if (root.opened) root.close()
@@ -1781,6 +1821,7 @@ Panel {
       ? (net.security === WifiSecurityType.Wpa2Eap || net.security === WifiSecurityType.WpaEap)
       : false
     readonly property bool canForget: root.canForgetNetwork(net)
+    readonly property bool isHotspot: !!(net && net.hotspot)
     readonly property bool isSelected: root.focusSection === "wifi" && root.selectedIndex === index
     readonly property bool forgetFocused: isSelected && root.wifiActionFocused && canForget
     readonly property bool forgetVisible: canForget && (!requiresCredentials || forgetFocused || rightMouse.containsMouse)
@@ -1831,6 +1872,7 @@ Panel {
       if (isBusy && root.actionKind === "forget") return "Forgetting…"
       if (isFailed) return root.failureReason || "Failed"
       if (isConnected && root.kind === "wifi" && root.hasCaptivePortal) return "Sign-in required"
+      if (isConnected && net.hotspot) return "Mobile hotspot"
       if (isConnected) return "Connected"
       return ""
     }
@@ -1893,6 +1935,8 @@ Panel {
       Text {
         id: networkIcon
         textFormat: Text.PlainText
+        // Bars stay on the left even for a hotspot, so strength stays visible;
+        // the chain goes on the right edge in the lock's place.
         text: row.net ? Model.connectionIcon("wifi", row.net.signal,
           row.isConnected && root.kind === "wifi" ? root.connectivity : "") : ""
         color: row.statusColor
@@ -1907,7 +1951,7 @@ Panel {
       // directly rather than reserving an invisible or misleading target.
       Item {
         id: rightAction
-        visible: row.requiresCredentials || row.canForget
+        visible: row.requiresCredentials || row.canForget || row.isHotspot
         width: Style.space(22)
         implicitHeight: lockIndicator.implicitHeight
         anchors.right: parent.right
@@ -1916,11 +1960,11 @@ Panel {
         Text {
           id: lockIndicator
           textFormat: Text.PlainText
-          visible: row.requiresCredentials || row.forgetVisible
+          visible: row.requiresCredentials || row.forgetVisible || row.isHotspot
           width: parent.width
           anchors.verticalCenter: parent.verticalCenter
           horizontalAlignment: Text.AlignHCenter
-          text: row.forgetVisible ? "󰅙" : "󰌾"
+          text: row.forgetVisible ? "󰅙" : (row.isHotspot ? Model.hotspotIcon : "󰌾")
           color: row.forgetVisible ? root.bar.urgent : Qt.darker(root.bar.foreground, 1.4)
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.subtitle
@@ -1948,7 +1992,7 @@ Panel {
 
         PanelToolTip {
           visible: rightMouse.containsMouse || row.forgetFocused
-          text: "Forget network"
+          text: row.canForget ? "Forget network" : "Mobile hotspot"
           fontFamily: root.bar.fontFamily
         }
       }
