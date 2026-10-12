@@ -77,12 +77,18 @@ for token in "${desktop_exec_argv[@]}"; do
 done
 [[ -n $browser_exec ]] || browser_exec=${desktop_exec_argv[0]}
 
-if "$browser_exec" --help 2>/dev/null | grep -q MOZ_LOG; then
-  private_flag="--private-window"
-elif [[ $browser_exec =~ edge ]]; then
-  private_flag="--inprivate"
-else
-  private_flag="--incognito"
+# Only a private launch needs the browser's flag, and probing a Firefox-family
+# browser's --help starts the whole binary, so ordinary launches skip it and
+# leave their arguments as they are.
+private_flag="--private"
+if [[ " $* " == *" --private "* ]]; then
+  if "$browser_exec" --help 2>/dev/null | grep -q MOZ_LOG; then
+    private_flag="--private-window"
+  elif [[ $browser_exec =~ edge ]]; then
+    private_flag="--inprivate"
+  else
+    private_flag="--incognito"
+  fi
 fi
 
 if ! omarchy-cmd-browser-handoff "${desktop_exec_argv[@]}" "${@/--private/$private_flag}"; then

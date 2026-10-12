@@ -96,6 +96,29 @@ HOME="$test_home" PATH="$mock_bin:$PATH" OMARCHY_TEST_BROWSER_LAUNCH="$launch_lo
 [[ ! -e $launch_log ]] || fail "browser launcher starts no browser when the running one takes the URL"
 pass "browser launcher hands a URL to the running browser"
 
+rm -f "$mock_bin/omarchy-cmd-browser-handoff" "$launch_log"
+help_log="$test_tmp/help"
+cat >"$mock_bin/chromium" <<'SH'
+#!/bin/bash
+[[ $1 != "--help" ]] || printf 'probed\n' >>"$OMARCHY_TEST_BROWSER_HELP"
+SH
+chmod +x "$mock_bin/chromium"
+launch() {
+  HOME="$test_home" PATH="$mock_bin:$PATH" OMARCHY_TEST_BROWSER_LAUNCH="$launch_log" \
+    OMARCHY_TEST_BROWSER_FOCUS="$focus_log" OMARCHY_TEST_BROWSER_HELP="$help_log" \
+    bash "$ROOT/bin/omarchy-launch-browser" "$@"
+}
+
+launch "https://example.test/a--private-b"
+[[ ! -e $help_log ]] || fail "an ordinary launch doesn't probe the browser's flags"
+grep -F 'https://example.test/a--private-b' "$launch_log" >/dev/null || fail "an ordinary launch leaves its arguments alone"
+pass "an ordinary launch doesn't probe the browser's flags"
+
+launch --private
+[[ -s $help_log ]] || fail "a private launch probes the browser's private flag"
+[[ $(sed '1,/^--$/d' "$launch_log") == $'chromium\n--incognito' ]] || fail "a private launch passes the browser's private flag"
+pass "a private launch passes the browser's private flag"
+
 cat >"$test_home/.local/share/applications/chromium.desktop" <<'EOF'
 [Desktop Entry]
 Exec=/usr/bin/env LIBVA_DRIVER_NAME=iHD chromium "--profile-directory=Work Profile" --class=100%% %U
@@ -112,3 +135,11 @@ expected=$(printf '%s\n' /usr/bin/env LIBVA_DRIVER_NAME=iHD chromium "--profile-
 grep -Fx '^chromium.*$' "$focus_log" >/dev/null ||
   fail "wrapped Exec launcher focuses the real browser, not env"
 pass "browser launcher resolves env-wrapped desktop Exec lines"
+
+rm -f "$help_log"
+launch --private
+[[ -s $help_log ]] || fail "a wrapped private launch probes the real browser, not env"
+expected=$(printf '%s\n' /usr/bin/env LIBVA_DRIVER_NAME=iHD chromium "--profile-directory=Work Profile" --class=100% --incognito)
+[[ $(sed '1,/^--$/d' "$launch_log") == "$expected" ]] ||
+  fail "a wrapped private launch passes the real browser's private flag"
+pass "a wrapped private launch passes the real browser's private flag"
