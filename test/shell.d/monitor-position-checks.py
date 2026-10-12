@@ -2,10 +2,13 @@
 
 import copy
 import importlib.util
+import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -13,9 +16,6 @@ ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('position', ROOT / 'default/hypr/monitor-position.py')
 position = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(position)
-app_spec = importlib.util.spec_from_file_location('position_app', ROOT / 'default/hypr/monitor-position-app.py')
-app = importlib.util.module_from_spec(app_spec)
-app_spec.loader.exec_module(app)
 
 
 def monitor(name, x=0, y=0, width=1920, height=1080, scale=1, transform=0, **extra):
@@ -161,29 +161,6 @@ hl.monitor({output="",scale=1})
                              [monitor('DP-1', description='Acme')], {'DP-1': (0, 0)})
 
 
-class AppSelectionTests(unittest.TestCase):
-  def test_laptop_with_multiple_external_screens_defaults_to_distinct_pair(self):
-    self.assertEqual(app.default_pair([monitor('eDP-1'), monitor('DP-1'), monitor('DP-2')]), ('DP-2', 'eDP-1'))
-
-  def test_desktop_only_and_dsi_internal_defaults(self):
-    self.assertEqual(app.default_pair([monitor('DP-1'), monitor('DP-2'), monitor('HDMI-A-1')]), ('HDMI-A-1', 'DP-1'))
-    self.assertEqual(app.default_pair([monitor('DSI-1'), monitor('DP-1')]), ('DP-1', 'DSI-1'))
-
-  def test_zero_or_one_screen_has_no_reference(self):
-    self.assertEqual(app.default_pair([]), (None, None))
-    self.assertEqual(app.default_pair([monitor('DP-1')]), ('DP-1', None))
-
-  def test_current_side_accounts_for_scaled_rotated_geometry(self):
-    anchor = monitor('DP-1', 100, 200, 3840, 2160, 2)
-    moving = monitor('DP-2', -980, 200, 1920, 1080, 1, 1)
-    self.assertEqual(app.current_side(moving, anchor), 'left')
-    moving['x'], moving['y'] = 100, -1720
-    self.assertEqual(app.current_side(moving, anchor), 'above')
-
-  def test_custom_layout_is_not_mislabelled_as_aligned(self):
-    self.assertEqual(app.current_side(monitor('DP-2', 1920, 100), monitor('DP-1')), 'custom')
-
-
 class TransactionTests(unittest.TestCase):
   def setUp(self):
     self.temp = tempfile.TemporaryDirectory()
@@ -201,6 +178,36 @@ class TransactionTests(unittest.TestCase):
 
   def run_apply(self, **kwargs):
     return position.apply('DP-2', 'DP-1', 'left', **kwargs)
+
+  def test_panel_preview_is_read_only_and_returns_logical_geometry(self):
+    screens = [monitor('DP-1', width=3840, height=2160, scale=2),
+               monitor('DP-2', 1920, width=2560, height=1440, scale=1.25, transform=1)]
+    with patch.object(position, 'displays', return_value=screens):
+      state = position.panel_request({'action': 'state'})
+      result = position.panel_request({'action': 'preview', 'output': 'DP-2', 'reference': 'DP-1',
+                                       'side': 'left', 'snapshot': state['snapshot']})
+    self.assertEqual(result['monitors'][1]['x'], -1152)
+    self.assertEqual(result['monitors'][1]['logicalHeight'], 2048)
+    self.assertEqual(self.config.read_text(), self.original)
+    self.assertFalse(self.config.with_name('monitors.lua.bak.monitor-position').exists())
+
+  def test_panel_apply_accepts_json_snapshot_and_saves_layout(self):
+    with patch.object(position, 'displays', return_value=self.screens), patch.object(position, 'hypr', return_value=''), patch.object(position, 'wait_layout'):
+      state = json.loads(json.dumps(position.panel_request({'action': 'state'})))
+      result = position.panel_request({'action': 'apply', 'output': 'DP-2', 'reference': 'DP-1',
+                                       'side': 'left', 'snapshot': state['snapshot']})
+    self.assertIn('Saved', result['message'])
+    self.assertEqual(evaluate(self.config.read_text())['DP-2', 'position'], '-1920x0')
+
+  def test_panel_apply_requires_snapshot_and_rejects_stale_preview(self):
+    request = {'action': 'apply', 'output': 'DP-2', 'reference': 'DP-1', 'side': 'left'}
+    with self.assertRaisesRegex(RuntimeError, 'snapshot'):
+      position.panel_request(request)
+    request['snapshot'] = json.loads(json.dumps(position.snapshot(self.screens)))
+    changed = [monitor('DP-1'), monitor('DP-2', 2000)]
+    with patch.object(position, 'displays', return_value=changed), self.assertRaisesRegex(RuntimeError, 'changed since'):
+      position.panel_request(request)
+    self.assertEqual(self.config.read_text(), self.original)
 
   def test_success_backup_and_permissions(self):
     with patch.object(position, 'displays', return_value=self.screens), patch.object(position, 'hypr', return_value=''), patch.object(position, 'wait_layout'):
@@ -285,6 +292,45 @@ class TransactionTests(unittest.TestCase):
     with patch.object(position, 'hypr', return_value='config error'):
       with self.assertRaisesRegex(RuntimeError, 'config error'):
         position.wait_layout(self.screens, {'DP-1': (0, 0), 'DP-2': (-1920, 0)})
+
+
+class PanelProcessTests(unittest.TestCase):
+  def test_apply_finishes_when_the_panel_waiter_disappears(self):
+    with tempfile.TemporaryDirectory() as directory:
+      scratch = Path(directory)
+      executable = scratch / 'bin/hyprctl'
+      executable.parent.mkdir()
+      fake = ROOT / 'test/shell.d/monitor-arrangement/fake-hyprctl.py'
+      executable.write_text(f'#!/bin/bash\nexec "{sys.executable}" "{fake}" "$@"\n')
+      executable.chmod(0o700)
+      environment = dict(os.environ, XDG_CONFIG_HOME=str(scratch / 'config'),
+                         ARRANGEMENT_TEST_STATE=str(scratch / 'state.json'),
+                         PATH=str(executable.parent) + os.pathsep + os.environ['PATH'])
+      subprocess.run([sys.executable, str(fake), '--control', '{"reset":true,"reloadDelay":0.5}'], env=environment, check=True)
+      helper = str(ROOT / 'default/hypr/monitor-position.py')
+      result = subprocess.run([sys.executable, helper, '--request', '{"action":"state"}'], env=environment, capture_output=True, text=True, check=True)
+      request = dict(action='apply', output='DP-3', reference='eDP-1', side='left', snapshot=json.loads(result.stdout)['snapshot'])
+      waiter = subprocess.Popen([sys.executable, helper, '--request', json.dumps(request)], env=environment,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+      self.addCleanup(lambda: waiter.poll() is not None or waiter.kill())
+      deadline = time.monotonic() + 5
+      while time.monotonic() < deadline:
+        state = json.loads((scratch / 'state.json').read_text())
+        if state.get('reloadStarted'):
+          break
+        time.sleep(0.02)
+      else:
+        self.fail('Apply did not reach the simulated reload')
+      waiter.kill()
+      waiter.wait(timeout=2)
+      while time.monotonic() < deadline:
+        state = json.loads((scratch / 'state.json').read_text())
+        if state['monitors'][2]['x'] == -1920:
+          break
+        time.sleep(0.02)
+      else:
+        self.fail('The transaction died with its panel waiter')
+      self.assertEqual(evaluate((scratch / 'config/hypr/monitors.lua').read_text())['DP-3', 'position'], '-1920x0')
 
 
 if __name__ == '__main__':

@@ -75,6 +75,7 @@ Panel {
 
   readonly property var visibleSections: {
     var list = []
+    list.push("arrangement")
     if (brightnessAvailable) list.push("brightness")
     list.push("textsize")
     list.push("scale")
@@ -87,6 +88,7 @@ Panel {
     if (section === "textsize") return 0    // slider sentinel at -1, like brightness
     if (section === "scale") return scaleValues.length
     if (section === "monitors") return displays.length
+    if (section === "arrangement") return 8
     return 0
   }
 
@@ -134,6 +136,10 @@ Panel {
   // because adjustBrightness handles horizontal motion on the brightness
   // slider.
   function moveCursorH(delta) {
+    if (focusSection === "arrangement") {
+      selectedIndex = Math.max(0, Math.min(7, selectedIndex + delta))
+      return
+    }
     if (focusSection !== "scale") return
     var next = selectedIndex + delta
     if (next < 0) next = 0
@@ -148,6 +154,10 @@ Panel {
   }
 
   function activateCursor() {
+    if (focusSection === "arrangement") {
+      arrangement.activate(selectedIndex)
+      return
+    }
     if (focusSection === "scale" && selectedIndex >= 0 && selectedIndex < scaleValues.length) {
       setScale(scaleValues[selectedIndex])
       return
@@ -214,7 +224,16 @@ Panel {
       brightnessAvailable: root.brightnessAvailable,
       focusedMonitor: root.focusedMonitor,
       scale: root.monitorScale,
-      displays: root.displays
+      displays: root.displays,
+      arrangement: {
+        busy: arrangement.busy,
+        moving: arrangement.moving,
+        reference: arrangement.reference,
+        side: arrangement.side,
+        canApply: arrangement.canApply,
+        message: arrangement.message,
+        preview: arrangement.preview
+      }
     })
   }
 
@@ -298,7 +317,7 @@ Panel {
   }
 
   function toggleDisplay(name, enabled) {
-    if (!name) return
+    if (!name || arrangement.busy) return
     if (enabled && root.enabledDisplayCount <= 1) return
 
     // hyprctl keyword is rejected under the Lua config ("non-legacy parsers"),
@@ -312,6 +331,7 @@ Panel {
   }
 
   function setScale(scale) {
+    if (arrangement.busy) return
     actionProc.command = ["bash", "-c", "omarchy-hyprland-monitor-scaling " + scale]
     if (!actionProc.running) actionProc.running = true
   }
@@ -364,13 +384,8 @@ Panel {
   onOpenedChanged: {
     if (opened) {
       refresh()
-      if (brightnessAvailable) {
-        focusSection = "brightness"
-        selectedIndex = -1
-      } else {
-        focusSection = "scale"
-        selectedIndex = 0
-      }
+      focusSection = "arrangement"
+      selectedIndex = 0
       cursorActive = false
     }
   }
@@ -501,13 +516,14 @@ Panel {
     PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
+      blocked: arrangement.popupOpen
       onMoveRequested: function(dx, dy) {
         if (!root.cursorActive) { root.cursorActive = true; return }
         if (dy !== 0) root.moveCursor(dy)
         else if (dx !== 0) {
           if (root.focusSection === "brightness") root.adjustBrightness(dx * 5)
           else if (root.focusSection === "textsize") root.adjustTextSize(dx)
-          else if (root.focusSection === "scale") root.moveCursorH(dx)
+          else if (root.focusSection === "scale" || root.focusSection === "arrangement") root.moveCursorH(dx)
         }
       }
       onActivateRequested: if (root.cursorActive) root.activateCursor()
@@ -586,6 +602,26 @@ Panel {
           }
 
           // ---------- Brightness ----------
+          PanelSeparator { foreground: root.bar.foreground }
+
+          Arrangement {
+            id: arrangement
+            width: parent.width
+            active: root.opened
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            cursorIndex: root.cursorActive && root.focusSection === "arrangement" ? root.selectedIndex : -1
+            onCursorRequested: function(index, item) {
+              if (root.reflowingText) return
+              root.cursorActive = true
+              root.focusSection = "arrangement"
+              root.selectedIndex = index
+              root.ensureCursorVisible(item)
+            }
+            onPopupOpenChanged: if (!popupOpen && root.opened) keyCatcher.forceActiveFocus()
+            onApplied: root.refresh()
+          }
+
           PanelSeparator {
             visible: root.brightnessAvailable
             foreground: root.bar.foreground
@@ -828,6 +864,8 @@ Panel {
             }
           }
 
+
+
           Item {
             width: parent.width
             height: Style.space(4)
@@ -843,6 +881,8 @@ Panel {
     required property int scaleIndex
 
     text: root.effectiveScale(scaleValue) + "x"
+    enabled: !arrangement.busy
+    opacity: enabled ? 1 : 0.45
     fontSize: Style.font.caption
     foreground: root.bar.foreground
     fontFamily: root.bar.fontFamily
@@ -868,7 +908,7 @@ Panel {
     required property int rowIndex
 
     readonly property bool isFocused: display && display.focused
-    readonly property bool canToggle: display && (!display.enabled || root.enabledDisplayCount > 1)
+    readonly property bool canToggle: !arrangement.busy && display && (!display.enabled || root.enabledDisplayCount > 1)
 
     hasCursor: root.cursorActive && root.focusSection === "monitors" && root.selectedIndex === rowIndex
     onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(monitorRow)

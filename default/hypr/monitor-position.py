@@ -304,6 +304,44 @@ def apply(output, reference, side, dry_run=False, expected_snapshot=None):
       raise RuntimeError(f'{error}\nThe previous configuration and layout were restored.') from error
 
 
+def layout_state(monitors, positions=None):
+  layout = []
+  for monitor in monitors:
+    width, height = logical_size(monitor)
+    x, y = positions[monitor['name']] if positions else (monitor['x'], monitor['y'])
+    layout.append(dict(name=monitor['name'], x=x, y=y, logicalWidth=width, logicalHeight=height))
+  return {'monitors': layout, 'snapshot': snapshot(monitors)}
+
+
+def panel_request(request):
+  """JSON boundary for the Display panel; preview never writes configuration."""
+  if not isinstance(request, dict):
+    raise RuntimeError('Expected a monitor arrangement request.')
+  action = request.get('action')
+  if action == 'state':
+    return layout_state(displays())
+  if action not in ('preview', 'apply'):
+    raise RuntimeError('Unknown monitor arrangement action.')
+  output, reference, side = (request.get(key) for key in ('output', 'reference', 'side'))
+  if not isinstance(output, str) or not isinstance(reference, str) or side not in SIDES:
+    raise RuntimeError('Choose two screens and a valid position.')
+  expected = request.get('snapshot')
+  if not isinstance(expected, list) or any(
+    not isinstance(row, (list, tuple)) or len(row) != 7 or not isinstance(row[0], str)
+    or any(not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value) for value in row[1:])
+    for row in expected
+  ):
+    raise RuntimeError('A valid preview snapshot is required. Refresh screens first.')
+  expected = sorted(tuple(row) for row in expected)
+  if action == 'apply':
+    apply(output, reference, side, expected_snapshot=expected)
+    return {'message': f'{output} is {side} of {reference}. Saved for next time.'}
+  monitors = displays()
+  if snapshot(monitors) != expected:
+    raise RuntimeError('The screens changed since the preview. Refresh screens and choose the position again.')
+  return layout_state(monitors, arrange(monitors, output, reference, side))
+
+
 def main():
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument('output', nargs='?')
@@ -311,9 +349,22 @@ def main():
   parser.add_argument('side', nargs='?', choices=SIDES)
   parser.add_argument('--list', action='store_true')
   parser.add_argument('--dry-run', action='store_true')
+  parser.add_argument('--request', help=argparse.SUPPRESS)
+  parser.add_argument('--request-worker', action='store_true', help=argparse.SUPPRESS)
   args = parser.parse_args()
   try:
-    if args.list:
+    if args.request is not None:
+      request = json.loads(args.request)
+      if isinstance(request, dict) and request.get('action') == 'apply' and not args.request_worker:
+        # A per-screen panel can disappear on hotplug or shell reload. Its
+        # Process owns this waiter, but must not kill a save/rollback transaction.
+        result = subprocess.run([sys.executable, __file__, '--request', args.request, '--request-worker'],
+                                capture_output=True, text=True, start_new_session=True)
+        sys.stdout.write(result.stdout)
+        sys.stderr.write(result.stderr)
+        return result.returncode
+      print(json.dumps(panel_request(request)))
+    elif args.list:
       print(json.dumps(displays()))
     elif args.output and args.reference and args.side:
       apply(args.output, args.reference, args.side, args.dry_run)
