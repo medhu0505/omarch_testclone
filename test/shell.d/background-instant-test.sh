@@ -16,7 +16,7 @@ function state(displayed = 'a.png') {
     currentBackground: displayed, displayedBackground: displayed,
     pendingInstantBackground: '', incomingBackground: '', oldBackground: '',
     preparedBackground: '', lastTransitionPath: '', sizeQueue: [],
-    finishingTransition: false, backgroundVersion: 0, revealStartedVersion: -1,
+    finishingTransition: false, backgroundVersion: 0, reloadVersion: 0, revealStartedVersion: -1,
     revealProgress: 1, sizeProbe: { running: false, path: '' },
     sizeProbeOut: { text: '' },
     preparedBackgroundTimer: { stop() {}, restart() {} },
