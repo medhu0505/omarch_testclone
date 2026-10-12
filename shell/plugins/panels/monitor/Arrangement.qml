@@ -11,6 +11,8 @@ Column {
   id: root
 
   property bool active: false
+  property int displayCount: 0
+  property bool expanded: false
   property color foreground: Commons.Color.popups.text
   property string fontFamily: Style.font.family
   property var backendCommand: ["python3", Quickshell.env("OMARCHY_PATH") + "/default/hypr/monitor-position.py"]
@@ -31,7 +33,7 @@ Column {
   property bool identifying: false
   property var identificationScreens: Quickshell.screens
   readonly property bool popupOpen: movingPicker.popupOpen || referencePicker.popupOpen || alignmentPicker.popupOpen
-  readonly property bool ready: !busy && monitors.length >= 2
+  readonly property bool ready: active && visible && expanded && !busy && monitors.length >= 2
   readonly property bool canApply: ready && side !== "" && preview.length > 0
   readonly property var shownMonitors: preview.length ? preview : monitors
   readonly property var layoutBounds: Model.bounds(shownMonitors)
@@ -45,15 +47,29 @@ Column {
   signal applied()
 
   spacing: Style.space(10)
+  visible: displayCount > 1
   onCursorIndexChanged: {
-    var item = cursorIndex === 0 ? identifyButton : cursorIndex === 1 ? movingPicker : cursorIndex === 2 ? referencePicker
-      : cursorIndex >= 3 && cursorIndex <= 6 ? directionButtons.itemAt(cursorIndex - 3)
-      : cursorIndex === 7 ? alignmentPicker : cursorIndex === 8 ? applyButton : cursorIndex === 9 ? refreshButton : null
+    var item = cursorIndex === 0 ? sectionButton : cursorIndex === 1 ? identifyButton : cursorIndex === 2 ? movingPicker : cursorIndex === 3 ? referencePicker
+      : cursorIndex >= 4 && cursorIndex <= 7 ? directionButtons.itemAt(cursorIndex - 4)
+      : cursorIndex === 8 ? alignmentPicker : cursorIndex === 9 ? applyButton : cursorIndex === 10 ? refreshButton : null
     if (item) cursorRequested(cursorIndex, item)
   }
   onActiveChanged: {
-    if (active) refresh()
-    else { movingPicker.close(); referencePicker.close(); alignmentPicker.close(); identifying = false; identifyTimer.stop() }
+    if (active && visible && expanded) refresh()
+    else closeControls()
+  }
+  onVisibleChanged: if (!visible) expanded = false
+  onExpandedChanged: {
+    if (active && visible && expanded) refresh()
+    else closeControls()
+  }
+
+  function closeControls() {
+    movingPicker.close()
+    referencePicker.close()
+    alignmentPicker.close()
+    identifying = false
+    identifyTimer.stop()
   }
 
   function request(action, preserve) {
@@ -76,6 +92,7 @@ Column {
   }
 
   function refresh(preserve) {
+    if (!active || !visible || !expanded) return
     if (busy) { refreshQueued = true; return }
     preview = []
     side = ""
@@ -123,16 +140,19 @@ Column {
   }
 
   function activate(index) {
-    if (index === 0) identifyScreens()
-    else if (index === 1 && ready) movingPicker.open()
-    else if (index === 2 && ready) referencePicker.open()
-    else if (index >= 3 && index <= 6) chooseSide(sides[index - 3])
-    else if (index === 7 && ready && side !== "") alignmentPicker.open()
-    else if (index === 8 && canApply) request("apply")
-    else if (index === 9) refresh()
+    if (!active || !visible) return
+    if (index === 0) expanded = !expanded
+    else if (index === 1 && expanded) identifyScreens()
+    else if (index === 2 && ready) movingPicker.open()
+    else if (index === 3 && ready) referencePicker.open()
+    else if (index >= 4 && index <= 7) chooseSide(sides[index - 4])
+    else if (index === 8 && ready && side !== "") alignmentPicker.open()
+    else if (index === 9 && canApply) request("apply")
+    else if (index === 10) refresh()
   }
 
   function identifyScreens() {
+    if (!active || !visible || !expanded) return
     identifying = true
     identifyTimer.restart()
   }
@@ -220,182 +240,203 @@ Column {
   }
   Timer { id: identifyTimer; interval: 4000; onTriggered: root.identifying = false }
 
-  Row {
+  Button {
+    id: sectionButton
+    objectName: "arrangementToggle"
     width: parent.width
-    spacing: Style.space(8)
-    PanelSectionHeader {
-      width: parent.width - identifyButton.width - parent.spacing
+    text: "ARRANGEMENT"
+    leftAlign: true
+    foreground: root.foreground
+    fontFamily: root.fontFamily
+    fontSize: Style.font.caption
+    hasCursor: root.cursorIndex === 0
+    onClicked: root.expanded = !root.expanded
+    onHovered: function(hot) { if (hot) root.cursorRequested(0, sectionButton) }
+    Text {
+      textFormat: Text.PlainText
+      anchors.right: parent.right
+      anchors.rightMargin: Style.spacing.controlPaddingX
       anchors.verticalCenter: parent.verticalCenter
-      text: "ARRANGEMENT"
-      foreground: root.foreground
-      fontFamily: root.fontFamily
+      text: root.expanded ? "󰅃" : "󰅀"
+      color: root.foreground
+      font.family: root.fontFamily
+      font.pixelSize: Style.font.icon
     }
+  }
+
+  Column {
+    id: arrangementBody
+    width: parent.width
+    visible: root.expanded
+    spacing: root.spacing
+
     Button {
       id: identifyButton
       objectName: "arrangementIdentify"
+      width: parent.width
       text: "Identify screens"
       foreground: root.foreground
       fontFamily: root.fontFamily
       fontSize: Style.font.caption
       verticalPadding: Style.space(4)
       bordered: true
-      hasCursor: root.cursorIndex === 0
+      hasCursor: root.cursorIndex === 1
       onClicked: root.identifyScreens()
-      onHovered: function(hot) { if (hot) root.cursorRequested(0, identifyButton) }
+      onHovered: function(hot) { if (hot) root.cursorRequested(1, identifyButton) }
     }
-  }
 
-  Rectangle {
-    id: diagram
-    width: parent.width
-    height: Style.space(140)
-    color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.04)
-    radius: Style.cornerRadius
-    readonly property real fit: Math.min((width - Style.space(20)) / root.layoutBounds.width,
-                                         (height - Style.space(20)) / root.layoutBounds.height)
-    Repeater {
-      model: root.shownMonitors
-      Rectangle {
-        required property var modelData
-        x: (diagram.width - root.layoutBounds.width * diagram.fit) / 2 + (modelData.x - root.layoutBounds.x) * diagram.fit
-        y: (diagram.height - root.layoutBounds.height * diagram.fit) / 2 + (modelData.y - root.layoutBounds.y) * diagram.fit
-        width: modelData.logicalWidth * diagram.fit
-        height: modelData.logicalHeight * diagram.fit
-        color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, modelData.name === root.moving ? 0.16 : 0.06)
-        border.width: modelData.name === root.moving ? 2 : 1
-        border.color: modelData.name === root.moving ? Commons.Color.accent : root.foreground
-        Text {
-          anchors.centerIn: parent
-          width: Math.max(0, parent.width - Style.space(8))
-          textFormat: Text.PlainText
-          text: modelData.name
-          horizontalAlignment: Text.AlignHCenter
-          elide: Text.ElideRight
-          color: root.foreground
-          font.family: root.fontFamily
-          font.pixelSize: Style.font.caption
+    Rectangle {
+      id: diagram
+      width: parent.width
+      height: Style.space(140)
+      color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.04)
+      radius: Style.cornerRadius
+      readonly property real fit: Math.min((width - Style.space(20)) / root.layoutBounds.width,
+                                           (height - Style.space(20)) / root.layoutBounds.height)
+      Repeater {
+        model: root.shownMonitors
+        Rectangle {
+          required property var modelData
+          x: (diagram.width - root.layoutBounds.width * diagram.fit) / 2 + (modelData.x - root.layoutBounds.x) * diagram.fit
+          y: (diagram.height - root.layoutBounds.height * diagram.fit) / 2 + (modelData.y - root.layoutBounds.y) * diagram.fit
+          width: modelData.logicalWidth * diagram.fit
+          height: modelData.logicalHeight * diagram.fit
+          color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, modelData.name === root.moving ? 0.16 : 0.06)
+          border.width: modelData.name === root.moving ? 2 : 1
+          border.color: modelData.name === root.moving ? Commons.Color.accent : root.foreground
+          Text {
+            anchors.centerIn: parent
+            width: Math.max(0, parent.width - Style.space(8))
+            textFormat: Text.PlainText
+            text: modelData.name
+            horizontalAlignment: Text.AlignHCenter
+            elide: Text.ElideRight
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+          }
+          MouseArea { anchors.fill: parent; enabled: root.ready; cursorShape: Qt.PointingHandCursor; onClicked: root.selectScreen(modelData.name) }
         }
-        MouseArea { anchors.fill: parent; enabled: root.ready; cursorShape: Qt.PointingHandCursor; onClicked: root.selectScreen(modelData.name) }
       }
     }
-  }
 
-  Row {
-    width: parent.width
-    spacing: Style.space(10)
-    Dropdown {
-      id: movingPicker
-      objectName: "arrangementMoving"
-      width: (parent.width - parent.spacing) / 2
-      label: "Move screen"
-      value: root.moving
-      options: root.screenOptions
-      enabled: root.ready
-      foreground: root.foreground
-      fontFamily: root.fontFamily
-      hasCursor: root.cursorIndex === 1
-      onChanged: function(value) { root.selectScreen(value) }
-      onHovered: function(hot) { if (hot) root.cursorRequested(1, movingPicker) }
-    }
-    Dropdown {
-      id: referencePicker
-      objectName: "arrangementReference"
-      width: (parent.width - parent.spacing) / 2
-      label: "Relative to"
-      value: root.reference
-      options: root.referenceOptions
-      enabled: root.ready
-      foreground: root.foreground
-      fontFamily: root.fontFamily
-      hasCursor: root.cursorIndex === 2
-      onChanged: function(value) { root.reference = value; root.clearPreview() }
-      onHovered: function(hot) { if (hot) root.cursorRequested(2, referencePicker) }
-    }
-  }
-
-  Row {
-    width: parent.width
-    spacing: Style.space(4)
-    Repeater {
-      id: directionButtons
-      model: ["Left", "Right", "Above", "Below"]
-      Button {
-        id: directionButton
-        required property string modelData
-        required property int index
-        objectName: "arrangement" + modelData
-        width: (parent.width - parent.spacing * 3) / 4
-        text: modelData
-        bordered: true
+    Row {
+      width: parent.width
+      spacing: Style.space(10)
+      Dropdown {
+        id: movingPicker
+        objectName: "arrangementMoving"
+        width: (parent.width - parent.spacing) / 2
+        label: "Move screen"
+        value: root.moving
+        options: root.screenOptions
+        enabled: root.ready
         foreground: root.foreground
         fontFamily: root.fontFamily
+        hasCursor: root.cursorIndex === 2
+        onChanged: function(value) { root.selectScreen(value) }
+        onHovered: function(hot) { if (hot) root.cursorRequested(2, movingPicker) }
+      }
+      Dropdown {
+        id: referencePicker
+        objectName: "arrangementReference"
+        width: (parent.width - parent.spacing) / 2
+        label: "Relative to"
+        value: root.reference
+        options: root.referenceOptions
         enabled: root.ready
-        opacity: enabled ? 1 : 0.45
-        active: root.side === root.sides[index] && root.preview.length > 0
-        hasCursor: root.cursorIndex === index + 3
-        onClicked: root.chooseSide(root.sides[index])
-        onHovered: function(hot) { if (hot) root.cursorRequested(index + 3, directionButton) }
+        foreground: root.foreground
+        fontFamily: root.fontFamily
+        hasCursor: root.cursorIndex === 3
+        onChanged: function(value) { root.reference = value; root.clearPreview() }
+        onHovered: function(hot) { if (hot) root.cursorRequested(3, referencePicker) }
       }
     }
-  }
 
-  Dropdown {
-    id: alignmentPicker
-    objectName: "arrangementAlignment"
-    width: parent.width
-    label: "Align screens"
-    value: root.alignment
-    options: root.alignmentOptions.map(function(value) {
-      return {value: value, label: value.charAt(0).toUpperCase() + value.slice(1)}
-    })
-    enabled: root.ready && root.side !== ""
-    foreground: root.foreground
-    fontFamily: root.fontFamily
-    hasCursor: root.cursorIndex === 7
-    onChanged: function(value) { root.chooseAlignment(value) }
-    onHovered: function(hot) { if (hot) root.cursorRequested(7, alignmentPicker) }
-  }
-
-  Text {
-    width: parent.width
-    textFormat: Text.PlainText
-    text: root.message
-    color: root.error ? Commons.Color.urgent : root.foreground
-    opacity: root.error ? 1 : 0.7
-    font.family: root.fontFamily
-    font.pixelSize: Style.font.caption
-    wrapMode: Text.Wrap
-  }
-
-  Row {
-    width: parent.width
-    spacing: Style.space(6)
-    Button {
-      id: applyButton
-      objectName: "arrangementApply"
-      width: (parent.width - parent.spacing) / 2
-      text: root.busy && root.requestAction === "apply" ? "Applying…" : "Apply layout"
-      foreground: root.foreground
-      fontFamily: root.fontFamily
-      bordered: true
-      enabled: root.canApply
-      opacity: enabled ? 1 : 0.45
-      hasCursor: root.cursorIndex === 8
-      onClicked: if (root.canApply) root.request("apply")
-      onHovered: function(hot) { if (hot) root.cursorRequested(8, applyButton) }
+    Row {
+      width: parent.width
+      spacing: Style.space(4)
+      Repeater {
+        id: directionButtons
+        model: ["Left", "Right", "Above", "Below"]
+        Button {
+          id: directionButton
+          required property string modelData
+          required property int index
+          objectName: "arrangement" + modelData
+          width: (parent.width - parent.spacing * 3) / 4
+          text: modelData
+          bordered: true
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+          enabled: root.ready
+          opacity: enabled ? 1 : 0.45
+          active: root.side === root.sides[index] && root.preview.length > 0
+          hasCursor: root.cursorIndex === index + 4
+          onClicked: root.chooseSide(root.sides[index])
+          onHovered: function(hot) { if (hot) root.cursorRequested(index + 4, directionButton) }
+        }
+      }
     }
-    Button {
-      id: refreshButton
-      objectName: "arrangementRefresh"
-      width: (parent.width - parent.spacing) / 2
-      text: "Refresh"
+
+    Dropdown {
+      id: alignmentPicker
+      objectName: "arrangementAlignment"
+      width: parent.width
+      label: "Align screens"
+      value: root.alignment
+      options: root.alignmentOptions.map(function(value) {
+        return {value: value, label: value.charAt(0).toUpperCase() + value.slice(1)}
+      })
+      enabled: root.ready && root.side !== ""
       foreground: root.foreground
       fontFamily: root.fontFamily
-      enabled: !root.busy
-      opacity: enabled ? 1 : 0.45
-      hasCursor: root.cursorIndex === 9
-      onClicked: root.refresh()
-      onHovered: function(hot) { if (hot) root.cursorRequested(9, refreshButton) }
+      hasCursor: root.cursorIndex === 8
+      onChanged: function(value) { root.chooseAlignment(value) }
+      onHovered: function(hot) { if (hot) root.cursorRequested(8, alignmentPicker) }
+    }
+
+    Text {
+      width: parent.width
+      textFormat: Text.PlainText
+      text: root.message
+      color: root.error ? Commons.Color.urgent : root.foreground
+      opacity: root.error ? 1 : 0.7
+      font.family: root.fontFamily
+      font.pixelSize: Style.font.caption
+      wrapMode: Text.Wrap
+    }
+
+    Row {
+      width: parent.width
+      spacing: Style.space(6)
+      Button {
+        id: applyButton
+        objectName: "arrangementApply"
+        width: (parent.width - parent.spacing) / 2
+        text: root.busy && root.requestAction === "apply" ? "Applying…" : "Apply layout"
+        foreground: root.foreground
+        fontFamily: root.fontFamily
+        bordered: true
+        enabled: root.canApply
+        opacity: enabled ? 1 : 0.45
+        hasCursor: root.cursorIndex === 9
+        onClicked: if (root.canApply) root.request("apply")
+        onHovered: function(hot) { if (hot) root.cursorRequested(9, applyButton) }
+      }
+      Button {
+        id: refreshButton
+        objectName: "arrangementRefresh"
+        width: (parent.width - parent.spacing) / 2
+        text: "Refresh"
+        foreground: root.foreground
+        fontFamily: root.fontFamily
+        enabled: !root.busy
+        opacity: enabled ? 1 : 0.45
+        hasCursor: root.cursorIndex === 10
+        onClicked: root.refresh()
+        onHovered: function(hot) { if (hot) root.cursorRequested(10, refreshButton) }
+      }
     }
   }
 }

@@ -75,11 +75,11 @@ Panel {
 
   readonly property var visibleSections: {
     var list = []
-    list.push("arrangement")
     if (brightnessAvailable) list.push("brightness")
     list.push("textsize")
     list.push("scale")
     if (displays.length > 1) list.push("monitors")
+    if (enabledDisplayCount > 1) list.push("arrangement")
     return list
   }
 
@@ -88,7 +88,7 @@ Panel {
     if (section === "textsize") return 0    // slider sentinel at -1, like brightness
     if (section === "scale") return scaleValues.length
     if (section === "monitors") return displays.length
-    if (section === "arrangement") return 10
+    if (section === "arrangement") return arrangement.expanded ? 11 : 1
     return 0
   }
 
@@ -137,7 +137,7 @@ Panel {
   // slider.
   function moveCursorH(delta) {
     if (focusSection === "arrangement") {
-      selectedIndex = Math.max(0, Math.min(9, selectedIndex + delta))
+      selectedIndex = Math.max(0, Math.min(sectionCount("arrangement") - 1, selectedIndex + delta))
       return
     }
     if (focusSection !== "scale") return
@@ -226,6 +226,8 @@ Panel {
       scale: root.monitorScale,
       displays: root.displays,
       arrangement: {
+        visible: arrangement.visible,
+        expanded: arrangement.expanded,
         busy: arrangement.busy,
         moving: arrangement.moving,
         reference: arrangement.reference,
@@ -386,8 +388,8 @@ Panel {
   onOpenedChanged: {
     if (opened) {
       refresh()
-      focusSection = "arrangement"
-      selectedIndex = 0
+      focusSection = brightnessAvailable ? "brightness" : "scale"
+      selectedIndex = brightnessAvailable ? -1 : 0
       cursorActive = false
     }
   }
@@ -604,25 +606,7 @@ Panel {
           }
 
           // ---------- Brightness ----------
-          PanelSeparator { foreground: root.bar.foreground }
 
-          Arrangement {
-            id: arrangement
-            width: parent.width
-            active: root.opened
-            foreground: root.bar.foreground
-            fontFamily: root.bar.fontFamily
-            cursorIndex: root.cursorActive && root.focusSection === "arrangement" ? root.selectedIndex : -1
-            onCursorRequested: function(index, item) {
-              if (root.reflowingText) return
-              root.cursorActive = true
-              root.focusSection = "arrangement"
-              root.selectedIndex = index
-              root.ensureCursorVisible(item)
-            }
-            onPopupOpenChanged: if (!popupOpen && root.opened) keyCatcher.forceActiveFocus()
-            onApplied: root.refresh()
-          }
 
           PanelSeparator {
             visible: root.brightnessAvailable
@@ -867,6 +851,31 @@ Panel {
           }
 
 
+
+          PanelSeparator { visible: root.enabledDisplayCount > 1; foreground: root.bar.foreground }
+
+          Arrangement {
+            id: arrangement
+            width: parent.width
+            active: root.opened
+            displayCount: root.enabledDisplayCount
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            cursorIndex: root.cursorActive && root.focusSection === "arrangement" ? root.selectedIndex : -1
+            onCursorRequested: function(index, item) {
+              if (root.reflowingText) return
+              root.cursorActive = true
+              root.focusSection = "arrangement"
+              root.selectedIndex = index
+              root.ensureCursorVisible(item)
+            }
+            onPopupOpenChanged: if (!popupOpen && root.opened) keyCatcher.forceActiveFocus()
+            onApplied: root.refresh()
+            onExpandedChanged: {
+              root.clampCursor()
+              if (expanded) Qt.callLater(function() { root.ensureCursorVisible(arrangement) })
+            }
+          }
 
           Item {
             width: parent.width

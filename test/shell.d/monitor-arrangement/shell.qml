@@ -57,15 +57,14 @@ ShellRoot {
       width: 380
       active: false
       source: "file://" + Quickshell.env("OMARCHY_PATH") + "/shell/plugins/panels/monitor/Arrangement.qml"
-      onLoaded: { item.width = width; item.identificationScreens = []; item.active = true }
+      onLoaded: { item.width = width; item.identificationScreens = []; item.displayCount = 3; item.expanded = true; item.active = true }
     }
     Loader {
       id: secondControls
       width: 380
       active: false
-      visible: false
       source: controls.source
-      onLoaded: { item.width = width; item.identificationScreens = []; item.active = true }
+      onLoaded: { item.width = width; item.identificationScreens = []; item.displayCount = 3; item.expanded = true; item.active = true }
     }
   }
 
@@ -331,6 +330,21 @@ ShellRoot {
         root.check(Date.now() - root.beforeTime >= 3500 && ui.canApply && root.screen("DP-3").y === -720,
                    "Labels hide automatically without changing the preview or applying it")
         root.done("timed screen identification")
+        root.child("arrangementToggle").clicked()
+        root.check(!ui.expanded && !ui.ready && !ui.identifying, "Chevron closes the controls")
+        ui.displayCount = 1
+        root.check(!ui.visible && !ui.expanded, "One enabled display hides the entire Arrangement section")
+        ui.displayCount = 3
+        root.check(ui.visible && !ui.expanded && !ui.busy, "Multiple displays show a collapsed row without querying")
+        root.child("arrangementToggle").clicked()
+        root.phase++
+        break
+      case 41:
+        if (ui.busy) return
+        root.check(ui.expanded && ui.ready && !ui.canApply, "Chevron opens controls and refreshes the current layout")
+        ui.displayCount = 1
+        root.check(!ui.visible && !ui.expanded, "Losing the second display also closes the controls")
+        root.done("conditional collapsible Arrangement")
         root.finish()
         break
       }
