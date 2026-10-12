@@ -288,6 +288,22 @@ def wait_layout(monitors, positions):
   raise RuntimeError('Hyprland did not apply the requested layout, or the connected screens changed.')
 
 
+def restore_layout(monitors):
+  # Runtime scaling can move outputs without persisting their positions to Lua.
+  # Restore the captured live rules after reloading the original file.
+  rules = []
+  for monitor in monitors:
+    mode = f'{monitor["width"]}x{monitor["height"]}'
+    if monitor.get('refreshRate'):
+      mode += f'@{monitor["refreshRate"]}'
+    fields = dict(output=monitor['name'], mode=mode,
+                  position=f'{monitor["x"]}x{monitor["y"]}', scale=monitor['scale'],
+                  transform=monitor.get('transform', 0))
+    rules.append('hl.monitor({' + ', '.join(f'{key}={json.dumps(value)}' for key, value in fields.items()) + '})')
+  hypr('eval', '\n'.join(rules))
+  wait_layout(monitors, {m['name']: (m['x'], m['y']) for m in monitors})
+
+
 def apply(output=None, reference=None, side=None, dry_run=False, expected_snapshot=None, alignment=None, positions=None, confirmation=None):
   config = (Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'hypr/monitors.lua').resolve(strict=True)
   # Lock a separate inode because atomic replacement changes the config inode.
@@ -310,7 +326,7 @@ def apply(output=None, reference=None, side=None, dry_run=False, expected_snapsh
       raise RuntimeError('Fix the existing Hyprland configuration errors first:\n' + errors)
     if snapshot(displays()) != snapshot(monitors) or config.read_text() != original:
       raise RuntimeError('The screens or configuration changed. Try again.')
-    if updated == original:
+    if updated == original and all(positions[m['name']] == (m['x'], m['y']) for m in monitors):
       return
     atomic_write(config.with_name('monitors.lua.bak.monitor-position'), original)
     if config.read_text() != original:
@@ -339,7 +355,7 @@ def apply(output=None, reference=None, side=None, dry_run=False, expected_snapsh
           atomic_write(config, original)
           restored = True
           hypr('reload')
-          wait_layout(monitors, {m['name']: (m['x'], m['y']) for m in monitors})
+          restore_layout(monitors)
           return False
     except Exception as error:
       if config.read_text() != (original if restored else updated):
@@ -347,7 +363,7 @@ def apply(output=None, reference=None, side=None, dry_run=False, expected_snapsh
       atomic_write(config, original)
       try:
         hypr('reload')
-        wait_layout(monitors, {m['name']: (m['x'], m['y']) for m in monitors})
+        restore_layout(monitors)
       except Exception as rollback_error:
         raise RuntimeError(f'{error}\nPrevious configuration restored, but its layout could not be verified: {rollback_error}') from error
       raise RuntimeError(f'{error}\nThe previous configuration and layout were restored.') from error

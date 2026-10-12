@@ -47,6 +47,21 @@ if args == ['monitors', '-j']:
   print(json.dumps(state['monitors']))
 elif args == ['configerrors']:
   print('')
+elif args[0] == 'eval':
+  script = 'hl = {monitor = function(rule) for key, value in pairs(rule) do print(rule.output .. "\\t" .. key .. "\\t" .. tostring(value)) end end}\n'
+  result = subprocess.run(['lua5.1', '-'], input=script + args[1], capture_output=True, text=True, check=True)
+  for line in result.stdout.splitlines():
+    name, key, value = line.split('\t')
+    monitor = next(screen for screen in state['monitors'] if screen['name'] == name)
+    if key == 'position':
+      monitor['x'], monitor['y'] = map(int, re.fullmatch(r'(-?\d+)x(-?\d+)', value).groups())
+    elif key in ('scale', 'transform'):
+      monitor[key] = float(value)
+    elif key == 'mode':
+      mode = re.fullmatch(r'(\d+)x(\d+)(?:@([\d.]+))?', value)
+      monitor['width'], monitor['height'] = map(int, mode.groups()[:2])
+      if mode[3]: monitor['refreshRate'] = float(mode[3])
+  save_state(state)
 elif args == ['reload']:
   state['reloads'] += 1
   if state.get('reloadDelay'):

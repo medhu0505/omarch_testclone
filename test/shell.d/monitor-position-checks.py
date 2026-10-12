@@ -455,6 +455,54 @@ class ConfirmationProcessTests(unittest.TestCase):
     self.assertEqual(self.config.read_text(), self.original)
     self.assertEqual(self.call({'action': 'state'})['snapshot'], self.initial['snapshot'])
 
+  def use_different_saved_and_live_positions(self):
+    self.original = 'hl.monitor({output="", scale=1})\nhl.monitor({output="DP-2", position="2500x100", scale=1})\n'
+    self.config.write_text(self.original)
+    subprocess.run([sys.executable, str(self.fake), '--control', '{"move":true}'], env=self.env, check=True)
+    self.initial = self.call({'action': 'state'})
+    self.request['snapshot'] = self.initial['snapshot']
+
+  def test_revert_restores_live_positions_when_saved_config_differs(self):
+    self.use_different_saved_and_live_positions()
+    trial = self.call(self.request)
+    self.await_status(trial, ('confirming',))
+    self.call(dict(action='revert', token=trial['token']))
+    state = self.await_status(trial, ('reverted', 'error'), seconds=15)
+    self.assertEqual(state['status'], 'reverted', state)
+    self.assertEqual(self.config.read_text(), self.original)
+    self.assertEqual(self.call({'action': 'state'})['snapshot'], self.initial['snapshot'])
+
+  def test_timeout_restores_live_positions_when_saved_config_differs(self):
+    self.use_different_saved_and_live_positions()
+    trial = self.call(self.request)
+    self.await_status(trial, ('confirming',))
+    state = self.await_status(trial, ('reverted', 'error'), seconds=36)
+    self.assertEqual(state['status'], 'reverted', state)
+    self.assertEqual(self.config.read_text(), self.original)
+    self.assertEqual(self.call({'action': 'state'})['snapshot'], self.initial['snapshot'])
+
+  def test_trial_applies_when_positions_already_match_saved_file(self):
+    monitors = json.loads((self.scratch / 'compositor.json').read_text())['monitors']
+    self.original = position.update_config(self.original, monitors, {name: tuple(point) for name, point in self.request['positions'].items()})
+    self.config.write_text(self.original)
+    trial = self.call(self.request)
+    state = self.await_status(trial, ('confirming', 'kept', 'error'))
+    self.assertEqual(state['status'], 'confirming', state)
+    self.assertEqual(self.call({'action': 'state'})['monitors'][1]['y'], 123)
+    self.call(dict(action='revert', token=trial['token']))
+    self.await_status(trial, ('reverted',))
+    self.assertEqual(self.config.read_text(), self.original)
+    self.assertEqual(self.call({'action': 'state'})['snapshot'], self.initial['snapshot'])
+
+  def test_failed_apply_restores_live_positions_when_saved_config_differs(self):
+    self.use_different_saved_and_live_positions()
+    subprocess.run([sys.executable, str(self.fake), '--control', '{"reloadError":true}'], env=self.env, check=True)
+    trial = self.call(self.request)
+    state = self.await_status(trial, ('error',))
+    self.assertIn('previous configuration and layout were restored', state['message'])
+    self.assertEqual(self.config.read_text(), self.original)
+    self.assertEqual(self.call({'action': 'state'})['snapshot'], self.initial['snapshot'])
+
   def test_competing_trial_cannot_save_while_confirmation_is_pending(self):
     first = self.call(self.request)
     self.await_status(first, ('confirming',))
