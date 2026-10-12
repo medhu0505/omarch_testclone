@@ -187,7 +187,7 @@ tips=(
   "Super + Space opens the Omarchy menu for apps, settings, and more"
   "Super + K shows all the key bindings"
   "Super is the Windows or command key on your keyboard"
-  "Use Xournal++ to sign PDFs"
+  "Sign PDFs and fill them in with Signed"
   "Share files with phones and laptops using LocalSend"
   "Turn any website into an app with Install > Web App in the menu"
   "Super + Return opens a terminal, Super + Shift + Return the browser"
@@ -1173,15 +1173,6 @@ run_provisioning() {
     log_step "refusing to finish setup while the staged LUKS key or its auto-unlock remains"
     return 1
   fi
-
-  if omarchy-pkg-present usbguard; then
-    log_step "enrolling the owner's USB devices"
-    source "$OMARCHY_PATH/install/helpers/usb-authorization.sh"
-    usb_authorization_provision_owner "$username"
-  fi
-
-  log_step "enrolling the owner's Thunderbolt accessories"
-  /usr/bin/omarchy-thunderbolt-authorization-admin owner
 
   log_step "cleaning up provisioning state"
   cleanup_oem_state
