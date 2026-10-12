@@ -8,6 +8,7 @@ run_node_test <<'JS'
 const fs = require('fs')
 const power = requireFromRoot('shell/plugins/panels/power/Model.js')
 const panelSource = fs.readFileSync(root + '/shell/plugins/panels/power/Panel.qml', 'utf8')
+const buttonSource = fs.readFileSync(root + '/shell/Ui/BarIconButton.qml', 'utf8')
 const states = { Charging: 1, Discharging: 2, FullyCharged: 3, PendingCharge: 4 }
 
 assertEqual(power.selectProfileIndex(0, 1, ['balanced', 'performance']), 1, 'power advances profile selection')
@@ -44,7 +45,8 @@ assertEqual(
 
 assert(/if \(b === Qt\.RightButton\) root\.togglePercentage\(\)/.test(panelSource), 'power right click toggles the bar percentage')
 assert(/Object\.assign\([^\n]+showPercentage: !root\.showPercentage[^\n]+\)[\s\S]*updateEntryInline/.test(panelSource), 'power persists the bar percentage setting')
-assert(/Math\.round\(root\.batteryFraction \* 100\) \+ "% " \+ root\.batteryIcon\(\)/.test(panelSource), 'power places the percentage before the battery icon')
+assert(/text: root\.batteryIcon\(\)\n\s+labelText: root\.showPercentage && !vertical \? Math\.round\(root\.batteryFraction \* 100\) \+ "%" : ""/.test(panelSource), 'power labels the battery icon with the percentage')
+assert(/id: opticalCanvas\n\s+x: label\.visible \? label\.implicitWidth \+ Style\.space\(4\) : 0/.test(buttonSource), 'power places the percentage before the battery icon')
 assert(/openPanelIndicatorWidth:.*showPercentage.*button\.glyphPaintedWidth : 0/.test(panelSource), 'power spans the open-panel mark across the painted percentage block')
 assert(/IpcHandler[\s\S]*?function togglePercentage\(\) \{ root\.togglePercentage\(\) \}/.test(panelSource), 'power exposes togglePercentage over IPC')
 assert(/manageIpc: false/.test(panelSource), 'power owns its IPC handler so it can extend the target methods')
