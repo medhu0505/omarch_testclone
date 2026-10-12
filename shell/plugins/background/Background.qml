@@ -193,7 +193,10 @@ Item {
   function probeNextSize() {
     if (sizeProbe.running || sizeQueue.length === 0) return
     sizeProbe.path = sizeQueue[0]
-    sizeProbe.command = ["magick", "identify", "-ping", "-format", "%w %h", sizeProbe.path]
+    // The shell draws the first frame of animated images. Probing every frame
+    // concatenates dimensions (20x10 twice becomes "20 1020 10"), which can
+    // make PreserveAspectCrop decode a tiny wallpaper at an enormous size.
+    sizeProbe.command = ["magick", "identify", "-ping", "-format", "%w %h", sizeProbe.path + "[0]"]
     sizeProbe.running = true
   }
 
