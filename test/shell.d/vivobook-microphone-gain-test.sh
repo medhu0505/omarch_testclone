@@ -40,3 +40,8 @@ source "$TEST_FIX"
   assert 'sudo:' not in run(failure=1)
 PY
 pass "Vivobook gain fix targets only the verified codec and stores successful changes"
+
+migration=$(grep -l 'fix-vivobook-m5606-mic.sh' "$ROOT"/migrations/*.sh)
+[[ $(head -n 1 "$migration") == echo\ * ]] || fail "migration must start with the description omarchy-migrate prints"
+grep -q 'source "$OMARCHY_PATH/install/user/hardware/asus/fix-vivobook-m5606-mic.sh"' "$migration" || fail "migration must apply the microphone fix on existing installs"
+pass "existing Vivobook installs receive the microphone boost fix"
