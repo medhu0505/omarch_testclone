@@ -2,7 +2,6 @@
 
 import copy
 import importlib.util
-import json
 import os
 from pathlib import Path
 import subprocess
@@ -36,7 +35,7 @@ def evaluate(contents):
     end
   end
   '''
-  result = subprocess.run(['lua', '-'], input=script, capture_output=True, text=True, check=True)
+  result = subprocess.run(['lua5.1', '-'], input=script, capture_output=True, text=True, check=True)
   return dict((tuple(line.split('\t')[:2]), line.split('\t')[2]) for line in result.stdout.splitlines())
 
 
@@ -107,6 +106,19 @@ hl.monitor({output="", bitdepth=10})
     self.assertIn('scale=omarchy_monitor_scale', updated)
     self.assertEqual(position.update_config(updated, screens, locations), updated)
 
+  def test_fallback_copies_keep_the_value_at_the_original_declaration(self):
+    original = 'local value=1\nhl.monitor({output="",scale=value,vrr=value})\nvalue=2\nlocal value=3\n'
+    updated = position.update_config(original, [monitor('DP-1')], {'DP-1': (0, 0)})
+    values = evaluate(updated)
+    self.assertEqual(values['DP-1', 'scale'], '1')
+    self.assertEqual(values['DP-1', 'vrr'], '1')
+
+  def test_fallback_computed_settings_are_not_evaluated_again(self):
+    for expression in ('choose_scale()', 'settings.scale', 'value - 1', 'value + 1', 'next_vrr "argument"', 'next_vrr {}', 'value % 2', 'value or 1'):
+      original = 'hl.monitor({output="",scale=' + expression + '})\n'
+      with self.subTest(expression=expression), self.assertRaisesRegex(RuntimeError, 'computed scale'):
+        position.update_config(original, [monitor('DP-1')], {'DP-1': (0, 0)})
+
   def test_description_rule_gets_independent_connector_rule(self):
     original = 'hl.monitor({output="desc:Acme", scale=2, transform=1})\n'
     screens = [monitor('DP-1', description='Acme screen')]
@@ -114,7 +126,7 @@ hl.monitor({output="", bitdepth=10})
     values = evaluate(updated)
     self.assertEqual(values['DP-1', 'scale'], '2')
     self.assertEqual(values['DP-1', 'position'], '-1080x0')
-    self.assertTrue(updated.startswith(original))
+    self.assertIn(original.strip(), updated)
 
   def test_repeated_explicit_rules_keep_merged_settings(self):
     original = 'hl.monitor({output="DP-1", scale=2, position="auto"})\nhl.monitor({output="DP-1", vrr=1})\n'
@@ -128,6 +140,13 @@ local text = [==[ hl.monitor(dynamic) ]==]
 hl.monitor({output="",scale=1})
 '''
     self.assertEqual(len(position.monitor_rules(original)), 1)
+
+  def test_expression_context_calls_are_rejected(self):
+    for original in ('local unused = hl.monitor({output="",scale=1}) or true',
+                     'local unused =\n hl.monitor({output="",scale=1})',
+                     'consume(\n hl.monitor({output="",scale=1}))'):
+      with self.subTest(original=original), self.assertRaisesRegex(RuntimeError, 'standalone'):
+        position.monitor_rules(original)
 
   def test_dynamic_and_ambiguous_rules_rejected(self):
     for contents in ('hl.monitor(rule)', 'if true then hl.monitor({output="DP-1"}) end',
@@ -185,6 +204,17 @@ class TransactionTests(unittest.TestCase):
       with self.assertRaisesRegex(RuntimeError, 'changed'):
         self.run_apply()
     self.assertEqual(self.config.read_text(), self.original)
+
+  def test_external_edit_during_backup_is_not_overwritten(self):
+    original_write = position.atomic_write
+    def edit_during_backup(path, contents):
+      original_write(path, contents)
+      if path.name == 'monitors.lua.bak.monitor-position':
+        self.config.write_text('-- user edit during backup\n')
+    with patch.object(position, 'displays', return_value=self.screens), patch.object(position, 'hypr', return_value=''), patch.object(position, 'atomic_write', side_effect=edit_during_backup):
+      with self.assertRaisesRegex(RuntimeError, 'changed while creating'):
+        self.run_apply()
+    self.assertEqual(self.config.read_text(), '-- user edit during backup\n')
 
   def test_external_edit_during_apply_is_not_overwritten(self):
     def external_edit(*args):

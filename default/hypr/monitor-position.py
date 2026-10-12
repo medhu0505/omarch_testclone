@@ -14,7 +14,7 @@ import tempfile
 import time
 
 SIDES = ('left', 'right', 'above', 'below')
-TOKEN = re.compile(r'''--\[(=*)\[.*?\]\1\]|--[^\n]*|\[(=*)\[.*?\]\2\]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[A-Za-z_][A-Za-z_0-9]*|[^\s]''', re.S)
+TOKEN = re.compile(r'''--\[(=*)\[.*?\]\1\]|--[^\n]*|\[(=*)\[.*?\]\2\]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|[A-Za-z_][A-Za-z_0-9]*|[^\s]''', re.S)
 
 
 def hypr(*args):
@@ -88,6 +88,9 @@ def monitor_rules(contents):
     if [m[0] for m in tokens[i:i + 4]] != ['hl', '.', 'monitor', '(']:
       i += 1
       continue
+    line_start = contents.rfind('\n', 0, tokens[i].start()) + 1
+    if contents[line_start:tokens[i].start()].strip() or (i and tokens[i - 1][0] in ('=', '(', ',', '{', '+', '-', '*', '/', '^', '%', '#', '.', 'and', 'or', 'not', 'return')):
+      raise RuntimeError('Monitor rules must be standalone statements in monitors.lua.')
     if blocks or i + 4 >= len(tokens) or tokens[i + 4][0] != '{':
       raise RuntimeError('Arrange screens manually in monitors.lua when monitor rules use helpers or conditional code.')
     start = i + 4
@@ -101,6 +104,10 @@ def monitor_rules(contents):
       end += 1
     if depth or end >= len(tokens) or tokens[end][0] != ')':
       raise RuntimeError('Cannot safely read a monitor table in monitors.lua.')
+    line_end = contents.find('\n', tokens[end].end())
+    trailing = contents[tokens[end].end():line_end if line_end >= 0 else len(contents)].strip()
+    if trailing and not trailing.startswith(('--', ';')):
+      raise RuntimeError('Monitor rules must be standalone statements in monitors.lua.')
     closing = tokens[end - 1].start()
     fields = {}
     j = start + 1
@@ -134,13 +141,13 @@ def monitor_rules(contents):
     literal = contents[a:b]
     if not re.fullmatch(r'''(?:"[^"\\]*"|'[^'\\]*')''', literal):
       raise RuntimeError('Monitor output names must be literal strings in monitors.lua.')
-    rules.append((literal[1:-1], tokens[start].start(), closing, fields))
+    rules.append((literal[1:-1], tokens[start].start(), closing, fields, tokens[end].end()))
     i = end + 1
   return rules
 
 
 def set_fields(contents, rule, values):
-  _, start, closing, fields = rule
+  _, start, closing, fields = rule[:4]
   edits = []
   missing = []
   for key, value in values.items():
@@ -160,10 +167,37 @@ def set_fields(contents, rule, values):
   return table
 
 
+def copyable_value(tokens):
+  """Only copy scalar references/literals and tables; never re-run computations."""
+  def value(index):
+    if index >= len(tokens):
+      return None
+    token = tokens[index]
+    if token == '{':
+      index += 1
+      while index < len(tokens) and tokens[index] != '}':
+        if index + 1 < len(tokens) and re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', tokens[index]) and tokens[index + 1] == '=':
+          index += 2
+        index = value(index)
+        if index is None or index >= len(tokens):
+          return None
+        if tokens[index] in (',', ';'):
+          index += 1
+        elif tokens[index] != '}':
+          return None
+      return index + 1 if index < len(tokens) else None
+    if token.startswith(('"', "'", '[')) or re.fullmatch(r'-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?', token):
+      return index + 1
+    if re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', token) and token not in ('function', 'if', 'then', 'else', 'end', 'do', 'for', 'while', 'repeat', 'until', 'and', 'or', 'not', 'return'):
+      return index + 1
+    return None
+  return value(0) == len(tokens)
+
+
 def update_config(contents, monitors, positions):
   rules = monitor_rules(contents)
   edits = []
-  additions = []
+  additions = {}
   for monitor in monitors:
     name = monitor['name']
     position = json.dumps('%dx%d' % positions[name])
@@ -178,16 +212,21 @@ def update_config(contents, monitors, positions):
     templates = descriptions or [r for r in rules if r[0] == '']
     if not templates:
       raise RuntimeError(f'Add an explicit or fallback hl.monitor rule for {name} in monitors.lua first.')
-    # Copy each declaration so repeated rules keep their merged fields. Expressions
-    # such as omarchy_monitor_scale stay expressions in the same Lua scope.
+    # Insert copies beside their source so locals retain their value and scope.
+    # Calls/indexing/operators could have side effects when evaluated twice.
     for rule in templates:
+      for field, (start, end) in rule[3].items():
+        if field in ('output', 'position'):
+          continue
+        value_tokens = [m[0] for m in TOKEN.finditer(contents[start:end]) if not m[0].startswith('--')]
+        if not copyable_value(value_tokens):
+          raise RuntimeError(f'Cannot copy computed {field} settings for {name}; add an explicit output rule first.')
       table = set_fields(contents, rule, {'output': json.dumps(name), 'position': position})
-      additions.append('hl.monitor(' + table + ')\n')
+      additions.setdefault(rule[4], []).append('\n-- Position saved by omarchy hyprland monitor position.\nhl.monitor(' + table + ')')
   updated = contents
+  edits.extend((offset, offset, ''.join(copies)) for offset, copies in additions.items())
   for start, end, table in sorted(edits, reverse=True):
     updated = updated[:start] + table + updated[end:]
-  if additions:
-    updated = updated.rstrip('\n') + '\n\n-- Positions saved by omarchy hyprland monitor position.\n' + ''.join(additions)
   return updated
 
 
@@ -245,6 +284,8 @@ def apply(output, reference, side, dry_run=False):
     if updated == original:
       return
     atomic_write(config.with_name('monitors.lua.bak.monitor-position'), original)
+    if config.read_text() != original:
+      raise RuntimeError('The configuration changed while creating its backup. Try again.')
     atomic_write(config, updated)
     try:
       hypr('reload')

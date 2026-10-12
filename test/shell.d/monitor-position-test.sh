@@ -4,7 +4,7 @@ set -euo pipefail
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
 require_command python3
-require_command lua
+require_command lua5.1
 python3 "$ROOT/test/shell.d/monitor-position-checks.py"
 pass "monitor positions preserve geometry, Lua options, and rollback safety"
 
