@@ -389,3 +389,19 @@ run_user admin on >/dev/null 2>&1 && fail "admin needs a name before on or off"
 run_user admin bob maybe >/dev/null 2>&1 && fail "admin rejects anything but on or off"
 grep -q gpasswd "$test_tmp/calls.log" && fail "admin changes nothing on bad arguments"
 pass "admin rejects incomplete or bad arguments"
+
+# --- running as root ---
+
+# Under sudo or in a root shell the session's OMARCHY_PATH is gone. A user
+# namespace stands in for root where the system allows one.
+if unshare -r true 2>/dev/null; then
+  for command in add remove admin; do
+    if output=$(env -u OMARCHY_PATH unshare -r "$ROOT/bin/omarchy-user-$command" bob 2>&1); then
+      fail "$command refuses to run as root"
+    fi
+    [[ $output == *"run this as your user"* ]] || fail "$command explains why it won't run as root" "$output"
+  done
+  pass "add, remove and admin refuse to run as root, with a clear reason"
+else
+  skip "add, remove and admin refuse to run as root (no user namespaces here)"
+fi

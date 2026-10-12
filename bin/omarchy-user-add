@@ -9,6 +9,14 @@
 set +x
 set -euo pipefail
 
+# Like Omarchy's other commands, these run as you and ask for sudo themselves.
+# Under sudo or in a root shell the session's OMARCHY_PATH is gone, so say so
+# before anything needs it.
+if (( EUID == 0 )); then
+  echo "omarchy-user-add: run this as your user, not as root; it asks for sudo when it needs it" >&2
+  exit 1
+fi
+
 source "$OMARCHY_PATH/install/helpers/user-accounts.sh"
 
 name=""
