@@ -78,13 +78,17 @@ qml = qml.replace('// REGISTRY_FUNCTIONS', functions(registry, ['setEnabled', 'e
 PY
 config="$fixture/home/.config/omarchy/shell.json"
 printf '%s\n' '{"version":1,"plugins":[]}' > "$config"
+qs_env=(env
+  HOME="$fixture/home" XDG_RUNTIME_DIR="$config_runtime" XDG_CONFIG_HOME="$fixture/home/.config"
+  XDG_CACHE_HOME="$fixture/home/.cache" XDG_STATE_HOME="$fixture/home/.local/state"
+  QT_QPA_PLATFORM=offscreen)
 qs() {
-  HOME="$fixture/home" XDG_RUNTIME_DIR="$config_runtime" XDG_CONFIG_HOME="$fixture/home/.config" \
-    XDG_CACHE_HOME="$fixture/home/.cache" XDG_STATE_HOME="$fixture/home/.local/state" \
-    QT_QPA_PLATFORM=offscreen quickshell "$@"
+  "${qs_env[@]}" quickshell "$@"
 }
 ulimit -c 0
-qs -n -p "$fixture" > "$fixture/log" 2>&1 &
+# Keep the child PID itself so cleanup cannot leave Quickshell running after
+# terminating a background function's wrapper shell.
+"${qs_env[@]}" quickshell -n -p "$fixture" > "$fixture/log" 2>&1 &
 qs_pid=$!
 ready=false
 for _ in {1..100}; do
