@@ -41,6 +41,16 @@ jobs:
           path: omarchy-iso
           persist-credentials: false
 
+      # The companions are taken at the head of their default branch: the
+      # tests that read them check that the three repositories agree today,
+      # and a pinned commit would go stale and hide a mismatch. A run then
+      # depends on more than this commit, so its summary says which it saw.
+      - name: Record the revisions under test
+        run: |
+          for repo in omarchy omarchy-pkgs omarchy-iso; do
+            echo "- $repo $(git -C "$repo" rev-parse HEAD)"
+          done | tee -a "$GITHUB_STEP_SUMMARY"
+
       # Ubuntu's AppArmor restricts unprivileged user namespaces, inside a
       # container as anywhere else, and the tests of the root helpers need
       # them.
