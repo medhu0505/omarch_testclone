@@ -149,7 +149,10 @@ while timeout 30 quickshell kill -p "$CONFIG_DIR" >/dev/null 2>&1; do :; done
 
 shell_instances_stopped() {
   local instances
-  instances=$(timeout --kill-after=1s 1s quickshell list -a -j 2>/dev/null) || return 1
+  # --all ignores the display filter. Scope the query like the kill above,
+  # and suppress zero-instance info text without suppressing JSON output.
+  instances=$(timeout --kill-after=1s 1s quickshell list -p "$CONFIG_DIR" -j --log-rules '*.info=false' 2>/dev/null) || return 1
+  [[ -z $instances ]] && return 0
   jq -e --arg dir "$CONFIG_DIR/" \
     'type == "array" and all(.[]; (.config_path | type) == "string") and all(.[]; .config_path | startswith($dir) | not)' \
     <<<"$instances" >/dev/null 2>&1

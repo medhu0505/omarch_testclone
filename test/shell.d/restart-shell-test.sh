@@ -118,7 +118,7 @@ cat >"$restart_bin/quickshell" <<'SH'
 printf '%s\n' "$*" >>"${OMARCHY_TEST_QS_LOG:-/dev/null}"
 
 case " $* " in
-  *' list -a -j '*)
+  *' list -a -j '*|*' list -p '*)
     case ${OMARCHY_TEST_QS_EXIT_CHECK:-} in
       stuck)
         printf '[{"config_path":"%s/shell/shell.qml"}]\n' "$OMARCHY_TEST_SESSION_PATH"
@@ -126,6 +126,7 @@ case " $* " in
         ;;
       failed) exit 1 ;;
       malformed) printf 'not json\n'; exit 0 ;;
+      empty) exit 0 ;;
     esac
     printf '['
     separator=""
@@ -134,7 +135,7 @@ case " $* " in
       kill -0 "$pid" 2>/dev/null || continue
       display=$(awk -v pid="$pid" '$1 == pid { print $2; exit }' "$OMARCHY_TEST_QS_DISPLAY_STATE")
       [[ -n $display ]] || display=wayland-1
-      if [[ ${WAYLAND_DISPLAY:-wayland-1} == "$display" || $* == *"--any-display"* ]]; then
+      if [[ ${WAYLAND_DISPLAY:-wayland-1} == "$display" || $* == *"--any-display"* || $* == "list -a "* ]]; then
         printf '%s{"config_path":"%s/shell/shell.qml"}' "$separator" "$OMARCHY_TEST_SESSION_PATH"
         separator=,
       fi
@@ -290,6 +291,29 @@ for exit_check in stuck failed malformed; do
   [[ ! -s $restart_state ]] || fail "restart launches no replacement with an unconfirmed exit ($exit_check)"
   pass "restart refuses replacement after $exit_check instance-exit check"
 done
+
+# Quickshell's zero-instance informational text is suppressed by --log-rules;
+# successful empty stdout must allow the first shell to start.
+: >"$dispatch_log"
+: >"$restart_state"
+PATH="$restart_bin:$PATH" \
+OMARCHY_PATH="$restart_root" \
+XDG_RUNTIME_DIR="$runtime_dir" \
+OMARCHY_TEST_QS_STATE="$restart_state" \
+OMARCHY_TEST_QS_LOG="$restart_log" \
+OMARCHY_TEST_QS_ENV_LOG="$restart_env_log" \
+OMARCHY_TEST_DISPATCH_LOG="$dispatch_log" \
+OMARCHY_TEST_IPC_LOG="$ipc_log" \
+OMARCHY_TEST_SESSION_PATH="$restart_root" \
+OMARCHY_TEST_QS_EXIT_CHECK=empty \
+HYPRLAND_INSTANCE_SIGNATURE=current-session \
+  "$short_restart" || fail "restart permits a successful empty instance listing"
+[[ $(wc -l <"$dispatch_log") == 1 && $(<"$restart_state") == 303 ]] || fail "empty listing launches one replacement"
+pass "restart permits a successful empty instance listing"
+: >"$restart_log"
+: >"$restart_display_state"
+: >"$dispatch_log"
+: >"$ipc_log"
 
 sleep 30 &
 restart_pid_one=$!
@@ -475,6 +499,7 @@ if ! kill -0 "$restart_pid_two" 2>/dev/null; then
 fi
 [[ $(tail -n 1 "$dispatch_log") == "session-a wayland-1" ]] || fail "dispatch uses the caller's compositor and resolved display"
 grep -F "kill -p $restart_root/shell" "$restart_log" >/dev/null || fail "restart kills the selected compositor's checkout rather than the manager's checkout"
+grep -F "list -p $restart_root/shell -j --log-rules *.info=false" "$restart_log" >/dev/null || fail "restart scopes its exit query to the selected checkout and display"
 [[ $(tail -n 1 "$ipc_log") == "ipc -n -p $restart_root/shell call -- shell ping" ]] || fail "restart probes readiness in the selected compositor's checkout"
 [[ $(tail -n 1 "$path_signature_log") == "session-a" ]] || fail "unlocked caller path lookup addresses session A"
 kill "$restart_pid_two" 2>/dev/null || true
