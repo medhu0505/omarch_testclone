@@ -83,6 +83,10 @@ Panel {
   // The profile the panel last limited on its own, so a refused write is not
   // retried on every refresh.
   property string autoLimitedConnection: ""
+  // Bumped by every hotspot read request. A read started for an older request
+  // may describe the network the link just left, so its result is dropped and
+  // the read runs again.
+  property int hotspotRequest: 0
   property bool scanning: false
   property bool wifiStationAvailable: false
   property string dnsProvider: ""
@@ -531,6 +535,9 @@ Panel {
     : (kind === "ethernet" && wiredDevice ? kind + ":" + wiredDevice.name : "")
 
   onConnectionKeyChanged: {
+    activeHotspot = false
+    hotspotConnection = ""
+    hotspotMetered = ""
     Qt.callLater(checkConnectivity)
     Qt.callLater(scanHotspots)
   }
@@ -617,6 +624,7 @@ Panel {
   // Reads the cached beacons and NetworkManager's metered guess for the Wi-Fi
   // interface. A failed or empty dump leaves every row as ordinary Wi-Fi.
   function scanHotspots() {
+    hotspotRequest++
     if (!wifiDevice || !wifiDevice.name) {
       hotspotSsids = ({})
       activeHotspot = false
@@ -1029,10 +1037,13 @@ Panel {
 
   Process {
     id: hotspotProc
+    property int request: 0
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: root.updateHotspots(text)
+      onStreamFinished: if (hotspotProc.request === root.hotspotRequest) root.updateHotspots(text)
     }
+    onRunningChanged: if (running) request = root.hotspotRequest
+    onExited: if (request !== root.hotspotRequest) Qt.callLater(root.scanHotspots)
   }
 
   Process {

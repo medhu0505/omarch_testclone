@@ -399,6 +399,11 @@ assertEqual(network.dataLimitTooltip('no'), 'Limit data on this network', 'netwo
 assertEqual(network.speedTestTooltip(true), 'Run a speed test (uses mobile data)', 'network warns that a speed test uses hotspot data')
 assertEqual(network.speedTestTooltip(false), 'Run a speed test', 'network keeps the plain speed test tooltip elsewhere')
 assert(/autoLimitedConnection !== scan\.connection/.test(panelSource), 'network limits a profile on its own only once')
+const hotspotProcBlock = panelSource.match(/id: hotspotProc[\s\S]*?\n {2}\}/)
+assert(hotspotProcBlock && /onStreamFinished: if \(hotspotProc\.request === root\.hotspotRequest\) root\.updateHotspots\(text\)/.test(hotspotProcBlock[0]), 'network drops a hotspot read that a newer request superseded')
+assert(hotspotProcBlock && /onExited: if \(request !== root\.hotspotRequest\) Qt\.callLater\(root\.scanHotspots\)/.test(hotspotProcBlock[0]), 'network reruns a hotspot read requested while one was running')
+const connectionKeyHandler = panelSource.match(/onConnectionKeyChanged: \{[\s\S]*?\n {2}\}/)
+assert(connectionKeyHandler && /hotspotConnection = ""/.test(connectionKeyHandler[0]), 'network forgets the old profile before the data limit can act on a new link')
 assert(/else if \(headerIndex === dataHeaderIndex\) toggleDataLimit\(\)/.test(panelSource), 'network reaches the data limit action from the keyboard')
 
 assertEqual(network.connectionIcon('wifi', 80, 'full', true), network.hotspotIcon, 'network draws the chain for a hotspot link')
