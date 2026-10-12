@@ -2,6 +2,7 @@ import QtQuick
 import QtTest
 import Quickshell
 import Quickshell.Io
+import qs.Ui
 
 // Real controls + real Python backend; only the compositor is simulated.
 ShellRoot {
@@ -14,6 +15,7 @@ ShellRoot {
   property var checks: []
   property bool finished: false
   property bool autoKeep: true
+  property bool keyboardFixtureActive: false
   property int droppedY: 0
   readonly property var ui: controls.item
   readonly property var secondUi: secondControls.item
@@ -58,6 +60,16 @@ ShellRoot {
     implicitWidth: 400
     implicitHeight: 650
     visible: true
+    PanelKeyCatcher {
+      id: keyboard
+      onActivateRequested: if (root.ui) root.ui.activate(root.ui.cursorIndex)
+    }
+    Connections {
+      target: root.ui
+      function onCursorRequested(index, item) {
+        if (root.keyboardFixtureActive) root.ui.cursorIndex = index
+      }
+    }
     TestCase { id: pointer; name: "Arrangement pointer input"; when: false }
     Loader {
       id: controls
@@ -471,6 +483,31 @@ ShellRoot {
                    "A rejected second preset keeps the earlier valid draft moves")
         root.child("arrangementDiscard").clicked()
         root.done("invalid preset preserves earlier draft")
+        ui.nudge(0, 1)
+        root.phase++
+        break
+      case 58:
+        if (ui.busy) return
+        root.keyboardFixtureActive = true
+        ui.cursorIndex = ui.indexOf(root.child("arrangementDiagram"))
+        keyboard.forceActiveFocus()
+        pointer.keyClick(Qt.Key_Return)
+        root.check(ui.keyboardEditing, "Enter starts editing the selected diagram")
+        var apply = root.child("arrangementApply")
+        pointer.mouseMove(apply, apply.width / 2, apply.height / 2)
+        root.phase++
+        break
+      case 59:
+        root.check(ui.cursorIndex === ui.indexOf(root.child("arrangementApply")), "Actual mouse hover selects Apply")
+        root.check(!ui.keyboardEditing, "Leaving the diagram ends keyboard editing before another control is highlighted")
+        // An activation arriving before the cursor binding settles must still end editing.
+        ui.keyboardEditing = true
+        keyboard.forceActiveFocus()
+        pointer.keyClick(Qt.Key_Return)
+        root.check(!ui.keyboardEditing && !ui.busy && !ui.confirming && ui.canApply,
+                   "Enter finishes editing without starting the highlighted Apply action")
+        root.child("arrangementDiscard").clicked()
+        root.done("hover and Enter end keyboard editing safely")
         root.finish()
         break
       }

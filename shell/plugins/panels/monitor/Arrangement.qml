@@ -72,6 +72,7 @@ Column {
   visible: displayCount > 1
   onCursorIndexChanged: {
     var item = navigationItems[cursorIndex]
+    if (keyboardEditing && item !== diagram) finishKeyboardEditing()
     if (item) cursorRequested(cursorIndex, item)
   }
   onActiveChanged: {
@@ -218,14 +219,20 @@ Column {
     request("preview")
   }
 
+  function finishKeyboardEditing() {
+    keyboardEditing = false
+    message = "Drag screens to match your desk. Apply saves the layout."
+  }
+
   function activate(index) {
     if (!active || !visible) return
+    if (keyboardEditing) { finishKeyboardEditing(); return }
     var item = navigationItems[index]
     if (item === sectionButton) expanded = !expanded
     else if (item === identifyButton && expanded) identifyScreens()
     else if (item === diagram && ready) {
-      keyboardEditing = !keyboardEditing
-      message = keyboardEditing ? "Arrow keys move the selected screen one pixel. Enter finishes editing." : "Drag screens to match your desk. Apply saves the layout."
+      keyboardEditing = true
+      message = "Arrow keys move the selected screen one pixel. Enter finishes editing."
     }
     else if (item === presetsButton && ready) showPresets = !showPresets
     else if (item === movingPicker && ready) movingPicker.open()
