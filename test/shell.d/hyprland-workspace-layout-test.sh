@@ -21,6 +21,8 @@ if [[ $1 == "activeworkspace" && -n $HYPRCTL_BROKEN ]]; then
   printf '{}\n'
 elif [[ $1 == "activeworkspace" ]]; then
   printf '{"id":%s,"tiledLayout":"%s"}\n' "${HYPRCTL_WS_ID:-3}" "${HYPRCTL_TILED_LAYOUT:-dwindle}"
+elif [[ $1 == "getoption" && -n $HYPRCTL_GLOBAL_LAYOUT ]]; then
+  printf '{"str":"%s"}\n' "$HYPRCTL_GLOBAL_LAYOUT"
 else
   printf '%s\n' "$*" >>"$HYPRCTL_LOG"
 
@@ -127,6 +129,25 @@ toggle
 [[ $(saved_mode) == "dwindle" ]] || fail "cycling on from the default saves the next layout" "saved: $(cat "$layout_file" 2>&1)"
 rm -f "${layout_file%/*}/default.lua"
 pass "a workspace cycled onto the default follows it again"
+
+# A layout set in looknfeel that the cycle does not include, such as master, is
+# a stop of its own after floating, so the cycle always comes back to it.
+rm -f "$layout_file"
+: >"$log_file"
+toggle HYPRCTL_GLOBAL_LAYOUT=master HYPRCTL_TILED_LAYOUT=master
+[[ $(saved_mode) == "dwindle" ]] || fail "master cycles to dwindle" "saved: $(cat "$layout_file" 2>&1)"
+toggle HYPRCTL_GLOBAL_LAYOUT=master
+toggle HYPRCTL_GLOBAL_LAYOUT=master
+[[ $(saved_mode) == "floating" ]] || fail "the cycle reaches floating under a master default" "saved: $(cat "$layout_file" 2>&1)"
+toggle HYPRCTL_GLOBAL_LAYOUT=master
+[[ ! -e $layout_file ]] || fail "floating cycles back to a master default, which the workspace follows again" "saved: $(cat "$layout_file")"
+applied master || fail "the master default is applied at once" "$(cat "$log_file")"
+HYPRCTL_TILED_LAYOUT=master HYPRCTL_GLOBAL_LAYOUT=master toggle_back back
+[[ $(saved_mode) == "floating" ]] || fail "back from a master default is floating" "saved: $(cat "$layout_file" 2>&1)"
+printf 'o.workspace_mode({ workspace = "3", mode = "dwindle" })\n' >"$layout_file"
+HYPRCTL_GLOBAL_LAYOUT=master toggle_back back
+[[ ! -e $layout_file ]] || fail "back from dwindle is a master default" "saved: $(cat "$layout_file")"
+pass "a default outside the cycle is a stop of its own"
 
 # Files written before floating existed name a layout rather than a mode.
 : >"$log_file"

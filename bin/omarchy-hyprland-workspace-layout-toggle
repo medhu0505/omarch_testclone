@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# omarchy:summary=Cycle the current active workspace through the dwindle, scrolling, and floating layouts
+# omarchy:summary=Cycle the current active workspace through the dwindle, scrolling, and floating layouts, and a default outside them
 # omarchy:args=[back]
 
 DIRECTION=${1:-next}
@@ -18,17 +18,27 @@ MODES_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/workspace-layouts"
 MODE_FILE="$MODES_DIR/$ACTIVE_WORKSPACE.lua"
 
 CURRENT_MODE=$(omarchy-hyprland-workspace-layout-current)
+DEFAULT_MODE=$(omarchy-hyprland-workspace-layout-default)
+
+# A default outside the cycle, such as master set in looknfeel, gets a stop of
+# its own after floating, or the cycle would never return a workspace to it.
+case "$DEFAULT_MODE" in
+  dwindle | scrolling | floating) OWN_STOP="" ;;
+  *) OWN_STOP=$DEFAULT_MODE ;;
+esac
 
 if [[ $DIRECTION == "back" ]]; then
   case "$CURRENT_MODE" in
-    dwindle) NEW_MODE=floating ;;
+    dwindle) NEW_MODE=${OWN_STOP:-floating} ;;
     floating) NEW_MODE=scrolling ;;
-    *) NEW_MODE=dwindle ;;
+    scrolling) NEW_MODE=dwindle ;;
+    *) NEW_MODE=floating ;;
   esac
 else
   case "$CURRENT_MODE" in
     dwindle) NEW_MODE=scrolling ;;
     scrolling) NEW_MODE=floating ;;
+    floating) NEW_MODE=${OWN_STOP:-dwindle} ;;
     *) NEW_MODE=dwindle ;;
   esac
 fi
@@ -44,7 +54,7 @@ fi
 
 if (( ! APPLIED )); then
   omarchy-notification-send -g 󱂬 "Workspace layout needs a Hyprland reload"
-elif [[ $NEW_MODE == "$(omarchy-hyprland-workspace-layout-default)" ]] && rm -f "$MODE_FILE"; then
+elif [[ $NEW_MODE == "$DEFAULT_MODE" ]] && rm -f "$MODE_FILE"; then
   # Cycled onto the default, a workspace goes back to following it, so a later
   # change of the default reaches it too.
   omarchy-notification-send -g 󱂬 "Workspace layout set to $NEW_MODE"
