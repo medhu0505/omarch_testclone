@@ -28,7 +28,8 @@ SH
 chmod +x "$scratch/bin/hyprctl"
 
 # Isolated Qt window and compositor stub; no live display or user config access.
-env QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software \
+env QT_QPA_PLATFORM=offscreen QT_QPA_PLATFORMTHEME= QT_QUICK_BACKEND=software \
+  WAYLAND_DISPLAY= HYPRLAND_INSTANCE_SIGNATURE= \
   HOME="$scratch/home" XDG_CONFIG_HOME="$scratch/home/.config" \
   XDG_CACHE_HOME="$scratch/home/.cache" XDG_STATE_HOME="$scratch/home/.local/state" \
   OMARCHY_PATH="$ROOT" ARRANGEMENT_TEST_DIR="$SHELL_TEST_DIR/monitor-arrangement" \
@@ -45,7 +46,7 @@ for (( attempt = 0; attempt < 350; attempt++ )); do
   fi
   sleep 0.1
 done
-if [[ ! -s $scratch/result.json ]] || ! jq -e '.ok and (.checks | length == 8)' "$scratch/result.json" >/dev/null; then
+if [[ ! -s $scratch/result.json ]] || ! jq -e '.ok and (.checks | length == 9)' "$scratch/result.json" >/dev/null; then
   cat "$scratch/log" >&2
   [[ ! -f $scratch/result.json ]] || cat "$scratch/result.json" >&2
   fail "Display arrangement controls pass with the real backend"

@@ -12,6 +12,7 @@ ShellRoot {
   property var checks: []
   property bool finished: false
   readonly property var ui: controls.item
+  readonly property var secondUi: secondControls.item
   readonly property string testDir: Quickshell.env("ARRANGEMENT_TEST_DIR")
   readonly property string resultPath: Quickshell.env("ARRANGEMENT_TEST_RESULT")
 
@@ -55,6 +56,14 @@ ShellRoot {
       width: 380
       active: false
       source: "file://" + Quickshell.env("OMARCHY_PATH") + "/shell/plugins/panels/monitor/Arrangement.qml"
+      onLoaded: { item.width = width; item.active = true }
+    }
+    Loader {
+      id: secondControls
+      width: 380
+      active: false
+      visible: false
+      source: controls.source
       onLoaded: { item.width = width; item.active = true }
     }
   }
@@ -208,6 +217,36 @@ ShellRoot {
         if (ui.busy) return
         root.check(ui.ready && !ui.canApply, "Reopening refreshes the screens without applying")
         root.done("close and reopen during query")
+        root.configure({reset: true, reloadDelay: 0.5})
+        root.phase++
+        break
+      case 24:
+        ui.refresh()
+        secondControls.active = true
+        root.phase++
+        break
+      case 25:
+        if (ui.busy || !secondUi || secondUi.busy) return
+        ui.selectScreen("DP-3")
+        root.child("arrangementLeft").clicked()
+        root.child("arrangementBelow", secondUi).clicked()
+        root.phase++
+        break
+      case 26:
+        if (ui.busy || secondUi.busy) return
+        root.check(ui.canApply && secondUi.canApply, "Two panel instances can each preview a layout")
+        root.child("arrangementApply").clicked()
+        root.child("arrangementApply", secondUi).clicked()
+        root.phase++
+        break
+      case 27:
+        if (ui.busy || secondUi.busy) return
+        root.check(ui.error !== secondUi.error && (ui.error ? secondUi : ui).message.indexOf("Saved") >= 0,
+                   "Only one competing panel transaction saves its preview")
+        var rejected = (ui.error ? ui : secondUi).message
+        root.check((rejected.indexOf("in progress") >= 0 || rejected.indexOf("changed since") >= 0) && !ui.canApply && !secondUi.canApply,
+                   "The competing panel reports a lock or stale preview and clears its preview")
+        root.done("competing panel instances")
         root.finish()
         break
       }

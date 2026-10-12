@@ -13,6 +13,13 @@ config = Path(os.environ['XDG_CONFIG_HOME']) / 'hypr/monitors.lua'
 base = [dict(name=name, x=index * 1920, y=0, width=1920, height=1080, scale=1, transform=0)
         for index, name in enumerate(('eDP-1', 'DP-2', 'DP-3'))]
 
+
+def save_state(state):
+  temporary = state_path.with_suffix('.tmp')
+  temporary.write_text(json.dumps(state))
+  temporary.replace(state_path)
+
+
 if sys.argv[1] == '--control':
   values = json.loads(sys.argv[2])
   if values.pop('reset', False):
@@ -26,7 +33,7 @@ if sys.argv[1] == '--control':
   if values.pop('move', False):
     state['monitors'][2]['x'] = 4000
   state.update(values)
-  state_path.write_text(json.dumps(state))
+  save_state(state)
   sys.exit(0)
 
 state = json.loads(state_path.read_text())
@@ -43,11 +50,11 @@ elif args == ['reload']:
   state['reloads'] += 1
   if state.get('reloadDelay'):
     state['reloadStarted'] = True
-    state_path.write_text(json.dumps(state))
+    save_state(state)
     time.sleep(state['reloadDelay'])
   if state['reloadError']:
     state['reloadError'] = False
-    state_path.write_text(json.dumps(state))
+    save_state(state)
     print('Simulated reload failed', file=sys.stderr)
     sys.exit(1)
   # Execute saved Lua rather than reimplementing the backend's config parser.
@@ -61,7 +68,7 @@ elif args == ['reload']:
   for monitor in state['monitors']:
     original = next(screen for screen in base if screen['name'] == monitor['name'])
     monitor['x'], monitor['y'] = positions.get(monitor['name'], (original['x'], original['y']))
-  state_path.write_text(json.dumps(state))
+  save_state(state)
 else:
   print('Unexpected simulated compositor command: ' + repr(args), file=sys.stderr)
   sys.exit(1)
