@@ -17,7 +17,7 @@ if [[ $sys_vendor == Apple* ]] && lspci -nn | grep -E "14e4:1570" >/dev/null; th
   # fix-synaptic-touchpad.sh: an optional camera must not halt hardware setup,
   # and install chroots cannot load modules for the target kernel anyway.
   if modprobe -qn facetimehd 2>/dev/null; then
-    modprobe facetimehd 2>/dev/null ||
+    sudo modprobe facetimehd 2>/dev/null ||
       echo "Warning: could not load facetimehd (takes effect after reboot)" >&2
   fi
 fi

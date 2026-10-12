@@ -76,6 +76,8 @@ grep -Fq 'pkg-aur-add facetimehd-firmware facetimehd-dkms-git' "$calls" ||
   fail "a pre-T2 Mac with the camera installs driver and firmware" "$(cat "$calls")"
 grep -Fq $'modprobe\tfacetimehd' "$calls" ||
   fail "a live session loads the driver without a reboot" "$(cat "$calls")"
+grep -Fq $'sudo\tmodprobe\tfacetimehd' "$calls" ||
+  fail "the live load runs through sudo (migration runs as the user)" "$(cat "$calls")"
 pass "a pre-T2 Mac with the camera installs driver and firmware"
 
 run_leaf "Apple Inc." 0 >/dev/null
