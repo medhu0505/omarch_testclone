@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# omarchy:summary=Open the graphical monitor positioning app
+
+python3 "$OMARCHY_PATH/default/hypr/monitor-position-app.py"

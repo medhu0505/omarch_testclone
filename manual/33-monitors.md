@@ -38,7 +38,7 @@ When you're extending, closing the lid on the laptop will automatically turn off
 
 ### Arranging multiple screens
 
-Open _Setup > Monitor Position_ to arrange two or more enabled screens. Choose the screen to move, the reference screen, and left, right, above, or below. This works with multiple external screens and desktops without a laptop screen. The other screens keep their positions. Left/right placements align the top edges; above/below placements align the left edges. Scaling and rotation are accounted for.
+Open **Monitor Position** from the application launcher or _Setup > Monitor Position_ to arrange two or more enabled screens. The app shows the current layout and two screen selectors. Choose the screen to move, choose its reference screen, then choose **Left**, **Right**, **Above** or **Below** to preview the arrangement. Click **Apply layout** to save and apply it. You can also click a screen in the preview to select it. Use **Refresh screens** after connecting or disconnecting a monitor. This works with multiple external screens and desktops without a laptop screen. The other screens keep their positions. Left/right placements align the top edges; above/below placements align the left edges. Scaling and rotation are accounted for.
 
 You can also arrange screens from the terminal:
 

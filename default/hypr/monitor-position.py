@@ -261,7 +261,7 @@ def wait_layout(monitors, positions):
   raise RuntimeError('Hyprland did not apply the requested layout, or the connected screens changed.')
 
 
-def apply(output, reference, side, dry_run=False):
+def apply(output, reference, side, dry_run=False, expected_snapshot=None):
   config = (Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'hypr/monitors.lua').resolve(strict=True)
   # Lock a separate inode because atomic replacement changes the config inode.
   with config.with_name('monitors.lua.monitor-position.lock').open('a') as lock:
@@ -270,6 +270,8 @@ def apply(output, reference, side, dry_run=False):
     except BlockingIOError as error:
       raise RuntimeError('Another monitor arrangement is in progress.') from error
     monitors = displays()
+    if expected_snapshot is not None and snapshot(monitors) != expected_snapshot:
+      raise RuntimeError('The screens changed since the preview. Refresh screens and choose the position again.')
     positions = arrange(monitors, output, reference, side)
     original = config.read_text()
     updated = update_config(original, monitors, positions)

@@ -13,6 +13,9 @@ ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('position', ROOT / 'default/hypr/monitor-position.py')
 position = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(position)
+app_spec = importlib.util.spec_from_file_location('position_app', ROOT / 'default/hypr/monitor-position-app.py')
+app = importlib.util.module_from_spec(app_spec)
+app_spec.loader.exec_module(app)
 
 
 def monitor(name, x=0, y=0, width=1920, height=1080, scale=1, transform=0, **extra):
@@ -158,6 +161,29 @@ hl.monitor({output="",scale=1})
                              [monitor('DP-1', description='Acme')], {'DP-1': (0, 0)})
 
 
+class AppSelectionTests(unittest.TestCase):
+  def test_laptop_with_multiple_external_screens_defaults_to_distinct_pair(self):
+    self.assertEqual(app.default_pair([monitor('eDP-1'), monitor('DP-1'), monitor('DP-2')]), ('DP-2', 'eDP-1'))
+
+  def test_desktop_only_and_dsi_internal_defaults(self):
+    self.assertEqual(app.default_pair([monitor('DP-1'), monitor('DP-2'), monitor('HDMI-A-1')]), ('HDMI-A-1', 'DP-1'))
+    self.assertEqual(app.default_pair([monitor('DSI-1'), monitor('DP-1')]), ('DP-1', 'DSI-1'))
+
+  def test_zero_or_one_screen_has_no_reference(self):
+    self.assertEqual(app.default_pair([]), (None, None))
+    self.assertEqual(app.default_pair([monitor('DP-1')]), ('DP-1', None))
+
+  def test_current_side_accounts_for_scaled_rotated_geometry(self):
+    anchor = monitor('DP-1', 100, 200, 3840, 2160, 2)
+    moving = monitor('DP-2', -980, 200, 1920, 1080, 1, 1)
+    self.assertEqual(app.current_side(moving, anchor), 'left')
+    moving['x'], moving['y'] = 100, -1720
+    self.assertEqual(app.current_side(moving, anchor), 'above')
+
+  def test_custom_layout_is_not_mislabelled_as_aligned(self):
+    self.assertEqual(app.current_side(monitor('DP-2', 1920, 100), monitor('DP-1')), 'custom')
+
+
 class TransactionTests(unittest.TestCase):
   def setUp(self):
     self.temp = tempfile.TemporaryDirectory()
@@ -204,6 +230,16 @@ class TransactionTests(unittest.TestCase):
       with self.assertRaisesRegex(RuntimeError, 'changed'):
         self.run_apply()
     self.assertEqual(self.config.read_text(), self.original)
+
+  def test_stale_gui_preview_does_not_change_configuration(self):
+    changed = copy.deepcopy(self.screens)
+    changed[0]['x'] = 100
+    with patch.object(position, 'displays', return_value=changed), patch.object(position, 'hypr') as hypr:
+      with self.assertRaisesRegex(RuntimeError, 'changed since the preview'):
+        self.run_apply(expected_snapshot=position.snapshot(self.screens))
+      hypr.assert_not_called()
+    self.assertEqual(self.config.read_text(), self.original)
+    self.assertFalse(self.config.with_name('monitors.lua.bak.monitor-position').exists())
 
   def test_external_edit_during_backup_is_not_overwritten(self):
     original_write = position.atomic_write
