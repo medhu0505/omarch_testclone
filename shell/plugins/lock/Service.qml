@@ -32,6 +32,10 @@ Item {
   property double fingerprintLastSettleMs: 0
   property double fingerprintResumedAtMs: 0
   property int fingerprintProbeStreak: 0
+  // A finger the reader read but did not match. Shown briefly so a bad read
+  // no longer looks the same as a reader that is not listening.
+  property bool fingerprintRejected: false
+  property int fingerprintRejections: 0
   property bool previewVisible: false
   property string enteredPassword: ""
   property string pendingPassword: ""
@@ -200,9 +204,12 @@ Item {
     fingerprintLastSettleMs = 0
     fingerprintResumedAtMs = 0
     fingerprintProbeStreak = 0
+    fingerprintRejected = false
+    fingerprintRejections = 0
     fingerprintRecheckTimer.stop()
     fingerprintRetryTimer.stop()
     fingerprintReachTimer.stop()
+    fingerprintRejectedTimer.stop()
     if (passwordPam.active) passwordPam.abort()
     if (fingerprintPam.active) fingerprintPam.abort()
   }
@@ -393,6 +400,17 @@ Item {
     fingerprintReachTimer.stop()
   }
 
+  // pam_fprintd reports a no-match or an unusable swipe as an error message
+  // and keeps the attempt open for the next touch. Wake the displays so the
+  // feedback is seen even when the touch landed on a blanked lock.
+  function noteFingerprintRejected() {
+    noteFingerprintReachedDevice()
+    fingerprintRejections += 1
+    fingerprintRejected = true
+    fingerprintRejectedTimer.restart()
+    runWake()
+  }
+
   // abort() gives no completion signal; settle the attempt here.
   function timeoutFingerprintReach() {
     logEvent("fingerprint-reach-timeout")
@@ -488,6 +506,8 @@ Item {
         backgroundVersion: root.backgroundVersion
         fingerprintConfigured: root.fingerprintConfigured || root.fingerprintUnavailable
         fingerprintUnavailable: root.fingerprintUnavailable
+        fingerprintRejected: root.fingerprintRejected
+        fingerprintRejections: root.fingerprintRejections
         authenticatingPassword: root.authenticatingPassword
         failureMessage: root.failureMessage
         failedAttempts: root.failedAttempts
@@ -566,7 +586,8 @@ Item {
     user: root.userName
 
     onPamMessage: {
-      if (!messageIsError) root.noteFingerprintReachedDevice()
+      if (messageIsError) root.noteFingerprintRejected()
+      else root.noteFingerprintReachedDevice()
     }
 
     onCompleted: function(result) {
@@ -610,6 +631,13 @@ Item {
     repeat: false
     onTriggered: root.startFingerprint()
   }
+  Timer {
+    id: fingerprintRejectedTimer
+    interval: 2500
+    repeat: false
+    onTriggered: root.fingerprintRejected = false
+  }
+
 
   // Detect resume both during an active attempt and during backoff.
   Timer {

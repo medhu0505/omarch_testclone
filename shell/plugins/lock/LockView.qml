@@ -12,6 +12,9 @@ Item {
   property int backgroundVersion: 0
   property bool fingerprintConfigured: false
   property bool fingerprintUnavailable: false
+  property bool fingerprintRejected: false
+  // Bumped on every rejected finger so repeated misses each shake the icon.
+  property int fingerprintRejections: 0
   property bool authenticatingPassword: false
   property string failureMessage: ""
   property int failedAttempts: 0
@@ -41,7 +44,12 @@ Item {
     ? Math.min(1, (passwordInput.width - 4) / dotMetrics.advanceWidth)
     : 1
   readonly property bool showPasswordCursor: inputEnabled && !authenticatingPassword && failureMessage.length === 0
-  readonly property bool errorState: failureMessage.length > 0
+  readonly property bool showFingerprintRejected: fingerprintConfigured && fingerprintRejected && !fingerprintUnavailable
+  readonly property bool errorState: failureMessage.length > 0 || showFingerprintRejected
+  readonly property string statusText: authenticatingPassword ? "Checking…"
+    : failureMessage.length > 0 ? failureMessage
+    : showFingerprintRejected ? "Fingerprint not recognized"
+    : placeholderText
   readonly property var inputBorderSpec: errorState
     ? Border.surfaceSpec("lock", "border-error", Commons.Color.lock.borderError, root.outlineThickness, "border-alpha")
     : Border.surfaceSpec("lock", "border-active", Commons.Color.lock.borderActive, root.outlineThickness, "border-alpha")
@@ -78,6 +86,7 @@ Item {
   }
 
   onPasswordTextChanged: syncPasswordText()
+  onFingerprintRejectionsChanged: if (fingerprintRejections > 0) fingerprintShake.restart()
   onInputEnabledChanged: {
     if (inputEnabled) Qt.callLater(forcePasswordFocus)
   }
@@ -223,12 +232,13 @@ Item {
       Text {
         textFormat: Text.PlainText
         anchors.fill: passwordInput
-        text: root.authenticatingPassword ? "Checking…" : (root.failureMessage.length > 0 ? root.failureMessage : root.placeholderText)
+        objectName: "lockStatusText"
+        text: root.statusText
         visible: passwordInput.text.length === 0
-        color: root.authenticatingPassword ? Commons.Color.lock.text : (root.failureMessage.length > 0 ? Commons.Color.lock.textError : Commons.Color.lock.placeholder)
+        color: root.authenticatingPassword ? Commons.Color.lock.text : (root.errorState ? Commons.Color.lock.textError : Commons.Color.lock.placeholder)
         font.family: Style.font.family
         font.pixelSize: root.fieldFontSize
-        font.italic: !root.authenticatingPassword && root.failureMessage.length > 0
+        font.italic: !root.authenticatingPassword && root.errorState
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
@@ -238,7 +248,8 @@ Item {
       // enrolled, so the user knows they can touch to unlock instead of typing.
       // Matches hyprlock, which draws its fingerprint icon in the same spot.
       // A reader the shell cannot reach crosses out rather than disappears, so
-      // it stops inviting touches that can never unlock.
+      // it stops inviting touches that can never unlock. A rejected finger
+      // tints and shakes it, so a miss is told apart from no read at all.
       Text {
         id: fingerprintIcon
         objectName: "fingerprintIndicator"
@@ -248,11 +259,20 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         visible: root.fingerprintConfigured
         text: root.fingerprintUnavailable ? "󰺱" : "󰈷"
-        color: root.fingerprintUnavailable ? Commons.Color.lock.textError : Commons.Color.lock.placeholder
+        color: root.fingerprintUnavailable || root.showFingerprintRejected ? Commons.Color.lock.textError : Commons.Color.lock.placeholder
+        transform: Translate { id: fingerprintOffset }
         font.family: Style.font.family
         font.pixelSize: Math.round(root.fieldFontSize * 1.1)
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
+
+        SequentialAnimation {
+          id: fingerprintShake
+          NumberAnimation { target: fingerprintOffset; property: "x"; to: -6; duration: 50 }
+          NumberAnimation { target: fingerprintOffset; property: "x"; to: 6; duration: 70 }
+          NumberAnimation { target: fingerprintOffset; property: "x"; to: -4; duration: 60 }
+          NumberAnimation { target: fingerprintOffset; property: "x"; to: 0; duration: 50 }
+        }
       }
     }
 
