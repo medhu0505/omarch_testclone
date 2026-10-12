@@ -391,6 +391,22 @@ Item {
     while (popupModel.count > 0) dismissPopup(0)
   }
 
+  // Take a toast off the screen by summary substring. Returns whether any
+  // matched, so in-shell callers and the IPC target share one implementation.
+  function dismissBySummary(summary) {
+    var needle = String(summary || "")
+    if (!needle) return false
+    var hit = false
+    for (var i = popupModel.count - 1; i >= 0; i--) {
+      var row = popupModel.get(i)
+      if (row && String(row.summary || "").indexOf(needle) !== -1) {
+        dismissPopup(i)
+        hit = true
+      }
+    }
+    return hit
+  }
+
   // Run the popup's click action, then dismiss. Omarchy's own toasts carry the
   // action as an argv vector in the `execArgv` role (see execArgvFromHints),
   // which the persistence files preserve, so restored toasts stay clickable.
@@ -958,17 +974,7 @@ Item {
     // Take a toast off the screen by summary substring, used by the
     // first-run notifications once their action has been clicked.
     function dismiss(summary: string): string {
-      var needle = String(summary || "")
-      if (!needle) return "none"
-      var hit = false
-      for (var i = popupModel.count - 1; i >= 0; i--) {
-        var row = popupModel.get(i)
-        if (row && String(row.summary || "").indexOf(needle) !== -1) {
-          service.dismissPopup(i)
-          hit = true
-        }
-      }
-      return hit ? "ok" : "none"
+      return service.dismissBySummary(summary) ? "ok" : "none"
     }
 
     function ping(): string { return "ok" }

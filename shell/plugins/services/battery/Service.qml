@@ -41,6 +41,7 @@ Item {
     var state = BatteryModel.shouldWarnLowBattery(UPower.displayDevice, UPower.onBattery, UPowerDeviceState.Discharging, batteryThreshold, persisted.notifiedLowBattery)
     persisted.notifiedLowBattery = state.notifiedLowBattery
     if (state.notify) sendLowBatteryWarning(state.level)
+    if (state.dismiss) dismissLowBatteryWarning()
   }
 
   function sendLowBatteryWarning(level) {
@@ -50,6 +51,13 @@ Item {
       String(level)
     ]
     warningProcess.running = true
+  }
+
+  function dismissLowBatteryWarning() {
+    // Both services run in this shell, so call the notification service
+    // directly rather than spawning omarchy-shell on every check.
+    var notifications = shell ? shell.firstPartyServiceFor("omarchy.notifications") : null
+    if (notifications) notifications.dismissBySummary("Time to recharge")
   }
 
   function applyPowerProfile() {
