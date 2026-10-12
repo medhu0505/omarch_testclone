@@ -36,7 +36,7 @@ exit 0
 SH
 cat >"$mock_bin/systemd-run" <<'SH'
 #!/bin/bash
-printf '%s\n' "$*" >"$OMARCHY_TEST_BROWSER_LAUNCH"
+printf '%s\n' "$@" >"$OMARCHY_TEST_BROWSER_LAUNCH"
 SH
 cat >"$mock_bin/omarchy-hyprland-focus-app" <<'SH'
 #!/bin/bash
@@ -83,6 +83,30 @@ grep -Fx '^chromium.*$' "$focus_log" >/dev/null ||
 
 pass "browser launcher follows opened links to the browser workspace"
 
+launch_entry() {
+  printf '[Desktop Entry]\nExec=%s\n' "$1" >"$test_home/.local/share/applications/chromium.desktop"
+  HOME="$test_home" PATH="$mock_bin:$PATH" OMARCHY_TEST_BROWSER_LAUNCH="$launch_log" \
+    OMARCHY_TEST_BROWSER_FOCUS="$focus_log" bash "$ROOT/bin/omarchy-launch-browser" "${@:2}"
+  sed -n '/^uwsm-app$/,$p' "$launch_log"
+}
+
+cp "$test_home/.local/share/applications/chromium.desktop" "$test_tmp/chromium.desktop"
+
+launched=$(launch_entry '/usr/bin/env "OMARCHY_TEST=a b" chromium --class=test %U' "https://example.test/wrapped")
+[[ $launched == $'uwsm-app\n--\n/usr/bin/env\nOMARCHY_TEST=a b\nchromium\n--class=test\nhttps://example.test/wrapped' ]] ||
+  fail "browser launcher runs every word of a wrapped Exec line" "$launched"
+
+launched=$(launch_entry '/usr/bin/flatpak run --file-forwarding org.example.Browser @@u %u @@' "https://example.test/flatpak")
+[[ $launched == $'uwsm-app\n--\n/usr/bin/flatpak\nrun\n--file-forwarding\norg.example.Browser\n@@u\nhttps://example.test/flatpak\n@@' ]] ||
+  fail "browser launcher puts the URL where a flatpak entry's %u is" "$launched"
+
+launched=$(launch_entry 'chromium --user-data-dir=/tmp/100%% %i %U' "https://example.test/percent")
+[[ $launched == $'uwsm-app\n--\nchromium\n--user-data-dir=/tmp/100%\nhttps://example.test/percent' ]] ||
+  fail "browser launcher decodes %% and drops other field codes" "$launched"
+
+mv "$test_tmp/chromium.desktop" "$test_home/.local/share/applications/chromium.desktop"
+pass "browser launcher runs a wrapped browser's whole Exec line"
+
 rm -f "$launch_log"
 cat >"$mock_bin/omarchy-cmd-browser-handoff" <<'SH'
 #!/bin/bash
@@ -95,3 +119,12 @@ HOME="$test_home" PATH="$mock_bin:$PATH" OMARCHY_TEST_BROWSER_LAUNCH="$launch_lo
 
 [[ ! -e $launch_log ]] || fail "browser launcher starts no browser when the running one takes the URL"
 pass "browser launcher hands a URL to the running browser"
+
+printf '[Desktop Entry]\nExec=chromium --profile-directory=Work %%U\n' >"$test_home/.local/share/applications/chromium.desktop"
+HOME="$test_home" PATH="$mock_bin:$PATH" OMARCHY_TEST_BROWSER_LAUNCH="$launch_log" \
+  OMARCHY_TEST_BROWSER_FOCUS="$focus_log" bash "$ROOT/bin/omarchy-launch-browser" "https://example.test/running"
+
+launched=$(sed -n '/^uwsm-app$/,$p' "$launch_log" 2>/dev/null || true)
+[[ $launched == $'uwsm-app\n--\nchromium\n--profile-directory=Work\nhttps://example.test/running' ]] ||
+  fail "browser launcher launches, rather than hands off, an entry with arguments of its own" "$launched"
+pass "browser launcher keeps an entry's own arguments from the hand-off"

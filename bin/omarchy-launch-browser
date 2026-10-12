@@ -4,7 +4,12 @@
 # omarchy:args=[url]
 
 default_browser=$(omarchy-cmd-default-browser)
-browser_exec=$(sed -n 's/^Exec=\([^ ]*\).*/\1/p' {~/.local,~/.nix-profile,/usr}/share/applications/$default_browser 2>/dev/null | head -1)
+desktop_exec=$(sed -s -n '/^\[Desktop Entry\]/,/^\[/s/^Exec=//p' {~/.local,~/.nix-profile,/usr}/share/applications/$default_browser 2>/dev/null | head -1)
+
+# Every word of the Exec line, so a wrapper like `env VAR=1 brave` or
+# `flatpak run ...` keeps the arguments that make it the browser.
+mapfile -d '' -t browser_command < <(xargs -r printf '%s\0' <<<"$desktop_exec" 2>/dev/null)
+browser_exec=${browser_command[0]:-}
 
 if $browser_exec --help 2>/dev/null | grep -q MOZ_LOG; then
   private_flag="--private-window"
@@ -14,10 +19,26 @@ else
   private_flag="--incognito"
 fi
 
-if ! omarchy-cmd-browser-handoff "$browser_exec" "${@/--private/$private_flag}"; then
+arguments=("${@/--private/$private_flag}")
+
+# The arguments go where the entry's %u or %U is, or last; other field codes are dropped.
+launch_command=("$browser_exec")
+entry_arguments=false
+for word in "${browser_command[@]:1}"; do
+  case $word in
+  %[uUfF]) launch_command+=("${arguments[@]}") arguments=() ;;
+  %[a-zA-Z]) ;;
+  *) launch_command+=("${word//'%%'/%}") entry_arguments=true ;;
+  esac
+done
+launch_command+=("${arguments[@]}")
+
+# The running browser would never see the entry's own arguments, so only a bare
+# entry is handed to it.
+if $entry_arguments || ! omarchy-cmd-browser-handoff "$browser_exec" "${@/--private/$private_flag}"; then
   systemd-run --user --quiet --collect --unit="omarchy-browser-$(date +%s%N)" \
     --property=StandardOutput=null --property=StandardError=null \
-    uwsm-app -- "$browser_exec" "${@/--private/$private_flag}"
+    uwsm-app -- "${launch_command[@]}"
 fi
 
 url=""
