@@ -572,8 +572,8 @@ Item {
     if (root.dmenuMultiple && root.dmenuOnChange.length === 0) {
       displayModel.append({
         itemId: "dmenu.apply", disabled: false, kind: "dmenu", icon: "", iconFont: "",
-        appIcon: "", appId: "", label: "Apply", target: "",
-        detail: root.dmenuSelected.length + " selected", path: "", childCount: 0,
+        appIcon: "", appId: "", label: I18n.t("menu.apply", "Apply"), target: "",
+        detail: root.dmenuSelected.length + " " + I18n.t("menu.selected", "selected"), path: "", childCount: 0,
         action: "", provider: "", score: -1, section: ""
       })
     }
