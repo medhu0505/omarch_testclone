@@ -65,6 +65,7 @@ assertEqual(estimatedAllowance(weekDays, { title: 'Monthly', percent: 0.5, reset
 assertEqual(estimatedAllowance(weekDays, { title: 'Session', percent: 0.5, resetAt: resetAt }), -1, 'no allowance estimate for session windows')
 assertEqual(estimatedAllowance(weekDays, { title: 'Weekly', percent: 0.1, resetAt: '' }), -1, 'no allowance estimate without a reset time')
 assert(/days: section\.provider \? \(section\.provider\.recentDays \|\| \[\]\) : \[\]/.test(panelSource), 'single-account limits get the agent\'s tokens by day for the estimate')
+assert(/readonly property real allowance: stale \? -1 : root\.estimatedAllowance\(days, window\)/.test(panelSource), 'no allowance estimate on limits kept from an earlier check')
 assert(/var from = Math\.min\(0\.8, \(threshold - 15\) \/ 100\)/.test(mainSource), 'faster checks start 15 points below the switch threshold')
 assert(/rows\.push\(\[\{ kind: "provider", index: p \}\]\)/.test(panelSource), "every agent's header is a keyboard stop")
 assert(/reorderable: root\.addStage === "" && !root\.renaming/.test(panelSource) && /onEditingChanged: root\.renaming = editing/.test(panelSource) && /onReorderRequested: function\(dy\) \{ root\.reorderProvider\(dy\) \}/.test(panelSource), 'Ctrl+Up/Down moves the agent the cursor is in')
