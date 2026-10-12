@@ -1,4 +1,5 @@
 import QtQuick
+import QtTest
 import Quickshell
 import Quickshell.Io
 
@@ -12,13 +13,18 @@ ShellRoot {
   property var failures: []
   property var checks: []
   property bool finished: false
+  property bool autoKeep: true
+  property int droppedY: 0
   readonly property var ui: controls.item
   readonly property var secondUi: secondControls.item
   readonly property string testDir: Quickshell.env("ARRANGEMENT_TEST_DIR")
   readonly property string resultPath: Quickshell.env("ARRANGEMENT_TEST_RESULT")
 
   function check(condition, message) {
-    if (!condition) failures.push(message)
+    if (!condition) {
+      failures.push(message)
+      console.warn(message + ": " + JSON.stringify({phase: phase, busy: ui.busy, message: ui.message, monitors: ui.monitors, preview: ui.preview}))
+    }
   }
   function child(name, item) {
     item = item || ui
@@ -52,19 +58,20 @@ ShellRoot {
     implicitWidth: 400
     implicitHeight: 650
     visible: true
+    TestCase { id: pointer; name: "Arrangement pointer input"; when: false }
     Loader {
       id: controls
       width: 380
       active: false
       source: "file://" + Quickshell.env("OMARCHY_PATH") + "/shell/plugins/panels/monitor/Arrangement.qml"
-      onLoaded: { item.width = width; item.identificationScreens = []; item.displayCount = 3; item.expanded = true; item.active = true }
+      onLoaded: { item.width = width; item.identificationScreens = []; item.displayCount = 3; item.expanded = true; item.showPresets = true; item.active = true }
     }
     Loader {
       id: secondControls
       width: 380
       active: false
       source: controls.source
-      onLoaded: { item.width = width; item.identificationScreens = []; item.displayCount = 3; item.expanded = true; item.active = true }
+      onLoaded: { item.width = width; item.identificationScreens = []; item.displayCount = 3; item.expanded = true; item.showPresets = true; item.active = true }
     }
   }
 
@@ -74,8 +81,10 @@ ShellRoot {
     repeat: true
     onTriggered: {
       root.ticks++
-      if (root.ticks > 1500) { root.failures.push("Timed out in phase " + root.phase); root.finish(); return }
+      if (root.ticks > 2800) { root.failures.push("Timed out in phase " + root.phase); root.finish(); return }
       if (control.running) return
+      if (root.autoKeep && ui && ui.confirming) root.child("arrangementApply").clicked()
+      if (root.autoKeep && secondUi && secondUi.confirming) root.child("arrangementApply", secondUi).clicked()
       switch (root.phase) {
       case 0:
         root.configure({reset: true, delay: 0.6})
@@ -103,8 +112,9 @@ ShellRoot {
         if (ui.busy) return
         root.check(ui.canApply && ui.preview[2].x === -1280 && root.screen("DP-3").x === 3840, "Left previews without changing the displays")
         root.child("arrangementMoving").changed("DP-2")
-        root.check(ui.moving === "DP-2" && !ui.canApply && ui.preview.length === 0, "Changing selection clears the preview")
+        root.check(ui.moving === "DP-2" && ui.canApply && ui.preview.length === 3, "Changing selection retains other unsaved screen moves")
         root.done("preview and selection")
+        root.child("arrangementDiscard").clicked()
         root.child("arrangementBelow").clicked()
         root.phase++
         break
@@ -117,7 +127,7 @@ ShellRoot {
         break
       case 6:
         if (ui.busy) return
-        root.check(root.screen("DP-2").y === 1080 && ui.message.indexOf("Saved") >= 0 && !ui.canApply, "Apply saves and refreshes the actual layout")
+        root.check(root.screen("DP-2").y === 1080 && ui.message.indexOf("saved") >= 0 && !ui.canApply, "Apply saves and refreshes the actual layout")
         root.done("successful Apply")
         root.configure({reloadError: true})
         root.child("arrangementLeft").clicked()
@@ -241,7 +251,7 @@ ShellRoot {
         break
       case 27:
         if (ui.busy || secondUi.busy) return
-        root.check(ui.error !== secondUi.error && (ui.error ? secondUi : ui).message.indexOf("Saved") >= 0,
+        root.check(ui.error !== secondUi.error && (ui.error ? secondUi : ui).message.indexOf("saved") >= 0,
                    "Only one competing panel transaction saves its preview")
         var rejected = (ui.error ? ui : secondUi).message
         root.check((rejected.indexOf("in progress") >= 0 || rejected.indexOf("changed since") >= 0) && !ui.canApply && !secondUi.canApply,
@@ -276,7 +286,7 @@ ShellRoot {
         break
       case 32:
         if (ui.busy) return
-        root.check(root.screen("DP-3").y === 360 && ui.message.indexOf("aligned bottom") >= 0, "Apply saves the chosen bottom alignment")
+        root.check(root.screen("DP-3").y === 360 && ui.message.indexOf("saved") >= 0, "Apply saves the chosen bottom alignment")
         root.child("arrangementAbove").clicked()
         root.phase++
         break
@@ -345,6 +355,107 @@ ShellRoot {
         ui.displayCount = 1
         root.check(!ui.visible && !ui.expanded, "Losing the second display also closes the controls")
         root.done("conditional collapsible Arrangement")
+        root.autoKeep = false
+        root.configure({reset: true})
+        ui.displayCount = 3
+        root.child("arrangementToggle").clicked()
+        root.phase++
+        break
+      case 42:
+        if (ui.busy) return
+        ui.refresh()
+        root.phase++
+        break
+      case 43:
+        if (ui.busy) return
+        var tile = root.child("arrangementScreenDP-3")
+        var diagram = root.child("arrangementDiagram")
+        var origin = tile.mapToItem(diagram, tile.width / 2, tile.height / 2)
+        pointer.mousePress(tile, tile.width / 2, tile.height / 2)
+        pointer.mouseMove(diagram, origin.x - 5120 * diagram.fit, origin.y + 123 * diagram.fit)
+        pointer.mouseRelease(diagram, origin.x - 5120 * diagram.fit, origin.y + 123 * diagram.fit)
+        root.phase++
+        break
+      case 44:
+        if (ui.busy) return
+        root.check(ui.canApply && ui.preview[2].x === -1280 && ui.preview[2].y >= 110 && ui.preview[2].y <= 140 && root.screen("DP-3").x === 3840,
+                   "Mouse drag snaps the contacting edge while retaining an arbitrary offset")
+        root.droppedY = ui.preview[2].y
+        ui.selectScreen("DP-2")
+        root.child("arrangementBelow").clicked()
+        root.phase++
+        break
+      case 45:
+        if (ui.busy) return
+        root.check(ui.preview[2].x === -1280 && ui.preview[1].y === 1080, "A second move retains the first draft screen")
+        root.child("arrangementApply").clicked()
+        root.phase++
+        break
+      case 46:
+        if (!ui.confirming) return
+        root.check(ui.busy && !root.child("arrangementMoving").enabled && root.child("arrangementDiscard").text.indexOf("Revert") >= 0,
+                   "Apply presents Keep/Revert while blocking conflicting changes")
+        root.child("arrangementApply").clicked()
+        root.phase++
+        break
+      case 47:
+        if (ui.busy) return
+        root.check(root.screen("DP-3").x === -1280 && root.screen("DP-3").y === root.droppedY && root.screen("DP-2").y === 1080,
+                   "Keep saves all drafted screens together")
+        root.done("mouse drag, arbitrary offsets and multi-screen Keep")
+        ui.selectScreen("DP-3")
+        root.child("arrangementAbove").clicked()
+        root.phase++
+        break
+      case 48:
+        if (ui.busy) return
+        root.child("arrangementApply").clicked()
+        root.phase++
+        break
+      case 49:
+        if (!ui.confirming) return
+        root.child("arrangementDiscard").clicked()
+        root.phase++
+        break
+      case 50:
+        if (ui.busy) return
+        root.check(root.screen("DP-3").y === root.droppedY && ui.message.indexOf("restored") >= 0, "Revert restores the previous layout")
+        root.done("manual confirmation Revert")
+        ui.nudge(0, 1)
+        root.phase++
+        break
+      case 51:
+        if (ui.busy) return
+        root.check(ui.preview[2].y === root.droppedY + 1, "Keyboard movement changes one logical pixel")
+        root.child("arrangementDiscard").clicked()
+        root.check(!ui.canApply && ui.preview.length === 0 && root.screen("DP-3").y === root.droppedY,
+                   "Discard clears the draft without moving physical screens")
+        root.done("precise keyboard movement and Discard")
+        root.child("arrangementAbove").clicked()
+        root.phase++
+        break
+      case 52:
+        if (ui.busy) return
+        root.child("arrangementApply").clicked()
+        root.phase++
+        break
+      case 53:
+        if (!ui.confirming) return
+        root.beforeTime = Date.now()
+        ui.active = false
+        root.phase++
+        break
+      case 54:
+        if (ui.busy) return
+        root.check(Date.now() - root.beforeTime >= 18000 && !ui.confirming && ui.message.indexOf("restored") >= 0,
+                   "Closing the panel still reverts an unconfirmed layout after the deadline")
+        ui.active = true
+        root.phase++
+        break
+      case 55:
+        if (ui.busy) return
+        root.check(root.screen("DP-3").y === root.droppedY, "Reopening reads the restored layout")
+        root.done("confirmation timeout while panel is closed")
         root.finish()
         break
       }

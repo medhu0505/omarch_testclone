@@ -240,6 +240,36 @@ class TransactionTests(unittest.TestCase):
       position.panel_request(request)
     self.assertEqual(self.config.read_text(), self.original)
 
+  def test_panel_saves_multiple_moves_and_arbitrary_offsets_together(self):
+    screens = [monitor('DP-1'), monitor('DP-2', 1920), monitor('DP-3', 3840)]
+    layout = {'DP-1': [100, 200], 'DP-2': [2020, 323], 'DP-3': [2020, 1403]}
+    request = dict(action='preview', positions=layout, snapshot=position.snapshot(screens))
+    with patch.object(position, 'displays', return_value=screens), patch.object(position, 'hypr', return_value=''), patch.object(position, 'wait_layout'):
+      preview = position.panel_request(request)
+      self.assertEqual(preview['monitors'][1]['y'], 323)
+      self.assertEqual(self.config.read_text(), self.original)
+      position.panel_request(dict(request, action='apply'))
+    rules = evaluate(self.config.read_text())
+    self.assertEqual(rules['DP-1', 'position'], '100x200')
+    self.assertEqual(rules['DP-2', 'position'], '2020x323')
+    self.assertEqual(rules['DP-3', 'position'], '2020x1403')
+
+  def test_full_layout_rejects_overlap_missing_outputs_and_invalid_coordinates(self):
+    for layout in ({'DP-1': [0, 0]}, {'DP-1': [0, 0], 'DP-2': [100, 100]},
+                   {'DP-1': [0, 0], 'DP-2': [True, 0]}, {'DP-1': [0, 0], 'DP-2': [float('nan'), 0]},
+                   {'DP-1': [0, 0], 'DP-2': [1000001, 0]}):
+      with self.subTest(layout=layout), patch.object(position, 'displays', return_value=self.screens), self.assertRaises(RuntimeError):
+        position.panel_request(dict(action='apply', positions=layout, snapshot=position.snapshot(self.screens)))
+      self.assertEqual(self.config.read_text(), self.original)
+
+  def test_readable_labels_have_stable_numbers_after_query_reordering(self):
+    screens = [monitor('eDP-1'), monitor('DP-2', 1920, model='Acme Display')]
+    first = position.layout_state(screens)['monitors']
+    second = position.layout_state(screens[::-1])['monitors']
+    self.assertEqual(first[0]['label'], 'Built-in display')
+    self.assertEqual(first[1]['label'], 'Acme Display')
+    self.assertEqual({m['name']: m['number'] for m in first}, {m['name']: m['number'] for m in second})
+
   def test_success_backup_and_permissions(self):
     with patch.object(position, 'displays', return_value=self.screens), patch.object(position, 'hypr', return_value=''), patch.object(position, 'wait_layout'):
       self.run_apply()
@@ -362,6 +392,86 @@ class PanelProcessTests(unittest.TestCase):
       else:
         self.fail('The transaction died with its panel waiter')
       self.assertEqual(evaluate((scratch / 'config/hypr/monitors.lua').read_text())['DP-3', 'position'], '-1280x0')
+
+
+class ConfirmationProcessTests(unittest.TestCase):
+  def setUp(self):
+    self.temp = tempfile.TemporaryDirectory()
+    self.addCleanup(self.temp.cleanup)
+    self.scratch = Path(self.temp.name)
+    executable = self.scratch / 'bin/hyprctl'
+    executable.parent.mkdir()
+    self.fake = ROOT / 'test/shell.d/monitor-arrangement/fake-hyprctl.py'
+    executable.write_text(f'#!/bin/bash\nexec "{sys.executable}" "{self.fake}" "$@"\n')
+    executable.chmod(0o700)
+    self.env = dict(os.environ, XDG_CONFIG_HOME=str(self.scratch / 'config'), XDG_STATE_HOME=str(self.scratch / 'state'),
+                    ARRANGEMENT_TEST_STATE=str(self.scratch / 'compositor.json'),
+                    PATH=str(executable.parent) + os.pathsep + os.environ['PATH'])
+    subprocess.run([sys.executable, str(self.fake), '--control', '{"reset":true}'], env=self.env, check=True)
+    self.config = self.scratch / 'config/hypr/monitors.lua'
+    self.original = self.config.read_text()
+    self.initial = self.call({'action': 'state'})
+    self.request = dict(action='trial', positions={'eDP-1': [0, 0], 'DP-2': [1920, 123], 'DP-3': [0, 1080]}, snapshot=self.initial['snapshot'])
+
+  def call(self, request):
+    result = subprocess.run([sys.executable, str(ROOT / 'default/hypr/monitor-position.py'), '--request', json.dumps(request)],
+                            env=self.env, capture_output=True, text=True, check=True)
+    return json.loads(result.stdout)
+
+  def await_status(self, trial, wanted, seconds=5):
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+      state = json.loads(Path(trial['statePath']).read_text())
+      if state['status'] in wanted:
+        return state
+      time.sleep(0.03)
+    self.fail('Did not reach ' + repr(wanted) + ': ' + repr(state))
+
+  def test_keep_commits_the_whole_draft_after_confirmation(self):
+    trial = self.call(self.request)
+    self.await_status(trial, ('confirming',))
+    self.call(dict(action='keep', token=trial['token']))
+    self.assertEqual(self.await_status(trial, ('kept',))['status'], 'kept')
+    rules = evaluate(self.config.read_text())
+    self.assertEqual(rules['DP-2', 'position'], '1920x123')
+    self.assertEqual(rules['DP-3', 'position'], '0x1080')
+    self.call(dict(action='dismiss', token=trial['token']))
+    self.assertFalse(Path(trial['statePath']).exists())
+
+  def test_revert_restores_configuration_and_live_geometry(self):
+    trial = self.call(self.request)
+    self.await_status(trial, ('confirming',))
+    self.call(dict(action='revert', token=trial['token']))
+    self.await_status(trial, ('reverted',))
+    self.assertEqual(self.config.read_text(), self.original)
+    self.assertEqual(self.call({'action': 'state'})['snapshot'], self.initial['snapshot'])
+
+  def test_unconfirmed_trial_reverts_after_panel_process_has_exited(self):
+    # call() has already waited for the panel's request process to exit.
+    trial = self.call(self.request)
+    state = self.await_status(trial, ('confirming',))
+    self.assertGreater(state['deadline'], time.time() + 18)
+    self.await_status(trial, ('reverted',), seconds=24)
+    self.assertEqual(self.config.read_text(), self.original)
+    self.assertEqual(self.call({'action': 'state'})['snapshot'], self.initial['snapshot'])
+
+  def test_competing_trial_cannot_save_while_confirmation_is_pending(self):
+    first = self.call(self.request)
+    self.await_status(first, ('confirming',))
+    second = self.call(self.request)
+    rejected = self.await_status(second, ('error',))
+    self.assertIn('in progress', rejected['message'])
+    self.call(dict(action='revert', token=first['token']))
+    self.await_status(first, ('reverted',))
+    self.assertEqual(self.config.read_text(), self.original)
+
+  def test_external_config_edit_during_confirmation_is_preserved(self):
+    trial = self.call(self.request)
+    self.await_status(trial, ('confirming',))
+    self.config.write_text('-- user changed configuration\n')
+    self.call(dict(action='keep', token=trial['token']))
+    self.assertIn('manually', self.await_status(trial, ('error',))['message'])
+    self.assertEqual(self.config.read_text(), '-- user changed configuration\n')
 
 
 if __name__ == '__main__':

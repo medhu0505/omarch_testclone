@@ -9,6 +9,7 @@ Item {
   id: root
   property bool shown: false
   property var screens: Quickshell.screens
+  property var monitors: []
 
   Variants {
     model: root.shown ? root.screens : []
@@ -17,7 +18,7 @@ Item {
       screen: modelData
       visible: true
       implicitWidth: Math.min(Style.space(320), modelData.width)
-      implicitHeight: Style.space(110)
+      implicitHeight: Style.space(140)
       color: "transparent"
       exclusionMode: ExclusionMode.Ignore
       WlrLayershell.namespace: "omarchy-monitor-identify"
@@ -38,11 +39,30 @@ Item {
           spacing: Style.space(8)
           Text {
             width: parent.width
-            text: "DISPLAY"
+            textFormat: Text.PlainText
+            text: {
+              var m = root.monitors.filter(function(s) { return s.name === modelData.name })[0]
+              return m ? m.label : "DISPLAY"
+            }
             color: Commons.Color.popups.text
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
             horizontalAlignment: Text.AlignHCenter
+            elide: Text.ElideRight
+          }
+          Text {
+            width: parent.width
+            textFormat: Text.PlainText
+            text: {
+              var m = root.monitors.filter(function(s) { return s.name === modelData.name })[0]
+              return m ? String(m.number) : modelData.name
+            }
+            color: Commons.Color.popups.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.displayLarge
+            font.bold: true
+            horizontalAlignment: Text.AlignHCenter
+            elide: Text.ElideRight
           }
           Text {
             width: parent.width
@@ -50,8 +70,7 @@ Item {
             text: modelData.name
             color: Commons.Color.popups.text
             font.family: Style.font.family
-            font.pixelSize: Style.font.displayLarge
-            font.bold: true
+            font.pixelSize: Style.font.caption
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
           }

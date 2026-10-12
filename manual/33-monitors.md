@@ -38,7 +38,17 @@ When you're extending, closing the lid on the laptop will automatically turn off
 
 ### Arranging multiple screens
 
-Open the **Display** panel from the monitor icon in the bar or with `Super + Ctrl + D`. With at least two enabled screens, a collapsed **Arrangement** row appears below **DISPLAYS**. Click the row or its right-hand chevron to open the controls; click again to close them. The row is hidden with only one enabled screen. Choose the screen to move and its reference screen, then choose **Left**, **Right**, **Above** or **Below** to preview the layout. Click **Apply layout** to save and apply it. You can also click a screen in the diagram to select it. **Refresh** rereads the connected screens. **Identify screens** briefly shows each connector name on its physical display. The labels disappear after four seconds; clicking again restarts the timer. Identification does not change the layout. This works with two or more enabled screens, including multiple external screens and desktops without a laptop screen. Other screens keep their positions. For left/right placement, **Align screens** offers **Top**, **Center** or **Bottom**. For above/below placement, it offers **Left**, **Center** or **Right**. This lets you line up screens of different sizes along either edge or their centers. The defaults are top and left alignment. Scaling and rotation are accounted for. Previewing does not change the displays. If the screens change before Apply, refresh and choose the position again.
+Open the **Display** panel from the monitor icon in the bar or with `Super + Ctrl + D`. With at least two enabled screens, a collapsed **Arrangement** row appears below **DISPLAYS**. Click the row or its right-hand chevron to open the controls; click again to close them. The row is hidden with only one enabled screen.
+
+Drag the numbered screens in the diagram to match the monitors on your desk. Nearby edges and top, center or bottom alignment snap into place, with a guide showing the shared edge. You can also use offsets between those alignments. Screens cannot overlap. Select and move another screen to build the whole arrangement before applying. **Discard changes** returns the diagram to the current layout without moving your screens. **Refresh** rereads the connected screens.
+
+**Identify screens** shows the matching number, display name and connector on each physical screen for four seconds. Clicking again restarts the timer. Identification does not change the layout.
+
+Click **Apply layout** to test the arrangement. Move your pointer between screens, then click **Keep layout** to save it. **Revert** restores the previous layout immediately; without confirmation, it returns automatically after 20 seconds, including if you close the panel. The optional terminal command below applies directly without this confirmation step.
+
+Open **Position controls** for preset placements. Choose the screen to move and its reference screen, then choose **Left**, **Right**, **Above** or **Below**. For left/right placement, **Align screens** offers **Top**, **Center** or **Bottom**. For above/below placement, it offers **Left**, **Center** or **Right**. Defaults are top and left alignment. To make precise adjustments with the keyboard, navigate to the diagram and press Enter. Arrow keys move the selected screen one logical pixel; Enter or Escape finishes editing. Changes remain a preview until Apply.
+
+Arrangement supports multiple external screens and desktops without a laptop screen. Scaling and rotation are accounted for. If the screens change before Apply, refresh and arrange them again.
 
 You can also arrange screens from the terminal:
 

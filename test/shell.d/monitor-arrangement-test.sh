@@ -38,7 +38,7 @@ env QT_QPA_PLATFORM=offscreen QT_QPA_PLATFORMTHEME= QT_QUICK_BACKEND=software \
   quickshell -p "$scratch/config" --no-color >"$scratch/log" 2>&1 &
 qs_pid=$!
 
-for (( attempt = 0; attempt < 350; attempt++ )); do
+for (( attempt = 0; attempt < 650; attempt++ )); do
   [[ -s $scratch/result.json ]] && break
   if ! kill -0 "$qs_pid" 2>/dev/null; then
     cat "$scratch/log" >&2
@@ -46,7 +46,7 @@ for (( attempt = 0; attempt < 350; attempt++ )); do
   fi
   sleep 0.1
 done
-if [[ ! -s $scratch/result.json ]] || ! jq -e '.ok and (.checks | length == 12)' "$scratch/result.json" >/dev/null; then
+if [[ ! -s $scratch/result.json ]] || ! jq -e '.ok and (.checks | length == 16)' "$scratch/result.json" >/dev/null; then
   cat "$scratch/log" >&2
   [[ ! -f $scratch/result.json ]] || cat "$scratch/result.json" >&2
   fail "Display arrangement controls pass with the real backend"

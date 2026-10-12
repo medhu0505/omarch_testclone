@@ -88,7 +88,7 @@ Panel {
     if (section === "textsize") return 0    // slider sentinel at -1, like brightness
     if (section === "scale") return scaleValues.length
     if (section === "monitors") return displays.length
-    if (section === "arrangement") return arrangement.expanded ? 11 : 1
+    if (section === "arrangement") return arrangement.navigationCount
     return 0
   }
 
@@ -228,6 +228,10 @@ Panel {
       arrangement: {
         visible: arrangement.visible,
         expanded: arrangement.expanded,
+        showPresets: arrangement.showPresets,
+        confirming: arrangement.confirming,
+        keyboardEditing: arrangement.keyboardEditing,
+        monitors: arrangement.monitors,
         busy: arrangement.busy,
         moving: arrangement.moving,
         reference: arrangement.reference,
@@ -523,6 +527,7 @@ Panel {
       blocked: arrangement.popupOpen
       onMoveRequested: function(dx, dy) {
         if (!root.cursorActive) { root.cursorActive = true; return }
+        if (root.focusSection === "arrangement" && arrangement.keyboardEditing) { arrangement.nudge(dx, dy); return }
         if (dy !== 0) root.moveCursor(dy)
         else if (dx !== 0) {
           if (root.focusSection === "brightness") root.adjustBrightness(dx * 5)
@@ -531,7 +536,7 @@ Panel {
         }
       }
       onActivateRequested: if (root.cursorActive) root.activateCursor()
-      onCloseRequested: root.close()
+      onCloseRequested: { if (arrangement.keyboardEditing) arrangement.keyboardEditing = false; else root.close() }
       onTabRequested: function(direction) { root.switchPanel(direction) }
 
       ScrollView {
@@ -871,6 +876,7 @@ Panel {
             }
             onPopupOpenChanged: if (!popupOpen && root.opened) keyCatcher.forceActiveFocus()
             onApplied: root.refresh()
+            onNavigationCountChanged: root.clampCursor()
             onExpandedChanged: {
               root.clampCursor()
               if (expanded) Qt.callLater(function() { root.ensureCursorVisible(arrangement) })

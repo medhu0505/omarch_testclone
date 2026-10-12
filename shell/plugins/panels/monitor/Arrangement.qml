@@ -13,12 +13,28 @@ Column {
   property bool active: false
   property int displayCount: 0
   property bool expanded: false
+  property bool showPresets: false
   property color foreground: Commons.Color.popups.text
   property string fontFamily: Style.font.family
   property var backendCommand: ["python3", Quickshell.env("OMARCHY_PATH") + "/default/hypr/monitor-position.py"]
   property var monitors: []
   property var preview: []
   property var snapshot: []
+  property var pendingPositions: null
+  property string token: ""
+  property string statePath: ""
+  property bool confirming: false
+  property double deadline: 0
+  property int remainingSeconds: 20
+  property bool keyboardEditing: false
+  property string dragging: ""
+  property var dragOrigin: null
+  property var dragBounds: null
+  property real dragFit: 1
+  property real dragX: 0
+  property real dragY: 0
+  property var dragCandidate: null
+  property bool dragMoved: false
   property string moving: ""
   property string reference: ""
   property string side: ""
@@ -34,14 +50,20 @@ Column {
   property var identificationScreens: Quickshell.screens
   readonly property bool popupOpen: movingPicker.popupOpen || referencePicker.popupOpen || alignmentPicker.popupOpen
   readonly property bool ready: active && visible && expanded && !busy && monitors.length >= 2
-  readonly property bool canApply: ready && side !== "" && preview.length > 0
+  readonly property bool canApply: ready && preview.length > 0 && Model.changed(monitors, preview)
   readonly property var shownMonitors: preview.length ? preview : monitors
-  readonly property var layoutBounds: Model.bounds(shownMonitors)
+  readonly property var layoutBounds: dragging ? dragBounds : Model.bounds(shownMonitors)
   readonly property var screenOptions: monitors.map(function(m) { return m.name })
   readonly property var referenceOptions: screenOptions.filter(function(name) { return name !== root.moving })
   readonly property var sides: ["left", "right", "above", "below"]
   readonly property var alignmentOptions: side === "above" || side === "below"
     ? ["left", "center", "right"] : ["top", "center", "bottom"]
+
+  readonly property var navigationItems: !expanded ? [sectionButton] : [sectionButton, identifyButton, diagram, applyButton, discardButton, refreshButton, presetsButton].concat(
+    showPresets ? [movingPicker, referencePicker, directionButtons.itemAt(0), directionButtons.itemAt(1), directionButtons.itemAt(2), directionButtons.itemAt(3), alignmentPicker] : [])
+  readonly property int navigationCount: navigationItems.length
+
+  function indexOf(item) { return navigationItems.indexOf(item) }
 
   signal cursorRequested(int index, var item)
   signal applied()
@@ -49,9 +71,7 @@ Column {
   spacing: Style.space(10)
   visible: displayCount > 1
   onCursorIndexChanged: {
-    var item = cursorIndex === 0 ? sectionButton : cursorIndex === 1 ? identifyButton : cursorIndex === 2 ? movingPicker : cursorIndex === 3 ? referencePicker
-      : cursorIndex >= 4 && cursorIndex <= 7 ? directionButtons.itemAt(cursorIndex - 4)
-      : cursorIndex === 8 ? alignmentPicker : cursorIndex === 9 ? applyButton : cursorIndex === 10 ? refreshButton : null
+    var item = navigationItems[cursorIndex]
     if (item) cursorRequested(cursorIndex, item)
   }
   onActiveChanged: {
@@ -70,6 +90,8 @@ Column {
     alignmentPicker.close()
     identifying = false
     identifyTimer.stop()
+    keyboardEditing = false
+    dragging = ""
   }
 
   function request(action, preserve) {
@@ -78,13 +100,10 @@ Column {
     preserveMessage = !!preserve
     error = preserve ? error : false
     busy = true
-    if (!preserve) message = action === "apply" ? "Applying layout…" : "Reading screens…"
+    if (!preserve) message = action === "trial" ? "Applying layout…" : "Reading screens…"
     var payload = { action: action }
     if (action !== "state") {
-      payload.output = moving
-      payload.reference = reference
-      payload.side = side
-      payload.alignment = alignment
+      payload.positions = action === "trial" ? Model.positions(preview) : pendingPositions
       payload.snapshot = snapshot
     }
     backend.command = backendCommand.concat(["--request", JSON.stringify(payload)])
@@ -101,9 +120,12 @@ Column {
   }
 
   function invalidate() {
+    if (token !== "") { refreshQueued = true; return }
     preview = []
     side = ""
     alignment = "top"
+    dragging = ""
+    keyboardEditing = false
     if (active) refresh()
   }
 
@@ -113,7 +135,8 @@ Column {
     var selected = Model.pair(monitors, moving, reference === name ? "" : reference)
     // Keep the clicked screen as the moving one, even when it was the reference.
     reference = selected.reference === moving ? referenceOptions[0] || "" : selected.reference
-    clearPreview()
+    side = ""
+    error = false
   }
 
   function clearPreview() {
@@ -124,31 +147,143 @@ Column {
     message = "Choose a position to preview. Apply saves the layout."
   }
 
+  function discard() {
+    if (!ready) return
+    clearPreview()
+    keyboardEditing = false
+    message = "Changes discarded. Drag screens to match your desk."
+  }
+
   function chooseSide(value) {
     if (!ready || sides.indexOf(value) < 0) return
-    preview = []
     side = value
     if (alignmentOptions.indexOf(alignment) < 0) alignment = alignmentOptions[0]
+    pendingPositions = Model.positions(Model.preset(shownMonitors, moving, reference, side, alignment))
     request("preview")
   }
 
   function chooseAlignment(value) {
     if (!ready || side === "" || alignmentOptions.indexOf(value) < 0) return
     alignment = value
-    preview = []
+    chooseSide(side)
+  }
+
+  function beginDrag(name, x, y) {
+    if (!ready) return
+    selectScreen(name)
+    dragBounds = Model.bounds(shownMonitors)
+    dragFit = diagram.fit
+    var m = shownMonitors.filter(function(s) { return s.name === name })[0]
+    dragOrigin = {x: x, y: y, screenX: m.x, screenY: m.y}
+    dragX = m.x
+    dragY = m.y
+    dragMoved = false
+    dragCandidate = null
+    dragging = name
+    cursorRequested(2, diagram)
+  }
+
+  function updateDrag(x, y) {
+    if (!dragging) return
+    var dx = x - dragOrigin.x, dy = y - dragOrigin.y
+    if (Math.hypot(dx, dy) > 4) dragMoved = true
+    var wantedX = dragOrigin.screenX + dx / dragFit, wantedY = dragOrigin.screenY + dy / dragFit
+    dragCandidate = Model.snap(shownMonitors, dragging, wantedX, wantedY, Style.space(18) / dragFit)
+    dragX = dragCandidate ? dragCandidate.x : wantedX
+    dragY = dragCandidate ? dragCandidate.y : wantedY
+  }
+
+  function endDrag() {
+    if (!dragging) return
+    var candidate = dragCandidate, moved = dragMoved
+    dragging = ""
+    if (!moved) return
+    if (!candidate) {
+      message = "Place the screen against another edge without overlapping."
+      error = true
+      return
+    }
+    side = ""
+    pendingPositions = Model.positions(candidate.layout)
+    request("preview")
+  }
+
+  function nudge(dx, dy) {
+    if (!ready) return
+    var m = shownMonitors.filter(function(s) { return s.name === moving })[0]
+    var draft = Model.place(shownMonitors, moving, m.x + dx, m.y + dy)
+    if (Model.overlaps(draft)) { error = true; message = "Screens cannot overlap."; return }
+    side = ""
+    pendingPositions = Model.positions(draft)
     request("preview")
   }
 
   function activate(index) {
     if (!active || !visible) return
-    if (index === 0) expanded = !expanded
-    else if (index === 1 && expanded) identifyScreens()
-    else if (index === 2 && ready) movingPicker.open()
-    else if (index === 3 && ready) referencePicker.open()
-    else if (index >= 4 && index <= 7) chooseSide(sides[index - 4])
-    else if (index === 8 && ready && side !== "") alignmentPicker.open()
-    else if (index === 9 && canApply) request("apply")
-    else if (index === 10) refresh()
+    var item = navigationItems[index]
+    if (item === sectionButton) expanded = !expanded
+    else if (item === identifyButton && expanded) identifyScreens()
+    else if (item === diagram && ready) {
+      keyboardEditing = !keyboardEditing
+      message = keyboardEditing ? "Arrow keys move the selected screen one pixel. Enter finishes editing." : "Drag screens to match your desk. Apply saves the layout."
+    }
+    else if (item === presetsButton && ready) showPresets = !showPresets
+    else if (item === movingPicker && ready) movingPicker.open()
+    else if (item === referencePicker && ready) referencePicker.open()
+    else if (item === alignmentPicker && ready && side !== "") alignmentPicker.open()
+    else if (item === applyButton) applyDraft()
+    else if (item === discardButton) { if (confirming) decide("revert"); else discard() }
+    else if (item === refreshButton) refresh()
+    else {
+      for (var i = 0; i < sides.length; i++)
+        if (item === directionButtons.itemAt(i)) chooseSide(sides[i])
+    }
+  }
+
+  function applyDraft() {
+    if (confirming) decide("keep")
+    else if (canApply) request("trial")
+  }
+
+  function decide(action) {
+    if (!confirming || decision.running) return
+    decision.command = backendCommand.concat(["--request", JSON.stringify({action: action, token: token})])
+    confirming = false
+    message = action === "keep" ? "Keeping layout…" : "Restoring previous layout…"
+    decision.running = true
+  }
+
+  function updateTrial() {
+    if (!token) return
+    try {
+      var state = JSON.parse(trialState.text())
+      if (state.status === "confirming") {
+        confirming = true
+        deadline = state.deadline
+        remainingSeconds = Math.max(0, Math.ceil(deadline - Date.now() / 1000))
+        message = "Does the pointer move between screens as expected? Keep this layout or it will revert."
+        return
+      }
+      if (["kept", "reverted", "error"].indexOf(state.status) < 0) return
+      var finishedToken = token
+      token = ""
+      statePath = ""
+      confirming = false
+      busy = false
+      error = state.status === "error"
+      message = state.message
+      preview = []
+      side = ""
+      keyboardEditing = false
+      applied()
+      decision.command = backendCommand.concat(["--request", JSON.stringify({action: "dismiss", token: finishedToken})])
+      if (!decision.running) decision.running = true
+      refreshQueued = false
+      refresh(true)
+    } catch (failure) {
+      // Atomic replacement may briefly race a file notification; the next load
+      // carries the complete state. The worker owns the confirmation deadline.
+    }
   }
 
   function identifyScreens() {
@@ -171,7 +306,15 @@ Column {
     } else {
       try {
         var response = JSON.parse(backendOutput.text)
-        if (action === "apply") {
+        if (action === "trial") {
+          if (typeof response.token !== "string" || !/^[a-f0-9]{32}$/.test(response.token) || typeof response.statePath !== "string")
+            throw new Error("Invalid confirmation response")
+          token = response.token
+          statePath = response.statePath
+          busy = true
+          keyboardEditing = false
+          return
+        } else if (action === "apply") {
           message = response.message
           error = false
           preview = []
@@ -183,7 +326,7 @@ Column {
           if (!Array.isArray(response.monitors) || !Array.isArray(response.snapshot)) throw new Error("Invalid display response")
           if (action === "preview") {
             preview = response.monitors
-            message = moving + " " + side + " of " + reference + ", aligned " + alignment + ". Preview only."
+            message = side ? moving + " " + side + " of " + reference + ", aligned " + alignment + ". Preview only." : "Unsaved arrangement. Apply layout to test it."
           } else {
             monitors = response.monitors
             snapshot = response.snapshot
@@ -192,7 +335,7 @@ Column {
             reference = selected.reference
             if (!preserveMessage) message = monitors.length < 2
               ? "Connect and enable at least two screens to arrange them."
-              : "Choose a position to preview. Apply saves the layout."
+              : "Drag screens to match your desk. Apply saves the layout."
           }
         }
       } catch (failure) {
@@ -218,8 +361,34 @@ Column {
     onExited: function(exitCode) { root.finish(exitCode) }
     // Failed-to-start emits runningChanged without exited.
     onRunningChanged: if (!running && root.busy) Qt.callLater(function() {
-      if (root.busy && !backend.running) root.finish(1)
+      if (root.busy && root.token === "" && !backend.running) root.finish(1)
     })
+  }
+
+  Process {
+    id: decision
+    stderr: StdioCollector { id: decisionError; waitForEnd: true }
+    onExited: function(exitCode) {
+      if (exitCode !== 0 && root.token !== "") {
+        root.confirming = true
+        root.error = true
+        root.message = String(decisionError.text).trim() || "Cannot confirm the layout. It will revert automatically."
+      }
+    }
+  }
+  FileView {
+    id: trialState
+    path: root.statePath
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: root.updateTrial()
+  }
+  Timer {
+    interval: 200
+    repeat: true
+    running: root.confirming
+    onTriggered: root.remainingSeconds = Math.max(0, Math.ceil(root.deadline - Date.now() / 1000))
   }
 
   Connections {
@@ -236,6 +405,7 @@ Column {
     onLoaded: {
       item.shown = Qt.binding(function() { return root.identifying })
       item.screens = Qt.binding(function() { return root.identificationScreens })
+      item.monitors = Qt.binding(function() { return root.monitors })
     }
   }
   Timer { id: identifyTimer; interval: 4000; onTriggered: root.identifying = false }
@@ -280,25 +450,45 @@ Column {
       fontSize: Style.font.caption
       verticalPadding: Style.space(4)
       bordered: true
-      hasCursor: root.cursorIndex === 1
+      hasCursor: root.cursorIndex === root.indexOf(identifyButton)
       onClicked: root.identifyScreens()
-      onHovered: function(hot) { if (hot) root.cursorRequested(1, identifyButton) }
+      onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(identifyButton), identifyButton) }
     }
 
     Rectangle {
       id: diagram
       width: parent.width
-      height: Style.space(140)
+      height: Style.space(180)
+      objectName: "arrangementDiagram"
+      border.width: root.cursorIndex === 2 ? 1 : 0
+      border.color: Commons.Color.accent
       color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.04)
       radius: Style.cornerRadius
-      readonly property real fit: Math.min((width - Style.space(20)) / root.layoutBounds.width,
-                                           (height - Style.space(20)) / root.layoutBounds.height)
+      readonly property real fit: root.dragging ? root.dragFit : Math.min(
+        (width - Style.space(20)) / (root.layoutBounds.width + 2 * Math.max.apply(null, root.shownMonitors.map(function(m) { return m.logicalWidth }).concat([1]))),
+        (height - Style.space(20)) / (root.layoutBounds.height + 2 * Math.max.apply(null, root.shownMonitors.map(function(m) { return m.logicalHeight }).concat([1]))))
+      clip: true
+      Rectangle {
+        visible: root.dragging !== "" && root.dragCandidate !== null
+        color: Commons.Color.accent
+        opacity: 0.7
+        z: 3
+        readonly property var guide: root.dragCandidate ? root.dragCandidate.guide : {}
+        x: guide.x !== undefined ? (diagram.width - root.layoutBounds.width * diagram.fit) / 2 + (guide.x - root.layoutBounds.x) * diagram.fit : 0
+        y: guide.y !== undefined ? (diagram.height - root.layoutBounds.height * diagram.fit) / 2 + (guide.y - root.layoutBounds.y) * diagram.fit : 0
+        width: guide.x !== undefined ? 1 : diagram.width
+        height: guide.y !== undefined ? 1 : diagram.height
+      }
       Repeater {
         model: root.shownMonitors
         Rectangle {
           required property var modelData
-          x: (diagram.width - root.layoutBounds.width * diagram.fit) / 2 + (modelData.x - root.layoutBounds.x) * diagram.fit
-          y: (diagram.height - root.layoutBounds.height * diagram.fit) / 2 + (modelData.y - root.layoutBounds.y) * diagram.fit
+          objectName: "arrangementScreen" + modelData.name
+          z: root.dragging === modelData.name ? 2 : 0
+          property real displayX: root.dragging === modelData.name ? root.dragX : modelData.x
+          property real displayY: root.dragging === modelData.name ? root.dragY : modelData.y
+          x: (diagram.width - root.layoutBounds.width * diagram.fit) / 2 + (displayX - root.layoutBounds.x) * diagram.fit
+          y: (diagram.height - root.layoutBounds.height * diagram.fit) / 2 + (displayY - root.layoutBounds.y) * diagram.fit
           width: modelData.logicalWidth * diagram.fit
           height: modelData.logicalHeight * diagram.fit
           color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, modelData.name === root.moving ? 0.16 : 0.06)
@@ -308,98 +498,45 @@ Column {
             anchors.centerIn: parent
             width: Math.max(0, parent.width - Style.space(8))
             textFormat: Text.PlainText
-            text: modelData.name
+            text: String(modelData.number)
+            font.bold: true
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
             color: root.foreground
             font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
+            font.pixelSize: Style.font.displayLarge
           }
-          MouseArea { anchors.fill: parent; enabled: root.ready; cursorShape: Qt.PointingHandCursor; onClicked: root.selectScreen(modelData.name) }
+          MouseArea {
+            anchors.fill: parent
+            enabled: root.ready
+            preventStealing: true
+            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+            onPressed: function(mouse) { var p = mapToItem(diagram, mouse.x, mouse.y); root.beginDrag(modelData.name, p.x, p.y) }
+            onPositionChanged: function(mouse) { if (pressed) { var p = mapToItem(diagram, mouse.x, mouse.y); root.updateDrag(p.x, p.y) } }
+            onReleased: root.endDrag()
+            onCanceled: root.dragging = ""
+          }
         }
       }
-    }
-
-    Row {
-      width: parent.width
-      spacing: Style.space(10)
-      Dropdown {
-        id: movingPicker
-        objectName: "arrangementMoving"
-        width: (parent.width - parent.spacing) / 2
-        label: "Move screen"
-        value: root.moving
-        options: root.screenOptions
-        enabled: root.ready
-        foreground: root.foreground
-        fontFamily: root.fontFamily
-        hasCursor: root.cursorIndex === 2
-        onChanged: function(value) { root.selectScreen(value) }
-        onHovered: function(hot) { if (hot) root.cursorRequested(2, movingPicker) }
-      }
-      Dropdown {
-        id: referencePicker
-        objectName: "arrangementReference"
-        width: (parent.width - parent.spacing) / 2
-        label: "Relative to"
-        value: root.reference
-        options: root.referenceOptions
-        enabled: root.ready
-        foreground: root.foreground
-        fontFamily: root.fontFamily
-        hasCursor: root.cursorIndex === 3
-        onChanged: function(value) { root.reference = value; root.clearPreview() }
-        onHovered: function(hot) { if (hot) root.cursorRequested(3, referencePicker) }
-      }
-    }
-
-    Row {
-      width: parent.width
-      spacing: Style.space(4)
-      Repeater {
-        id: directionButtons
-        model: ["Left", "Right", "Above", "Below"]
-        Button {
-          id: directionButton
-          required property string modelData
-          required property int index
-          objectName: "arrangement" + modelData
-          width: (parent.width - parent.spacing * 3) / 4
-          text: modelData
-          bordered: true
-          foreground: root.foreground
-          fontFamily: root.fontFamily
-          enabled: root.ready
-          opacity: enabled ? 1 : 0.45
-          active: root.side === root.sides[index] && root.preview.length > 0
-          hasCursor: root.cursorIndex === index + 4
-          onClicked: root.chooseSide(root.sides[index])
-          onHovered: function(hot) { if (hot) root.cursorRequested(index + 4, directionButton) }
-        }
-      }
-    }
-
-    Dropdown {
-      id: alignmentPicker
-      objectName: "arrangementAlignment"
-      width: parent.width
-      label: "Align screens"
-      value: root.alignment
-      options: root.alignmentOptions.map(function(value) {
-        return {value: value, label: value.charAt(0).toUpperCase() + value.slice(1)}
-      })
-      enabled: root.ready && root.side !== ""
-      foreground: root.foreground
-      fontFamily: root.fontFamily
-      hasCursor: root.cursorIndex === 8
-      onChanged: function(value) { root.chooseAlignment(value) }
-      onHovered: function(hot) { if (hot) root.cursorRequested(8, alignmentPicker) }
     }
 
     Text {
       width: parent.width
       textFormat: Text.PlainText
-      text: root.message
+      text: {
+        var m = root.shownMonitors.filter(function(s) { return s.name === root.moving })[0]
+        return m ? m.number + " · " + m.label + " (" + m.name + ")" : ""
+      }
+      color: root.foreground
+      font.family: root.fontFamily
+      font.pixelSize: Style.font.caption
+      wrapMode: Text.Wrap
+    }
+
+    Text {
+      width: parent.width
+      textFormat: Text.PlainText
+      text: root.keyboardEditing ? "Arrow keys move the selected screen one pixel. Enter finishes editing." : root.message
       color: root.error ? Commons.Color.urgent : root.foreground
       opacity: root.error ? 1 : 0.7
       font.family: root.fontFamily
@@ -414,28 +551,145 @@ Column {
         id: applyButton
         objectName: "arrangementApply"
         width: (parent.width - parent.spacing) / 2
-        text: root.busy && root.requestAction === "apply" ? "Applying…" : "Apply layout"
+        text: root.confirming ? "Keep layout" : root.busy && root.requestAction === "trial" ? "Applying…" : "Apply layout"
         foreground: root.foreground
         fontFamily: root.fontFamily
         bordered: true
-        enabled: root.canApply
+        enabled: root.confirming || root.canApply
         opacity: enabled ? 1 : 0.45
-        hasCursor: root.cursorIndex === 9
-        onClicked: if (root.canApply) root.request("apply")
-        onHovered: function(hot) { if (hot) root.cursorRequested(9, applyButton) }
+        hasCursor: root.cursorIndex === root.indexOf(applyButton)
+        onClicked: root.applyDraft()
+        onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(applyButton), applyButton) }
       }
       Button {
-        id: refreshButton
-        objectName: "arrangementRefresh"
+        id: discardButton
+        objectName: "arrangementDiscard"
         width: (parent.width - parent.spacing) / 2
-        text: "Refresh"
+        text: root.confirming ? "Revert (" + root.remainingSeconds + "s)" : "Discard changes"
         foreground: root.foreground
         fontFamily: root.fontFamily
-        enabled: !root.busy
+        enabled: root.confirming || (root.ready && root.preview.length > 0)
         opacity: enabled ? 1 : 0.45
-        hasCursor: root.cursorIndex === 10
-        onClicked: root.refresh()
-        onHovered: function(hot) { if (hot) root.cursorRequested(10, refreshButton) }
+        hasCursor: root.cursorIndex === root.indexOf(discardButton)
+        onClicked: { if (root.confirming) root.decide("revert"); else root.discard() }
+        onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(discardButton), discardButton) }
+      }
+    }
+    Button {
+      id: refreshButton
+      objectName: "arrangementRefresh"
+      width: parent.width
+      text: "Refresh"
+      foreground: root.foreground
+      fontFamily: root.fontFamily
+      enabled: !root.busy
+      opacity: enabled ? 1 : 0.45
+      hasCursor: root.cursorIndex === root.indexOf(refreshButton)
+      onClicked: root.refresh()
+      onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(refreshButton), refreshButton) }
+    }
+    Button {
+      id: presetsButton
+      objectName: "arrangementPresets"
+      width: parent.width
+      text: "Position controls"
+      leftAlign: true
+      foreground: root.foreground
+      fontFamily: root.fontFamily
+      fontSize: Style.font.caption
+      enabled: root.ready
+      hasCursor: root.cursorIndex === root.indexOf(presetsButton)
+      onClicked: root.showPresets = !root.showPresets
+      onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(presetsButton), presetsButton) }
+      Text {
+        textFormat: Text.PlainText
+        anchors.right: parent.right
+        anchors.rightMargin: Style.spacing.controlPaddingX
+        anchors.verticalCenter: parent.verticalCenter
+        text: root.showPresets ? "󰅃" : "󰅀"
+        color: root.foreground
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.icon
+      }
+    }
+    Column {
+      width: parent.width
+      spacing: root.spacing
+      visible: root.showPresets
+      Row {
+        width: parent.width
+        spacing: Style.space(10)
+        Dropdown {
+          id: movingPicker
+          objectName: "arrangementMoving"
+          width: (parent.width - parent.spacing) / 2
+          label: "Move screen"
+          value: root.moving
+          options: root.monitors.map(function(m) { return {value: m.name, label: m.number + " · " + m.label} })
+          enabled: root.ready
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+          hasCursor: root.cursorIndex === root.indexOf(movingPicker)
+          onChanged: function(value) { root.selectScreen(value) }
+          onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(movingPicker), movingPicker) }
+        }
+        Dropdown {
+          id: referencePicker
+          objectName: "arrangementReference"
+          width: (parent.width - parent.spacing) / 2
+          label: "Relative to"
+          value: root.reference
+          options: root.monitors.filter(function(m) { return m.name !== root.moving }).map(function(m) { return {value: m.name, label: m.number + " · " + m.label} })
+          enabled: root.ready
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+          hasCursor: root.cursorIndex === root.indexOf(referencePicker)
+          onChanged: function(value) { root.reference = value; root.side = "" }
+          onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(referencePicker), referencePicker) }
+        }
+      }
+
+      Row {
+        width: parent.width
+        spacing: Style.space(4)
+        Repeater {
+          id: directionButtons
+          model: ["Left", "Right", "Above", "Below"]
+          Button {
+            id: directionButton
+            required property string modelData
+            required property int index
+            objectName: "arrangement" + modelData
+            width: (parent.width - parent.spacing * 3) / 4
+            text: modelData
+            bordered: true
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            enabled: root.ready
+            opacity: enabled ? 1 : 0.45
+            active: root.side === root.sides[index] && root.preview.length > 0
+            hasCursor: root.cursorIndex === root.indexOf(directionButton)
+            onClicked: root.chooseSide(root.sides[index])
+            onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(directionButton), directionButton) }
+          }
+        }
+      }
+
+      Dropdown {
+        id: alignmentPicker
+        objectName: "arrangementAlignment"
+        width: parent.width
+        label: "Align screens"
+        value: root.alignment
+        options: root.alignmentOptions.map(function(value) {
+          return {value: value, label: value.charAt(0).toUpperCase() + value.slice(1)}
+        })
+        enabled: root.ready && root.side !== ""
+        foreground: root.foreground
+        fontFamily: root.fontFamily
+        hasCursor: root.cursorIndex === root.indexOf(alignmentPicker)
+        onChanged: function(value) { root.chooseAlignment(value) }
+        onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(alignmentPicker), alignmentPicker) }
       }
     }
   }

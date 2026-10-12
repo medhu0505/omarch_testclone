@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 
 SIDES = ('left', 'right', 'above', 'below')
 TOKEN = re.compile(r'''--\[(=*)\[.*?\]\1\]|--[^\n]*|\[(=*)\[.*?\]\2\]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|[A-Za-z_][A-Za-z_0-9]*|[^\s]''', re.S)
@@ -71,6 +72,16 @@ def arrange(monitors, output, reference, side, alignment=None):
     x += offset
   positions = {m['name']: (m['x'], m['y']) for m in monitors}
   positions[output] = (x, y)
+  return validate_positions(monitors, positions)
+
+
+def validate_positions(monitors, positions):
+  if not isinstance(positions, dict) or set(positions) != {m['name'] for m in monitors}:
+    raise RuntimeError('The layout must include each enabled screen exactly once.')
+  if any(not isinstance(point, (list, tuple)) or len(point) != 2
+         or any(type(value) is not int or abs(value) > 1000000 for value in point)
+         for point in positions.values()):
+    raise RuntimeError('Screen positions must be integer coordinates within range.')
   for a, b in itertools.combinations(monitors, 2):
     ax, ay = positions[a['name']]
     bx, by = positions[b['name']]
@@ -78,7 +89,7 @@ def arrange(monitors, output, reference, side, alignment=None):
     bw, bh = logical_size(b)
     if ax < bx + bw and bx < ax + aw and ay < by + bh and by < ay + ah:
       raise RuntimeError(f"The layout would overlap {a['name']} and {b['name']}. Move the obstructing screen first.")
-  return positions
+  return {name: tuple(point) for name, point in positions.items()}
 
 
 def monitor_rules(contents):
@@ -273,7 +284,7 @@ def wait_layout(monitors, positions):
   raise RuntimeError('Hyprland did not apply the requested layout, or the connected screens changed.')
 
 
-def apply(output, reference, side, dry_run=False, expected_snapshot=None, alignment=None):
+def apply(output=None, reference=None, side=None, dry_run=False, expected_snapshot=None, alignment=None, positions=None, confirmation=None):
   config = (Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'hypr/monitors.lua').resolve(strict=True)
   # Lock a separate inode because atomic replacement changes the config inode.
   with config.with_name('monitors.lua.monitor-position.lock').open('a') as lock:
@@ -284,7 +295,7 @@ def apply(output, reference, side, dry_run=False, expected_snapshot=None, alignm
     monitors = displays()
     if expected_snapshot is not None and snapshot(monitors) != expected_snapshot:
       raise RuntimeError('The screens changed since the preview. Refresh screens and choose the position again.')
-    positions = arrange(monitors, output, reference, side, alignment)
+    positions = validate_positions(monitors, positions) if positions is not None else arrange(monitors, output, reference, side, alignment)
     original = config.read_text()
     updated = update_config(original, monitors, positions)
     if dry_run:
@@ -301,11 +312,33 @@ def apply(output, reference, side, dry_run=False, expected_snapshot=None, alignm
     if config.read_text() != original:
       raise RuntimeError('The configuration changed while creating its backup. Try again.')
     atomic_write(config, updated)
+    restored = False
     try:
       hypr('reload')
       wait_layout(monitors, positions)
+      if confirmation:
+        status_path, decision_path = confirmation
+        deadline = time.time() + 20
+        stop = time.monotonic() + 20
+        atomic_write(status_path, json.dumps({'status': 'confirming', 'deadline': deadline}))
+        keep = False
+        while time.monotonic() < stop:
+          if decision_path.exists():
+            keep = decision_path.read_text() == 'keep'
+            break
+          time.sleep(0.1)
+        if config.read_text() != updated:
+          raise RuntimeError('Configuration changed during confirmation; restore monitors.lua.bak.monitor-position manually.')
+        if keep:
+          wait_layout(monitors, positions)
+        else:
+          atomic_write(config, original)
+          restored = True
+          hypr('reload')
+          wait_layout(monitors, {m['name']: (m['x'], m['y']) for m in monitors})
+          return False
     except Exception as error:
-      if config.read_text() != updated:
+      if config.read_text() != (original if restored else updated):
         raise RuntimeError(f'{error}\nConfiguration changed during apply; restore monitors.lua.bak.monitor-position manually.') from error
       atomic_write(config, original)
       try:
@@ -314,15 +347,54 @@ def apply(output, reference, side, dry_run=False, expected_snapshot=None, alignm
       except Exception as rollback_error:
         raise RuntimeError(f'{error}\nPrevious configuration restored, but its layout could not be verified: {rollback_error}') from error
       raise RuntimeError(f'{error}\nThe previous configuration and layout were restored.') from error
+    return True
 
 
 def layout_state(monitors, positions=None):
   layout = []
+  names = sorted((m['name'] for m in monitors), key=lambda name: (not re.match(r'^(eDP|LVDS|DSI)', name), name))
+  numbers = {name: number for number, name in enumerate(names, 1)}
   for monitor in monitors:
     width, height = logical_size(monitor)
     x, y = positions[monitor['name']] if positions else (monitor['x'], monitor['y'])
-    layout.append(dict(name=monitor['name'], x=x, y=y, logicalWidth=width, logicalHeight=height))
+    label = 'Built-in display' if re.match(r'^(eDP|LVDS|DSI)', monitor['name']) else (monitor.get('model') or monitor.get('description') or monitor['name'])
+    layout.append(dict(name=monitor['name'], label=label, number=numbers[monitor['name']], x=x, y=y, logicalWidth=width, logicalHeight=height))
   return {'monitors': layout, 'snapshot': snapshot(monitors)}
+
+
+def trial_paths(token):
+  if not isinstance(token, str) or not re.fullmatch(r'[a-f0-9]{32}', token):
+    raise RuntimeError('Invalid layout confirmation token.')
+  directory = Path(os.environ.get('XDG_STATE_HOME', Path.home() / '.local/state')) / 'omarchy/monitor-position'
+  directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+  return directory / (token + '.json'), directory / (token + '.decision')
+
+
+def trial_request(request):
+  token = request.get('token') or uuid.uuid4().hex
+  status_path, decision_path = trial_paths(token)
+  if request.get('worker'):
+    try:
+      result = panel_request(dict(request, action='apply', confirmation=(status_path, decision_path)))
+      atomic_write(status_path, json.dumps({'status': 'kept' if result['kept'] else 'reverted', 'message': result['message']}))
+    except Exception as error:
+      atomic_write(status_path, json.dumps({'status': 'error', 'message': str(error)}))
+    finally:
+      decision_path.unlink(missing_ok=True)
+    return {}
+  # Terminal records may outlive a closed panel. Only prune our own expired files.
+  for path in status_path.parent.glob('*.json'):
+    if re.fullmatch(r'[a-f0-9]{32}\.json', path.name) and time.time() - path.stat().st_mtime > 86400:
+      path.unlink(missing_ok=True)
+      path.with_suffix('.decision').unlink(missing_ok=True)
+  atomic_write(status_path, json.dumps({'status': 'applying'}))
+  try:
+    subprocess.Popen([sys.executable, __file__, '--request', json.dumps(dict(request, token=token, worker=True))],
+                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+  except OSError:
+    status_path.unlink(missing_ok=True)
+    raise
+  return {'token': token, 'statePath': str(status_path)}
 
 
 def panel_request(request):
@@ -330,12 +402,26 @@ def panel_request(request):
   if not isinstance(request, dict):
     raise RuntimeError('Expected a monitor arrangement request.')
   action = request.get('action')
+  if action == 'trial':
+    return trial_request(request)
+  if action in ('keep', 'revert', 'dismiss'):
+    status_path, decision_path = trial_paths(request.get('token'))
+    status = json.loads(status_path.read_text())
+    if action == 'dismiss':
+      if status['status'] in ('kept', 'reverted', 'error'):
+        status_path.unlink(missing_ok=True)
+      return {}
+    if status['status'] != 'confirming' or time.time() >= status['deadline']:
+      raise RuntimeError('This layout confirmation has already ended.')
+    atomic_write(decision_path, action)
+    return {}
   if action == 'state':
     return layout_state(displays())
   if action not in ('preview', 'apply'):
     raise RuntimeError('Unknown monitor arrangement action.')
   output, reference, side = (request.get(key) for key in ('output', 'reference', 'side'))
-  if not isinstance(output, str) or not isinstance(reference, str) or side not in SIDES:
+  positions = request.get('positions')
+  if positions is None and (not isinstance(output, str) or not isinstance(reference, str) or side not in SIDES):
     raise RuntimeError('Choose two screens and a valid position.')
   expected = request.get('snapshot')
   if not isinstance(expected, list) or any(
@@ -347,13 +433,15 @@ def panel_request(request):
   expected = sorted(tuple(row) for row in expected)
   alignment = request.get('alignment')
   if action == 'apply':
-    apply(output, reference, side, expected_snapshot=expected, alignment=alignment)
+    kept = apply(output, reference, side, expected_snapshot=expected, alignment=alignment, positions=positions, confirmation=request.get('confirmation'))
+    if positions is not None:
+      return {'kept': kept is not False, 'message': 'Layout saved for next time.' if kept is not False else 'Previous layout restored.'}
     alignment = alignment or ('top' if side in ('left', 'right') else 'left')
-    return {'message': f'{output} is {side} of {reference}, aligned {alignment}. Saved for next time.'}
+    return {'kept': kept is not False, 'message': f'{output} is {side} of {reference}, aligned {alignment}. Saved for next time.' if kept is not False else 'Previous layout restored.'}
   monitors = displays()
   if snapshot(monitors) != expected:
     raise RuntimeError('The screens changed since the preview. Refresh screens and choose the position again.')
-  return layout_state(monitors, arrange(monitors, output, reference, side, alignment))
+  return layout_state(monitors, validate_positions(monitors, positions) if positions is not None else arrange(monitors, output, reference, side, alignment))
 
 
 def main():
