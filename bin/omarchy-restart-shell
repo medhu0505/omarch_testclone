@@ -147,15 +147,22 @@ fi
 # still-dying instance (-n), which is how a restart used to end with no bar.
 while timeout 30 quickshell kill -p "$CONFIG_DIR" >/dev/null 2>&1; do :; done
 
-shell_instance_running() {
-  quickshell list -a -j 2>/dev/null |
-    jq -e --arg dir "$CONFIG_DIR/" 'any(.[]; .config_path | startswith($dir))' >/dev/null 2>&1
+shell_instances_stopped() {
+  local instances
+  instances=$(timeout --kill-after=1s 1s quickshell list -a -j 2>/dev/null) || return 1
+  jq -e --arg dir "$CONFIG_DIR/" \
+    'type == "array" and all(.[]; (.config_path | type) == "string") and all(.[]; .config_path | startswith($dir) | not)' \
+    <<<"$instances" >/dev/null 2>&1
 }
 
 deadline=$((SECONDS + 30))
-while (( SECONDS < deadline )) && shell_instance_running; do
+while (( SECONDS < deadline )) && ! shell_instances_stopped; do
   sleep 0.1
 done
+if ! shell_instances_stopped; then
+  echo "Could not confirm the old Omarchy shell exited; refusing to launch a replacement." >&2
+  exit 1
+fi
 
 # Spawn from Hyprland so the shell inherits the canonical session environment,
 # not transient variables from a terminal, SSH connection, or development tool.

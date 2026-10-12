@@ -119,6 +119,14 @@ printf '%s\n' "$*" >>"${OMARCHY_TEST_QS_LOG:-/dev/null}"
 
 case " $* " in
   *' list -a -j '*)
+    case ${OMARCHY_TEST_QS_EXIT_CHECK:-} in
+      stuck)
+        printf '[{"config_path":"%s/shell/shell.qml"}]\n' "$OMARCHY_TEST_SESSION_PATH"
+        exit 0
+        ;;
+      failed) exit 1 ;;
+      malformed) printf 'not json\n'; exit 0 ;;
+    esac
     printf '['
     separator=""
     while IFS= read -r pid; do
@@ -134,6 +142,7 @@ case " $* " in
     printf ']\n'
     ;;
   *' kill -p '*)
+    [[ -z ${OMARCHY_TEST_QS_EXIT_CHECK:-} ]] || exit 124
     [[ $* == "kill -p $OMARCHY_TEST_SESSION_PATH/shell" ]] || exit 1
     killed=0
     : >"$OMARCHY_TEST_QS_STATE.next"
@@ -255,6 +264,32 @@ SH
 chmod +x "$restart_bin/qs" "$restart_bin/quickshell" "$restart_bin/hyprctl" "$restart_bin/systemd-cat" "$restart_bin/systemctl" "$restart_bin/busctl"
 
 hypr_signature_log="$test_tmp/hypr-signatures.log"
+
+# Exercise the post-deadline gate without spending 30 seconds per refusal.
+# Only shorten the shutdown wait in a temporary copy of the production script.
+short_restart="$test_tmp/restart-no-exit-wait"
+sed 's/^deadline=$((SECONDS + 30))$/deadline=$SECONDS/' "$ROOT/bin/omarchy-restart-shell" >"$short_restart"
+chmod +x "$short_restart"
+for exit_check in stuck failed malformed; do
+  : >"$dispatch_log"
+  : >"$restart_state"
+  exit_error=$(PATH="$restart_bin:$PATH" \
+    OMARCHY_PATH="$restart_root" \
+    XDG_RUNTIME_DIR="$runtime_dir" \
+    OMARCHY_TEST_QS_STATE="$restart_state" \
+    OMARCHY_TEST_QS_LOG="$restart_log" \
+    OMARCHY_TEST_QS_ENV_LOG="$restart_env_log" \
+    OMARCHY_TEST_DISPATCH_LOG="$dispatch_log" \
+    OMARCHY_TEST_IPC_LOG="$ipc_log" \
+    OMARCHY_TEST_SESSION_PATH="$restart_root" \
+    OMARCHY_TEST_QS_EXIT_CHECK="$exit_check" \
+    HYPRLAND_INSTANCE_SIGNATURE=current-session \
+    "$short_restart" 2>&1) && fail "restart refuses an unconfirmed old-shell exit ($exit_check)"
+  [[ $exit_error == "Could not confirm the old Omarchy shell exited; refusing to launch a replacement." ]] || fail "old-shell exit refusal is clear ($exit_check)" "$exit_error"
+  [[ ! -s $dispatch_log ]] || fail "restart dispatches no replacement with an unconfirmed exit ($exit_check)"
+  [[ ! -s $restart_state ]] || fail "restart launches no replacement with an unconfirmed exit ($exit_check)"
+  pass "restart refuses replacement after $exit_check instance-exit check"
+done
 
 sleep 30 &
 restart_pid_one=$!
