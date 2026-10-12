@@ -599,14 +599,14 @@ render = function()
   regions[#regions+1]={id='remaining',x=W-90,y=sy-12,w=90,h=24,action=function() show_total=not show_total end}
   local x1,x2=104,W-104
   seekbar={id='seek',x=x1,y=sy-10,w=x2-x1,h=20}
-  box(x1,sy-2,x2-x1,4,palette.button,2,nil,surface_opacity(sy))
+  box(x1,sy-4,x2-x1,8,palette.button,4,nil,surface_opacity(sy))
   local position=window and math.max(0,math.min(1,(time-window.start)/(window.finish-window.start))) or 0
-  if position > 0 then box(x1,sy-2,(x2-x1)*position,4,palette.accent,2) end
+  if position > 0 then box(x1,sy-4,(x2-x1)*position,8,palette.accent,4) end
   for _, chapter in ipairs(prop('chapter-list',{})) do
-    if window and chapter.time >= window.start and chapter.time <= window.finish then box(x1+(x2-x1)*(chapter.time-window.start)/(window.finish-window.start),sy-4,1,8,palette.muted) end
+    if window and chapter.time >= window.start and chapter.time <= window.finish then box(x1+(x2-x1)*(chapter.time-window.start)/(window.finish-window.start),sy-6,1,12,palette.muted) end
   end
   if window then
-    box(x1+(x2-x1)*position-4,sy-5,8,10,palette.accent,3)
+    box(x1+(x2-x1)*position-5,sy-9,10,18,palette.accent,3)
     seekbar.action=seek_mouse; regions[#regions+1]=seekbar
     if inside and hit(seekbar) then text(mx,sy-22,format_time(clamp_seek(window.start+(mx-x1)/(x2-x1)*(window.finish-window.start),window)),12,palette.foreground,5) end
   end
