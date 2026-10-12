@@ -48,9 +48,13 @@ Item {
   // JSONC menu definitions. The shell parses both at startup and merges
   // the user file on top of the defaults, so the keybind → IPC → visible
   // path doesn't have to shell out to bash + jq on every open.
+  readonly property string systemLocaleName: String(Quickshell.env("LANG") || Qt.locale().name || "")
+  readonly property bool isPtBrLocale: systemLocaleName.indexOf("pt_BR") !== -1 || systemLocaleName.indexOf("pt-BR") !== -1
   property string defaultMenuPath: omarchyPath + "/default/omarchy/omarchy-menu.jsonc"
+  property string localeMenuPath: omarchyPath + "/default/omarchy/omarchy-menu.pt_BR.jsonc"
   property string userMenuPath: Quickshell.env("HOME") + "/.config/omarchy/extensions/omarchy-menu.jsonc"
   property var defaultMenuItems: []
+  property var localeMenuItems: []
   property var userMenuItems: []
   // Whether each file has answered once, loaded or (the user's) missing. At
   // startup both arrive separately, and evaluating guards for the first alone
@@ -255,11 +259,16 @@ Item {
     return MenuModel.parseMenuJsonc(raw)
   }
 
-  // Merge defaults + user extension. Later entries override earlier ones
-  // on a per-key basis (so the user can tweak label/icon/action without
-  // re-declaring the whole row).
+  // Merge defaults + optional locale overlay + user extension.
+  // Later entries override earlier ones on a per-key basis (so the user can
+  // tweak label/icon/action without re-declaring the whole row).
   function rebuildItemsFromSources() {
-    var mergedMenu = MenuModel.mergeMenuSources(root.defaultMenuItems, root.userMenuItems)
+    var baseList = root.defaultMenuItems
+    if (root.isPtBrLocale && root.localeMenuItems && root.localeMenuItems.length > 0) {
+      var overlayMap = MenuModel.mergeMenuSources(root.defaultMenuItems, root.localeMenuItems)
+      baseList = Object.values(overlayMap.items)
+    }
+    var mergedMenu = MenuModel.mergeMenuSources(baseList, root.userMenuItems)
     root.providerRevision += 1
     root.providersLoaded = ({})
     root.providerQueue = []
@@ -1077,9 +1086,7 @@ Item {
     }
   }
 
-  // The JSONC sources are watched so live edits to the default file (or the
-  // user extension at ~/.config/omarchy/extensions/omarchy-menu.jsonc) take
-  // effect without restarting the shell.
+  // JSONC sources: default, optional locale overlay, and user extensions.
   FileView {
     id: defaultMenuFile
     path: root.defaultMenuPath
@@ -1088,6 +1095,16 @@ Item {
     onLoaded: { root.defaultMenuItems = root.parseMenuJsonc(text()); root.defaultMenuSettled = true; root.rebuildItemsFromSources() }
     // A user file that loaded first held its evaluation for this one.
     onLoadFailed: { root.defaultMenuSettled = true; if (root.userMenuSettled) root.evaluateGuards() }
+    onFileChanged: reload()
+  }
+
+  FileView {
+    id: localeMenuFile
+    path: root.isPtBrLocale ? root.localeMenuPath : ""
+    watchChanges: true
+    printErrors: false
+    onLoaded: { root.localeMenuItems = root.parseMenuJsonc(text()); root.rebuildItemsFromSources() }
+    onLoadFailed: { root.localeMenuItems = []; root.rebuildItemsFromSources() }
     onFileChanged: reload()
   }
 
