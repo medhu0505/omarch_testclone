@@ -911,3 +911,14 @@ if command -v phantombot >/dev/null; then
     fail "phantombot persona renders persona management, not the chat TUI"
   pass "Phantombot entrypoint contract holds on the real binary"
 fi
+
+# The install script is pinned the way Omarchy's packaged seeds are in
+# effect: one upstream release, fetched by tag and held to a recorded sha256,
+# so a fresh install never runs whatever the upstream main branch holds.
+grep -Eq 'phantombot/v[0-9][^/]*/install\.sh' "$ROOT/bin/omarchy-install-phantombot" ||
+  fail "the Phantombot install script is pinned to a release tag"
+grep -q 'install_script_sha256=' "$ROOT/bin/omarchy-install-phantombot" ||
+  fail "the Phantombot install script is held to a recorded sha256"
+! grep -q 'phantombot/main/install\.sh' "$ROOT/bin/omarchy-install-phantombot" ||
+  fail "the Phantombot installer never runs an unpinned main script"
+pass "the Phantombot installer runs a pinned, hash-verified script"

@@ -8,8 +8,17 @@
 # service. The default-agent flow talks to that installer through the same
 # --check/--now contract mise-backed agents get from mise itself. PHANTOMBOT_SKIP_TUI
 # keeps the post-install setup wizard from grabbing the floating terminal.
+#
+# The installer is pinned: one upstream release's install.sh, fetched by tag
+# and refused unless its bytes match the sha256 recorded here, so an install
+# never runs whatever the upstream main branch happens to hold. The pinned
+# script then checksum-verifies the binary against that release's
+# SHA256SUMS. Move the tag and the hash together when bumping the pin.
 
 set -euo pipefail
+
+install_script_url="https://raw.githubusercontent.com/phantomyard/phantombot/v1.1.432/install.sh"
+install_script_sha256="91ac51ede81154ea358b164a72fd71bbc6f0174177d2b914067449ab86d6b9b9"
 
 case "${1:---now}" in
 --check)
@@ -18,7 +27,15 @@ case "${1:---now}" in
 --now)
   if ! omarchy-cmd-present phantombot; then
     echo "Installing Phantombot..."
-    PHANTOMBOT_SKIP_TUI=1 sh -c "$(curl -fsSL https://raw.githubusercontent.com/phantomyard/phantombot/main/install.sh)"
+    installer=$(mktemp)
+    trap 'rm -f "$installer"' EXIT
+    curl -fsSL "$install_script_url" -o "$installer"
+    if [[ $(sha256sum "$installer" | awk '{print $1}') != "$install_script_sha256" ]]; then
+      echo "The pinned Phantombot installer did not match its recorded sha256; refusing to run it." >&2
+      echo "The pin in omarchy-install-phantombot may need to move to a current upstream release." >&2
+      exit 1
+    fi
+    PHANTOMBOT_SKIP_TUI=1 sh "$installer"
   fi
   ;;
 *)
