@@ -10,14 +10,22 @@ trap 'rm -rf "$test_tmp"' EXIT
 stub_bin="$test_tmp/bin"
 mkdir -p "$stub_bin" "$test_tmp/home"
 
-# The default route goes out wlan0, whose metering and profile come from the
-# environment. gum prints the box it was handed and answers with $GUM_ANSWER.
+# Traffic leaves by $TEST_ROUTE_DEV (wlan0 unless a VPN is up), and the main
+# table's defaults are eth0 at metric 600 and wlan0 at 100. Only wlan0 is a
+# NetworkManager link, with metering and profile from the environment. gum
+# prints the box it was handed and answers with $GUM_ANSWER.
 cat >"$stub_bin/ip" <<'STUB'
 #!/bin/bash
-echo "1.1.1.1 via 192.0.2.1 dev wlan0 src 192.0.2.10 uid 1000"
+if [[ $* == "route get 1.1.1.1" ]]; then
+  echo "1.1.1.1 dev ${TEST_ROUTE_DEV:-wlan0} src 192.0.2.10 uid 1000"
+elif [[ $* == "-o route show default" ]]; then
+  echo "default via 198.51.100.1 dev eth0 proto dhcp metric 600"
+  echo "default via 192.0.2.1 dev wlan0 proto dhcp metric 100"
+fi
 STUB
 cat >"$stub_bin/nmcli" <<'STUB'
 #!/bin/bash
+[[ $5 == "wlan0" ]] || exit 10
 case $2 in
   GENERAL.METERED) echo "$TEST_METERED" ;;
   GENERAL.CON-UUID) echo "$TEST_UUID" ;;
@@ -37,7 +45,7 @@ chmod +x "$stub_bin"/*
 remembered="$test_tmp/home/.local/state/omarchy/update-metered-networks"
 
 confirm() {
-  HOME="$test_tmp/home" PATH="$stub_bin:$PATH" \
+  HOME="${TEST_HOME:-$test_tmp/home}" PATH="$stub_bin:$PATH" \
     TEST_METERED="$1" TEST_UUID="$2" TEST_NAME="$3" GUM_ANSWER="$4" \
     bash "$ROOT/bin/omarchy-update-confirm" >"$test_tmp/out" 2>&1
 }
@@ -75,3 +83,15 @@ pass "a different metered network still warns once"
 confirm "yes (guessed)" colon-uuid 'Cafe\:Upstairs' no || true
 grep -q "Cafe:Upstairs is a mobile hotspot" "$test_tmp/out" || fail "the warning shows nmcli's escaped colons" "$(cat "$test_tmp/out")"
 pass "the warning unescapes the network name"
+
+TEST_ROUTE_DEV=tailscale0 confirm "yes (guessed)" vpn-uuid "Galaxy A54" yes || fail "a hotspot behind a VPN is not confirmed"
+grep -q "Galaxy A54 is a mobile hotspot" "$test_tmp/out" || fail "a full-tunnel VPN hides the hotspot underneath it" "$(cat "$test_tmp/out")"
+pass "a hotspot behind a full-tunnel VPN still warns"
+
+readonly_home="$test_tmp/readonly-home"
+mkdir -p "$readonly_home"
+chmod a-w "$readonly_home"
+TEST_HOME="$readonly_home" confirm "yes (guessed)" ro-uuid "Phone" yes || fail "failing to remember a network cancels the confirmed update" "$(cat "$test_tmp/out")"
+grep -q "Couldn't remember this network" "$test_tmp/out" || fail "a failed save is not reported"
+chmod u+w "$readonly_home"
+pass "a failed save still continues the update"
