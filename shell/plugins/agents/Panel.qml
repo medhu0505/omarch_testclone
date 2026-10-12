@@ -472,6 +472,7 @@ Panel {
 
   function planLabel(p) {
     var tier = String(p && p.tierLabel || "")
+    if (tier === "API key") return Commons.I18n.t("agents.tierApiKey")
     if (tier === "Prepaid") return Commons.I18n.t("agents.tierPrepaid")
     return tier === "" ? "" : tier.charAt(0).toUpperCase() + tier.slice(1)
   }
