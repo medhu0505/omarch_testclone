@@ -10,6 +10,14 @@ QtObject {
   property string home: Quickshell.env("HOME")
   property string pluginsDir: home + "/.config/omarchy/plugins"
 
+  // Per-rescan load directory. The QML engine caches compiled components by URL
+  // for its lifetime and gives QML no way to clear that cache, so the only way
+  // to load edited code is a new URL. Each rescan symlinks every plugin source
+  // dir under a fresh revision here; entryPointUrl() loads through the symlink.
+  // Wiped at startup; older revisions survive the session so preserved
+  // keepLoaded services keep resolving.
+  property string loadRoot: Quickshell.cachePath("plugin-load")
+
   // Set by shell.qml at startup so we can also scan bundled first-party plugins.
   property string firstPartyDir: ""
 
@@ -119,7 +127,9 @@ QtObject {
     if (!Util.isPlainObject(manifest)) return ""
     var ep = manifest.entryPoints ? manifest.entryPoints[kind] : null
     if (!ep) return ""
-    var dir = manifest.__sourceDir || ""
+    // Prefer the per-rescan load dir (a symlink to the source dir) so edits
+    // recompile; fall back to the source dir when no shim was created.
+    var dir = manifest.__loadDir || manifest.__sourceDir || ""
     if (!dir) return ""
     // Defense in depth: even after validateManifest, confirm the resolved
     // path stays inside the plugin's sourceDir.
@@ -569,7 +579,7 @@ QtObject {
   // ---------------------------------------------------------------- scanning
 
   // Output format produced by the rescan script:
-  //   ===<kind>::<absolute-source-dir>===
+  //   ===<kind>::<absolute-source-dir>::<absolute-load-dir>===
   //   ... raw manifest.json content ...
   //   === EOM ===
   // (repeating for every manifest found)
@@ -578,6 +588,7 @@ QtObject {
     var firstParty = {}
     var thirdParty = {}
     var currentSource = null
+    var currentLoad = null
     var currentKind = null
     var currentJson = []
 
@@ -587,6 +598,7 @@ QtObject {
       try {
         var manifest = JSON.parse(raw)
         manifest.__sourceDir = currentSource
+        manifest.__loadDir = currentLoad || currentSource
         manifest.__isFirstParty = (currentKind === "firstparty")
         var validated = validateManifest(manifest, currentSource + "/manifest.json")
         if (validated) {
@@ -597,6 +609,7 @@ QtObject {
         console.warn("PluginRegistry: bad manifest at " + currentSource + ": " + e)
       }
       currentSource = null
+      currentLoad = null
       currentKind = null
       currentJson = []
     }
@@ -607,7 +620,14 @@ QtObject {
       if (startMatch) {
         flush()
         currentKind = startMatch[1]
-        currentSource = startMatch[2].replace(/\/$/, "")
+        var separator = startMatch[2].indexOf("::")
+        if (separator === -1) {
+          currentSource = startMatch[2].replace(/\/$/, "")
+          currentLoad = currentSource
+        } else {
+          currentSource = startMatch[2].slice(0, separator).replace(/\/$/, "")
+          currentLoad = startMatch[2].slice(separator + 2).replace(/\/$/, "")
+        }
         currentJson = []
         continue
       }
@@ -689,17 +709,25 @@ QtObject {
   function rescan() {
     if (scanning) return
     scanning = true
-    // $0 = first-party dir, $1 = third-party dir. Some bash versions need the explicit -- separator.
+    // $0 = first-party dir, $1 = third-party dir, $2 = load root. Some bash
+    // versions need the explicit -- separator.
     // First-party plugins may be grouped one level deeper, e.g. panels/audio
     // or services/battery.
     // First-party bar widgets can also carry sibling manifests such as
     // widgets/Clock.manifest.json so multiple widgets can live in one source
     // directory without wrapper folders.
     // Third-party plugins stay at the top level of ~/.config/omarchy/plugins.
+    // Each manifest gets a symlink under a fresh per-rescan revision dir; the
+    // load dir emitted alongside the source dir is what entryPointUrl() loads
+    // from, so the component URL changes and the engine recompiles.
     var script = ""
-      + "emit_manifest() { local kind=\"$1\"; local manifest=\"$2\"; local sub; "
+      + "load_root=\"$2\"; rev_dir=\"\"; "
+      + "if mkdir -p \"$load_root\" 2>/dev/null; then rev_dir=\"$(mktemp -d \"$load_root/rev.XXXXXX\" 2>/dev/null)\"; fi; "
+      + "emit_manifest() { local kind=\"$1\"; local manifest=\"$2\"; local sub target shim load; "
       + "  if [[ ${manifest##*/} == \"manifest.json\" ]]; then sub=\"${manifest%/manifest.json}\"; else sub=\"$(dirname -- \"$manifest\")\"; fi; "
-      + "  printf '===%s::%s===\\n' \"$kind\" \"$sub\"; "
+      + "  target=\"${sub%/}\"; load=\"$sub\"; "
+      + "  if [[ -n $rev_dir ]]; then shim=\"$rev_dir/$(printf '%s' \"$target\" | md5sum | cut -c1-16)\"; if ln -sfn \"$target\" \"$shim\" 2>/dev/null; then load=\"$shim\"; fi; fi; "
+      + "  printf '===%s::%s::%s===\\n' \"$kind\" \"$sub\" \"$load\"; "
       + "  cat \"$manifest\"; "
       + "  printf '\\n=== EOM ===\\n'; "
       + "}; "
@@ -716,12 +744,13 @@ QtObject {
       + "}; "
       + "scan_firstparty \"$0\"; "
       + "scan_thirdparty \"$1\""
-    scanProcess.command = ["bash", "-c", script, registry.firstPartyDir, registry.pluginsDir]
+    scanProcess.command = ["bash", "-c", script, registry.firstPartyDir, registry.pluginsDir, registry.loadRoot]
     scanProcess.running = true
   }
 
   function ensureUserDir() {
-    initProcess.command = ["bash", "-c", "mkdir -p \"$0\"", registry.pluginsDir]
+    // Wipe stale load shims from the previous shell run before the first scan.
+    initProcess.command = ["bash", "-c", "mkdir -p \"$0\" && rm -rf \"$1\" && mkdir -p \"$1\"", registry.pluginsDir, registry.loadRoot]
     initProcess.running = true
   }
 
