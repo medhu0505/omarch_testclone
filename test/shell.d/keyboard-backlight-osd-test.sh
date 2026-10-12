@@ -49,3 +49,9 @@ with tempfile.TemporaryDirectory() as tmp:
   assert osd(['-p','67'])['progressText'] == '67%'
 print('ok - hardware keyboard events show actual levels without writes or a startup OSD; CLI keeps percentage defaults')
 PY
+service="$ROOT/shell/plugins/keyboard-backlight/Service.qml"
+grep -q '/usr/bin/python3' "$service" || fail "backlight monitor must use the system Python, not PATH"
+if grep -q '\["python3"' "$service"; then
+  fail "backlight monitor must not take Python from PATH"
+fi
+pass "backlight monitor uses the system Python"

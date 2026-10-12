@@ -9,7 +9,7 @@ Item {
   property var pluginRegistry: null
 
   Process {
-    command: ["python3", root.omarchyPath + "/shell/plugins/keyboard-backlight/monitor.py"]
+    command: ["/usr/bin/python3", root.omarchyPath + "/shell/plugins/keyboard-backlight/monitor.py"]
     running: root.omarchyPath !== ""
     stdout: SplitParser {
       onRead: function(line) {
