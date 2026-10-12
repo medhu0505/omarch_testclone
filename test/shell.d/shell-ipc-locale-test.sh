@@ -88,7 +88,7 @@ pass "bar put survives an unavailable LC_ALL"
 
 payload="Lisboa — São Paulo — 東京"
 output=$(LC_ALL=C "$ROOT/bin/omarchy-shell" shell reply "$payload")
-[[ $output == "$payload" ]] || fail "IPC preserves Unicode arguments and replies" "$output"
+[[ $output == $payload ]] || fail "IPC preserves Unicode arguments and replies" "$output"
 pass "IPC preserves Unicode arguments and replies"
 
 for target in shell missing; do
