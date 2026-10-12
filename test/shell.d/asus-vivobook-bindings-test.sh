@@ -50,3 +50,10 @@ match='evdev:name:Asus WMI hotkeys:dmi:bvnBIOS:bvr1:bd01:svnASUSTeKCOMPUTERINC.:
 [[ -z $(systemd-hwdb --root="$stage" query "${match/M5606UA_M5606UA/M5606WA_M5606WA}") ]] || fail "hwdb does not remap another model"
 [[ -z $(systemd-hwdb --root="$stage" query "${match/Asus WMI hotkeys/Other keyboard}") ]] || fail "hwdb does not remap another keyboard"
 pass "compiled hwdb maps only the verified emoji scan code"
+
+script="$ROOT/install/hardware/asus/fix-vivobook-emoji-key.sh"
+grep -q "udevadm trigger --action=change \"\$event\" 2>/dev/null || true" "$script" || fail "udev trigger must not abort an install without udevd"
+grep -q "udevadm settle 2>/dev/null || true" "$script" || fail "udev settle must not abort an install without udevd"
+migration=$(grep -l 'fix-vivobook-emoji-key.sh' "$ROOT"/migrations/*.sh)
+[[ $(head -n 1 "$migration") == echo\ * ]] || fail "migration must start with the description omarchy-migrate prints"
+pass "emoji-key setup survives a missing udevd and describes its migration"
