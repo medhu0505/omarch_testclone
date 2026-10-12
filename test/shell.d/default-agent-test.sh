@@ -900,8 +900,9 @@ pass "Phantombot launches bare for chat and seeds prompts through --prompt"
 # the argv the launcher builds must match what Phantombot actually ships.
 # Bare `phantombot` is the chat TUI under a TTY and hits the usage gate when
 # unwatched, while `phantombot persona` renders persona management either
-# way. The --prompt seed flag is specified in phantomyard/phantombot#575;
-# probe it here once the shipping binary supports it.
+# way. `--prompt` seeds the TUI's first turn (phantomyard/phantombot#575);
+# without a terminal it is refused with a dedicated message, which is the
+# observable proof the flag is recognized rather than an unknown option.
 if command -v phantombot >/dev/null; then
   bare_out=$(timeout 15 phantombot </dev/null 2>&1 || true)
   [[ $bare_out == *"No command specified"* ]] ||
@@ -909,6 +910,9 @@ if command -v phantombot >/dev/null; then
   persona_out=$(timeout 15 phantombot persona </dev/null 2>&1 || true)
   [[ $persona_out == *"Persona"* && $persona_out == *"Status"* ]] ||
     fail "phantombot persona renders persona management, not the chat TUI"
+  prompt_out=$(timeout 15 phantombot --prompt "contract probe" </dev/null 2>&1 || true)
+  [[ $prompt_out == *"need a terminal on stdin and stdout"* ]] ||
+    fail "the shipping binary accepts --prompt as its TUI seed flag" "output: $prompt_out"
   pass "Phantombot entrypoint contract holds on the real binary"
 fi
 
@@ -922,3 +926,82 @@ grep -q 'install_script_sha256=' "$ROOT/bin/omarchy-install-phantombot" ||
 ! grep -q 'phantombot/main/install\.sh' "$ROOT/bin/omarchy-install-phantombot" ||
   fail "the Phantombot installer never runs an unpinned main script"
 pass "the Phantombot installer runs a pinned, hash-verified script"
+
+# The sha256 gate is the security boundary, so run the real wrapper against
+# fake downloads and prove it only ever executes bytes that match the
+# recorded hash — grepping the script's text cannot show that ordering.
+# The recorded hash's value is upstream release bytes, verified when the pin
+# moves; the match case points the pin at the fixture so the suite is offline.
+install_bin="$test_tmp/install-bin"
+install_src="$test_tmp/install-src.sh"
+install_ran="$test_tmp/install-ran"
+install_env="$test_tmp/install-env"
+install_tmpfile="$test_tmp/install-tmp"
+mkdir -p "$install_bin"
+
+cat >"$install_bin/omarchy-cmd-present" <<'SH'
+#!/bin/bash
+exit 1
+SH
+
+cat >"$install_bin/curl" <<'SH'
+#!/bin/bash
+out=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -o)
+      out=$2
+      shift 2
+      ;;
+    *) shift ;;
+  esac
+done
+[[ ${OMARCHY_TEST_CURL_FAIL:-false} != "true" ]] || exit 22
+cp "$OMARCHY_TEST_CURL_SRC" "$out"
+SH
+
+cat >"$install_bin/mktemp" <<'SH'
+#!/bin/bash
+printf '%s\n' "$OMARCHY_TEST_INSTALL_TMPFILE"
+SH
+
+chmod +x "$install_bin"/*
+
+cat >"$install_src" <<'SH'
+#!/bin/sh
+: >"$OMARCHY_TEST_INSTALL_RAN"
+printf '%s' "${PHANTOMBOT_SKIP_TUI:-}" >"$OMARCHY_TEST_INSTALL_ENV"
+SH
+
+export OMARCHY_TEST_CURL_SRC="$install_src"
+export OMARCHY_TEST_INSTALL_TMPFILE="$install_tmpfile"
+export OMARCHY_TEST_INSTALL_RAN="$install_ran"
+export OMARCHY_TEST_INSTALL_ENV="$install_env"
+
+sed "s/^install_script_sha256=.*/install_script_sha256=\"$(sha256sum "$install_src" | awk '{print $1}')\"/" \
+  "$ROOT/bin/omarchy-install-phantombot" >"$install_bin/wrapper"
+
+rm -f "$install_ran" "$install_env" "$install_tmpfile"
+PATH="$install_bin:$PATH" bash "$install_bin/wrapper" --now >/dev/null
+[[ -f $install_ran ]] || fail "installer bytes matching the recorded sha256 run"
+[[ $(cat "$install_env") == "1" ]] ||
+  fail "the installer runs with PHANTOMBOT_SKIP_TUI=1" "env: $(cat "$install_env")"
+[[ ! -e $install_tmpfile ]] || fail "the downloaded script is removed after it runs"
+pass "installer bytes matching the recorded sha256 run, wizard suppressed"
+
+rm -f "$install_ran" "$install_env" "$install_tmpfile"
+if mismatch_out=$(PATH="$install_bin:$PATH" bash "$ROOT/bin/omarchy-install-phantombot" --now 2>&1); then
+  fail "installer bytes that do not match the recorded sha256 are refused"
+fi
+[[ $mismatch_out == *"refusing to run"* ]] ||
+  fail "a hash mismatch reports why it stopped" "output: $mismatch_out"
+[[ ! -f $install_ran ]] || fail "mismatched installer bytes never execute"
+[[ ! -e $install_tmpfile ]] || fail "a refused download is cleaned up"
+pass "mismatched installer bytes are refused before anything runs"
+
+rm -f "$install_ran" "$install_env" "$install_tmpfile"
+if PATH="$install_bin:$PATH" OMARCHY_TEST_CURL_FAIL=true bash "$ROOT/bin/omarchy-install-phantombot" --now >/dev/null 2>&1; then
+  fail "a failed download stops the installation"
+fi
+[[ ! -f $install_ran ]] || fail "a failed download never runs an installer"
+pass "a failed download stops the installation"
