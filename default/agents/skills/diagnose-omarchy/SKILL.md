@@ -14,6 +14,8 @@ description: >
 Work from evidence. The goal is to identify the failing layer and produce a
 useful next step, not to guess from a familiar symptom.
 
+This is the general entry point. When a coredump exists, hand the crash-specific work to the `diagnose-crash` skill; otherwise continue here.
+
 ## Start with the symptom
 
 Ask the user for:

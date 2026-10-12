@@ -57,12 +57,12 @@ const skill = fs.readFileSync(path.join(root, 'default/agents/skills/diagnose-om
 
 assertEqual(
   byId['trigger.investigate'].label,
-  'Investigate Problem',
+  'Hunt Bugs',
   'menu exposes the problem investigation action'
 )
 assertEqual(
   byId['trigger.investigate'].description,
-  'Start an AI-assisted Omarchy troubleshooting session',
+  'Investigate a bug or desktop problem with AI',
   'menu exposes searchable problem investigation text'
 )
 assertEqual(
