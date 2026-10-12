@@ -224,6 +224,7 @@ Panel {
       brightnessAvailable: root.brightnessAvailable,
       focusedMonitor: root.focusedMonitor,
       scale: root.monitorScale,
+      cursor: {section: root.focusSection, index: root.selectedIndex, active: root.cursorActive},
       displays: root.displays,
       arrangement: {
         visible: arrangement.visible,

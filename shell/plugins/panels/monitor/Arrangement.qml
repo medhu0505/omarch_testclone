@@ -296,11 +296,18 @@ Column {
     busy = false
     var action = requestAction
     if (exitCode !== 0) {
-      preview = []
+      var detail = String(backendError.text || "").trim() || "Cannot read or arrange the screens. Try Refresh."
+      var keepDraft = false
+      try {
+        var failure = JSON.parse(detail)
+        keepDraft = action === "preview" && failure.code === "invalid-layout"
+        detail = failure.message
+      } catch (parseError) {}
+      if (!keepDraft) preview = []
       side = ""
       alignment = "top"
       if (action === "state") { monitors = []; snapshot = [] }
-      var detail = String(backendError.text || "").trim() || "Cannot read or arrange the screens. Try Refresh."
+      if (keepDraft && preview.length > 0) detail += " Earlier draft moves are kept."
       message = preserveMessage ? message + " Refresh failed: " + detail : detail
       error = true
     } else {

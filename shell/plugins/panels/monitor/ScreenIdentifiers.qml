@@ -15,6 +15,7 @@ Item {
     model: root.shown ? root.screens : []
     delegate: PanelWindow {
       required property var modelData
+      readonly property var displayInfo: root.monitors.filter(function(s) { return s.name === modelData.name })[0]
       screen: modelData
       visible: true
       implicitWidth: Math.min(Style.space(320), modelData.width)
@@ -40,10 +41,7 @@ Item {
           Text {
             width: parent.width
             textFormat: Text.PlainText
-            text: {
-              var m = root.monitors.filter(function(s) { return s.name === modelData.name })[0]
-              return m ? m.label : "DISPLAY"
-            }
+            text: displayInfo ? displayInfo.label : "DISPLAY"
             color: Commons.Color.popups.text
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
@@ -53,10 +51,7 @@ Item {
           Text {
             width: parent.width
             textFormat: Text.PlainText
-            text: {
-              var m = root.monitors.filter(function(s) { return s.name === modelData.name })[0]
-              return m ? String(m.number) : modelData.name
-            }
+            text: displayInfo ? String(displayInfo.number) : modelData.name
             color: Commons.Color.popups.text
             font.family: Style.font.family
             font.pixelSize: Style.font.displayLarge

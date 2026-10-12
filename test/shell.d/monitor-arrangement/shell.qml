@@ -456,6 +456,21 @@ ShellRoot {
         if (ui.busy) return
         root.check(root.screen("DP-3").y === root.droppedY, "Reopening reads the restored layout")
         root.done("confirmation timeout while panel is closed")
+        ui.nudge(0, 1)
+        root.phase++
+        break
+      case 56:
+        if (ui.busy) return
+        ui.selectScreen("DP-2")
+        root.child("arrangementLeft").clicked()
+        root.phase++
+        break
+      case 57:
+        if (ui.busy) return
+        root.check(ui.error && ui.canApply && ui.preview[2].y === root.droppedY + 1 && ui.preview[1].y === 1080,
+                   "A rejected second preset keeps the earlier valid draft moves")
+        root.child("arrangementDiscard").clicked()
+        root.done("invalid preset preserves earlier draft")
         root.finish()
         break
       }

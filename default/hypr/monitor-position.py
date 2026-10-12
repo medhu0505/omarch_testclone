@@ -18,6 +18,10 @@ SIDES = ('left', 'right', 'above', 'below')
 TOKEN = re.compile(r'''--\[(=*)\[.*?\]\1\]|--[^\n]*|\[(=*)\[.*?\]\2\]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|[A-Za-z_][A-Za-z_0-9]*|[^\s]''', re.S)
 
 
+class LayoutError(RuntimeError):
+  """An invalid proposed layout does not invalidate earlier draft moves."""
+
+
 def hypr(*args):
   result = subprocess.run(['hyprctl', *args], capture_output=True, text=True, timeout=12)
   if result.returncode:
@@ -77,18 +81,18 @@ def arrange(monitors, output, reference, side, alignment=None):
 
 def validate_positions(monitors, positions):
   if not isinstance(positions, dict) or set(positions) != {m['name'] for m in monitors}:
-    raise RuntimeError('The layout must include each enabled screen exactly once.')
+    raise LayoutError('The layout must include each enabled screen exactly once.')
   if any(not isinstance(point, (list, tuple)) or len(point) != 2
          or any(type(value) is not int or abs(value) > 1000000 for value in point)
          for point in positions.values()):
-    raise RuntimeError('Screen positions must be integer coordinates within range.')
+    raise LayoutError('Screen positions must be integer coordinates within range.')
   for a, b in itertools.combinations(monitors, 2):
     ax, ay = positions[a['name']]
     bx, by = positions[b['name']]
     aw, ah = logical_size(a)
     bw, bh = logical_size(b)
     if ax < bx + bw and bx < ax + aw and ay < by + bh and by < ay + ah:
-      raise RuntimeError(f"The layout would overlap {a['name']} and {b['name']}. Move the obstructing screen first.")
+      raise LayoutError(f"The layout would overlap {a['name']} and {b['name']}. Move the obstructing screen first.")
   return {name: tuple(point) for name, point in positions.items()}
 
 
@@ -476,7 +480,8 @@ def main():
     else:
       parser.error('provide OUTPUT REFERENCE SIDE, or --list')
   except (RuntimeError, OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
-    print(str(error), file=sys.stderr)
+    detail = json.dumps({'message': str(error), 'code': 'invalid-layout' if isinstance(error, LayoutError) else 'request-failed'}) if args.request is not None else str(error)
+    print(detail, file=sys.stderr)
     return 1
   return 0
 
