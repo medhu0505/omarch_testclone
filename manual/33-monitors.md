@@ -38,13 +38,13 @@ When you're extending, closing the lid on the laptop will automatically turn off
 
 ### Arranging multiple screens
 
-Open the **Display** panel from the monitor icon in the bar or with `Super + Ctrl + D`. In **Arrangement**, choose the screen to move and its reference screen, then choose **Left**, **Right**, **Above** or **Below** to preview the layout. Click **Apply layout** to save and apply it. You can also click a screen in the diagram to select it. **Refresh** rereads the connected screens. This works with two or more enabled screens, including multiple external screens and desktops without a laptop screen. Other screens keep their positions. Left/right placements align the top edges; above/below placements align the left edges. Scaling and rotation are accounted for. Previewing does not change the displays. If the screens change before Apply, refresh and choose the position again.
+Open the **Display** panel from the monitor icon in the bar or with `Super + Ctrl + D`. In **Arrangement**, choose the screen to move and its reference screen, then choose **Left**, **Right**, **Above** or **Below** to preview the layout. Click **Apply layout** to save and apply it. You can also click a screen in the diagram to select it. **Refresh** rereads the connected screens. **Identify screens** briefly shows each connector name on its physical display. The labels disappear after four seconds; clicking again restarts the timer. Identification does not change the layout. This works with two or more enabled screens, including multiple external screens and desktops without a laptop screen. Other screens keep their positions. For left/right placement, **Align screens** offers **Top**, **Center** or **Bottom**. For above/below placement, it offers **Left**, **Center** or **Right**. This lets you line up screens of different sizes along either edge or their centers. The defaults are top and left alignment. Scaling and rotation are accounted for. Previewing does not change the displays. If the screens change before Apply, refresh and choose the position again.
 
 You can also arrange screens from the terminal:
 
 ```bash
-omarchy hyprland monitor position DP-1 eDP-1 left
-omarchy hyprland monitor position DP-2 DP-1 above --dry-run
+omarchy hyprland monitor position DP-1 eDP-1 left --align bottom
+omarchy hyprland monitor position DP-2 DP-1 above --align right --dry-run
 ```
 
 The command saves positions in `~/.config/hypr/monitors.lua`, preserving the other fields in your monitor rules, and keeps a backup at `monitors.lua.bak.monitor-position`. Screens using a fallback or description rule get explicit connector rules with the same options. These rules take precedence over the fallback afterward, so edit their scale fields individually if needed. Mirrored screens and overlapping layouts are rejected. Turn mirroring off first, or move an obstructing screen before moving another into its place. If applying the layout fails, the previous configuration is restored. Monitor rules built through helpers or conditional Lua code must be arranged manually. Fallback and description rules with computed option expressions need explicit connector rules before using this command.

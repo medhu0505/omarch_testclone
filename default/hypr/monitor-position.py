@@ -45,7 +45,7 @@ def logical_size(monitor):
   return math.floor(width / scale + 0.5), math.floor(height / scale + 0.5)
 
 
-def arrange(monitors, output, reference, side):
+def arrange(monitors, output, reference, side, alignment=None):
   by_name = {m['name']: m for m in monitors}
   if output == reference:
     raise RuntimeError('Choose two different screens.')
@@ -54,9 +54,21 @@ def arrange(monitors, output, reference, side):
   moving, anchor = by_name[output], by_name[reference]
   width, height = logical_size(moving)
   anchor_width, anchor_height = logical_size(anchor)
+  horizontal = side in ('left', 'right')
+  alignments = ('top', 'center', 'bottom') if horizontal else ('left', 'center', 'right')
+  if alignment is None:
+    alignment = alignments[0]
+  if alignment not in alignments:
+    raise RuntimeError(f'Choose a valid alignment for {side}: {", ".join(alignments)}.')
   x, y = anchor['x'], anchor['y']
   x, y = {'left': (x - width, y), 'right': (x + anchor_width, y),
           'above': (x, y - height), 'below': (x, y + anchor_height)}[side]
+  difference = anchor_height - height if horizontal else anchor_width - width
+  offset = {'top': 0, 'left': 0, 'center': difference // 2, 'bottom': difference, 'right': difference}[alignment]
+  if horizontal:
+    y += offset
+  else:
+    x += offset
   positions = {m['name']: (m['x'], m['y']) for m in monitors}
   positions[output] = (x, y)
   for a, b in itertools.combinations(monitors, 2):
@@ -261,7 +273,7 @@ def wait_layout(monitors, positions):
   raise RuntimeError('Hyprland did not apply the requested layout, or the connected screens changed.')
 
 
-def apply(output, reference, side, dry_run=False, expected_snapshot=None):
+def apply(output, reference, side, dry_run=False, expected_snapshot=None, alignment=None):
   config = (Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'hypr/monitors.lua').resolve(strict=True)
   # Lock a separate inode because atomic replacement changes the config inode.
   with config.with_name('monitors.lua.monitor-position.lock').open('a') as lock:
@@ -272,7 +284,7 @@ def apply(output, reference, side, dry_run=False, expected_snapshot=None):
     monitors = displays()
     if expected_snapshot is not None and snapshot(monitors) != expected_snapshot:
       raise RuntimeError('The screens changed since the preview. Refresh screens and choose the position again.')
-    positions = arrange(monitors, output, reference, side)
+    positions = arrange(monitors, output, reference, side, alignment)
     original = config.read_text()
     updated = update_config(original, monitors, positions)
     if dry_run:
@@ -333,13 +345,15 @@ def panel_request(request):
   ):
     raise RuntimeError('A valid preview snapshot is required. Refresh screens first.')
   expected = sorted(tuple(row) for row in expected)
+  alignment = request.get('alignment')
   if action == 'apply':
-    apply(output, reference, side, expected_snapshot=expected)
-    return {'message': f'{output} is {side} of {reference}. Saved for next time.'}
+    apply(output, reference, side, expected_snapshot=expected, alignment=alignment)
+    alignment = alignment or ('top' if side in ('left', 'right') else 'left')
+    return {'message': f'{output} is {side} of {reference}, aligned {alignment}. Saved for next time.'}
   monitors = displays()
   if snapshot(monitors) != expected:
     raise RuntimeError('The screens changed since the preview. Refresh screens and choose the position again.')
-  return layout_state(monitors, arrange(monitors, output, reference, side))
+  return layout_state(monitors, arrange(monitors, output, reference, side, alignment))
 
 
 def main():
@@ -349,6 +363,7 @@ def main():
   parser.add_argument('side', nargs='?', choices=SIDES)
   parser.add_argument('--list', action='store_true')
   parser.add_argument('--dry-run', action='store_true')
+  parser.add_argument('--align', choices=('top', 'center', 'bottom', 'left', 'right'))
   parser.add_argument('--request', help=argparse.SUPPRESS)
   parser.add_argument('--request-worker', action='store_true', help=argparse.SUPPRESS)
   args = parser.parse_args()
@@ -367,7 +382,7 @@ def main():
     elif args.list:
       print(json.dumps(displays()))
     elif args.output and args.reference and args.side:
-      apply(args.output, args.reference, args.side, args.dry_run)
+      apply(args.output, args.reference, args.side, args.dry_run, alignment=args.align)
       if not args.dry_run:
         print(f'{args.output} is {args.side} of {args.reference}. Saved for next time.')
     else:

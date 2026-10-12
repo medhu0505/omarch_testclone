@@ -8,6 +8,7 @@ ShellRoot {
   property int phase: 0
   property int ticks: 0
   property int beforeTicks: 0
+  property double beforeTime: 0
   property var failures: []
   property var checks: []
   property bool finished: false
@@ -48,15 +49,15 @@ ShellRoot {
   Process { id: writer; onExited: Qt.quit() }
 
   FloatingWindow {
-    width: 400
-    height: 650
+    implicitWidth: 400
+    implicitHeight: 650
     visible: true
     Loader {
       id: controls
       width: 380
       active: false
       source: "file://" + Quickshell.env("OMARCHY_PATH") + "/shell/plugins/panels/monitor/Arrangement.qml"
-      onLoaded: { item.width = width; item.active = true }
+      onLoaded: { item.width = width; item.identificationScreens = []; item.active = true }
     }
     Loader {
       id: secondControls
@@ -64,7 +65,7 @@ ShellRoot {
       active: false
       visible: false
       source: controls.source
-      onLoaded: { item.width = width; item.active = true }
+      onLoaded: { item.width = width; item.identificationScreens = []; item.active = true }
     }
   }
 
@@ -101,7 +102,7 @@ ShellRoot {
         break
       case 4:
         if (ui.busy) return
-        root.check(ui.canApply && ui.preview[2].x === -1920 && root.screen("DP-3").x === 3840, "Left previews without changing the displays")
+        root.check(ui.canApply && ui.preview[2].x === -1280 && root.screen("DP-3").x === 3840, "Left previews without changing the displays")
         root.child("arrangementMoving").changed("DP-2")
         root.check(ui.moving === "DP-2" && !ui.canApply && ui.preview.length === 0, "Changing selection clears the preview")
         root.done("preview and selection")
@@ -247,6 +248,89 @@ ShellRoot {
         root.check((rejected.indexOf("in progress") >= 0 || rejected.indexOf("changed since") >= 0) && !ui.canApply && !secondUi.canApply,
                    "The competing panel reports a lock or stale preview and clears its preview")
         root.done("competing panel instances")
+        secondControls.active = false
+        root.configure({reset: true})
+        root.phase++
+        break
+      case 28:
+        ui.refresh()
+        root.phase++
+        break
+      case 29:
+        if (ui.busy) return
+        ui.selectScreen("DP-3")
+        root.child("arrangementLeft").clicked()
+        root.phase++
+        break
+      case 30:
+        if (ui.busy) return
+        root.check(ui.alignmentOptions.join(",") === "top,center,bottom", "Horizontal positions offer vertical alignment")
+        root.child("arrangementAlignment").changed("bottom")
+        root.phase++
+        break
+      case 31:
+        if (ui.busy) return
+        root.check(ui.preview[2].x === -1280 && ui.preview[2].y === 360 && root.screen("DP-3").y === 0,
+                   "Bottom alignment previews unequal display heights without applying")
+        root.child("arrangementApply").clicked()
+        root.phase++
+        break
+      case 32:
+        if (ui.busy) return
+        root.check(root.screen("DP-3").y === 360 && ui.message.indexOf("aligned bottom") >= 0, "Apply saves the chosen bottom alignment")
+        root.child("arrangementAbove").clicked()
+        root.phase++
+        break
+      case 33:
+        if (ui.busy) return
+        root.check(ui.alignmentOptions.join(",") === "left,center,right" && ui.alignment === "left",
+                   "Vertical positions offer horizontal alignment and clear incompatible choices")
+        root.child("arrangementAlignment").changed("right")
+        root.phase++
+        break
+      case 34:
+        if (ui.busy) return
+        root.check(ui.preview[2].x === 640 && ui.preview[2].y === -720, "Right alignment previews unequal display widths")
+        root.child("arrangementApply").clicked()
+        root.phase++
+        break
+      case 35:
+        if (ui.busy) return
+        root.check(root.screen("DP-3").x === 640 && root.screen("DP-3").y === -720, "Apply saves the chosen right alignment")
+        root.child("arrangementLeft").clicked()
+        root.phase++
+        break
+      case 36:
+        if (ui.busy) return
+        root.child("arrangementAlignment").changed("center")
+        root.phase++
+        break
+      case 37:
+        if (ui.busy) return
+        root.check(ui.preview[2].y === 180 && root.screen("DP-3").y === -720, "Center alignment previews without applying")
+        root.done("edge and center alignment")
+        root.child("arrangementIdentify").clicked()
+        root.check(ui.identifying, "Identify starts the screen labels")
+        root.beforeTime = Date.now()
+        root.phase++
+        break
+      case 38:
+        if (Date.now() - root.beforeTime < 2000) return
+        root.check(ui.identifying, "Labels remain visible briefly")
+        root.child("arrangementIdentify").clicked()
+        root.beforeTime = Date.now()
+        root.phase++
+        break
+      case 39:
+        if (Date.now() - root.beforeTime < 1000) return
+        root.check(ui.identifying, "Clicking Identify again restarts its timeout")
+        root.phase++
+        break
+      case 40:
+        if (ui.identifying) return
+        root.check(Date.now() - root.beforeTime >= 3500 && ui.canApply && root.screen("DP-3").y === -720,
+                   "Labels hide automatically without changing the preview or applying it")
+        root.done("timed screen identification")
         root.finish()
         break
       }

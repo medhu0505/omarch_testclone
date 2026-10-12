@@ -20,6 +20,7 @@ Column {
   property string moving: ""
   property string reference: ""
   property string side: ""
+  property string alignment: "top"
   property string message: "Connect and enable at least two screens to arrange them."
   property bool error: false
   property bool busy: false
@@ -27,7 +28,9 @@ Column {
   property string requestAction: ""
   property bool preserveMessage: false
   property int cursorIndex: -1
-  readonly property bool popupOpen: movingPicker.popupOpen || referencePicker.popupOpen
+  property bool identifying: false
+  property var identificationScreens: Quickshell.screens
+  readonly property bool popupOpen: movingPicker.popupOpen || referencePicker.popupOpen || alignmentPicker.popupOpen
   readonly property bool ready: !busy && monitors.length >= 2
   readonly property bool canApply: ready && side !== "" && preview.length > 0
   readonly property var shownMonitors: preview.length ? preview : monitors
@@ -35,20 +38,22 @@ Column {
   readonly property var screenOptions: monitors.map(function(m) { return m.name })
   readonly property var referenceOptions: screenOptions.filter(function(name) { return name !== root.moving })
   readonly property var sides: ["left", "right", "above", "below"]
+  readonly property var alignmentOptions: side === "above" || side === "below"
+    ? ["left", "center", "right"] : ["top", "center", "bottom"]
 
   signal cursorRequested(int index, var item)
   signal applied()
 
   spacing: Style.space(10)
   onCursorIndexChanged: {
-    var item = cursorIndex === 0 ? movingPicker : cursorIndex === 1 ? referencePicker
-      : cursorIndex >= 2 && cursorIndex <= 5 ? directionButtons.itemAt(cursorIndex - 2)
-      : cursorIndex === 6 ? applyButton : cursorIndex === 7 ? refreshButton : null
+    var item = cursorIndex === 0 ? identifyButton : cursorIndex === 1 ? movingPicker : cursorIndex === 2 ? referencePicker
+      : cursorIndex >= 3 && cursorIndex <= 6 ? directionButtons.itemAt(cursorIndex - 3)
+      : cursorIndex === 7 ? alignmentPicker : cursorIndex === 8 ? applyButton : cursorIndex === 9 ? refreshButton : null
     if (item) cursorRequested(cursorIndex, item)
   }
   onActiveChanged: {
     if (active) refresh()
-    else { movingPicker.close(); referencePicker.close() }
+    else { movingPicker.close(); referencePicker.close(); alignmentPicker.close(); identifying = false; identifyTimer.stop() }
   }
 
   function request(action, preserve) {
@@ -63,6 +68,7 @@ Column {
       payload.output = moving
       payload.reference = reference
       payload.side = side
+      payload.alignment = alignment
       payload.snapshot = snapshot
     }
     backend.command = backendCommand.concat(["--request", JSON.stringify(payload)])
@@ -73,12 +79,14 @@ Column {
     if (busy) { refreshQueued = true; return }
     preview = []
     side = ""
+    alignment = "top"
     request("state", preserve)
   }
 
   function invalidate() {
     preview = []
     side = ""
+    alignment = "top"
     if (active) refresh()
   }
 
@@ -94,6 +102,7 @@ Column {
   function clearPreview() {
     preview = []
     side = ""
+    alignment = "top"
     error = false
     message = "Choose a position to preview. Apply saves the layout."
   }
@@ -102,15 +111,30 @@ Column {
     if (!ready || sides.indexOf(value) < 0) return
     preview = []
     side = value
+    if (alignmentOptions.indexOf(alignment) < 0) alignment = alignmentOptions[0]
+    request("preview")
+  }
+
+  function chooseAlignment(value) {
+    if (!ready || side === "" || alignmentOptions.indexOf(value) < 0) return
+    alignment = value
+    preview = []
     request("preview")
   }
 
   function activate(index) {
-    if (index === 0 && ready) movingPicker.open()
-    else if (index === 1 && ready) referencePicker.open()
-    else if (index >= 2 && index <= 5) chooseSide(sides[index - 2])
-    else if (index === 6 && canApply) request("apply")
-    else if (index === 7) refresh()
+    if (index === 0) identifyScreens()
+    else if (index === 1 && ready) movingPicker.open()
+    else if (index === 2 && ready) referencePicker.open()
+    else if (index >= 3 && index <= 6) chooseSide(sides[index - 3])
+    else if (index === 7 && ready && side !== "") alignmentPicker.open()
+    else if (index === 8 && canApply) request("apply")
+    else if (index === 9) refresh()
+  }
+
+  function identifyScreens() {
+    identifying = true
+    identifyTimer.restart()
   }
 
   function finish(exitCode) {
@@ -119,6 +143,7 @@ Column {
     if (exitCode !== 0) {
       preview = []
       side = ""
+      alignment = "top"
       if (action === "state") { monitors = []; snapshot = [] }
       var detail = String(backendError.text || "").trim() || "Cannot read or arrange the screens. Try Refresh."
       message = preserveMessage ? message + " Refresh failed: " + detail : detail
@@ -131,13 +156,14 @@ Column {
           error = false
           preview = []
           side = ""
+          alignment = "top"
           refreshQueued = true
           applied()
         } else {
           if (!Array.isArray(response.monitors) || !Array.isArray(response.snapshot)) throw new Error("Invalid display response")
           if (action === "preview") {
             preview = response.monitors
-            message = moving + " " + side + " of " + reference + ". Preview only."
+            message = moving + " " + side + " of " + reference + ", aligned " + alignment + ". Preview only."
           } else {
             monitors = response.monitors
             snapshot = response.snapshot
@@ -152,6 +178,7 @@ Column {
       } catch (failure) {
         preview = []
         side = ""
+        alignment = "top"
         monitors = []
         snapshot = []
         message = "Cannot read the display response. Try Refresh."
@@ -183,7 +210,40 @@ Column {
     }
   }
 
-  PanelSectionHeader { text: "ARRANGEMENT"; foreground: root.foreground; fontFamily: root.fontFamily }
+  Loader {
+    active: root.identifying && root.identificationScreens.length > 0
+    source: "ScreenIdentifiers.qml"
+    onLoaded: {
+      item.shown = Qt.binding(function() { return root.identifying })
+      item.screens = Qt.binding(function() { return root.identificationScreens })
+    }
+  }
+  Timer { id: identifyTimer; interval: 4000; onTriggered: root.identifying = false }
+
+  Row {
+    width: parent.width
+    spacing: Style.space(8)
+    PanelSectionHeader {
+      width: parent.width - identifyButton.width - parent.spacing
+      anchors.verticalCenter: parent.verticalCenter
+      text: "ARRANGEMENT"
+      foreground: root.foreground
+      fontFamily: root.fontFamily
+    }
+    Button {
+      id: identifyButton
+      objectName: "arrangementIdentify"
+      text: "Identify screens"
+      foreground: root.foreground
+      fontFamily: root.fontFamily
+      fontSize: Style.font.caption
+      verticalPadding: Style.space(4)
+      bordered: true
+      hasCursor: root.cursorIndex === 0
+      onClicked: root.identifyScreens()
+      onHovered: function(hot) { if (hot) root.cursorRequested(0, identifyButton) }
+    }
+  }
 
   Rectangle {
     id: diagram
@@ -233,9 +293,9 @@ Column {
       enabled: root.ready
       foreground: root.foreground
       fontFamily: root.fontFamily
-      hasCursor: root.cursorIndex === 0
+      hasCursor: root.cursorIndex === 1
       onChanged: function(value) { root.selectScreen(value) }
-      onHovered: function(hot) { if (hot) root.cursorRequested(0, movingPicker) }
+      onHovered: function(hot) { if (hot) root.cursorRequested(1, movingPicker) }
     }
     Dropdown {
       id: referencePicker
@@ -247,9 +307,9 @@ Column {
       enabled: root.ready
       foreground: root.foreground
       fontFamily: root.fontFamily
-      hasCursor: root.cursorIndex === 1
+      hasCursor: root.cursorIndex === 2
       onChanged: function(value) { root.reference = value; root.clearPreview() }
-      onHovered: function(hot) { if (hot) root.cursorRequested(1, referencePicker) }
+      onHovered: function(hot) { if (hot) root.cursorRequested(2, referencePicker) }
     }
   }
 
@@ -272,11 +332,28 @@ Column {
         enabled: root.ready
         opacity: enabled ? 1 : 0.45
         active: root.side === root.sides[index] && root.preview.length > 0
-        hasCursor: root.cursorIndex === index + 2
+        hasCursor: root.cursorIndex === index + 3
         onClicked: root.chooseSide(root.sides[index])
-        onHovered: function(hot) { if (hot) root.cursorRequested(index + 2, directionButton) }
+        onHovered: function(hot) { if (hot) root.cursorRequested(index + 3, directionButton) }
       }
     }
+  }
+
+  Dropdown {
+    id: alignmentPicker
+    objectName: "arrangementAlignment"
+    width: parent.width
+    label: "Align screens"
+    value: root.alignment
+    options: root.alignmentOptions.map(function(value) {
+      return {value: value, label: value.charAt(0).toUpperCase() + value.slice(1)}
+    })
+    enabled: root.ready && root.side !== ""
+    foreground: root.foreground
+    fontFamily: root.fontFamily
+    hasCursor: root.cursorIndex === 7
+    onChanged: function(value) { root.chooseAlignment(value) }
+    onHovered: function(hot) { if (hot) root.cursorRequested(7, alignmentPicker) }
   }
 
   Text {
@@ -303,9 +380,9 @@ Column {
       bordered: true
       enabled: root.canApply
       opacity: enabled ? 1 : 0.45
-      hasCursor: root.cursorIndex === 6
+      hasCursor: root.cursorIndex === 8
       onClicked: if (root.canApply) root.request("apply")
-      onHovered: function(hot) { if (hot) root.cursorRequested(6, applyButton) }
+      onHovered: function(hot) { if (hot) root.cursorRequested(8, applyButton) }
     }
     Button {
       id: refreshButton
@@ -316,9 +393,9 @@ Column {
       fontFamily: root.fontFamily
       enabled: !root.busy
       opacity: enabled ? 1 : 0.45
-      hasCursor: root.cursorIndex === 7
+      hasCursor: root.cursorIndex === 9
       onClicked: root.refresh()
-      onHovered: function(hot) { if (hot) root.cursorRequested(7, refreshButton) }
+      onHovered: function(hot) { if (hot) root.cursorRequested(9, refreshButton) }
     }
   }
 }

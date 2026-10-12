@@ -16,7 +16,7 @@ cp "$scratch/config/hypr/monitors.lua" "$scratch/original.lua"
 cat >"$scratch/bin/hyprctl" <<'EOF'
 #!/bin/bash
 [[ $* == "monitors -j" ]] || exit 1
-printf '%s\n' '[{"name":"DP-1","width":1920,"height":1080,"scale":1,"x":0,"y":0},{"name":"DP-2","width":1920,"height":1080,"scale":1,"x":1920,"y":0}]'
+printf '%s\n' '[{"name":"DP-1","width":1920,"height":1080,"scale":1,"x":0,"y":0},{"name":"DP-2","width":1920,"height":720,"scale":1,"x":1920,"y":0}]'
 EOF
 cat >"$scratch/bin/omarchy-menu-select" <<'EOF'
 #!/bin/bash
@@ -34,6 +34,10 @@ export PATH="$scratch/bin:$PATH"
 bash "$ROOT/bin/omarchy-hyprland-monitor-position" DP-2 DP-1 left --dry-run >"$scratch/layout.json"
 jq -e '.["DP-2"] == [-1920,0] and .["DP-1"] == [0,0]' "$scratch/layout.json" >/dev/null
 pass "position command forwards CLI arguments to the backend"
+
+bash "$ROOT/bin/omarchy-hyprland-monitor-position" DP-2 DP-1 left --align bottom --dry-run >"$scratch/layout.json"
+jq -e '.["DP-2"] == [-1920,360] and .["DP-1"] == [0,0]' "$scratch/layout.json" >/dev/null
+pass "position command forwards edge alignment for unequal screens"
 
 bash "$ROOT/bin/omarchy-hyprland-monitor-position"
 [[ $(< "$POSITION_MENU_LOG") == "Screen to move" ]] || fail "interactive command opens the screen selector"

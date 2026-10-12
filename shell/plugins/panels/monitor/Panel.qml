@@ -88,7 +88,7 @@ Panel {
     if (section === "textsize") return 0    // slider sentinel at -1, like brightness
     if (section === "scale") return scaleValues.length
     if (section === "monitors") return displays.length
-    if (section === "arrangement") return 8
+    if (section === "arrangement") return 10
     return 0
   }
 
@@ -137,7 +137,7 @@ Panel {
   // slider.
   function moveCursorH(delta) {
     if (focusSection === "arrangement") {
-      selectedIndex = Math.max(0, Math.min(7, selectedIndex + delta))
+      selectedIndex = Math.max(0, Math.min(9, selectedIndex + delta))
       return
     }
     if (focusSection !== "scale") return
@@ -230,6 +230,8 @@ Panel {
         moving: arrangement.moving,
         reference: arrangement.reference,
         side: arrangement.side,
+        alignment: arrangement.alignment,
+        identifying: arrangement.identifying,
         canApply: arrangement.canApply,
         message: arrangement.message,
         preview: arrangement.preview

@@ -72,6 +72,35 @@ class GeometryTests(unittest.TestCase):
       with self.assertRaises(RuntimeError):
         position.logical_size(monitor('DP-1', scale=scale))
 
+  def test_horizontal_alignment_with_scaled_rotated_screens(self):
+    screens = [monitor('eDP-1', -100, 200, 3840, 2160, 2),
+               monitor('DP-1', 1820, 200, 2560, 1440, 1.25, 1)]
+    for side, x in [('left', -1252), ('right', 1820)]:
+      for alignment, y in [('top', 200), ('center', -284), ('bottom', -768)]:
+        with self.subTest(side=side, alignment=alignment):
+          self.assertEqual(position.arrange(screens, 'DP-1', 'eDP-1', side, alignment)['DP-1'], (x, y))
+
+  def test_vertical_alignment_with_scaled_rotated_screens(self):
+    screens = [monitor('eDP-1', -100, 200, 3840, 2160, 2),
+               monitor('DP-1', 1820, 200, 2560, 1440, 1.25, 1)]
+    for side, y in [('above', -1848), ('below', 1280)]:
+      for alignment, x in [('left', -100), ('center', 284), ('right', 668)]:
+        with self.subTest(side=side, alignment=alignment):
+          self.assertEqual(position.arrange(screens, 'DP-1', 'eDP-1', side, alignment)['DP-1'], (x, y))
+
+  def test_alignment_rejects_wrong_axis_and_rounds_odd_centers(self):
+    screens = [monitor('DP-1', height=1081), monitor('DP-2', 1920, height=720)]
+    self.assertEqual(position.arrange(screens, 'DP-2', 'DP-1', 'right', 'center')['DP-2'], (1920, 180))
+    for side, alignment in [('left', 'right'), ('above', 'bottom'), ('below', 'invalid')]:
+      with self.subTest(side=side, alignment=alignment), self.assertRaisesRegex(RuntimeError, 'alignment'):
+        position.arrange(screens, 'DP-2', 'DP-1', side, alignment)
+
+  def test_bottom_alignment_rejects_overlap_with_a_third_screen(self):
+    screens = [monitor('DP-1'), monitor('DP-2', 1920, width=1280, height=720), monitor('DP-3', 1920, 720)]
+    self.assertEqual(position.arrange(screens, 'DP-2', 'DP-1', 'right', 'top')['DP-2'], (1920, 0))
+    with self.assertRaisesRegex(RuntimeError, 'overlap'):
+      position.arrange(screens, 'DP-2', 'DP-1', 'right', 'bottom')
+
 
 class ConfigTests(unittest.TestCase):
   def test_multiline_rules_comments_nested_fields_and_missing_position(self):
@@ -192,12 +221,14 @@ class TransactionTests(unittest.TestCase):
     self.assertFalse(self.config.with_name('monitors.lua.bak.monitor-position').exists())
 
   def test_panel_apply_accepts_json_snapshot_and_saves_layout(self):
+    self.screens[1]['height'] = 720
     with patch.object(position, 'displays', return_value=self.screens), patch.object(position, 'hypr', return_value=''), patch.object(position, 'wait_layout'):
       state = json.loads(json.dumps(position.panel_request({'action': 'state'})))
       result = position.panel_request({'action': 'apply', 'output': 'DP-2', 'reference': 'DP-1',
-                                       'side': 'left', 'snapshot': state['snapshot']})
+                                       'side': 'left', 'alignment': 'bottom', 'snapshot': state['snapshot']})
     self.assertIn('Saved', result['message'])
-    self.assertEqual(evaluate(self.config.read_text())['DP-2', 'position'], '-1920x0')
+    self.assertIn('aligned bottom', result['message'])
+    self.assertEqual(evaluate(self.config.read_text())['DP-2', 'position'], '-1920x360')
 
   def test_panel_apply_requires_snapshot_and_rejects_stale_preview(self):
     request = {'action': 'apply', 'output': 'DP-2', 'reference': 'DP-1', 'side': 'left'}
@@ -325,12 +356,12 @@ class PanelProcessTests(unittest.TestCase):
       waiter.wait(timeout=2)
       while time.monotonic() < deadline:
         state = json.loads((scratch / 'state.json').read_text())
-        if state['monitors'][2]['x'] == -1920:
+        if state['monitors'][2]['x'] == -1280:
           break
         time.sleep(0.02)
       else:
         self.fail('The transaction died with its panel waiter')
-      self.assertEqual(evaluate((scratch / 'config/hypr/monitors.lua').read_text())['DP-3', 'position'], '-1920x0')
+      self.assertEqual(evaluate((scratch / 'config/hypr/monitors.lua').read_text())['DP-3', 'position'], '-1280x0')
 
 
 if __name__ == '__main__':

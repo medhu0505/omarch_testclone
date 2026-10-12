@@ -12,6 +12,7 @@ state_path = Path(os.environ['ARRANGEMENT_TEST_STATE'])
 config = Path(os.environ['XDG_CONFIG_HOME']) / 'hypr/monitors.lua'
 base = [dict(name=name, x=index * 1920, y=0, width=1920, height=1080, scale=1, transform=0)
         for index, name in enumerate(('eDP-1', 'DP-2', 'DP-3'))]
+base[2].update(width=1280, height=720)
 
 
 def save_state(state):
