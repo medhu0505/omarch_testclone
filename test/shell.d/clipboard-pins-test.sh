@@ -42,6 +42,7 @@ export PATH="$work/bin:$PATH" TMPDIR="$work" PIN_TEST_WORK="$work"
 
 cat >"$work/bin/wl-paste" <<'SH'
 #!/bin/bash
+touch "$PIN_TEST_WORK/paste-requested"
 if [[ $1 == "--list-types" ]]; then
   printf '%b' "${PIN_TEST_TYPES:-text/plain\n}"
 else
@@ -68,10 +69,18 @@ jq -e '.text == "current clipboard"' "$work/request.json" >/dev/null || fail "pi
 pass "pin command snapshots the clipboard through a private request and cleans up"
 
 printf 'copied\nexactly\n\n' >"$work/input"
+rm "$work/paste-requested"
 "$ROOT/bin/omarchy-clipboard-pin" --copy <"$work/input" >/dev/null
 jq -e '.text == "copied\nexactly\n\n"' "$work/request.json" >/dev/null || fail "copy and pin preserves all text"
 cmp "$work/input" "$work/copied" || fail "copy and pin copies the exact pinned payload"
+[[ ! -e $work/paste-requested ]] || fail "copy and pin must not inspect the current clipboard"
 pass "copy and pin preserves multiline text and trailing newlines"
+
+PIN_TEST_TYPES='text/plain\nx-kde-passwordManagerHint\n' CLIPBOARD_STATE=sensitive \
+  "$ROOT/bin/omarchy-clipboard-pin" --copy <"$work/input" >/dev/null
+cmp "$work/input" "$work/copied" || fail "a sensitive old clipboard must not block stdin"
+[[ ! -e $work/paste-requested ]] || fail "copy and pin must not query sensitive markers from the old clipboard"
+pass "copy and pin accepts stdin independently of sensitive markers on the old clipboard"
 
 rm "$work/copied"
 if PIN_TEST_RESULT=limit "$ROOT/bin/omarchy-clipboard-pin" --copy <"$work/input" >"$work/out" 2>&1; then
@@ -79,6 +88,17 @@ if PIN_TEST_RESULT=limit "$ROOT/bin/omarchy-clipboard-pin" --copy <"$work/input"
 fi
 [[ ! -e $work/copied ]] || fail "rejected copy and pin must leave the clipboard alone"
 pass "full pin slots fail without changing the clipboard"
+
+if PIN_TEST_RESULT=save-failed "$ROOT/bin/omarchy-clipboard-pin" --copy <"$work/input" >"$work/out" 2>&1; then
+  fail "a failed history save must fail the command"
+fi
+[[ ! -e $work/copied ]] || fail "a failed history save must leave the clipboard alone"
+rg -q 'Could not save clipboard history' "$work/out" || fail "a failed history save must explain the error"
+if rg -q 'Clipboard pinned' "$work/out"; then
+  fail "a failed history save must not claim success"
+fi
+[[ ! -e $(<"$work/request-path") ]] || fail "a failed history save must clean up its private request"
+pass "failed history saves report failure without copying text or claiming success"
 
 rm "$work/request.json"
 if PIN_TEST_TYPES='text/plain\nx-kde-passwordManagerHint\n' "$ROOT/bin/omarchy-clipboard-pin" >"$work/out" 2>&1; then

@@ -14,6 +14,7 @@ Item {
   property string filterText: ""
   property int selectedIndex: 0
   property bool cursorActive: false
+  property bool clearConfirmOpen: false
   property var history: []
   property bool historyReady: false
   property string statusMessage: ""
@@ -54,6 +55,7 @@ Item {
   }
 
   function close() {
+    root.cancelClearHistory()
     root.opened = false
   }
 
@@ -83,28 +85,54 @@ Item {
   // A fresh reader keeps IPC payloads out of command-line arguments and reads
   // this request before the CLI removes its private temporary file.
   function pinClipboardFile(path) {
+    historyFile.waitForJob()
     if (!root.historyReady) return "not-ready"
     var request = pinRequestComponent.createObject(root, { path: path })
     var entry = ClipboardHistory.parseEntryJson(request.text())
     request.destroy()
     var result = ClipboardHistory.pinEntry(root.history, entry, root.historyLimit)
-    root.finishPin(result)
-    return result.status
+    return root.finishPin(result)
   }
 
   function finishPin(result) {
     if (result.status === "limit") {
       root.statusMessage = "All " + ClipboardHistory.pinLimit + " pins are in use. Unpin an entry first."
-      return
+      return result.status
     }
-    if (result.status !== "pinned" && result.status !== "unpinned") return
-    root.history = result.history
-    root.statusMessage = ""
-    root.saveHistory()
+    if (result.status !== "pinned" && result.status !== "unpinned" && result.status !== "already-pinned") return result.status
+    if (!root.persistHistory(result.history)) return "save-failed"
     if (root.opened) root.rebuildDisplay()
+    return result.status
+  }
+
+  function persistHistory(nextHistory) {
+    // Drain ordinary history writes before confirming a pin. A fresh writer
+    // also avoids FileView skipping an identical payload after a failed save.
+    historyFile.waitForJob()
+    var serialized = JSON.stringify(ClipboardHistory.trimHistory(nextHistory, root.historyLimit), null, 2) + "\n"
+    var writer = pinWriterComponent.createObject(root, { path: root.historyPath })
+    writer.setText(serialized)
+    var saved = writer.savedSuccessfully
+    writer.destroy()
+    // Check the committed file too: a failed final atomic commit must never
+    // leave an in-memory pin looking persistent.
+    if (saved) {
+      var stored = pinRequestComponent.createObject(root, { path: root.historyPath })
+      saved = stored.text() === serialized
+      stored.destroy()
+    }
+    if (!saved) {
+      root.statusMessage = "Could not save clipboard history. Try again."
+      return false
+    }
+
+    root.history = nextHistory
+    root.statusMessage = ""
+    return true
   }
 
   function togglePinDisplayIndex(index) {
+    historyFile.waitForJob()
     if (index < 0 || index >= displayModel.count) return
     var historyIndex = displayModel.get(index).historyIndex
     var key = ClipboardHistory.entryKey(root.history[historyIndex])
@@ -133,6 +161,46 @@ Item {
 
   function addClipboardJson(line) {
     root.addClipboardEntry(ClipboardHistory.parseEntryJson(line))
+  }
+
+  function requestClearHistory() {
+    if (root.history.length === 0) return
+    clearConfirm.selectedIndex = 1
+    root.clearConfirmOpen = true
+  }
+
+  function cancelClearHistory() {
+    root.clearConfirmOpen = false
+    root.disarmPointer()
+    Qt.callLater(function() { keyCatcher.forceActiveFocus() })
+  }
+
+  function confirmClearHistory() {
+    if (!root.persistHistory(ClipboardHistory.clearHistory())) return
+    root.selectedIndex = 0
+    root.cursorActive = false
+    root.disarmPointer()
+    root.clearConfirmOpen = false
+    root.rebuildDisplay()
+    Qt.callLater(function() { keyCatcher.forceActiveFocus() })
+  }
+
+  function removeDisplayIndex(index) {
+    historyFile.waitForJob()
+    if (index < 0 || index >= displayModel.count) return
+
+    var row = displayModel.get(index)
+    if (!root.persistHistory(ClipboardHistory.removeEntryAt(root.history, row.historyIndex))) return
+
+    if (displayModel.count <= 1) {
+      root.selectedIndex = 0
+      root.cursorActive = false
+    } else if (root.selectedIndex >= displayModel.count - 1) {
+      root.selectedIndex = displayModel.count - 2
+    }
+
+    root.disarmPointer()
+    root.rebuildDisplay()
   }
 
   function rebuildDisplay() {
@@ -253,6 +321,18 @@ Item {
     FileView { blockLoading: true; printErrors: false }
   }
 
+  Component {
+    id: pinWriterComponent
+    FileView {
+      preload: false
+      atomicWrites: true
+      blockWrites: true
+      printErrors: false
+      property bool savedSuccessfully: false
+      onSaved: savedSuccessfully = true
+    }
+  }
+
   PointerMoveGate {
     id: pointerGate
     referenceItem: card
@@ -353,11 +433,18 @@ Item {
 
       Item {
         id: keyCatcher
+        objectName: "clipboardKeyCatcher"
         anchors.fill: parent
+        z: root.clearConfirmOpen ? 20 : 0
         focus: true
 
         Keys.priority: Keys.BeforeItem
         Keys.onPressed: function(event) {
+          if (root.clearConfirmOpen) {
+            if (clearConfirm.handleKey(event)) event.accepted = true
+            return
+          }
+
           if (event.key === Qt.Key_Escape) {
             if (root.filterText) root.setFilter("")
             else root.close()
@@ -367,6 +454,10 @@ Item {
             event.accepted = true
           } else if (Util.editsFilter(event, root.filterText)) {
             root.setFilter(Util.editedFilter(event, root.filterText))
+            event.accepted = true
+          } else if (event.key === Qt.Key_Delete) {
+            if (event.modifiers & Qt.ShiftModifier) root.requestClearHistory()
+            else root.removeDisplayIndex(root.selectedIndex)
             event.accepted = true
           } else if (event.key === Qt.Key_Up) {
             root.select(-1)
@@ -396,6 +487,25 @@ Item {
             root.setFilter(root.filterText + event.text)
             event.accepted = true
           }
+        }
+
+        ConfirmDialog {
+          id: clearConfirm
+
+          anchors.fill: parent
+          opened: root.clearConfirmOpen
+          z: 10
+          message: "Delete entire clipboard history, including pinned entries?"
+          confirmText: "Delete"
+          background: root.background
+          foreground: root.foreground
+          scrim: root.scrim
+          selectedBackground: root.selectedBackground
+          selectedText: root.selectedText
+          fontFamily: root.fontFamily
+          cornerRadius: root.cornerRadius
+          onCanceled: root.cancelClearHistory()
+          onConfirmed: root.confirmClearHistory()
         }
       }
 
@@ -527,6 +637,7 @@ Item {
 
                       MouseArea {
                         id: pinMouse
+                        objectName: "clipboardPinButton"
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor

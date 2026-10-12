@@ -44,6 +44,7 @@ for command in wl-copy wl-paste wtype hyprctl omasnap omarchy-launch-browser oma
   chmod +x "$work/bin/$command"
 done
 printf '%s\n' '{"type":"text","text":"Pinned from a private request"}' >"$work/request.json"
+printf '%s\n' 'A file prevents creation of a history directory here.' >"$work/blocked-state"
 
 # Interactive previews copy only appearance settings into the scratch home.
 # The panel then uses the same theme/font bindings as the installed clipboard.
@@ -71,7 +72,10 @@ export XDG_CACHE_HOME="$work/home/.cache" XDG_RUNTIME_DIR="$work/runtime"
 export OMARCHY_PATH="$ROOT" PATH="$work/bin:$PATH"
 export QT_QPA_PLATFORMTHEME= QT_STYLE_OVERRIDE= QT_QUICK_BACKEND=software
 export CLIPBOARD_PIN_REQUEST="$work/request.json"
+export CLIPBOARD_PIN_BLOCKED_HISTORY="$work/blocked-state/clipboard-history.json"
+export CLIPBOARD_PIN_RETRY_HISTORY="$work/state/retry/clipboard-history.json"
 export CLIPBOARD_PIN_SCREENSHOT="${CLIPBOARD_PIN_SCREENSHOT:-$work/preview.png}"
+export CLIPBOARD_PIN_CONFIRM_SCREENSHOT="${CLIPBOARD_PIN_CONFIRM_SCREENSHOT:-$work/confirm.png}"
 ulimit -c 0
 
 if [[ ${1:-} == "--preview" ]]; then
@@ -91,5 +95,6 @@ else
     fail "isolated clipboard QML pin lifecycle and persistence"
   fi
   [[ -s $CLIPBOARD_PIN_SCREENSHOT ]] || fail "isolated UI preview was rendered"
-  pass "isolated clipboard QML pin lifecycle, restart persistence, limits and UI rendering"
+  [[ -s $CLIPBOARD_PIN_CONFIRM_SCREENSHOT ]] || fail "clear-history confirmation was rendered"
+  pass "isolated clipboard controls, save failures, retries, deletion, restart persistence, limits and UI rendering"
 fi

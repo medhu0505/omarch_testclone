@@ -21,7 +21,7 @@ request=$(mktemp "${TMPDIR:-/tmp}/omarchy-clipboard-pin.XXXXXX")
 trap 'rm -f "$request"' EXIT
 
 if [[ $copy == "true" ]]; then
-  "$OMARCHY_PATH/shell/plugins/clipboard/capture.sh" text >"$request"
+  jq -Rs '{type: "text", text: .}' >"$request"
 else
   "$OMARCHY_PATH/shell/plugins/clipboard/capture.sh" >"$request"
 fi
@@ -41,5 +41,6 @@ case "$result" in
     ;;
   limit) echo "All 10 pins are in use. Unpin an entry in clipboard history first." >&2; exit 1 ;;
   not-ready) echo "Clipboard history is still loading. Try again shortly." >&2; exit 1 ;;
+  save-failed) echo "Could not save clipboard history. Try again." >&2; exit 1 ;;
   *) echo "Could not pin clipboard. The running shell must support clipboard pins." >&2; exit 1 ;;
 esac
