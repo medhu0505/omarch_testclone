@@ -882,17 +882,30 @@ pass "transcode notifies instead of leaking usage when nothing matches"
 printf '#!/bin/bash\nexit 1\n' >"$NOTIFY_FAKE_BIN/omarchy-shell"
 chmod +x "$NOTIFY_FAKE_BIN/omarchy-shell"
 make_tmpdir FOUND_MEDIA_TMPDIR
+make_tmpdir LOCKED_MEDIA_TMPDIR
 touch "$FOUND_MEDIA_TMPDIR/clip.mp4"
-mkdir "$FOUND_MEDIA_TMPDIR/locked"
-chmod 000 "$FOUND_MEDIA_TMPDIR/locked"
+# Root reads through the permission, so the unreadable folder only means
+# something for an ordinary user.
+if (( EUID != 0 )); then
+  mkdir "$FOUND_MEDIA_TMPDIR/locked"
+  chmod 000 "$FOUND_MEDIA_TMPDIR/locked" "$LOCKED_MEDIA_TMPDIR"
+fi
 : >"$NOTIFY_TMPDIR/notify.log"
 
 file_status=0
 PATH="$NOTIFY_FAKE_BIN:$PATH" "$ROOT/bin/omarchy-menu-file" "Pick media" "$FOUND_MEDIA_TMPDIR" "mp4" >/dev/null 2>&1 || file_status=$?
 NOTIFY_LOG="$NOTIFY_TMPDIR/notify.log" PATH="$NOTIFY_FAKE_BIN:$PATH" "$ROOT/bin/omarchy-transcode" --path "$FOUND_MEDIA_TMPDIR" >/dev/null 2>&1 || true
-chmod 755 "$FOUND_MEDIA_TMPDIR/locked"
+locked_status=0
+"$ROOT/bin/omarchy-menu-file" "Pick media" "$LOCKED_MEDIA_TMPDIR" "mp4" >/dev/null 2>&1 || locked_status=$?
+if (( EUID != 0 )); then
+  chmod 755 "$FOUND_MEDIA_TMPDIR/locked" "$LOCKED_MEDIA_TMPDIR"
+fi
 
 (( file_status == 2 )) || fail "menu-file offers the matches it found beside an unreadable folder (got $file_status)"
 pass "menu-file offers the matches it found beside an unreadable folder"
+if (( EUID != 0 )); then
+  (( locked_status == 1 )) || fail "menu-file reports an unreadable folder as a failed search, not as no matches (got $locked_status)"
+  pass "menu-file reports an unreadable folder as a failed search, not as no matches"
+fi
 [[ $(<"$NOTIFY_TMPDIR/notify.log") != *"Nothing to transcode"* ]] || fail "transcode does not report an empty search when the menu cannot open"
 pass "transcode does not report an empty search when the menu cannot open"
