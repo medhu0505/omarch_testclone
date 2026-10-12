@@ -51,7 +51,7 @@ ART=$(screensaver_art) || ART=""
 ART_ROWS=0
 ART_COLS=0
 if [[ -n $ART ]]; then
-  ART_ROWS=$(wc -l <"$ART")
+  ART_ROWS=$(awk 'END { print NR }' "$ART")
   ART_COLS=$(awk '{ n = length($0); if (n > m) m = n } END { print m + 0 }' "$ART")
 fi
 
