@@ -24,11 +24,11 @@ local focused_id='play'
 local last_move, visible = mp.get_time(), true
 local visibility_mode='auto'
 local reveal_until, milliseconds, show_total = mp.get_time()+3, false, true
-local volume_feedback_until=0
+local volume_feedback_until, seek_feedback_until=0, 0
 local render, request_render, deadline_timer, set_visibility, appearance_menu
 local render_count,seek_requests=0,0
 local last_drag_seek
-local input_visible, input_width, input_height
+local input_top, input_bottom, input_width, input_height
 local sub_margin_base=mp.get_property_number('sub-margin-y',34)
 local applied_sub_margin
 local file_active=false
@@ -379,11 +379,20 @@ render = function()
   local header, footer = 48, 112
   local bottom = H-footer
   if opts.debug then mp.set_property_native('user-data/omarchy/layout',{width=W,height=H,scale=scale}) end
-  local near_controls = inside and (my >= bottom-24 or my <= header+12)
-  visible = visibility_mode ~= 'never' and not prop('user-data/mpv/console/open',false) and
-    (keyboard or visibility_mode == 'always' or dragging or prop('idle-active',false) or
-    mp.get_time() < reveal_until or near_controls and mp.get_time()-last_move < opts.hide_timeout)
-  update_sub_margin(file_active and visible and number('sub-pos',100) >= 95 and prop('sub-align-y','bottom') == 'bottom',height,footer*scale)
+  local near_top = inside and my <= header+12
+  local near_bottom = inside and my >= bottom-24
+  local near_controls = near_top or near_bottom
+  local allowed = visibility_mode ~= 'never' and not prop('user-data/mpv/console/open',false)
+  local shared = keyboard or visibility_mode == 'always' or prop('idle-active',false)
+  local pointer_awake = mp.get_time()-last_move < opts.hide_timeout
+  local top_visible = allowed and (shared or near_top and pointer_awake)
+  local bottom_visible = allowed and (shared or (not not dragging) or near_bottom and pointer_awake or
+    mp.get_time() < seek_feedback_until or mp.get_time() < volume_feedback_until or
+    not near_top and mp.get_time() < reveal_until)
+  visible = top_visible or bottom_visible
+  if prop('user-data/omarchy/top-visible') ~= top_visible then mp.set_property_native('user-data/omarchy/top-visible',top_visible) end
+  if prop('user-data/omarchy/bottom-visible') ~= bottom_visible then mp.set_property_native('user-data/omarchy/bottom-visible',bottom_visible) end
+  update_sub_margin(file_active and bottom_visible and number('sub-pos',100) >= 95 and prop('sub-align-y','bottom') == 'bottom',height,footer*scale)
   schedule_deadline(near_controls)
   if prop('user-data/omarchy/surface-mode') ~= surface_mode then
     mp.set_property_native('user-data/omarchy/surface-mode',surface_mode)
@@ -400,13 +409,17 @@ render = function()
     mp.set_mouse_area(0, 0, width, header*scale, 'omarchy-header')
     input_width, input_height = width, height
   end
-  if input_visible ~= visible then
-    for _, section in ipairs({'omarchy-footer','omarchy-header'}) do
-      if visible then mp.enable_key_bindings(section, 'allow-hide-cursor')
-      else mp.disable_key_bindings(section) end
-    end
-    input_visible = visible
+  if input_top ~= top_visible then
+    if top_visible then mp.enable_key_bindings('omarchy-header', 'allow-hide-cursor')
+    else mp.disable_key_bindings('omarchy-header') end
+    input_top = top_visible
   end
+  if input_bottom ~= bottom_visible then
+    if bottom_visible then mp.enable_key_bindings('omarchy-footer', 'allow-hide-cursor')
+    else mp.disable_key_bindings('omarchy-footer') end
+    input_bottom = bottom_visible
+  end
+  regions, seekbar, volume_slider = {}, nil, nil
   if not keyboard then mp.disable_key_bindings('omarchy-keyboard') end
   if not visible then
     if overlay.data ~= '' then overlay:remove(); overlay.data='' end
@@ -512,7 +525,7 @@ render = function()
     elseif name == 'fullscreen' then lines(x,y,{{-7,-2,-7,-7},{-7,-7,-2,-7},{2,-7,7,-7},{7,-7,7,-2},{7,2,7,7},{7,7,2,7},{-2,7,-7,7},{-7,7,-7,2}},fg)
     elseif name == 'appearance' then
       a:new_event()
-      a:append(string.format('{\\pos(%.3f,%.3f)\\an7\\bord0\\shad0\\fscx83.333\\fscy83.333\\1c&H%s&}',x-10,y-10,color(fg)))
+      a:append(string.format('{\\pos(%.3f,%.3f)\\an7\\bord.9\\shad0\\fscx83.333\\fscy83.333\\1a&HFF&\\3a&H00&\\3c&H%s&}',x-10,y-10,color(fg)))
       a:append('{\\p1}'..appearance_path..'{\\p0}')
     elseif name == 'more' then
       for dx=-6,6,6 do box(x+dx-1,y-1,2,2,fg) end
@@ -573,92 +586,97 @@ render = function()
         fullscreen='Fullscreen'..key_hint('f','cycle fullscreen')}
       if help[id] then
         local tw=math.min(W-24,#help[id]*7.4+20)
-        box((W-tw)/2,bottom-34,tw,28,palette.panel,corner_radius,palette.border)
-        text(W/2,bottom-20,help[id],12,palette.foreground,5)
+        local tooltip_y = y < header and header+6 or bottom-34
+        box((W-tw)/2,tooltip_y,tw,28,palette.panel,corner_radius,palette.border)
+        text(W/2,tooltip_y+14,help[id],12,palette.foreground,5)
       end
     end
   end
-  panel(0,header)
-  if surface_mode ~= 'gradient' then box(0,header-1,W,1,palette.border) end
-  local title_right=W-104
-  text(18,header/2,prop('filename',prop('media-title','Drop a video to play')),16,palette.foreground,4,{18,0,title_right,header})
-  regions[#regions+1]={id='title',x=18,y=0,w=title_right-18,h=header,action=function() mp.commandv('script-binding','stats/display-page-5') end}
-  button('appearance',W-91,7,34,'','appearance',function() menu('appearance') end)
-  button('menu',W-49,7,34,'','more',function() menu('menu') end)
-  panel(bottom,footer)
-  if surface_mode ~= 'gradient' then box(0,bottom,W,1,palette.border) end
-  local duration=number('duration')
-  local window=seek_window()
-  if prop('user-data/omarchy/seek-enabled') ~= (window ~= nil) then mp.set_property_native('user-data/omarchy/seek-enabled',window ~= nil) end
-  if opts.debug then mp.set_property_native('user-data/omarchy/seek-window',window or false) end
-  local time=number('time-pos')
-  local sy=bottom+28
-  text(18,sy,milliseconds and string.format('%s.%03d',format_time(time),math.floor(time%1*1000)) or format_time(time),13,palette.foreground)
-  regions[#regions+1]={id='elapsed',x=0,y=sy-12,w=90,h=24,action=function() milliseconds=not milliseconds end}
-  text(W-18,sy,duration > 0 and prop('seekable',false) and (show_total and format_time(duration) or '-'..format_time(duration-time)) or 'LIVE',13,palette.muted,6)
-  regions[#regions+1]={id='remaining',x=W-90,y=sy-12,w=90,h=24,action=function() show_total=not show_total end}
-  local x1,x2=104,W-104
-  seekbar={id='seek',x=x1,y=sy-10,w=x2-x1,h=20}
-  box(x1,sy-4,x2-x1,8,palette.button,4,nil,surface_opacity(sy))
-  local position=window and math.max(0,math.min(1,(time-window.start)/(window.finish-window.start))) or 0
-  if position > 0 then box(x1,sy-4,(x2-x1)*position,8,palette.accent,4) end
-  for _, chapter in ipairs(prop('chapter-list',{})) do
-    if window and chapter.time >= window.start and chapter.time <= window.finish then box(x1+(x2-x1)*(chapter.time-window.start)/(window.finish-window.start),sy-6,1,12,palette.muted) end
+  if top_visible then
+    panel(0,header)
+    if surface_mode ~= 'gradient' then box(0,header-1,W,1,palette.border) end
+    local title_right=W-104
+    text(18,header/2,prop('filename',prop('media-title','Drop a video to play')),16,palette.foreground,4,{18,0,title_right,header})
+    regions[#regions+1]={id='title',x=18,y=0,w=title_right-18,h=header,action=function() mp.commandv('script-binding','stats/display-page-5') end}
+    button('appearance',W-91,7,34,'','appearance',function() menu('appearance') end)
+    button('menu',W-49,7,34,'','more',function() menu('menu') end)
   end
-  if window then
-    box(x1+(x2-x1)*position-5,sy-9,10,18,palette.accent,3)
-    seekbar.action=seek_mouse; regions[#regions+1]=seekbar
-    if inside and hit(seekbar) then text(mx,sy-22,format_time(clamp_seek(window.start+(mx-x1)/(x2-x1)*(window.finish-window.start),window)),12,palette.foreground,5) end
-  end
-  local by=bottom+55
-  button('play',18,by,42,'',paused and 'play' or 'pause',function() mp.commandv('cycle','pause') end,true)
-  if W >= 620 then
-  button('back',68,by,56,'10','back',function() relative_seek(-10) end,false,window ~= nil)
-  button('forward',132,by,56,'10','forward',function() relative_seek(10) end,false,window ~= nil)
-  end
-  local playlist_count=number('playlist-count')
-  if playlist_count > 1 and W >= 980 then
-    button('prev',196,by,34,'','prev',function() mp.commandv('playlist-prev') end,false,number('playlist-pos')>0)
-    button('next',238,by,34,'','next',function() mp.commandv('playlist-next') end,false,number('playlist-pos')<playlist_count-1)
-  end
-  if #prop('chapter-list',{}) > 1 and W >= 1200 then
-    button('chapter-prev',280,by,34,'','prev',function() mp.commandv('add','chapter',-1) end,false,window ~= nil and not window.ranges)
-    button('chapter-next',322,by,34,'','next',function() mp.commandv('add','chapter',1) end,false,window ~= nil and not window.ranges)
-  end
-  local compact=W < 850
-  local right=W-18-34-8
-  local fw=compact and 34 or 92
-  right=right-fw
-  button('playlist',right,by,fw,compact and '' or 'Queue','playlist',function() menu('select-playlist') end)
-  right=right-8-(compact and 34 or 84)
-  button('subtitles',right,by,compact and 34 or 84,compact and '' or 'Subs','subtitles',function() menu('select-sid') end)
-  right=right-8-(compact and 34 or 92)
-  button('audio',right,by,compact and 34 or 92,compact and '' or 'Audio','audio',function() menu('select-aid') end)
-  if W >= 460 then
-  right=right-8-64
-  button('speed',right,by,64,format_speed(number('speed',1)),nil,function()
-    local speed=number('speed',1); mp.set_property_number('speed',speed>=2 and .5 or speed+.25)
-  end)
-  end
-  local vy=by+17
-  local vw=compact and 64 or 88
-  local vx=right-8-vw
-  local mute_x=W >= 420 and vx-12-34 or right-8-34
-  button('volume',mute_x,by,34,'',prop('mute',false) and 'muted' or 'speaker',
-    function() mp.commandv('cycle','mute') end,prop('mute',false))
-  if W >= 420 then
-    volume_slider={id='volume-slider',x=vx,y=by,w=vw,h=34,action=function() mp.commandv('cycle','mute') end}
-    regions[#regions+1]=volume_slider
-    local ratio=math.max(0,math.min(1,number('volume')/math.max(1,number('volume-max',130))))
-    box(vx,vy-2,vw,4,palette.button,1,nil,surface_opacity(vy))
-    if ratio > 0 then box(vx,vy-2,vw*ratio,4,palette.accent,1) end
-    box(vx+vw*ratio-3,vy-5,6,10,palette.accent,corner_radius)
-    if mp.get_time() < volume_feedback_until or dragging == 'volume-slider' or inside and hit(volume_slider) or keyboard and focused_id=='volume-slider' then
-      box(vx-8,by-27,vw+16,22,palette.panel,corner_radius,palette.border)
-      text(vx+vw/2,by-16,string.format('%d%%',number('volume')),12,palette.foreground,5)
+  if bottom_visible then
+    panel(bottom,footer)
+    if surface_mode ~= 'gradient' then box(0,bottom,W,1,palette.border) end
+    local duration=number('duration')
+    local window=seek_window()
+    if prop('user-data/omarchy/seek-enabled') ~= (window ~= nil) then mp.set_property_native('user-data/omarchy/seek-enabled',window ~= nil) end
+    if opts.debug then mp.set_property_native('user-data/omarchy/seek-window',window or false) end
+    local time=number('time-pos')
+    local sy=bottom+28
+    text(18,sy,milliseconds and string.format('%s.%03d',format_time(time),math.floor(time%1*1000)) or format_time(time),13,palette.foreground)
+    regions[#regions+1]={id='elapsed',x=0,y=sy-12,w=90,h=24,action=function() milliseconds=not milliseconds end}
+    text(W-18,sy,duration > 0 and prop('seekable',false) and (show_total and format_time(duration) or '-'..format_time(duration-time)) or 'LIVE',13,palette.muted,6)
+    regions[#regions+1]={id='remaining',x=W-90,y=sy-12,w=90,h=24,action=function() show_total=not show_total end}
+    local x1,x2=104,W-104
+    seekbar={id='seek',x=x1,y=sy-10,w=x2-x1,h=20}
+    box(x1,sy-4,x2-x1,8,palette.button,4,nil,surface_opacity(sy))
+    local position=window and math.max(0,math.min(1,(time-window.start)/(window.finish-window.start))) or 0
+    if position > 0 then box(x1,sy-4,(x2-x1)*position,8,palette.accent,4) end
+    for _, chapter in ipairs(prop('chapter-list',{})) do
+      if window and chapter.time >= window.start and chapter.time <= window.finish then box(x1+(x2-x1)*(chapter.time-window.start)/(window.finish-window.start),sy-6,1,12,palette.muted) end
     end
-  else volume_slider=nil end
-  button('fullscreen',W-52,by,34,'','fullscreen',function() mp.commandv('cycle','fullscreen') end)
+    if window then
+      box(x1+(x2-x1)*position-5,sy-9,10,18,palette.accent,3)
+      seekbar.action=seek_mouse; regions[#regions+1]=seekbar
+      if inside and hit(seekbar) then text(mx,sy-22,format_time(clamp_seek(window.start+(mx-x1)/(x2-x1)*(window.finish-window.start),window)),12,palette.foreground,5) end
+    end
+    local by=bottom+55
+    button('play',18,by,42,'',paused and 'play' or 'pause',function() mp.commandv('cycle','pause') end,true)
+    if W >= 620 then
+    button('back',68,by,56,'10','back',function() relative_seek(-10) end,false,window ~= nil)
+    button('forward',132,by,56,'10','forward',function() relative_seek(10) end,false,window ~= nil)
+    end
+    local playlist_count=number('playlist-count')
+    if playlist_count > 1 and W >= 980 then
+      button('prev',196,by,34,'','prev',function() mp.commandv('playlist-prev') end,false,number('playlist-pos')>0)
+      button('next',238,by,34,'','next',function() mp.commandv('playlist-next') end,false,number('playlist-pos')<playlist_count-1)
+    end
+    if #prop('chapter-list',{}) > 1 and W >= 1200 then
+      button('chapter-prev',280,by,34,'','prev',function() mp.commandv('add','chapter',-1) end,false,window ~= nil and not window.ranges)
+      button('chapter-next',322,by,34,'','next',function() mp.commandv('add','chapter',1) end,false,window ~= nil and not window.ranges)
+    end
+    local compact=W < 850
+    local right=W-18-34-8
+    local fw=34
+    right=right-fw
+    button('playlist',right,by,fw,'','playlist',function() menu('select-playlist') end)
+    right=right-8-34
+    button('subtitles',right,by,34,'','subtitles',function() menu('select-sid') end)
+    right=right-8-34
+    button('audio',right,by,34,'','audio',function() menu('select-aid') end)
+    if W >= 460 then
+    right=right-8-64
+    button('speed',right,by,64,format_speed(number('speed',1)),nil,function()
+      local speed=number('speed',1); mp.set_property_number('speed',speed>=2 and .5 or speed+.25)
+    end)
+    end
+    local vy=by+17
+    local vw=compact and 64 or 88
+    local vx=right-8-vw
+    local mute_x=W >= 420 and vx-12-34 or right-8-34
+    button('volume',mute_x,by,34,'',prop('mute',false) and 'muted' or 'speaker',
+      function() mp.commandv('cycle','mute') end,prop('mute',false))
+    if W >= 420 then
+      volume_slider={id='volume-slider',x=vx,y=by,w=vw,h=34,action=function() mp.commandv('cycle','mute') end}
+      regions[#regions+1]=volume_slider
+      local ratio=math.max(0,math.min(1,number('volume')/math.max(1,number('volume-max',130))))
+      box(vx,vy-2,vw,4,palette.button,1,nil,surface_opacity(vy))
+      if ratio > 0 then box(vx,vy-2,vw*ratio,4,palette.accent,1) end
+      box(vx+vw*ratio-3,vy-5,6,10,palette.accent,corner_radius)
+      if mp.get_time() < volume_feedback_until or dragging == 'volume-slider' or inside and hit(volume_slider) or keyboard and focused_id=='volume-slider' then
+        box(vx-8,by-27,vw+16,22,palette.panel,corner_radius,palette.border)
+        text(vx+vw/2,by-16,string.format('%d%%',number('volume')),12,palette.foreground,5)
+      end
+    else volume_slider=nil end
+    button('fullscreen',W-52,by,34,'','fullscreen',function() mp.commandv('cycle','fullscreen') end)
+  end
   if prop('idle-active',false) then
     text(W/2,H/2-18,'Drop a video or URL here',21,palette.foreground,5)
     text(W/2,H/2+18,'Space to play · f for fullscreen · Tab for controls',13,palette.muted,5)
@@ -719,7 +737,8 @@ mp.observe_property('sub-margin-y','number',function(_,value)
   end
 end)
 mp.register_event('seek',function()
-  reveal_until=mp.get_time()+1.5
+  seek_feedback_until=mp.get_time()+1.5
+  reveal_until=seek_feedback_until
   request_render()
 end)
 local previous_volume

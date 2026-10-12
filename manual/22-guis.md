@@ -97,7 +97,7 @@ Omarchy's controls follow your active theme while the player stays open. Move th
 
 Buttons and tooltips follow the desktop's corner rounding while the player stays open. Set `corner_radius=-1` in `omarchy-controls.conf` to follow the desktop, `0` for square corners, or a positive value for a fixed radius.
 
-The fullscreen button is at the bottom-right of the controls.
+Hover near the bottom to reveal playback controls, or near the top to reveal the title, Appearance, and player menu. Audio, subtitles, and queue use icons with tooltips. The toolbars reveal separately; keyboard focus and always-visible mode show both. The fullscreen button is at the bottom-right of the controls.
 
 Press `Tab` to focus the controls, `Enter` to activate a button and `Escape` to return to normal playback keys. `a` opens the audio picker; `#` cycles audio tracks and `j` cycles subtitles. Your own mpv keybindings take precedence.
 
