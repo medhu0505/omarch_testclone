@@ -125,15 +125,15 @@ fi
 # A sudo grant naming the account would pass to a later user given the name.
 user_accounts_drop_installer_grants "$name"
 
-if [[ -n $last_password ]]; then
-  user_accounts_go_single "$self" "$last_password" ||
-    fail "removed $name, but the passwords weren't brought back together; run omarchy-drive-password with your own password as the new one"
-fi
-
 if (( delete_home )); then
   user_accounts_log "login user '$name' removed by $self, home folder deleted"
   echo "Removed $name and deleted $home."
 else
   user_accounts_log "login user '$name' removed by $self, home folder $home kept"
   echo "Removed $name. Their files stay in $home."
+fi
+
+if [[ -n $last_password ]]; then
+  user_accounts_go_single "$self" "$last_password" ||
+    fail "removed $name, but the passwords weren't brought back together; run omarchy-drive-password with your own password as the new one"
 fi

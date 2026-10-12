@@ -275,5 +275,8 @@ user_accounts_go_single() {
   if [[ -n $disk ]]; then
     user_accounts_autologin_on "$self" || return 1
     user_accounts_log "automatic login turned on for $self: the only account left"
+    echo "Your password unlocks the disk and root again, and you'll be logged in automatically."
+  else
+    echo "Root has your password again."
   fi
 }

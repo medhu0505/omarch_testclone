@@ -626,7 +626,9 @@ output=$(OMARCHY_TEST_NEW_DISK=alicepw run_tty remove bob) || fail "back to one 
   grep -qx "root:alicepw" "$test_tmp/chpasswd.log" &&
   grep -qx "User=alice" "$test_tmp/autologin.conf" ||
   fail "back to one account re-couples disk, root and login" "$output; $(cat "$test_tmp/calls.log")"
-[[ $output == *"your password will unlock the disk and root again"* ]] || fail "back to one account says what it will do" "$output"
+[[ $output == *"your password will unlock the disk and root again"* && $output == *"Your password unlocks the disk and root again"* ]] ||
+  fail "back to one account says what it will do, and what it did" "$output"
+[[ $(head -n 1 "$test_tmp/journal") == "login user 'bob' removed by alice"* ]] || fail "the removal is logged before the switch back" "$(cat "$test_tmp/journal")"
 pass "back to one account re-couples disk, root and login, and logs in automatically again"
 
 two_accounts
