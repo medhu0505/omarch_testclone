@@ -87,6 +87,9 @@ Panel {
   // may describe the network the link just left, so its result is dropped and
   // the read runs again.
   property int hotspotRequest: 0
+  // The latest data-limit write asked for while another runs. It starts when
+  // that one exits, so a click during the automatic write is not lost.
+  property var pendingMetered: null
   property bool scanning: false
   property bool wifiStationAvailable: false
   property string dnsProvider: ""
@@ -652,7 +655,11 @@ Panel {
   }
 
   function setMetered(connection, value, onlyIfUnset) {
-    if (!connection || !wifiDevice || meteredProc.running) return
+    if (!connection || !wifiDevice) return
+    if (meteredProc.running) {
+      pendingMetered = { connection: connection, value: value, onlyIfUnset: onlyIfUnset }
+      return
+    }
     meteredProc.command = ["bash", "-c", Model.meteredScript, "omarchy-network-metered",
       connection, value, wifiDevice.name, onlyIfUnset ? "1" : ""]
     meteredProc.running = true
@@ -1032,7 +1039,12 @@ Panel {
 
   Process {
     id: meteredProc
-    onExited: root.scanHotspots()
+    onExited: {
+      var next = root.pendingMetered
+      root.pendingMetered = null
+      if (next) Qt.callLater(function() { root.setMetered(next.connection, next.value, next.onlyIfUnset) })
+      else root.scanHotspots()
+    }
   }
 
   Process {

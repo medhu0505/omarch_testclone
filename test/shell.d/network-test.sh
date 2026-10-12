@@ -404,6 +404,10 @@ assert(hotspotProcBlock && /onStreamFinished: if \(hotspotProc\.request === root
 assert(hotspotProcBlock && /onExited: if \(request !== root\.hotspotRequest\) Qt\.callLater\(root\.scanHotspots\)/.test(hotspotProcBlock[0]), 'network reruns a hotspot read requested while one was running')
 const connectionKeyHandler = panelSource.match(/onConnectionKeyChanged: \{[\s\S]*?\n {2}\}/)
 assert(connectionKeyHandler && /hotspotConnection = ""/.test(connectionKeyHandler[0]), 'network forgets the old profile before the data limit can act on a new link')
+const setMeteredFn = panelSource.match(/function setMetered\([\s\S]*?\n {2}\}/)
+assert(setMeteredFn && /if \(meteredProc\.running\) \{\s*pendingMetered = /.test(setMeteredFn[0]), 'network queues a data limit write that arrives during another')
+const meteredProcBlock = panelSource.match(/id: meteredProc[\s\S]*?\n {2}\}/)
+assert(meteredProcBlock && /root\.setMetered\(next\.connection, next\.value, next\.onlyIfUnset\)/.test(meteredProcBlock[0]), 'network runs the queued data limit write once the running one exits')
 assert(/else if \(headerIndex === dataHeaderIndex\) toggleDataLimit\(\)/.test(panelSource), 'network reaches the data limit action from the keyboard')
 
 assertEqual(network.connectionIcon('wifi', 80, 'full', true), network.hotspotIcon, 'network draws the chain for a hotspot link')
