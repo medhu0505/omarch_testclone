@@ -839,13 +839,13 @@ if (( EUID != 0 )); then
 fi
 
 # An empty option list piped into menu-select is the caller's "nothing to
-# offer", not a usage mistake: it must exit 2 quietly instead of leaking the
+# offer", not a usage mistake: it must exit 3 quietly instead of leaking the
 # usage string, and callers must report what came up empty.
 status=0
 output=$(printf '' | "$ROOT/bin/omarchy-menu-select" "Pick" 2>&1) || status=$?
-(( status == 2 )) || fail "menu-select exits 2 on an empty piped option list (got $status)"
+(( status == 3 )) || fail "menu-select exits 3 on an empty piped option list (got $status)"
 [[ -z $output ]] || fail "menu-select is quiet on an empty piped option list"
-pass "menu-select exits 2 quietly on an empty piped option list"
+pass "menu-select exits 3 quietly on an empty piped option list"
 
 status=0
 output=$("$ROOT/bin/omarchy-menu-select" </dev/null 2>&1) || status=$?
@@ -855,7 +855,7 @@ assert_output_contains "menu-select without a prompt still prints usage" "$outpu
 make_tmpdir EMPTY_MEDIA_TMPDIR
 status=0
 output=$("$ROOT/bin/omarchy-menu-file" "Pick media" "$EMPTY_MEDIA_TMPDIR" "jpg png" 2>&1) || status=$?
-(( status == 2 )) || fail "menu-file exits 2 when no files match (got $status)"
+(( status == 3 )) || fail "menu-file exits 3 when no files match (got $status)"
 assert_output_contains "menu-file reports an empty search instead of usage" "$output" "No matching files"
 
 make_tmpdir NOTIFY_TMPDIR
@@ -876,3 +876,23 @@ if [[ $output == *"Usage: omarchy-menu-select"* ]]; then
   fail "transcode does not leak the menu-select usage string"
 fi
 pass "transcode notifies instead of leaking usage when nothing matches"
+
+# A menu that cannot open (exit 2) is not an empty search, and an unreadable
+# folder beside the matches must not hide them.
+printf '#!/bin/bash\nexit 1\n' >"$NOTIFY_FAKE_BIN/omarchy-shell"
+chmod +x "$NOTIFY_FAKE_BIN/omarchy-shell"
+make_tmpdir FOUND_MEDIA_TMPDIR
+touch "$FOUND_MEDIA_TMPDIR/clip.mp4"
+mkdir "$FOUND_MEDIA_TMPDIR/locked"
+chmod 000 "$FOUND_MEDIA_TMPDIR/locked"
+: >"$NOTIFY_TMPDIR/notify.log"
+
+file_status=0
+PATH="$NOTIFY_FAKE_BIN:$PATH" "$ROOT/bin/omarchy-menu-file" "Pick media" "$FOUND_MEDIA_TMPDIR" "mp4" >/dev/null 2>&1 || file_status=$?
+NOTIFY_LOG="$NOTIFY_TMPDIR/notify.log" PATH="$NOTIFY_FAKE_BIN:$PATH" "$ROOT/bin/omarchy-transcode" --path "$FOUND_MEDIA_TMPDIR" >/dev/null 2>&1 || true
+chmod 755 "$FOUND_MEDIA_TMPDIR/locked"
+
+(( file_status == 2 )) || fail "menu-file offers the matches it found beside an unreadable folder (got $file_status)"
+pass "menu-file offers the matches it found beside an unreadable folder"
+[[ $(<"$NOTIFY_TMPDIR/notify.log") != *"Nothing to transcode"* ]] || fail "transcode does not report an empty search when the menu cannot open"
+pass "transcode does not report an empty search when the menu cannot open"

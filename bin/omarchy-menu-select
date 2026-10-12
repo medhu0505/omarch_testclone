@@ -12,8 +12,9 @@
 # alone; an option with a subtext returns "<label><TAB><subtext>", so callers
 # with same-named rows get the subtext back as the stable key.
 #
-# An empty option list piped on stdin exits 2 with no menu and no output, so
-# pipe-callers can tell "nothing to offer" apart from a usage mistake.
+# An empty option list piped on stdin exits 3 with no menu and no output, so
+# pipe-callers can tell "nothing to offer" apart from a usage mistake (1) or a
+# menu that could not open (2).
 
 # With --multiple, clicking/Enter toggles rows and Apply returns a JSON array.
 # --on-change takes a JSON command array; each toggle runs it with the selection
@@ -104,7 +105,7 @@ if (( ${#options[@]} == 0 )) && [[ ! -t 0 ]]; then
   # An empty piped list is the caller's "nothing to offer", not a usage
   # mistake; exit distinctly and quietly so callers can report it themselves.
   if (( ${#options[@]} == 0 )); then
-    exit 2
+    exit 3
   fi
 fi
 
