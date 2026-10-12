@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# omarchy:summary=Remove a login user, keeping their home folder unless asked
+# omarchy:args=[name] [--delete-home] [--yes]
+# omarchy:examples=omarchy user remove alice | omarchy user remove bob --delete-home
+# omarchy:alias=omarchy user rm
+# omarchy:requires-sudo=true
+
+set -euo pipefail
+
+source "$OMARCHY_PATH/install/helpers/user-accounts.sh"
+
+name=""
+delete_home=0
+ASSUME_YES=0
+
+fail() {
+  echo "omarchy-user-remove: $*" >&2
+  exit 1
+}
+
+interactive() {
+  [[ -t 0 && -t 1 ]]
+}
+
+confirm() {
+  local prompt="$1"
+  (( ASSUME_YES )) && return 0
+  if interactive; then
+    gum confirm --default=false "$prompt"
+  else
+    fail "refusing to continue without confirmation; pass --yes"
+  fi
+}
+
+while (( $# > 0 )); do
+  case "$1" in
+  --delete-home)
+    delete_home=1
+    ;;
+  --yes | -y)
+    ASSUME_YES=1
+    ;;
+  -h | --help)
+    echo "Usage: omarchy user remove [name] [--delete-home] [--yes]"
+    exit 0
+    ;;
+  -*)
+    fail "unknown option: $1"
+    ;;
+  *)
+    [[ -z $name ]] || fail "unexpected argument: $1"
+    name="$1"
+    ;;
+  esac
+  shift
+done
+
+self=$(user_accounts_self)
+
+if [[ -z $name ]]; then
+  interactive || fail "a name is required (e.g. omarchy user remove alice)"
+  candidates=$(user_accounts_login_users | cut -f1 | grep -vxF -- "$self" | sort || true)
+  [[ -n $candidates ]] || fail "there are no other login users to remove"
+  name=$(gum filter --placeholder "Remove which user?" <<<"$candidates") || fail "cancelled"
+  [[ -n $name ]] || fail "nothing selected"
+fi
+
+getent passwd "$name" >/dev/null || fail "there is no user '$name'"
+user_accounts_is_login_user "$name" || fail "'$name' is a system account, not a login user"
+[[ $name != "$self" ]] || fail "you can't remove your own account; ask another administrator"
+
+if user_accounts_is_admin "$name"; then
+  other_admins=$(user_accounts_admins | grep -vxF -- "$name" || true)
+  [[ -n $other_admins ]] || fail "'$name' is the last administrator; make someone else an administrator first"
+fi
+
+as_root true || fail "couldn't get administrator rights (sudo)"
+
+home=$(getent passwd "$name" | cut -d: -f6)
+if (( delete_home )); then
+  confirm "Remove $name and delete $home?" || fail "cancelled"
+else
+  confirm "Remove $name? Their home folder $home is kept." || fail "cancelled"
+fi
+
+# userdel refuses while the account has programs running.
+if user_accounts_has_programs "$name"; then
+  confirm "$name is signed in or has programs running. Sign them out now? Unsaved work is lost." || fail "cancelled"
+  as_root loginctl disable-linger "$name" 2>/dev/null || true
+  user_accounts_sign_out "$name" || fail "'$name' still has programs running; try again in a moment"
+fi
+
+userdel_args=()
+if (( delete_home )); then
+  userdel_args=(-r)
+fi
+if ! output=$(as_root userdel "${userdel_args[@]}" "$name" 2>&1); then
+  printf '%s\n' "$output" >&2
+  fail "couldn't remove '$name'"
+fi
+# Omarchy has no local mail, so userdel's warning that there's no spool is noise.
+if [[ -n $output ]]; then
+  grep -v 'mail spool' <<<"$output" >&2 || true
+fi
+
+# A sudo grant naming the account would pass to a later user given the name.
+user_accounts_drop_installer_grants "$name"
+
+if (( delete_home )); then
+  user_accounts_log "login user '$name' removed by $self, home folder deleted"
+  echo "Removed $name and deleted $home."
+else
+  user_accounts_log "login user '$name' removed by $self, home folder $home kept"
+  echo "Removed $name. Their files stay in $home."
+fi

@@ -1,0 +1,121 @@
+#!/bin/bash
+
+# omarchy:summary=Give a login user administrator rights or take them away
+# omarchy:args=[name] [on|off]
+# omarchy:examples=omarchy user admin alice on | omarchy user admin alice off
+# omarchy:requires-sudo=true
+
+set -euo pipefail
+
+source "$OMARCHY_PATH/install/helpers/user-accounts.sh"
+
+name=""
+state=""
+
+fail() {
+  echo "omarchy-user-admin: $*" >&2
+  exit 1
+}
+
+interactive() {
+  [[ -t 0 && -t 1 ]]
+}
+
+while (( $# > 0 )); do
+  case "$1" in
+  on | off)
+    [[ -n $name && -z $state ]] || fail "usage: omarchy user admin [name] [on|off]"
+    state="$1"
+    ;;
+  -h | --help)
+    echo "Usage: omarchy user admin [name] [on|off]"
+    exit 0
+    ;;
+  -*)
+    fail "unknown option: $1"
+    ;;
+  *)
+    [[ -z $name ]] || fail "unexpected argument: $1"
+    name="$1"
+    ;;
+  esac
+  shift
+done
+
+self=$(user_accounts_self)
+
+if [[ -z $name ]]; then
+  interactive || fail "a name is required (e.g. omarchy user admin alice on)"
+  name=$(user_accounts_login_users | cut -f1 | sort |
+    gum filter --placeholder "Change administrator rights for which user?") || fail "cancelled"
+  [[ -n $name ]] || fail "nothing selected"
+fi
+
+getent passwd "$name" >/dev/null || fail "there is no user '$name'"
+user_accounts_is_login_user "$name" || fail "'$name' is a system account, not a login user"
+
+if user_accounts_is_admin "$name"; then
+  current="on"
+else
+  current="off"
+fi
+
+if [[ -z $state ]]; then
+  interactive || fail "say on or off (e.g. omarchy user admin $name on)"
+  if [[ $current == "on" ]]; then
+    gum confirm --default=false "$name is an administrator. Take administrator rights away?" || fail "cancelled"
+    state="off"
+  else
+    gum confirm --default=false "$name isn't an administrator. Make $name an administrator?" || fail "cancelled"
+    state="on"
+  fi
+fi
+
+if [[ $state == "off" && $current == "off" ]]; then
+  echo "$name isn't an administrator."
+  exit 0
+fi
+
+if [[ $state == "off" ]]; then
+  [[ $name != "$self" ]] || fail "you can't take away your own administrator rights; ask another administrator"
+  other_admins=$(user_accounts_admins | grep -vxF -- "$name" || true)
+  [[ -n $other_admins ]] || fail "'$name' is the last administrator; make someone else an administrator first"
+  # Membership through the primary group can't be dropped with gpasswd.
+  wheel_gid=$(getent group wheel | cut -d: -f3)
+  if [[ $(getent passwd "$name" | cut -d: -f4) == "$wheel_gid" ]]; then
+    fail "wheel is $name's primary group; change it first (sudo usermod -g $name $name)"
+  fi
+fi
+
+as_root true || fail "couldn't get administrator rights (sudo)"
+
+if [[ $state == "on" ]]; then
+  # Also for a wheel member: wheel alone gives no sudo on an install that
+  # granted it only by name.
+  user_accounts_ensure_wheel_sudo || fail "couldn't give the wheel group sudo"
+  if [[ $current == "on" ]]; then
+    echo "$name is already an administrator."
+  else
+    as_root gpasswd -a "$name" wheel >/dev/null
+    user_accounts_log "login user '$name' made an administrator by $self"
+    echo "$name is now an administrator. It takes effect the next time they log in."
+  fi
+else
+  as_root gpasswd -d "$name" wheel >/dev/null
+  user_accounts_drop_installer_grants "$name"
+  user_accounts_log "administrator rights taken from login user '$name' by $self"
+  if user_accounts_has_full_sudo "$name"; then
+    fail "$name is out of wheel, but another sudo rule still gives them full sudo; see sudo -l -U $name"
+  fi
+  echo "$name is no longer an administrator."
+  # Programs keep the groups they started with, so sudo still works in a
+  # session that is already open.
+  if user_accounts_has_programs "$name"; then
+    echo "$name has programs running, and they keep sudo until $name logs out."
+    if interactive && gum confirm --default=false "Sign $name out now? Unsaved work is lost."; then
+      user_accounts_sign_out "$name" || fail "some of $name's programs are still running and keep sudo"
+      user_accounts_log "login user '$name' signed out by $self after losing administrator rights"
+      echo "Signed $name out."
+    fi
+  fi
+fi

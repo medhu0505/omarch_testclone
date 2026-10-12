@@ -1,0 +1,128 @@
+#!/bin/bash
+
+# omarchy:summary=Add a login user, optionally as an administrator
+# omarchy:args=[name] [--admin] [--password-stdin]
+# omarchy:examples=omarchy user add alice | omarchy user add bob --admin
+# omarchy:requires-sudo=true
+
+# Passwords live in variables; never trace them.
+set +x
+set -euo pipefail
+
+source "$OMARCHY_PATH/install/helpers/user-accounts.sh"
+
+name=""
+admin=""
+password_stdin=0
+
+fail() {
+  echo "omarchy-user-add: $*" >&2
+  exit 1
+}
+
+interactive() {
+  [[ -t 0 && -t 1 ]]
+}
+
+# Prints why a name can't be used, or nothing when it can.
+name_problem() {
+  if [[ -z $1 ]]; then
+    echo "a username is required"
+  elif ! user_accounts_valid_name "$1"; then
+    echo "'$1' isn't a valid username: use lowercase letters, digits, - and _, starting with a letter or _ (32 at most)"
+  elif getent passwd "$1" >/dev/null; then
+    echo "user '$1' already exists"
+  elif getent group "$1" >/dev/null; then
+    echo "a group named '$1' already exists"
+  elif [[ -e /home/$1 ]]; then
+    # omarchy user remove keeps a removed user's home folder by default.
+    echo "/home/$1 already exists; move it aside first (sudo mv /home/$1 /home/$1.old)"
+  fi
+}
+
+while (( $# > 0 )); do
+  case "$1" in
+  --admin)
+    admin="yes"
+    ;;
+  --password-stdin)
+    password_stdin=1
+    ;;
+  -h | --help)
+    echo "Usage: omarchy user add [name] [--admin] [--password-stdin]"
+    exit 0
+    ;;
+  -*)
+    fail "unknown option: $1"
+    ;;
+  *)
+    [[ -z $name ]] || fail "unexpected argument: $1"
+    name="$1"
+    ;;
+  esac
+  shift
+done
+
+# Ask for the administrator's own password first, before the new user's.
+as_root true || fail "couldn't get administrator rights (sudo)"
+
+if [[ -n $name ]]; then
+  problem=$(name_problem "$name")
+  [[ -z $problem ]] || fail "$problem"
+else
+  interactive || fail "a name is required (e.g. omarchy user add alice)"
+  while true; do
+    name=$(gum input --prompt "Username: " --placeholder "lowercase, e.g. alice") || fail "cancelled"
+    problem=$(name_problem "$name")
+    if [[ -z $problem ]]; then
+      break
+    fi
+    echo "${problem^}."
+  done
+fi
+
+if [[ -z $admin ]]; then
+  if interactive && gum confirm --default=false "Make $name an administrator?"; then
+    admin="yes"
+  else
+    admin="no"
+  fi
+fi
+
+# The password reaches chpasswd on stdin, never a command line.
+password=""
+if (( password_stdin )); then
+  IFS= read -r password || true
+elif interactive; then
+  while true; do
+    password=$(gum input --password --prompt "Password for $name: ") || fail "cancelled"
+    if [[ -z $password ]]; then
+      echo "The password can't be empty."
+      continue
+    fi
+    confirmation=$(gum input --password --prompt "Repeat the password: ") || fail "cancelled"
+    if [[ $password == "$confirmation" ]]; then
+      break
+    fi
+    echo "The passwords don't match. Try again."
+  done
+else
+  fail "no terminal to ask for a password; pass --password-stdin"
+fi
+[[ -n $password ]] || fail "the password can't be empty"
+
+groups=()
+if [[ $admin == "yes" ]]; then
+  user_accounts_ensure_wheel_sudo || fail "couldn't give the wheel group sudo, so '$name' was not added"
+  groups=(-G wheel)
+fi
+
+as_root useradd -m -s /bin/bash "${groups[@]}" "$name"
+
+if ! printf '%s:%s\n' "$name" "$password" | as_root chpasswd; then
+  as_root userdel -r "$name" 2>/dev/null || true
+  fail "couldn't set the password, so '$name' was not added"
+fi
+
+user_accounts_log "login user '$name' added by $(user_accounts_self) (administrator: $admin)"
+echo "Added $name (administrator: $admin). Their desktop is set up the first time they log in."
