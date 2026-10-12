@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# omarchy:summary=Arrange multiple monitors and save their positions
+# omarchy:args=[OUTPUT REFERENCE left|right|above|below] [--dry-run]
+# omarchy:examples=omarchy hyprland monitor position | omarchy hyprland monitor position DP-1 eDP-1 left | omarchy hyprland monitor position DP-2 DP-1 above --dry-run
+
+set -euo pipefail
+
+helper="$OMARCHY_PATH/default/hypr/monitor-position.py"
+
+if (( $# > 0 )); then
+  python3 "$helper" "$@"
+else
+  if ! monitors=$(python3 "$helper" --list 2>&1); then
+    omarchy-notification-send "Monitor Position" "$monitors"
+    exit 1
+  fi
+  mapfile -t outputs < <(jq -r '.[].name' <<<"$monitors")
+  if (( ${#outputs[@]} < 2 )); then
+    omarchy-notification-send "Monitor Position" "Connect and enable at least two screens."
+    exit 1
+  fi
+  output=$(omarchy-menu-select "Screen to move" "${outputs[@]}") || exit 0
+  references=()
+  for name in "${outputs[@]}"; do
+    if [[ $name != "$output" ]]; then
+      references+=("$name")
+    fi
+  done
+  reference=$(omarchy-menu-select "Position $output relative to" "${references[@]}") || exit 0
+  side=$(omarchy-menu-select "Place $output relative to $reference" left right above below) || exit 0
+  if message=$(python3 "$helper" "$output" "$reference" "$side" 2>&1); then
+    omarchy-notification-send "Monitor Position" "$message"
+  else
+    omarchy-notification-send "Monitor Position" "$message"
+    exit 1
+  fi
+fi

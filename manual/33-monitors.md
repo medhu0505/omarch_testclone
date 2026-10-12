@@ -38,6 +38,17 @@ When you're extending, closing the lid on the laptop will automatically turn off
 
 ### Arranging multiple screens
 
+Open _Setup > Monitor Position_ to arrange two or more enabled screens. Choose the screen to move, the reference screen, and left, right, above, or below. This works with multiple external screens and desktops without a laptop screen. The other screens keep their positions. Left/right placements align the top edges; above/below placements align the left edges. Scaling and rotation are accounted for.
+
+You can also arrange screens from the terminal:
+
+```bash
+omarchy hyprland monitor position DP-1 eDP-1 left
+omarchy hyprland monitor position DP-2 DP-1 above --dry-run
+```
+
+The command saves positions in `~/.config/hypr/monitors.lua`, preserving the other fields in your monitor rules, and keeps a backup at `monitors.lua.bak.monitor-position`. Screens using a fallback or description rule get explicit connector rules with the same options. These rules take precedence over the fallback afterward, so edit their scale fields individually if needed. Mirrored screens and overlapping layouts are rejected. Turn mirroring off first, or move an obstructing screen before moving another into its place. If applying the layout fails, the previous configuration is restored. Monitor rules built through helpers or conditional Lua code must be arranged manually.
+
 Hyprland works great with multiple screens. Read more about how to lay them out in [the Hyprland monitor documentation](https://wiki.hypr.land/Configuring/Basics/Monitors/). You can [bind specific workspaces to specific monitors](https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/) as well. In Omarchy, these rules go in `~/.config/hypr/monitors.lua` as `hl.monitor` entries — the file ships with commented examples for pinning a specific monitor to a resolution, position, and rotation.
 
 You can also checkout [Hyprmon](https://github.com/erans/hyprmon/), if you'd like a TUI to help you with the positioning of multiple screens.
