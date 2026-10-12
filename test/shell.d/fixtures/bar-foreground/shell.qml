@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 
 ShellRoot {
   id: root
@@ -21,6 +22,10 @@ ShellRoot {
   property int samples: 0
   property bool staleApplied: false
   property color initialSampleForeground: "#909090"
+  property bool samplerStarted: false
+  // The real bar's palette bindings instantiate Color. Our literal palette
+  // must still load its shell.toml before sampling the bound Style dimensions.
+  readonly property bool styleReady: Commons.Color.shellValues && Commons.Color.shellValues["bar.size-horizontal"] === "30" && Style.bar.sizeHorizontal === 30
 
   // PRODUCTION_SAMPLER
 
@@ -45,7 +50,14 @@ ShellRoot {
     command: ["ln", "-nsf", Quickshell.env("BACKGROUND_NEXT"), root.stateHome + "/omarchy/current/background"]
   }
 
-  Component.onCompleted: setRequestedTransparency(true)
+  function startSampling() {
+    if (!styleReady || samplerStarted) return
+    samplerStarted = true
+    setRequestedTransparency(true)
+  }
+
+  onStyleReadyChanged: Qt.callLater(startSampling)
+  Component.onCompleted: Qt.callLater(startSampling)
 
   Timer {
     interval: 20
@@ -61,10 +73,10 @@ ShellRoot {
         else if (root.scenario === "contrast") root.themeContrastForeground = "#dddddd"
         else if (root.scenario === "position") root.position = "bottom"
         else if (root.scenario === "orientation") root.position = "left"
-        else if (root.scenario === "size") Color.loadShell("[bar]\nsize-horizontal = 42\nsize-vertical = 36\nscale-with-font = false")
+        else if (root.scenario === "size") Commons.Color.loadShell("[bar]\nsize-horizontal = 42\nsize-vertical = 36\nscale-with-font = false")
         else if (root.scenario === "orientation-size") {
           root.position = "right"
-          Color.loadShell("[bar]\nsize-horizontal = 30\nsize-vertical = 42\nscale-with-font = false")
+          Commons.Color.loadShell("[bar]\nsize-horizontal = 30\nsize-vertical = 42\nscale-with-font = false")
         }
         else if (root.scenario === "background") changeBackground.running = true
         else if (root.scenario === "failure-latest") root.scheduleTransparentForegroundRefresh()
@@ -72,7 +84,7 @@ ShellRoot {
           root.themeForeground = "#444444"
           root.themeContrastForeground = "#dddddd"
           root.position = "right"
-          Color.loadShell("[bar]\nsize-horizontal = 30\nsize-vertical = 42\nscale-with-font = false")
+          Commons.Color.loadShell("[bar]\nsize-horizontal = 30\nsize-vertical = 42\nscale-with-font = false")
           root.scheduleTransparentForegroundRefresh()
         } else if (root.scenario === "toggle") {
           root.setRequestedTransparency(false)

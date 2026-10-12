@@ -35,7 +35,7 @@ bar = (root / "shell/plugins/bar/Bar.qml").read_text()
 start = bar.index("  function colorHex(")
 end = bar.index("  function runProcess(", start)
 geometry_start = bar.index("  readonly property bool vertical:")
-geometry_end = bar.index("  function normalizePosition(", geometry_start)
+geometry_end = bar.index("\n", bar.index("  readonly property int barSize:", geometry_start)) + 1
 fixture = (root / "test/shell.d/fixtures/bar-foreground/shell.qml").read_text()
 fixture = fixture.replace("  // PRODUCTION_GEOMETRY", bar[geometry_start:geometry_end])
 output.write_text(fixture.replace("  // PRODUCTION_SAMPLER", bar[start:end]))
