@@ -130,6 +130,7 @@ if [[ ${1:-} == "-y" ]] || omarchy-update-confirm; then
   omarchy-update-orphan-pkgs -y
 
   omarchy-update-analyze-logs
+  omarchy-update-pacnew
   omarchy-update-status
 
   # Service restart helpers can need sudo. The reboot-only phase below

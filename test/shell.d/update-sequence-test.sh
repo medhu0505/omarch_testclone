@@ -27,6 +27,7 @@ steps=(
   omarchy-update-mise
   omarchy-update-orphan-pkgs
   omarchy-update-analyze-logs
+  omarchy-update-pacnew
   omarchy-update-status
   omarchy-update-restart
 )
@@ -75,6 +76,7 @@ expected_steps() {
     omarchy-migrate \
     omarchy-update-orphan-pkgs \
     omarchy-update-analyze-logs \
+    omarchy-update-pacnew \
     omarchy-update-status \
     omarchy-update-restart \
     omarchy-hook \
