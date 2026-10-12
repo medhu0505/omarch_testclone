@@ -148,6 +148,9 @@ end
         assert '\\clip(' in rounded_ass and ' b ' in rounded_ass
         rounding.write_text('{"int": 0}')
         wait_radius(0)
+        deadline = time.monotonic() + 5
+        while property('user-data/mpv-test/overlay') == rounded_ass and time.monotonic() < deadline:
+          time.sleep(.05)
         assert property('user-data/mpv-test/overlay') != rounded_ass
         wait_palette(parsed(dark))
         assert property('pause') is True

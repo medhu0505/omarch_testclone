@@ -1,3 +1,5 @@
+local picker
+require('mp.input').select=function(options) picker=options end
 local mouse_handler
 local original_observe=mp.observe_property
 mp.observe_property=function(name,kind,callback)
@@ -56,6 +58,32 @@ function() mp.commandv('script-message','osc-visibility','never') end,
 function() state(false,false);mp.commandv('script-message','osc-visibility','auto');mp.commandv('keypress','TAB') end,
 function() state(true,true); assert(region('play') and region('appearance')) end,
 function()
+  keys['omarchy-keyboard'][6][2]() -- leave keyboard focus
+  mp.commandv('script-binding',mp.get_script_name()..'/appearance-menu')
+end,
+function()
+  assert(picker.prompt=='Appearance:' and picker.items[3]:find('Separate'))
+  picker.submit(3)
+  assert(picker.prompt=='Toolbar reveal:' and picker.default_item==1)
+  picker.submit(2)
+  assert(p('reveal-mode')=='together')
+  mouse(500,20);state(true,true)
+end,
+function() mouse(500,680);state(true,true) end,
+function() mouse(500,350);state(false,false);mp.commandv('script-message','set-omarchy-reveal','invalid') end,
+function()
+  assert(p('reveal-mode')=='together','Invalid mode must retain last choice')
+  mp.commandv('script-binding',mp.get_script_name()..'/appearance-menu')
+end,
+function()
+  assert(picker.items[3]:find('Together'))
+  picker.submit(3)
+  assert(picker.default_item==2)
+  picker.submit(1)
+  mouse(500,20);state(true,false)
+  mouse(500,680);state(false,true)
+end,
+function()
   print('PASS: separate reveals, hidden hitboxes, outline icon, icon-only controls, drag, subtitle margins, pin, hidden mode, keyboard')
   mp.commandv('quit')
 end
@@ -63,6 +91,6 @@ end
 local function run(i)
   local ok,err=pcall(steps[i])
   if not ok then print('FAIL: step '..i..': '..tostring(err));mp.commandv('quit',1);return end
-  if i<#steps then mp.add_timeout(i==5 and 1.6 or .15,function() run(i+1) end) end
+  if i<#steps then mp.add_timeout((i==5 or i==15) and 1.6 or .15,function() run(i+1) end) end
 end
 mp.add_timeout(3.3,function() run(1) end)

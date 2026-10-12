@@ -3,11 +3,12 @@ local assdraw = require 'mp.assdraw'
 local input = require 'mp.input'
 -- Palette glyph adapted from the omarchy.org SVG supplied by Miguel.
 local appearance_path=[[m 2 12 b 2 6.71457 6.51697 2.5 12 2.5 b 17.483 2.5 22 6.71457 22 12 b 22 13.8878 21.4937 15.1519 20.4345 15.8123 b 19.4491 16.4266 18.2002 16.3605 17.1496 16.2236 b 16.7813 16.1757 16.397 16.1121 16.0307 16.0515 b 15.8617 16.0235 15.6965 15.9962 15.5384 15.9713 b 15.0184 15.8895 14.5499 15.8295 14.1335 15.8234 b 13.298 15.8112 12.8925 16.0091 12.671 16.4526 b 12.539 16.7171 12.5395 17.0363 12.6858 17.4705 b 12.8149 17.8538 13.0214 18.2277 13.2435 18.63 b 13.2828 18.7012 13.3226 18.7734 13.3626 18.8465 b 13.4857 19.0721 13.6169 19.3217 13.7077 19.5624 b 13.7926 19.7875 13.8875 20.117 13.8161 20.466 b 13.7303 20.8858 13.4434 21.1713 13.0891 21.3241 b 12.7768 21.4588 12.3992 21.5 12 21.5 b 6.51697 21.5 2 17.2854 2 12 m 10.25 6.25 b 9.42157 6.25 8.75 6.92157 8.75 7.75 b 8.75 8.57843 9.42157 9.25 10.25 9.25 b 11.0784 9.25 11.75 8.57843 11.75 7.75 b 11.75 6.92157 11.0784 6.25 10.25 6.25 m 7.25 10.5 b 6.42157 10.5 5.75 11.1716 5.75 12 b 5.75 12.8284 6.42157 13.5 7.25 13.5 b 8.07843 13.5 8.75 12.8284 8.75 12 b 8.75 11.1716 8.07843 10.5 7.25 10.5 m 15.25 7.75 b 14.4216 7.75 13.75 8.42157 13.75 9.25 b 13.75 10.0784 14.4216 10.75 15.25 10.75 b 16.0784 10.75 16.75 10.0784 16.75 9.25 b 16.75 8.42157 16.0784 7.75 15.25 7.75]]
-local opts = {font='JetBrainsMono Nerd Font', hide_timeout=2.5, corner_radius=-1, visibility='auto',
+local opts = {font='JetBrainsMono Nerd Font', hide_timeout=2.5, corner_radius=-1, visibility='auto', reveal_mode='separate',
   surface_mode='gradient', surface_opacity=.55, gradient_inner_opacity=.05, gradient_outer_opacity=.55,
   light_surface_opacity=.92, light_gradient_inner_opacity=.82, light_gradient_outer_opacity=.97, debug=false}
 require('mp.options').read_options(opts, 'omarchy-controls')
 local modes={'solid','translucent','gradient'}
+local reveal_mode=opts.reveal_mode == 'together' and 'together' or 'separate'
 local surface_mode=opts.surface_mode
 if surface_mode ~= 'solid' and surface_mode ~= 'translucent' and surface_mode ~= 'gradient' then surface_mode='solid' end
 local overlay = mp.create_osd_overlay('ass-events')
@@ -293,14 +294,35 @@ local function transparency_menu()
   input.select({prompt='Controls transparency:',items=items,default_item=selected,
     submit=function(index) set_surface_mode(modes[index],true) end})
 end
+local reveal_labels={separate='Separate · hover each toolbar',together='Together · show both toolbars'}
+local function set_reveal_mode(mode)
+  if mode ~= 'separate' and mode ~= 'together' then return end
+  reveal_mode=mode
+  mp.set_property_native('user-data/omarchy/reveal-mode',mode)
+  wake()
+end
+local function reveal_menu()
+  local modes={'separate','together'}
+  local items={}
+  for i,mode in ipairs(modes) do
+    items[i]=reveal_labels[mode]..(mode == reveal_mode and ' (current)' or '')
+  end
+  input.select({prompt='Toolbar reveal:',items=items,
+    default_item=reveal_mode == 'together' and 2 or 1,
+    submit=function(index) set_reveal_mode(modes[index]) end})
+end
+mp.register_script_message('set-omarchy-reveal',set_reveal_mode)
+mp.set_property_native('user-data/omarchy/reveal-mode',reveal_mode)
 appearance_menu=function()
   local theme=prop('user-data/omarchy/theme-selection','automatic')
   input.select({prompt='Appearance:',keep_open=true,default_item=1,
     items={'Theme · '..(theme == 'automatic' and 'Automatic' or theme),
-      'Transparency · '..surface_labels[surface_mode]..' · Ctrl+F9'},
+      'Transparency · '..surface_labels[surface_mode]..' · Ctrl+F9',
+      'Toolbar reveal · '..(reveal_mode == 'together' and 'Together' or 'Separate')},
     submit=function(index)
       if index == 1 then mp.commandv('script-message-to','omarchy_theme','select-omarchy-theme')
-      elseif index == 2 then transparency_menu() end
+      elseif index == 2 then transparency_menu()
+      elseif index == 3 then reveal_menu() end
     end})
 end
 mp.add_key_binding(nil,'controls-menu',function() menu('menu') end)
@@ -389,6 +411,9 @@ render = function()
   local bottom_visible = allowed and (shared or (not not dragging) or near_bottom and pointer_awake or
     mp.get_time() < seek_feedback_until or mp.get_time() < volume_feedback_until or
     not near_top and mp.get_time() < reveal_until)
+  if reveal_mode == 'together' and (top_visible or bottom_visible) then
+    top_visible, bottom_visible = true, true
+  end
   visible = top_visible or bottom_visible
   if prop('user-data/omarchy/top-visible') ~= top_visible then mp.set_property_native('user-data/omarchy/top-visible',top_visible) end
   if prop('user-data/omarchy/bottom-visible') ~= bottom_visible then mp.set_property_native('user-data/omarchy/bottom-visible',bottom_visible) end
