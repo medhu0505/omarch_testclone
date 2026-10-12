@@ -293,6 +293,12 @@ Item {
   // A suspended PAM conversation may be orphaned by the daemon restart.
   function restartFingerprintAfterSleep() {
     noteFingerprintResumed()
+    // A resume lights the panel, and it may not pass through runWake() (same
+    // outputs kept), so give up the blank or the reader stays off until a
+    // keypress. Defer the clear so this function has settled any orphaned
+    // attempt first; the falling flag re-arms scanning through the
+    // displaysBlank change handler (runBlank stopped the retry timer).
+    Qt.callLater(function() { root.displaysBlank = false })
     if (fingerprintAuthenticating || fingerprintPam.active) {
       if (fingerprintPam.active) fingerprintPam.abort()
       settleFingerprintAttempt()
@@ -305,6 +311,10 @@ Item {
   function runBlank() {
     root.displaysBlank = true
     root.monitorDpmsKnown = false
+    // Stop the retry loop with the panel off; a scan window that ends without
+    // a finger otherwise counts as a usable attempt and re-arms every 250 ms
+    // for as long as the screen is blanked. The reader re-arms on wake.
+    fingerprintRetryTimer.stop()
     if (!blankProcess.running) blankProcess.running = true
   }
 
@@ -367,6 +377,7 @@ Item {
 
   function startFingerprint() {
     if (!lockRequested || !sessionLock.secure || !fingerprintConfigured) return
+    if (displaysBlank) return
     if (fingerprintPam.active || fingerprintAuthenticating) return
 
     fingerprintAuthenticating = true
@@ -752,9 +763,10 @@ Item {
         root.armBlankTimer()
         return
       }
-      // Only a password check in flight should hold the display up. The
-      // fingerprint PAM stays armed for the whole lock, so gating on
-      // `authenticating` here would keep the panel lit until unlock.
+      // Only a password check in flight should hold the display up. New scans
+      // are paused while the display is blanked - a session already running is
+      // allowed to finish - and re-arm on wake, so the reader never races the
+      // blank timer.
       if (root.lockRequested && !root.authenticatingPassword) root.runBlank()
     }
   }
@@ -811,6 +823,14 @@ Item {
     if (!lockRequested) return
     if (authenticatingPassword) idleBlankTimer.stop()
     else armBlankTimer()
+  }
+
+  // Re-arm only when the display comes back, not on every input to an awake
+  // lock. runWake() and onScreensChanged clear the flag for their routes and
+  // restartFingerprintAfterSleep() clears it for the resume route, which lights
+  // the panel without either.
+  onDisplaysBlankChanged: {
+    if (!displaysBlank && lockRequested && fingerprintConfigured && !authenticatingPassword) startFingerprint()
   }
 
   FileView {
