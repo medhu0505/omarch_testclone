@@ -108,30 +108,27 @@ ShellRoot {
 
           // A rejected finger must read differently from a reader that never
           // answered, so the user knows to try again rather than wait.
-          var status = findByObjectName(view, "lockStatusText")
-          root.assertTrue(status !== null, "status text exists in the lock view")
+          var rejected = findByObjectName(view, "fingerprintRejectedNotice")
+          root.assertTrue(rejected !== null, "rejected notice exists in the lock view")
 
-          if (status) {
+          if (rejected) {
             var idleColor = String(indicator.color)
-            root.assertTrue(status.text === view.placeholderText, "status shows the placeholder before any touch")
+            root.assertTrue(!rejected.visible, "rejected notice stays hidden before any touch")
 
             view.fingerprintRejected = true
-            root.assertTrue(status.text === "Fingerprint not recognized", "status reports a rejected finger, got " + status.text)
-            root.assertTrue(view.errorState, "a rejected finger puts the field in its error state")
+            root.assertTrue(rejected.visible, "rejected notice appears when the finger is rejected")
+            root.assertTrue(rejected.text === "Fingerprint not recognized", "rejected notice names the fingerprint, got " + rejected.text)
+            root.assertTrue(rejected.implicitWidth <= view.width, "rejected notice fits the lock view")
             root.assertTrue(String(indicator.color) !== idleColor || String(Color.lock.textError) === String(Color.lock.placeholder),
               "icon tints when the finger is rejected")
 
-            view.failureMessage = "Authentication failed (1)"
-            root.assertTrue(status.text === "Authentication failed (1)", "a password failure outranks a rejected finger")
-            view.failureMessage = ""
-
             view.fingerprintUnavailable = true
-            root.assertTrue(status.text === view.placeholderText, "an unavailable reader does not also claim a rejected finger")
+            root.assertTrue(!rejected.visible, "an unavailable reader does not also claim a rejected finger")
             view.fingerprintUnavailable = false
 
             view.fingerprintRejected = false
-            root.assertTrue(status.text === view.placeholderText, "status returns to the placeholder once the rejection clears")
-            root.assertTrue(!view.errorState, "the field leaves its error state once the rejection clears")
+            root.assertTrue(!rejected.visible, "rejected notice clears once the rejection clears")
+            root.assertTrue(String(indicator.color) === idleColor, "icon restores once the rejection clears")
           }
         }
 

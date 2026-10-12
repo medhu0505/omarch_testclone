@@ -44,12 +44,9 @@ Item {
     ? Math.min(1, (passwordInput.width - 4) / dotMetrics.advanceWidth)
     : 1
   readonly property bool showPasswordCursor: inputEnabled && !authenticatingPassword && failureMessage.length === 0
+  readonly property bool errorState: failureMessage.length > 0
+  // An unreachable reader outranks a rejection, so the two never show at once.
   readonly property bool showFingerprintRejected: fingerprintConfigured && fingerprintRejected && !fingerprintUnavailable
-  readonly property bool errorState: failureMessage.length > 0 || showFingerprintRejected
-  readonly property string statusText: authenticatingPassword ? "Checking…"
-    : failureMessage.length > 0 ? failureMessage
-    : showFingerprintRejected ? "Fingerprint not recognized"
-    : placeholderText
   readonly property var inputBorderSpec: errorState
     ? Border.surfaceSpec("lock", "border-error", Commons.Color.lock.borderError, root.outlineThickness, "border-alpha")
     : Border.surfaceSpec("lock", "border-active", Commons.Color.lock.borderActive, root.outlineThickness, "border-alpha")
@@ -232,13 +229,12 @@ Item {
       Text {
         textFormat: Text.PlainText
         anchors.fill: passwordInput
-        objectName: "lockStatusText"
-        text: root.statusText
+        text: root.authenticatingPassword ? "Checking…" : (root.failureMessage.length > 0 ? root.failureMessage : root.placeholderText)
         visible: passwordInput.text.length === 0
-        color: root.authenticatingPassword ? Commons.Color.lock.text : (root.errorState ? Commons.Color.lock.textError : Commons.Color.lock.placeholder)
+        color: root.authenticatingPassword ? Commons.Color.lock.text : (root.failureMessage.length > 0 ? Commons.Color.lock.textError : Commons.Color.lock.placeholder)
         font.family: Style.font.family
         font.pixelSize: root.fieldFontSize
-        font.italic: !root.authenticatingPassword && root.errorState
+        font.italic: !root.authenticatingPassword && root.failureMessage.length > 0
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
@@ -287,6 +283,23 @@ Item {
       anchors.horizontalCenter: inputField.horizontalCenter
       visible: root.fingerprintConfigured && root.fingerprintUnavailable
       text: "Fingerprint reader unavailable"
+      color: Commons.Color.lock.textError
+      font.family: Style.font.family
+      font.pixelSize: Style.font.heading
+      font.italic: true
+      horizontalAlignment: Text.AlignHCenter
+    }
+
+    // Sits where the unavailable notice does, so both fingerprint states speak
+    // from one place and the field keeps its password prompt.
+    Text {
+      objectName: "fingerprintRejectedNotice"
+      textFormat: Text.PlainText
+      anchors.top: inputField.bottom
+      anchors.topMargin: 18
+      anchors.horizontalCenter: inputField.horizontalCenter
+      visible: root.showFingerprintRejected
+      text: "Fingerprint not recognized"
       color: Commons.Color.lock.textError
       font.family: Style.font.family
       font.pixelSize: Style.font.heading
