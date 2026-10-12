@@ -114,9 +114,13 @@ pass "touchpad disable treats USB device names as data"
 
 HOME="$home_dir" XDG_STATE_HOME="$xdg_decoy" OMARCHY_PATH="$ROOT" MARKER="$marker" lua - <<'LUA'
 local seen = {}
+-- toggles.lua also restores the workspace layouts, which look over the open windows.
 hl = {
   device = function(opts)
     table.insert(seen, opts)
+  end,
+  get_windows = function()
+    return {}
   end,
 }
 
@@ -148,6 +152,9 @@ local seen, executed = {}, false
 hl = {
   device = function(opts)
     table.insert(seen, opts)
+  end,
+  get_windows = function()
+    return {}
   end,
 }
 os.execute = function()
@@ -275,7 +282,10 @@ printf 'elan-touchpad\n' >"$reload_state/touchpad-disabled-name"
 
 HOME="$reload_home" XDG_STATE_HOME="$reload_home/.local/state" OMARCHY_PATH="$ROOT" lua - <<'LUA'
 local disabled = {}
-hl = { device = function(opts) table.insert(disabled, opts) end }
+hl = {
+  device = function(opts) table.insert(disabled, opts) end,
+  get_windows = function() return {} end,
+}
 dofile(os.getenv("OMARCHY_PATH") .. "/default/hypr/bootstrap.lua")
 require("default.hypr.toggles")
 assert(#disabled == 1, "only the current name-file disable is applied")
