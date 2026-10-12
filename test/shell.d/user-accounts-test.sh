@@ -68,8 +68,69 @@ SH
 cat >"$mock_bin/chpasswd" <<'SH'
 #!/bin/bash
 echo "chpasswd $*" >>"$OMARCHY_TEST_DIR/calls.log"
-cat >>"$OMARCHY_TEST_DIR/shadow"
+cat >>"$OMARCHY_TEST_DIR/chpasswd.log"
 [[ -z ${OMARCHY_TEST_CHPASSWD_FAIL:-} ]]
+SH
+
+# The disk: encrypted when $OMARCHY_TEST_DIR/encrypted exists, its password in
+# disk_password. omarchy-drive-password sets it to OMARCHY_TEST_NEW_DISK.
+cat >"$mock_bin/findmnt" <<'SH'
+#!/bin/bash
+if [[ -e $OMARCHY_TEST_DIR/encrypted ]]; then echo /dev/mapper/root; else echo /dev/vda2; fi
+SH
+
+cat >"$mock_bin/lsblk" <<'SH'
+#!/bin/bash
+if [[ -e $OMARCHY_TEST_DIR/encrypted ]]; then
+  printf '/dev/mapper/root btrfs\n/dev/vda2 crypto_LUKS\n/dev/vda \n'
+else
+  printf '/dev/vda2 btrfs\n/dev/vda \n'
+fi
+SH
+
+cat >"$mock_bin/cryptsetup" <<'SH'
+#!/bin/bash
+[[ $1 == "open" && " $* " == *" --test-passphrase "* ]] || exit 9
+[[ $(cat) == "$(cat "$OMARCHY_TEST_DIR/disk_password")" ]] || exit 2
+SH
+
+cat >"$mock_bin/omarchy-drive-password" <<'SH'
+#!/bin/bash
+echo "omarchy-drive-password" >>"$OMARCHY_TEST_DIR/calls.log"
+[[ -z ${OMARCHY_TEST_DRIVE_FAIL:-} ]] || exit 1
+printf '%s' "$OMARCHY_TEST_NEW_DISK" >"$OMARCHY_TEST_DIR/disk_password"
+SH
+
+# passwd: root's status and lock, and the administrator changing their own
+# password to OMARCHY_TEST_NEW_LOGIN.
+cat >"$mock_bin/passwd" <<'SH'
+#!/bin/bash
+case "${1:-}" in
+-S) echo "root $(cat "$OMARCHY_TEST_DIR/root_status") 2026-10-12 -1 -1 -1 -1" ;;
+-l) echo "passwd -l $2" >>"$OMARCHY_TEST_DIR/calls.log"; echo L >"$OMARCHY_TEST_DIR/root_status" ;;
+"")
+  echo "passwd (own)" >>"$OMARCHY_TEST_DIR/calls.log"
+  hash=$(printf '%s\n' "$OMARCHY_TEST_NEW_LOGIN" | perl -e 'my $p = <STDIN>; chomp $p; print crypt($p, q($6$testsalt$))')
+  awk -F: -v user="$SUDO_USER" -v hash="$hash" 'BEGIN { OFS = ":" } $1 == user { $2 = hash } 1' \
+    "$OMARCHY_TEST_DIR/shadow" >"$OMARCHY_TEST_DIR/shadow.new" && mv "$OMARCHY_TEST_DIR/shadow.new" "$OMARCHY_TEST_DIR/shadow"
+  ;;
+esac
+SH
+
+# gum answers from a queue, one line per prompt: "yes"/"no" for confirm, the
+# text for input and choose. Every prompt is logged.
+cat >"$mock_bin/gum" <<'SH'
+#!/bin/bash
+echo "gum $*" >>"$OMARCHY_TEST_DIR/gum.log"
+# Out of answers is someone pressing Esc.
+[[ -s $OMARCHY_TEST_DIR/answers ]] || exit 130
+answer=$(head -n 1 "$OMARCHY_TEST_DIR/answers")
+sed -i 1d "$OMARCHY_TEST_DIR/answers"
+if [[ $1 == "confirm" ]]; then
+  [[ $answer == "yes" ]]
+else
+  printf '%s\n' "$answer"
+fi
 SH
 
 cat >"$mock_bin/userdel" <<'SH'
@@ -130,7 +191,7 @@ SH
 chmod +x "$mock_bin"/*
 
 reset_fixtures() {
-  rm -rf "${test_tmp:?}/home" "$test_tmp/sudoers.d" "$test_tmp/calls.log" "$test_tmp/journal" "$test_tmp/shadow"
+  rm -rf "${test_tmp:?}/home" "$test_tmp/sudoers.d" "$test_tmp/calls.log" "$test_tmp/journal" "$test_tmp/chpasswd.log" "$test_tmp/encrypted"
   mkdir -p "$test_tmp/home/alice" "$test_tmp/home/bob" "$test_tmp/sudoers.d"
   # The owner, alice, was installed from the ISO: sudo by name, no wheel rule.
   echo "alice ALL=(ALL) ALL" >"$test_tmp/sudoers.d/04_alice"
@@ -138,6 +199,13 @@ reset_fixtures() {
   : >"$test_tmp/journal"
   : >"$test_tmp/procs"
   : >"$test_tmp/outside_session"
+  : >"$test_tmp/answers"
+  : >"$test_tmp/gum.log"
+  echo P >"$test_tmp/root_status"
+  printf 'alicepw' >"$test_tmp/disk_password"
+  printf '[Autologin]\nUser=alice\nSession=omarchy.desktop\n' >"$test_tmp/autologin.conf"
+  # alice's login password is alicepw, as the installer would have the disk.
+  printf 'alice:%s:20000::::::\n' "$(printf 'alicepw\n' | perl -e 'my $p = <STDIN>; chomp $p; print crypt($p, q($6$testsalt$))')" >"$test_tmp/shadow"
 
   cat >"$test_tmp/passwd" <<EOF
 root:x:0:0::/root:/usr/bin/bash
@@ -145,6 +213,7 @@ alpm:x:970:970:Arch Linux Package Management:/:/usr/bin/nologin
 alice:x:1000:1000::$test_tmp/home/alice:/bin/bash
 bob:x:1001:1001::$test_tmp/home/bob:/bin/bash
 svc:x:1002:1002::/home/svc:/usr/bin/nologin
+carl:x:1004:1004::$test_tmp/home/carl:/bin/bash
 EOF
 
   cat >"$test_tmp/group" <<'EOF'
@@ -153,6 +222,7 @@ wheel:x:998:alice
 alice:x:1000:
 bob:x:1001:
 svc:x:1002:
+carl:x:1004:
 staff:x:1500:
 EOF
 }
@@ -164,6 +234,7 @@ run_user() {
   shift
   PATH="$mock_bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_TEST_DIR="$test_tmp" \
     SUDO_USER=${RUN_AS:-alice} OMARCHY_LOGIN_DEFS=/dev/null OMARCHY_SUDOERS_DIR="$test_tmp/sudoers.d" \
+    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" \
     "$ROOT/bin/omarchy-user-$command" "$@"
 }
 
@@ -180,10 +251,10 @@ has_user() {
 reset_fixtures
 output=$(printf 's3cret pass:word\n' | run_user add carol --password-stdin 2>&1) ||
   fail "add creates a user with a password from stdin" "$output"
-grep -q '^carol:x:1003:1003::.*/home/carol:/bin/bash$' "$test_tmp/passwd" ||
+grep -Eq '^carol:x:[0-9]+:[0-9]+::.*/home/carol:/bin/bash$' "$test_tmp/passwd" ||
   fail "add creates a user with a password from stdin" "$(cat "$test_tmp/passwd")"
-[[ $(cat "$test_tmp/shadow") == "carol:s3cret pass:word" ]] ||
-  fail "add creates a user with a password from stdin" "$(cat "$test_tmp/shadow")"
+[[ $(cat "$test_tmp/chpasswd.log") == "carol:s3cret pass:word" ]] ||
+  fail "add creates a user with a password from stdin" "$(cat "$test_tmp/chpasswd.log")"
 [[ $(wheel_members) == "alice" ]] || fail "a new user isn't an administrator by default" "$(wheel_members)"
 [[ $output == *"Added carol (administrator: no)"* ]] || fail "add reports what it did" "$output"
 pass "add creates a user with a password from stdin"
@@ -405,3 +476,178 @@ if unshare -r true 2>/dev/null; then
 else
   skip "add, remove and admin refuse to run as root (no user namespaces here)"
 fi
+
+# --- the second account, and back to one ---
+
+# The switch-overs need a terminal, so these run under script(1), which gives
+# the command a real one. gum answers from the queue in $test_tmp/answers.
+run_tty() {
+  local command="$1" cmd status
+  shift
+  printf -v cmd '%q ' "$ROOT/bin/omarchy-user-$command" "$@"
+  PATH="$mock_bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_TEST_DIR="$test_tmp" \
+    SUDO_USER=${RUN_AS:-alice} OMARCHY_LOGIN_DEFS=/dev/null OMARCHY_SUDOERS_DIR="$test_tmp/sudoers.d" \
+    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" \
+    script -qefc "$cmd" /dev/null </dev/null >"$test_tmp/tty.out" 2>&1
+  status=$?
+  tr -d '\r' <"$test_tmp/tty.out"
+  return "$status"
+}
+
+answers() {
+  printf '%s\n' "$@" >"$test_tmp/answers"
+}
+
+only_alice() {
+  sed -i -E '/^(bob|carl):/d' "$test_tmp/passwd" "$test_tmp/group"
+}
+
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+if output=$(printf 'pw\n' | run_user add carol --password-stdin 2>&1); then
+  fail "the second account needs a terminal"
+fi
+[[ $output == *"add it in a terminal"* ]] || fail "the second account says it needs a terminal" "$output"
+has_user carol && fail "the second account needs a terminal"
+[[ $(cat "$test_tmp/root_status") == "P" && -e $test_tmp/autologin.conf ]] || fail "the second account needs a terminal, and nothing changes without one"
+pass "the second account needs a terminal, and nothing changes without one"
+
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers no carolpw carolpw yes alicepw "A new disk password, to share"
+output=$(OMARCHY_TEST_NEW_DISK=sharedpw run_tty add carol) || fail "a second account with a new shared disk password" "$output"
+has_user carol &&
+  [[ $(cat "$test_tmp/disk_password") == "sharedpw" ]] &&
+  [[ $(cat "$test_tmp/root_status") == "L" ]] &&
+  [[ ! -e $test_tmp/autologin.conf ]] ||
+  fail "a second account with a new shared disk password: disk changed, root locked, autologin off" "$output"
+[[ $output == *"Give carol the disk password"* ]] || fail "the administrator is reminded to share the disk password" "$output"
+grep -q "Your password also unlocks the disk" "$test_tmp/gum.log" || fail "the administrator is asked which password to change" "$(cat "$test_tmp/gum.log")"
+grep -q "confirm Continue?" "$test_tmp/gum.log" && [[ $output == *"the disk password is shared"* ]] ||
+  fail "the administrator is told what changes and asked to continue" "$output"
+grep -q "disk password changed by alice" "$test_tmp/journal" && grep -q "root account locked by alice" "$test_tmp/journal" &&
+  grep -q "automatic login turned off by alice" "$test_tmp/journal" || fail "each change writes a journal line" "$(cat "$test_tmp/journal")"
+pass "a second account with a new shared disk password: disk changed, root locked, autologin off"
+
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers no carolpw carolpw yes alicepw "A new password for me" newalicepw
+output=$(OMARCHY_TEST_NEW_LOGIN=newalicepw run_tty add carol) || fail "a second account with a new password for the administrator" "$output"
+has_user carol && [[ $(cat "$test_tmp/disk_password") == "alicepw" ]] && grep -qx "passwd (own)" "$test_tmp/calls.log" ||
+  fail "a second account with a new password for the administrator keeps the disk password" "$output"
+pass "a second account with a new password for the administrator keeps the disk password"
+
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers no carolpw carolpw yes wrongpw alicepw "A new disk password, to share"
+output=$(OMARCHY_TEST_NEW_DISK=sharedpw run_tty add carol) || fail "a mistyped own password is asked again" "$output"
+[[ $output == *"That isn't your password"* ]] && has_user carol || fail "a mistyped own password is asked again" "$output"
+pass "a mistyped own password is asked again"
+
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+printf 'otherdiskpw' >"$test_tmp/disk_password"
+answers no carolpw carolpw yes alicepw
+output=$(run_tty add carol) || fail "already separate passwords need no change" "$output"
+has_user carol && ! grep -q "choose" "$test_tmp/gum.log" && ! grep -q "omarchy-drive-password\|passwd (own)" "$test_tmp/calls.log" &&
+  [[ $(cat "$test_tmp/root_status") == "L" ]] || fail "already separate passwords need no change, but root is still locked" "$output"
+pass "already separate passwords need no change, but root is still locked"
+
+reset_fixtures
+only_alice
+answers no carolpw carolpw yes
+output=$(run_tty add carol) || fail "an unencrypted install skips the disk" "$output"
+has_user carol && ! grep -q "Your password" "$test_tmp/gum.log" && [[ $output != *"disk password"* ]] ||
+  fail "an unencrypted install skips the disk" "$output"
+pass "an unencrypted install skips the disk"
+
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers no carolpw carolpw no
+if run_tty add carol >/dev/null; then fail "declining the switch-over adds no one"; fi
+has_user carol && fail "declining the switch-over adds no one"
+[[ $(cat "$test_tmp/root_status") == "P" && -e $test_tmp/autologin.conf ]] || fail "declining the switch-over changes nothing"
+pass "declining the switch-over adds no one and changes nothing"
+
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers no carolpw carolpw yes alicepw "A new disk password, to share"
+if OMARCHY_TEST_DRIVE_FAIL=1 run_tty add carol >/dev/null; then fail "a disk password that didn't change stops the switch-over"; fi
+has_user carol && fail "a disk password that didn't change stops the switch-over"
+[[ $(cat "$test_tmp/root_status") == "P" ]] || fail "a disk password that didn't change leaves root alone"
+pass "a disk password that didn't change stops the switch-over and adds no one"
+
+# omarchy-drive-password can also finish without changing anything (no drive
+# chosen), so the result is checked, not its exit status.
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers no carolpw carolpw yes alicepw "A new disk password, to share"
+if output=$(OMARCHY_TEST_NEW_DISK=alicepw run_tty add carol); then fail "a disk still on the administrator's password stops the switch-over"; fi
+[[ $output == *"Your password still unlocks the disk"* ]] && ! has_user carol ||
+  fail "a disk still on the administrator's password stops the switch-over" "$output"
+pass "a disk still on the administrator's password stops the switch-over"
+
+reset_fixtures
+answers no carolpw carolpw
+output=$(run_tty add carol) || fail "a third account changes nothing about unlocking" "$output"
+! grep -q "Continue" "$test_tmp/gum.log" && [[ $(cat "$test_tmp/root_status") == "P" ]] ||
+  fail "a third account changes nothing about unlocking" "$(cat "$test_tmp/gum.log")"
+pass "a third account changes nothing about unlocking"
+
+# Back to one: alice and bob, with the disk on the shared password and root locked.
+two_accounts() {
+  reset_fixtures
+  sed -i -E '/^carl:/d' "$test_tmp/passwd" "$test_tmp/group"
+  printf 'sharedpw' >"$test_tmp/disk_password"
+  echo L >"$test_tmp/root_status"
+  rm -f "$test_tmp/autologin.conf"
+}
+
+two_accounts
+touch "$test_tmp/encrypted"
+run_user remove bob --yes >/dev/null 2>&1 && fail "leaving one account needs a terminal"
+has_user bob || fail "leaving one account needs a terminal, and nothing is removed without one"
+pass "leaving one account needs a terminal, and nothing is removed without one"
+
+two_accounts
+touch "$test_tmp/encrypted"
+answers alicepw yes
+output=$(OMARCHY_TEST_NEW_DISK=alicepw run_tty remove bob) || fail "back to one account re-couples disk, root and login" "$output"
+! has_user bob &&
+  [[ $(cat "$test_tmp/disk_password") == "alicepw" ]] &&
+  grep -qx "root:alicepw" "$test_tmp/chpasswd.log" &&
+  grep -qx "User=alice" "$test_tmp/autologin.conf" ||
+  fail "back to one account re-couples disk, root and login" "$output; $(cat "$test_tmp/calls.log")"
+[[ $output == *"your password will unlock the disk and root again"* ]] || fail "back to one account says what it will do" "$output"
+pass "back to one account re-couples disk, root and login, and logs in automatically again"
+
+two_accounts
+touch "$test_tmp/encrypted"
+printf 'alicepw' >"$test_tmp/disk_password"
+answers alicepw yes
+output=$(run_tty remove bob) || fail "a disk already on the administrator's password is left alone" "$output"
+! grep -q "omarchy-drive-password" "$test_tmp/calls.log" && grep -qx "root:alicepw" "$test_tmp/chpasswd.log" ||
+  fail "a disk already on the administrator's password is left alone" "$(cat "$test_tmp/calls.log")"
+pass "a disk already on the administrator's password is left alone"
+
+two_accounts
+answers alicepw yes
+output=$(run_tty remove bob) || fail "back to one account on an unencrypted install" "$output"
+grep -qx "root:alicepw" "$test_tmp/chpasswd.log" && [[ ! -e $test_tmp/autologin.conf ]] ||
+  fail "back to one account on an unencrypted install sets root but no automatic login" "$output"
+pass "back to one account on an unencrypted install sets root but no automatic login"
+
+two_accounts
+touch "$test_tmp/encrypted"
+answers wrongpw wrongpw
+if run_tty remove bob >/dev/null; then :; fi
+has_user bob || fail "nothing is removed before the administrator's password checks out"
+pass "nothing is removed before the administrator's password checks out"

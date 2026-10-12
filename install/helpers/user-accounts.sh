@@ -147,3 +147,133 @@ user_accounts_has_full_sudo() {
   privileges=$(as_root sudo -l -U "$1" 2>/dev/null) || return 1
   grep -qE '^[[:space:]]+\((ALL|root)( : ALL)?\) (NOPASSWD: )?ALL$' <<<"$privileges"
 }
+
+user_accounts_login_count() {
+  user_accounts_login_users | wc -l
+}
+
+# The LUKS device holding /, or nothing on an unencrypted install. The same
+# walk omarchy-drive-password does.
+user_accounts_root_luks() {
+  local source ancestry
+  source=$(findmnt -no SOURCE / 2>/dev/null) || return 0
+  ancestry=$(lsblk -nsrpo NAME,FSTYPE "${source%%[*}" 2>/dev/null) || return 0
+  awk '$2 == "crypto_LUKS" { print $1; exit }' <<<"$ancestry"
+}
+
+# Whether the password opens the disk. cryptsetup tries enrolled tokens before
+# the key, so allow only a token type none has, as omarchy-drive-password does.
+user_accounts_opens_disk() {
+  printf '%s' "$2" | as_root cryptsetup open --test-passphrase --token-type passphrase-only --key-file - "$1" >/dev/null 2>&1
+}
+
+# Whether the password is the user's login password, checked against its hash.
+user_accounts_password_is() {
+  local hash
+  hash=$(as_root getent shadow "$1" | cut -d: -f2) || return 1
+  [[ -n $hash && $hash != '!'* && $hash != '*'* ]] || return 1
+  printf '%s\n' "$2" | HASH="$hash" perl -e 'my $p = <STDIN>; chomp $p; exit(crypt($p, $ENV{HASH}) eq $ENV{HASH} ? 0 : 1)'
+}
+
+user_accounts_autologin_conf() {
+  printf '%s\n' "${OMARCHY_SDDM_AUTOLOGIN:-/etc/sddm.conf.d/autologin.conf}"
+}
+
+# The same file the installer writes.
+user_accounts_autologin_on() {
+  printf '[Autologin]\nUser=%s\nSession=omarchy.desktop\n' "$1" | as_root tee "$(user_accounts_autologin_conf)" >/dev/null
+}
+
+user_accounts_autologin_off() {
+  as_root rm -f "$(user_accounts_autologin_conf)"
+}
+
+user_accounts_root_locked() {
+  [[ $(as_root passwd -S root 2>/dev/null | awk '{ print $2 }') == "L" ]]
+}
+
+# Asks until the user types their own login password, and prints it.
+user_accounts_ask_own_password() {
+  local password
+  while true; do
+    password=$(gum input --password --prompt "Your password ($1): ") || return 1
+    if user_accounts_password_is "$1" "$password"; then
+      printf '%s\n' "$password"
+      return 0
+    fi
+    echo "That isn't your password. Try again." >&2
+  done
+}
+
+# Before the second login account: one person no longer owns everything. The
+# disk password, which everyone who starts the computer types, must stop being
+# the first administrator's own password; root is locked; and the login screen
+# asks who is logging in instead of logging the owner in automatically.
+user_accounts_go_multi() {
+  local self=$1 disk mine choice
+  disk=$(user_accounts_root_luks)
+  echo "This will be the second account on this computer, so:"
+  if [[ -n $disk ]]; then
+    echo "  • the disk password is shared with everyone who starts the computer, so it must differ from your password"
+  fi
+  echo "  • the login screen asks who is logging in, instead of logging you in automatically"
+  echo "  • root is locked; administrators use sudo"
+  gum confirm "Continue?" || return 1
+
+  if [[ -n $disk ]]; then
+    mine=$(user_accounts_ask_own_password "$self") || return 1
+    if user_accounts_opens_disk "$disk" "$mine"; then
+      choice=$(gum choose --header "Your password also unlocks the disk. Which one do you want to change?" \
+        "A new disk password, to share" "A new password for me") || return 1
+      if [[ $choice == "A new disk password, to share" ]]; then
+        omarchy-drive-password || return 1
+        if user_accounts_opens_disk "$disk" "$mine"; then
+          echo "Your password still unlocks the disk." >&2
+          return 1
+        fi
+        user_accounts_log "disk password changed by $self, so it no longer matches their login password"
+      else
+        passwd || return 1
+        mine=$(user_accounts_ask_own_password "$self") || return 1
+        if user_accounts_opens_disk "$disk" "$mine"; then
+          echo "Your new password still unlocks the disk; it has to differ from the disk password." >&2
+          return 1
+        fi
+        user_accounts_log "login password of $self changed, so it no longer matches the disk password"
+      fi
+    fi
+  fi
+
+  if ! user_accounts_root_locked; then
+    as_root passwd -l root >/dev/null || return 1
+    user_accounts_log "root account locked by $self: a second login account is being added"
+  fi
+  if as_root test -e "$(user_accounts_autologin_conf)"; then
+    user_accounts_autologin_off || return 1
+    user_accounts_log "automatic login turned off by $self: a second login account is being added"
+  fi
+}
+
+# Back to one login account: a normal single-user Omarchy again, as the
+# installer leaves it. One password for the login, root and the disk, and on an
+# encrypted install automatic login once the disk is unlocked. $2 is the
+# remaining administrator's password, already checked.
+user_accounts_go_single() {
+  local self=$1 mine=$2 disk
+  disk=$(user_accounts_root_luks)
+  if [[ -n $disk ]] && ! user_accounts_opens_disk "$disk" "$mine"; then
+    echo "Now the disk password: enter its current password, then your own password as the new one."
+    omarchy-drive-password || return 1
+    if ! user_accounts_opens_disk "$disk" "$mine"; then
+      echo "Your password doesn't unlock the disk yet. Run omarchy-drive-password and use your own password as the new one." >&2
+      return 1
+    fi
+    user_accounts_log "disk password set to $self's login password: the only account left"
+  fi
+  printf 'root:%s\n' "$mine" | as_root chpasswd || return 1
+  user_accounts_log "root password set to $self's login password: the only account left"
+  if [[ -n $disk ]]; then
+    user_accounts_autologin_on "$self" || return 1
+    user_accounts_log "automatic login turned on for $self: the only account left"
+  fi
+}

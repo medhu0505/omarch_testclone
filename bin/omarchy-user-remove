@@ -85,6 +85,16 @@ fi
 
 as_root true || fail "couldn't get administrator rights (sudo)"
 
+# Leaving one account makes this a single-user computer again: the remaining
+# administrator's password unlocks the disk, root and the login. Ask for it
+# before anything is deleted.
+last_password=""
+if (( $(user_accounts_login_count) == 2 )); then
+  interactive || fail "removing '$name' leaves one account, which changes how this computer unlocks, so run it in a terminal"
+  echo "$name is the only other account, so after removing them your password will unlock the disk and root again, and you'll be logged in automatically."
+  last_password=$(user_accounts_ask_own_password "$self") || fail "cancelled"
+fi
+
 home=$(getent passwd "$name" | cut -d: -f6)
 if (( delete_home )); then
   confirm "Remove $name and delete $home?" || fail "cancelled"
@@ -114,6 +124,11 @@ fi
 
 # A sudo grant naming the account would pass to a later user given the name.
 user_accounts_drop_installer_grants "$name"
+
+if [[ -n $last_password ]]; then
+  user_accounts_go_single "$self" "$last_password" ||
+    fail "removed $name, but the passwords weren't brought back together; run omarchy-drive-password with your own password as the new one"
+fi
 
 if (( delete_home )); then
   user_accounts_log "login user '$name' removed by $self, home folder deleted"

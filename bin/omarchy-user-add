@@ -74,6 +74,14 @@ done
 # Ask for the administrator's own password first, before the new user's.
 as_root true || fail "couldn't get administrator rights (sudo)"
 
+# The second account changes how the computer unlocks and logs in, which needs
+# answers and passwords from the administrator.
+second_account=0
+if (( $(user_accounts_login_count) == 1 )); then
+  second_account=1
+  interactive || fail "the second account changes how this computer unlocks and logs in, so add it in a terminal"
+fi
+
 if [[ -n $name ]]; then
   problem=$(name_problem "$name")
   [[ -z $problem ]] || fail "$problem"
@@ -119,6 +127,10 @@ else
 fi
 [[ -n $password ]] || fail "the password can't be empty"
 
+if (( second_account )); then
+  user_accounts_go_multi "$(user_accounts_self)" || fail "nothing changed for the second account, so '$name' was not added"
+fi
+
 groups=()
 if [[ $admin == "yes" ]]; then
   user_accounts_ensure_wheel_sudo || fail "couldn't give the wheel group sudo, so '$name' was not added"
@@ -134,3 +146,6 @@ fi
 
 user_accounts_log "login user '$name' added by $(user_accounts_self) (administrator: $admin)"
 echo "Added $name (administrator: $admin). Their desktop is set up the first time they log in."
+if (( second_account )) && [[ -n $(user_accounts_root_luks) ]]; then
+  echo "Give $name the disk password: it unlocks the computer when it starts. Their own password logs them in."
+fi
