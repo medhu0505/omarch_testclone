@@ -170,6 +170,32 @@ run_hook pre suspend
 [[ ! -s $tmp_dir/calls ]] || fail "pre suspend on non-Intel must not execute modprobe"
 pass "pre suspend on non-Intel system is a no-op"
 
+# Test 10a: suspend-then-hibernate unloads for its suspend phase and not its hibernate phase
+setup_env "iwlmld 123 0\niwlwifi 456 1 iwlmld" "$be200_pci"
+SYSTEMD_SLEEP_ACTION=hibernate run_hook pre suspend-then-hibernate
+
+[[ ! -f $tmp_dir/run/iwlwifi-suspended ]] || fail "hibernate phase must not create state file"
+[[ ! -s $tmp_dir/calls ]] || fail "hibernate phase must not unload drivers"
+
+SYSTEMD_SLEEP_ACTION=suspend run_hook pre suspend-then-hibernate
+grep -Fx 'modprobe -r iwlwifi' "$tmp_dir/calls" >/dev/null || fail "suspend phase unloads iwlwifi"
+pass "suspend-then-hibernate unloads only for its suspend phase"
+
+# Test 10b: pre suspend keeps the opmode a failed resume left in the marker
+setup_env "iwlwifi 456 0" "$be200_pci"
+echo "iwlmld" >"$tmp_dir/run/iwlwifi-suspended"
+run_hook pre suspend
+
+[[ $(<"$tmp_dir/run/iwlwifi-suspended") == "iwlmld" ]] || fail "pre suspend keeps the retained iwlmld opmode"
+pass "pre suspend keeps the opmode a failed resume left behind"
+
+# Test 10c: pre suspend keeps the marker when neither iwlwifi unload nor opmode restore succeeds
+setup_env "iwlmld 123 0\niwlwifi 456 1 iwlmld" "$be200_pci" "iwl"
+run_hook pre suspend
+
+[[ $(<"$tmp_dir/run/iwlwifi-suspended") == "iwlmld" ]] || fail "pre suspend keeps the marker when opmode restore fails"
+pass "pre suspend keeps the marker when opmode restore fails"
+
 # Test 11: installation script copies hook when BE200 is present
 inst_dir=$(mktemp -d)
 mkdir -p "$inst_dir/etc/modprobe.d" "$inst_dir/usr/lib/systemd/system-sleep"

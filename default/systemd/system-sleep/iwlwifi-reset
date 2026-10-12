@@ -5,6 +5,7 @@
 # Unload before suspend and reload after wake to cleanly re-enumerate the device.
 
 state_file="${OMARCHY_IWLWIFI_STATE_FILE:-/run/iwlwifi-suspended}"
+sleep_action=${SYSTEMD_SLEEP_ACTION:-$2}
 
 log() {
   logger -t iwlwifi-reset "$*"
@@ -27,7 +28,7 @@ is_affected_device() {
 case "$1" in
   pre)
     # Only unload before suspend on affected BE200/BE211 hardware, not on full hibernate
-    if [[ $2 != "hibernate" ]] && is_affected_device && lsmod | grep -q "^iwlwifi"; then
+    if [[ $sleep_action != "hibernate" ]] && is_affected_device && lsmod | grep -q "^iwlwifi"; then
       log "Pre-suspend: unloading wifi drivers"
       opmode="iwlwifi"
       if lsmod | grep -q "^iwlmld"; then
@@ -38,6 +39,11 @@ case "$1" in
         opmode="iwldvm"
       fi
 
+      # A marker left by a failed reload on resume still names the opmode to restore.
+      if [[ $opmode == "iwlwifi" && -s $state_file ]]; then
+        opmode=$(<"$state_file")
+      fi
+
       if [[ $opmode != "iwlwifi" ]]; then
         run_modprobe -r "$opmode" || true
       fi
@@ -46,10 +52,11 @@ case "$1" in
         echo "$opmode" > "$state_file"
       else
         log "Failed to unload iwlwifi before suspend"
-        if [[ $opmode != "iwlwifi" ]]; then
-          run_modprobe "$opmode" || true
+        if [[ $opmode != "iwlwifi" ]] && ! run_modprobe "$opmode"; then
+          echo "$opmode" > "$state_file"
+        else
+          rm -f "$state_file"
         fi
-        rm -f "$state_file"
       fi
     fi
     ;;
