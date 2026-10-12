@@ -5,7 +5,7 @@ set -euo pipefail
 source "$(dirname "$0")/base-test.sh"
 
 test_dir=$(mktemp -d)
-trap 'rm -rf "$test_dir"' EXIT
+trap 'chmod -R u+rwx "$test_dir" 2>/dev/null; rm -rf "$test_dir"' EXIT
 
 migration="$ROOT/migrations/1787691200.sh"
 seed='{"distribution":{"require_eula":false},"browser":{"theme":{"color_scheme":0,"color_scheme2":0}}}'
@@ -75,3 +75,45 @@ run_migration stale
 [[ $(mode_of "$stale_dir") == "755" ]] ||
   fail "a root-only seed directory comes back traversable" "mode $(mode_of "$stale_dir")"
 pass "Chromium seed migration repairs a seed the old write left root-only"
+
+# Machines that already ran 1787691200 as it first shipped never run it again,
+# so the repair for them is its own migration.
+repair="$ROOT/migrations/1791767683.sh"
+occurrences=$(grep -Fc '/usr/lib/chromium' "$repair") || occurrences=0
+(( occurrences == 1 )) ||
+  fail "Chromium seed repair names its directory exactly once" "found $occurrences occurrences"
+
+run_repair() {
+  local scenario=$1
+
+  : >"$test_dir/$scenario.calls"
+  sed "s|^chromium_dir=\"/usr/lib/chromium\"$|chromium_dir=\"$test_dir/$scenario/usr/lib/chromium\"|" "$repair" |
+    (CALL_LOG="$test_dir/$scenario.calls" PATH="$stub_bin:$PATH" bash -euo pipefail) >/dev/null
+}
+
+# What the shipped write left under umask 077. The test cannot own root's files,
+# so the directory is made untraversable to its own owner instead.
+leftover_dir="$test_dir/leftover/usr/lib/chromium"
+mkdir -p "$leftover_dir"
+printf '%s\n' "$seed" >"$leftover_dir/initial_preferences"
+chmod 000 "$leftover_dir/initial_preferences"
+chmod 000 "$leftover_dir"
+run_repair leftover
+[[ $(mode_of "$leftover_dir") == "755" ]] ||
+  fail "Chromium seed repair makes the directory traversable" "mode $(mode_of "$leftover_dir")"
+[[ $(mode_of "$leftover_dir/initial_preferences") == "644" ]] ||
+  fail "Chromium seed repair makes the seed readable" "mode $(mode_of "$leftover_dir/initial_preferences")"
+[[ $(<"$leftover_dir/initial_preferences") == "$seed" ]] ||
+  fail "Chromium seed repair leaves the seed's content alone" "$(cat "$leftover_dir/initial_preferences")"
+pass "Chromium seed repair makes a root-only seed readable"
+
+# A readable seed, a missing seed and a missing directory need no privileges.
+run_repair fresh
+mkdir -p "$test_dir/unseeded/usr/lib/chromium"
+run_repair unseeded
+run_repair absent
+for scenario in fresh unseeded absent; do
+  [[ ! -s $test_dir/$scenario.calls ]] ||
+    fail "Chromium seed repair must not prompt for privileges ($scenario)" "$(cat "$test_dir/$scenario.calls")"
+done
+pass "Chromium seed repair no-ops wherever the browser can already read the seed"
