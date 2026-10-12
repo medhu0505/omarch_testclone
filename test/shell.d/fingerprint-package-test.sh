@@ -11,9 +11,23 @@ source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
 scratch=$(mktemp -d)
 trap 'rm -rf "$scratch"' EXIT
-mkdir -p "$scratch/bin"
+mkdir -p "$scratch/bin" "$scratch/default"
 export CALL_LOG="$scratch/calls"
 export PATH="$scratch/bin:$ROOT/bin:$PATH"
+
+setup_command="$ROOT/bin/omarchy-setup-security-fingerprint"
+source <(awk '/^resolve_source_root\(\) \{$/,/^}/' "$setup_command")
+[[ $(resolve_source_root /usr/bin/omarchy-setup-security-fingerprint) == "/usr/share/omarchy" ]] ||
+  fail "the packaged fingerprint setup maps /usr/bin to /usr/share/omarchy"
+[[ $(resolve_source_root "$setup_command") == "$ROOT" ]] ||
+  fail "the dev-linked fingerprint setup maps bin back to its checkout"
+if resolve_source_root /opt/omarchy-setup-security-fingerprint >/dev/null; then
+  fail "fingerprint setup accepts a command path outside a packaged or dev-linked layout"
+fi
+unset -f resolve_source_root
+grep -F '[[ ! -d $source_root/default ]]' "$setup_command" >/dev/null ||
+  fail "fingerprint setup verifies the resolved source tree"
+pass "fingerprint setup resolves packaged and dev-linked source trees"
 
 cat > "$scratch/bin/omarchy-hw-fingerprint" <<'STUB'
 #!/bin/bash

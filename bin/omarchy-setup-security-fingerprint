@@ -5,15 +5,32 @@
 
 set -e
 
+resolve_source_root() {
+  case $1 in
+    /usr/bin/*)
+      printf '%s\n' /usr/share/omarchy
+      ;;
+    */bin/*)
+      printf '%s\n' "${1%/bin/*}"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 # Keep the follow-up helper in the same packaged or dev-linked tree as this
 # command instead of selecting executable code from inherited environment.
 command_path=$(/usr/bin/readlink -e -- "${BASH_SOURCE[0]}") || {
   echo "Could not resolve the Omarchy fingerprint setup command." >&2
   exit 1
 }
-source_root=${command_path%/bin/*}
-if [[ $source_root == "$command_path" ]]; then
+source_root=$(resolve_source_root "$command_path") || {
   echo "Could not resolve the Omarchy source root." >&2
+  exit 1
+}
+if [[ ! -d $source_root/default ]]; then
+  echo "Omarchy source root has no default/: $source_root" >&2
   exit 1
 fi
 

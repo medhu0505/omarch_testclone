@@ -20,12 +20,21 @@ pass "the root lock helper uses only trusted command directories"
 
 grep -F 'command_path=$(/usr/bin/readlink -e -- "${BASH_SOURCE[0]}")' "$apply_lock" >/dev/null ||
   fail "the lock helper resolves the command that is actually running"
-grep -F 'source_root=${command_path%/bin/*}' "$apply_lock" >/dev/null ||
-  fail "the lock helper derives its source tree from the running command"
+source <(awk '/^resolve_source_root\(\) \{$/,/^}/' "$apply_lock")
+[[ $(resolve_source_root /usr/bin/omarchy-apply-lock) == "/usr/share/omarchy" ]] ||
+  fail "the packaged lock helper maps /usr/bin to /usr/share/omarchy"
+[[ $(resolve_source_root "$ROOT/bin/omarchy-apply-lock") == "$ROOT" ]] ||
+  fail "the dev-linked lock helper maps bin back to its checkout"
+if resolve_source_root /opt/omarchy-apply-lock >/dev/null; then
+  fail "the lock helper accepts a command path outside a packaged or dev-linked layout"
+fi
+unset -f resolve_source_root
+grep -F '[[ ! -d $source_root/default ]]' "$apply_lock" >/dev/null ||
+  fail "the lock helper verifies the resolved source tree"
 if grep -F '$OMARCHY_PATH/default/systemd/' "$apply_lock" >/dev/null; then
   fail "the lock helper does not select privileged install sources from inherited OMARCHY_PATH"
 fi
-pass "the lock helper binds privileged install sources to its own source tree"
+pass "the lock helper resolves packaged and dev-linked source trees"
 
 grep -F '[[ -x /usr/bin/fprintd-list ]]' "$apply_lock" >/dev/null ||
   fail "the lock helper checks the trusted fprintd-list executable"
