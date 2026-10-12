@@ -79,7 +79,8 @@ function weatherEditor() {
     geocodePendingQuery: '',
     geocodeActiveQuery: '',
     locationField: { text: '' },
-    keyCatcher: null,
+    locationInput() { return editor.locationField },
+    panel: { loadedContent: null },
     Qt: { callLater: fn => queued.push(fn) },
     geocodeDebounce: {
       running: false,
