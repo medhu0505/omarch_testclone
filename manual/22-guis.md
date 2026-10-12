@@ -97,6 +97,8 @@ Omarchy's controls follow your active theme while the player stays open. Move th
 
 Buttons and tooltips follow the desktop's corner rounding while the player stays open. Set `corner_radius=-1` in `omarchy-controls.conf` to follow the desktop, `0` for square corners, or a positive value for a fixed radius.
 
+The fullscreen button is at the bottom-right of the controls.
+
 Press `Tab` to focus the controls, `Enter` to activate a button and `Escape` to return to normal playback keys. `a` opens the audio picker; `#` cycles audio tracks and `j` cycles subtitles. Your own mpv keybindings take precedence.
 
 The three-dot button opens mpv's native player menu directly. The palette button beside it opens Appearance. Choose Theme to follow the desktop automatically or use an installed palette for this player only. Choosing Automatic again picks up the current desktop theme. These choices last for the current player process. Choose Transparency from Appearance, or use `Ctrl + F9` to cycle solid, uniform translucent and gradient controls. The choice applies to the current player. To persist a choice, edit `~/.config/mpv/script-opts/omarchy-controls.conf` and set `surface_mode` to `solid`, `translucent` or `gradient`. This file also contains opacity, font and corner settings. Light themes use a stronger backing for readable dark text. Native selection menus remain solid.

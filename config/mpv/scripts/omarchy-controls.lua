@@ -580,12 +580,11 @@ render = function()
   end
   panel(0,header)
   if surface_mode ~= 'gradient' then box(0,header-1,W,1,palette.border) end
-  local title_right=W-146
+  local title_right=W-104
   text(18,header/2,prop('filename',prop('media-title','Drop a video to play')),16,palette.foreground,4,{18,0,title_right,header})
   regions[#regions+1]={id='title',x=18,y=0,w=title_right-18,h=header,action=function() mp.commandv('script-binding','stats/display-page-5') end}
-  button('appearance',W-133,7,34,'','appearance',function() menu('appearance') end)
-  button('menu',W-91,7,34,'','more',function() menu('menu') end)
-  button('fullscreen',W-49,7,34,'','fullscreen',function() mp.commandv('cycle','fullscreen') end)
+  button('appearance',W-91,7,34,'','appearance',function() menu('appearance') end)
+  button('menu',W-49,7,34,'','more',function() menu('menu') end)
   panel(bottom,footer)
   if surface_mode ~= 'gradient' then box(0,bottom,W,1,palette.border) end
   local duration=number('duration')
@@ -627,7 +626,7 @@ render = function()
     button('chapter-next',322,by,34,'','next',function() mp.commandv('add','chapter',1) end,false,window ~= nil and not window.ranges)
   end
   local compact=W < 850
-  local right=W-18
+  local right=W-18-34-8
   local fw=compact and 34 or 92
   right=right-fw
   button('playlist',right,by,fw,compact and '' or 'Queue','playlist',function() menu('select-playlist') end)
@@ -635,7 +634,7 @@ render = function()
   button('subtitles',right,by,compact and 34 or 84,compact and '' or 'Subs','subtitles',function() menu('select-sid') end)
   right=right-8-(compact and 34 or 92)
   button('audio',right,by,compact and 34 or 92,compact and '' or 'Audio','audio',function() menu('select-aid') end)
-  if W >= 450 then
+  if W >= 460 then
   right=right-8-64
   button('speed',right,by,64,format_speed(number('speed',1)),nil,function()
     local speed=number('speed',1); mp.set_property_number('speed',speed>=2 and .5 or speed+.25)
@@ -659,6 +658,7 @@ render = function()
       text(vx+vw/2,by-16,string.format('%d%%',number('volume')),12,palette.foreground,5)
     end
   else volume_slider=nil end
+  button('fullscreen',W-52,by,34,'','fullscreen',function() mp.commandv('cycle','fullscreen') end)
   if prop('idle-active',false) then
     text(W/2,H/2-18,'Drop a video or URL here',21,palette.foreground,5)
     text(W/2,H/2+18,'Space to play · f for fullscreen · Tab for controls',13,palette.muted,5)
