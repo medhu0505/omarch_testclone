@@ -44,7 +44,8 @@ def current_side(moving, reference):
   return 'custom'
 
 
-def gui(smoke_test=False):
+def create_application(display_backend=backend, smoke_test=False):
+  backend = display_backend
   # Match the compact sizing of the existing Monitor Position app.
   os.environ['GDK_SCALE'] = '1'
   import gi
@@ -59,6 +60,8 @@ def gui(smoke_test=False):
       self.reference = None
       self.loading = False
       self.busy = False
+      self.refreshing = False
+      self.closed = False
       self.side = None
       self.preview_positions = None
       self.hitboxes = []
@@ -70,7 +73,7 @@ def gui(smoke_test=False):
       self.window = Gtk.ApplicationWindow(application=self, title='Monitor Position')
       self.window.set_default_size(700, 650)
       self.window.set_resizable(False)
-      self.window.connect('close-request', lambda window: self.busy)
+      self.window.connect('close-request', self.close_requested)
       box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
       for edge in ('top', 'bottom', 'start', 'end'):
         getattr(box, 'set_margin_' + edge)(24)
@@ -189,12 +192,14 @@ def gui(smoke_test=False):
       self.apply_button.connect('clicked', lambda button: self.apply_layout())
       footer.append(self.apply_button)
       box.append(footer)
-      self.refresh()
       self.window.present()
+      self.refresh()
       if smoke_test:
         GLib.timeout_add(900, self.smoke_check)
 
     def smoke_check(self):
+      if self.refreshing:
+        return True
       assert len(self.monitors) >= 2
       assert self.output != self.reference
       assert all(button.get_sensitive() for button in self.buttons)
@@ -211,13 +216,34 @@ def gui(smoke_test=False):
       by_name = {m['name']: m for m in self.monitors}
       return [f"{display_name(by_name[name])} ({name})" for name in names]
 
-    def refresh(self):
+    def close_requested(self, window):
       if self.busy:
+        return True
+      self.closed = True
+      return False
+
+    def refresh(self, message=None, kind=None):
+      if self.busy or self.refreshing or self.closed:
         return
-      self.loading = True
+      self.refreshing = True
       self.clear_side()
-      try:
-        self.monitors = backend.displays()
+      self.set_status('Refreshing screens…' if self.monitors else 'Loading screens…')
+      self.update_preview()
+      def worker():
+        try:
+          monitors, error = backend.displays(), None
+        except Exception as exception:
+          monitors, error = [], str(exception)
+        GLib.idle_add(self.finished_refresh, monitors, error, message, kind)
+      # Closing the window need not wait for a slow read-only IPC query.
+      threading.Thread(target=worker, daemon=True).start()
+
+    def finished_refresh(self, monitors, error, message, kind):
+      if self.closed:
+        return False
+      self.loading = True
+      self.monitors = monitors
+      if error is None:
         names = [m['name'] for m in self.monitors]
         if self.output not in names:
           self.output, self.reference = default_pair(self.monitors)
@@ -225,16 +251,17 @@ def gui(smoke_test=False):
         if self.output is not None:
           self.selectors[0].set_selected(names.index(self.output))
         self.rebuild_references()
-        self.set_status('Choose a direction to preview the change.' if len(names) > 1 else 'Connect and enable at least two screens.')
-      except Exception as error:
-        self.monitors = []
+        self.set_status(message or ('Choose a direction to preview the change.' if len(names) > 1 else 'Connect and enable at least two screens.'), kind)
+      else:
         self.output = self.reference = None
+        self.reference_names = []
         for selector in self.selectors:
           selector.set_model(Gtk.StringList.new([]))
-        self.set_status(str(error), 'error')
-      finally:
-        self.loading = False
-        self.update_preview()
+        self.set_status(f'{message}\nCould not refresh screens: {error}' if message else error, 'error')
+      self.loading = False
+      self.refreshing = False
+      self.update_preview()
+      return False
 
     def rebuild_references(self):
       self.reference_names = [m['name'] for m in self.monitors if m['name'] != self.output]
@@ -245,7 +272,7 @@ def gui(smoke_test=False):
         self.selectors[1].set_selected(self.reference_names.index(self.reference))
 
     def output_changed(self, selector, parameter):
-      if self.loading or self.busy:
+      if self.loading or self.busy or self.refreshing:
         return
       index = selector.get_selected()
       if index >= len(self.monitors):
@@ -258,7 +285,7 @@ def gui(smoke_test=False):
       self.update_preview()
 
     def reference_changed(self, selector, parameter):
-      if self.loading or self.busy:
+      if self.loading or self.busy or self.refreshing:
         return
       index = selector.get_selected()
       self.reference = self.reference_names[index] if index < len(self.reference_names) else None
@@ -269,15 +296,15 @@ def gui(smoke_test=False):
       by_name = {m['name']: m for m in self.monitors}
       enabled = self.output in by_name and self.reference in by_name and self.output != self.reference
       for widget in self.buttons + self.selectors:
-        widget.set_sensitive(enabled and not self.busy)
-      self.refresh_button.set_sensitive(not self.busy)
+        widget.set_sensitive(enabled and not self.busy and not self.refreshing)
+      self.refresh_button.set_sensitive(not self.busy and not self.refreshing)
       self.close_button.set_sensitive(not self.busy)
       if enabled:
         side = current_side(by_name[self.output], by_name[self.reference])
         self.position_label.set_text(f'{self.output} is {side} of {self.reference}.' if side != 'custom' else f'{self.output} and {self.reference} have a custom arrangement.')
       else:
         self.position_label.set_text('Choose two connected screens to position them.')
-      self.apply_button.set_sensitive(enabled and not self.busy and self.preview_positions is not None and any(self.preview_positions[m['name']] != (m['x'], m['y']) for m in self.monitors))
+      self.apply_button.set_sensitive(enabled and not self.busy and not self.refreshing and self.preview_positions is not None and any(self.preview_positions[m['name']] != (m['x'], m['y']) for m in self.monitors))
       self.preview_heading.set_text('Preview of your new layout' if self.preview_positions else 'Current layout')
       self.canvas.queue_draw()
 
@@ -296,7 +323,7 @@ def gui(smoke_test=False):
       self.set_status('Choose a direction to preview the change.')
 
     def select_side(self, side):
-      if self.busy:
+      if self.busy or self.refreshing or self.closed:
         return
       self.side = side
       for button, candidate in zip(self.buttons, backend.SIDES):
@@ -311,7 +338,7 @@ def gui(smoke_test=False):
       self.update_preview()
 
     def preview_clicked(self, gesture, presses, x, y):
-      if self.busy:
+      if self.busy or self.refreshing or self.closed:
         return
       for index, (left, top, width, height) in enumerate(self.hitboxes):
         if left <= x <= left + width and top <= y <= top + height:
@@ -366,7 +393,7 @@ def gui(smoke_test=False):
 
     def apply_layout(self):
       side = self.side
-      if self.busy or not self.output or not self.reference or not side or self.preview_positions is None:
+      if self.busy or self.refreshing or self.closed or not self.output or not self.reference or not side or self.preview_positions is None:
         return
       output, reference = self.output, self.reference
       expected = backend.snapshot(self.monitors)
@@ -389,11 +416,14 @@ def gui(smoke_test=False):
       self.busy = False
       self.clear_side()
       self.apply_button.set_label('Apply layout')
-      self.refresh()
-      self.set_status(message, 'success' if success else 'error')
+      self.refresh(message, 'success' if success else 'error')
       return False
 
-  return App().run([])
+  return App()
+
+
+def gui(smoke_test=False):
+  return create_application(smoke_test=smoke_test).run([])
 
 
 def main():
