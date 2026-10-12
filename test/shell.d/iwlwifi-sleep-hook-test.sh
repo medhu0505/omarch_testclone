@@ -188,9 +188,9 @@ pass "hardware installer installs iwlwifi-reset hook for BE200"
 rm -rf "$inst_dir"
 
 # Test 12: migration installs hook on BE200 system
-migration="$ROOT/migrations/1790619118.sh"
-[[ -f $migration ]] || fail "migration 1790619118.sh exists"
-pass "migration 1790619118.sh exists"
+migration="$ROOT/migrations/1791844136.sh"
+[[ -f $migration ]] || fail "migration 1791844136.sh exists"
+pass "migration 1791844136.sh exists"
 
 mig_dir=$(mktemp -d)
 mkdir -p "$mig_dir/bin" "$mig_dir/system-sleep"
