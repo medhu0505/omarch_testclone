@@ -26,9 +26,7 @@ for unit in \
   omarchy-migrate-notify.service \
   omarchy-fcitx5.service \
   omarchy-crash-watch.service \
-  omarchy-sni-watcher.service \
-  omarchy-usb-authorization.service \
-  omarchy-thunderbolt-authorization.service; do
+  omarchy-sni-watcher.service; do
   systemctl --user enable --now "$unit" || failed=1
 done
 
