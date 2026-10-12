@@ -244,6 +244,12 @@ function hotspotSsids(entries) {
   return ssids
 }
 
+// Own keys only, so a network named "constructor" or "toString" is not taken
+// for a hotspot by way of Object.prototype.
+function isHotspotSsid(ssids, name) {
+  return !!ssids && !!name && Object.prototype.hasOwnProperty.call(ssids, name) && ssids[name] === true
+}
+
 // NetworkManager reports "yes (guessed)" when an Android phone sends
 // ANDROID_METERED over DHCP, which covers hotspots whose beacon says nothing.
 function isMetered(value) {
@@ -546,6 +552,7 @@ if (typeof module !== "undefined") {
     hotspotIcon: hotspotIcon,
     parseIwScanDump: parseIwScanDump,
     hotspotSsids: hotspotSsids,
+    isHotspotSsid: isHotspotSsid,
     isMetered: isMetered,
     activeLinkIsHotspot: activeLinkIsHotspot,
     hotspotScanScript: hotspotScanScript,

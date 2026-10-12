@@ -764,7 +764,7 @@ Panel {
       var network = networks[i]
       if (!network) continue
       checkActionCompletion(network)
-      var row = Model.wifiRow(network, !!hotspotSsids[network.name || ""] || (!!network.connected && activeHotspot))
+      var row = Model.wifiRow(network, Model.isHotspotSsid(hotspotSsids, network.name) || (!!network.connected && activeHotspot))
       if (row) nets.push(row)
     }
     wifiNetworks = Model.sortWifiRows(nets)

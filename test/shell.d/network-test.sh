@@ -378,6 +378,11 @@ assertDeepEqual(
   'network falls back to ordinary Wi-Fi when the scan fails'
 )
 
+assertEqual(network.isHotspotSsid(hotspotScan.ssids, 'Redmi Note 13'), true, 'network finds a hotspot SSID')
+assertEqual(network.isHotspotSsid({}, 'constructor'), false, 'network ignores inherited keys when looking up a hotspot SSID')
+assertEqual(network.isHotspotSsid({}, 'toString'), false, 'network ignores Object.prototype methods as hotspot SSIDs')
+assertEqual(network.isHotspotSsid(null, 'Home'), false, 'network treats a missing hotspot list as none')
+
 const limitScan = network.parseHotspotScan('metered\tyes (guessed)\nconnection\tphone-uuid\nlimit\tunknown\n' + scanDump)
 assertEqual(limitScan.connection, 'phone-uuid', 'network reads the active profile ahead of the scan')
 assertEqual(limitScan.limit, 'unknown', 'network reads the profile metered setting ahead of the scan')
