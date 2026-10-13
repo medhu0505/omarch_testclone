@@ -185,7 +185,7 @@ best=""
 for round in 1 2 3; do
   elapsed=$(appear_ms) || { sed -n '1,120p' "$log" >&2; fail "lock preview appears and hides cleanly"; }
   (( round == 1 )) && first=$elapsed
-  if [[ -z $best ]] || (( elapsed < best )); then
+  if (( round > 1 )) && { [[ -z $best ]] || (( elapsed < best )); }; then
     best=$elapsed
   fi
 done
