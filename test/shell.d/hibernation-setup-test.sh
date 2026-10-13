@@ -15,6 +15,11 @@ cat >"$fake_bin/omarchy-cmd-missing" <<'STUB'
 exit 1
 STUB
 
+cat >"$fake_bin/omarchy-hw-aarch64-apple" <<'STUB'
+#!/bin/bash
+exit 1
+STUB
+
 cat >"$fake_bin/sudo" <<'STUB'
 #!/bin/bash
 if [[ $1 == "btrfs" ]]; then
