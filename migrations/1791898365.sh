@@ -17,7 +17,7 @@ if [[ -z $limine_conf ]]; then
   limine_conf="${esp:-/boot}/limine.conf"
 fi
 
-[[ -f $limine_conf ]] || exit 0
+sudo test -f "$limine_conf" || exit 0
 
 changed=""
 if ! sudo grep -Eqi '^[[:space:]]*timeout:' "$limine_conf"; then
