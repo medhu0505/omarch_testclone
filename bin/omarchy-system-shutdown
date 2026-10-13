@@ -4,26 +4,4 @@
 # omarchy:examples=omarchy shutdown | omarchy system shutdown
 # omarchy:aliases=omarchy shutdown
 
-if [[ ${1:-} == "--inhibited" ]]; then
-  omarchy-osd -i shutdown -m "Shutting down" -d 5000
-  omarchy-state clear re*-required
-  # Proceed as soon as apps exit, with a bound for unresponsive windows.
-  timeout 2s omarchy-hyprland-window-close-all --wait
-  systemctl poweroff --no-wall
-elif [[ ${1:-} == "--inhibit" ]]; then
-  # Report failures from inside the service, independently of the launching terminal.
-  # Block lid handling explicitly: it ignores high-level sleep inhibitors.
-  systemd-inhibit --what=sleep:idle:handle-lid-switch \
-    --who=Omarchy --why="Shutdown in progress" --mode=block \
-    "$0" --inhibited || {
-    status=$?
-    omarchy-notification-send -u critical "Shutdown failed" "Could not complete shutdown. Please try again."
-    exit "$status"
-  }
-else
-  # Schedule the shutdown in the user manager so closing the terminal's systemd
-  # scope cannot terminate it before it runs.
-  systemd-run --user --collect --quiet --property=Type=exec --property=RuntimeMaxSec=30s \
-    --setenv=PATH --setenv=HYPRLAND_INSTANCE_SIGNATURE --setenv=OMARCHY_PATH \
-    "$OMARCHY_PATH/bin/omarchy-system-shutdown" --inhibit
-fi
+"$OMARCHY_PATH/bin/omarchy-system-exit" shutdown
