@@ -1,0 +1,44 @@
+{
+  "system": {
+    "screensaver": "Screensaver",
+    "lock": "Lock",
+    "suspend": "Suspend",
+    "hibernate": "Hibernate",
+    "logout": "Logout",
+    "reboot": "Reboot",
+    "shutdown": "Shutdown"
+  },
+  "menu": {
+    "apps": "Apps",
+    "learn": "Learn",
+    "trigger": "Trigger",
+    "style": "Style",
+    "setup": "Setup",
+    "install": "Install",
+    "remove": "Remove",
+    "update": "Update",
+    "about": "About",
+    "system": "System",
+    "apply": "Apply",
+    "selected": "selected"
+  },
+  "power": {
+    "battery": "Battery",
+    "fully_charged": "Fully charged",
+    "on_battery": "On battery",
+    "charging": "Charging",
+    "threshold": "Threshold",
+    "power_profile": "POWER PROFILE",
+    "battery_size": "Battery size",
+    "charge_cycles": "Charge cycles",
+    "charge_limit": "Charge limit",
+    "time_left": "Time left",
+    "time_to_full": "Time to full",
+    "battery_state": "Battery state",
+    "discharging": "Discharging",
+    "holding": "Holding",
+    "power_saver": "Power saver",
+    "balanced": "Balanced",
+    "performance": "Performance"
+  }
+}

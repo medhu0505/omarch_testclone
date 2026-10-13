@@ -128,7 +128,7 @@ Panel {
   readonly property bool rotatingPhrases: activePhrases.length > 0
 
   readonly property string heroStatusText: {
-    if (fullyCharged) return "Fully charged"
+    if (fullyCharged) return I18n.t("power.fully_charged", "Fully charged")
     if (rotatingPhrases) return activePhrases[phraseIndex % activePhrases.length]
     return modeLabel()
   }
@@ -348,7 +348,7 @@ Panel {
             spacing: Style.space(2)
 
             Text {
-              text: "Battery"
+              text: I18n.t("power.battery", "Battery")
               color: root.bar.foreground
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.title
@@ -435,20 +435,20 @@ Panel {
           Column {
             width: (parent.width - parent.spacing) / 2
             spacing: Style.spacing.labelGap
-            InfoPair { label: "Battery size"; value: root.batteryInfo.size || "" }
-            InfoPair { label: "Charge cycles"; value: root.batteryInfo.cycles || "—" }
+            InfoPair { label: I18n.t("power.battery_size", "Battery size"); value: root.batteryInfo.size || "" }
+            InfoPair { label: I18n.t("power.charge_cycles", "Charge cycles"); value: root.batteryInfo.cycles || "—" }
           }
 
           Column {
             width: (parent.width - parent.spacing) / 2
             spacing: Style.spacing.labelGap
             InfoPair {
-              label: root.chargeThresholdActive ? "Charge limit" : (root.discharging ? "Time left" : "Time to full")
+              label: root.chargeThresholdActive ? I18n.t("power.charge_limit", "Charge limit") : (root.discharging ? I18n.t("power.time_left", "Time left") : I18n.t("power.time_to_full", "Time to full"))
               value: root.chargeThresholdActive ? (root.batteryInfo.threshold || "-") : (root.batteryFlowIdle ? "-" : (root.batteryInfo.time || "—"))
             }
             InfoPair {
-              label: root.chargeThresholdActive ? "Battery state" : (root.discharging ? "Discharging" : "Charging")
-              value: root.chargeThresholdActive ? "Holding" : (root.batteryFull ? "-" : (root.batteryInfo.rate || ""))
+              label: root.chargeThresholdActive ? I18n.t("power.battery_state", "Battery state") : (root.discharging ? I18n.t("power.discharging", "Discharging") : I18n.t("power.charging", "Charging"))
+              value: root.chargeThresholdActive ? I18n.t("power.holding", "Holding") : (root.batteryFull ? "-" : (root.batteryInfo.rate || ""))
             }
           }
         }
@@ -463,7 +463,7 @@ Panel {
           spacing: Style.space(10)
 
           PanelSectionHeader {
-            text: "POWER PROFILE"
+            text: I18n.t("power.power_profile", "POWER PROFILE")
             foreground: root.bar.foreground
             fontFamily: root.bar.fontFamily
           }

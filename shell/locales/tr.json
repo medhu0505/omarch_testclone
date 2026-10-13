@@ -1,0 +1,44 @@
+{
+  "system": {
+    "screensaver": "Ekran Koruyucu",
+    "lock": "Kilitle",
+    "suspend": "Askıya Al",
+    "hibernate": "Hazırda Beklet",
+    "logout": "Oturumu Kapat",
+    "reboot": "Yeniden Başlat",
+    "shutdown": "Bilgisayarı Kapat"
+  },
+  "menu": {
+    "apps": "Uygulamalar",
+    "learn": "Öğren",
+    "trigger": "Tetikleyiciler",
+    "style": "Biçim",
+    "setup": "Yapılandırma",
+    "install": "Yükle",
+    "remove": "Kaldır",
+    "update": "Güncelle",
+    "about": "Hakkında",
+    "system": "Sistem",
+    "apply": "Uygula",
+    "selected": "seçildi"
+  },
+  "power": {
+    "battery": "Pil",
+    "fully_charged": "Tam Dolu",
+    "on_battery": "Pilde",
+    "charging": "Şarj Oluyor",
+    "threshold": "Eşik Değerinde",
+    "power_profile": "GÜÇ PROFİLİ",
+    "battery_size": "Pil kapasitesi",
+    "charge_cycles": "Şarj döngüsü",
+    "charge_limit": "Şarj sınırı",
+    "time_left": "Kalan süre",
+    "time_to_full": "Dolma süresi",
+    "battery_state": "Pil durumu",
+    "discharging": "Deşarj Oluyor",
+    "holding": "Sabit Tutuluyor",
+    "power_saver": "Güç tasarrufu",
+    "balanced": "Dengeli",
+    "performance": "Yüksek başarım"
+  }
+}
