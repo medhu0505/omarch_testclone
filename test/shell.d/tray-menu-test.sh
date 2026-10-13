@@ -4,6 +4,13 @@ set -euo pipefail
 
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
+# Pressing a tray icon whose menu is already open must close it. The guard has
+# to stay ahead of the reset-and-open path in openTrayMenu().
+if ! rg -q 'if \(trayMenuOpen && activeTrayItem === item && activeTrayAnchor === anchorItem\)' "$ROOT/shell/plugins/bar/widgets/Tray.qml"; then
+  fail "pressing the open tray icon must close its menu instead of reopening it"
+fi
+pass "pressing the open tray icon closes its menu"
+
 TMPDIR=""
 QS_PID=""
 MOCK_PID=""
