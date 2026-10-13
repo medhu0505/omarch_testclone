@@ -121,6 +121,12 @@ cold_start_ms() {
   local start end elapsed layers
 
   : >"$log"
+  # Every sample is a cold start: the first launch writes session state
+  # (the background-intro marker, caches) that later launches read and
+  # skip first-login work for.
+  rm -rf "$test_home"
+  mkdir -p "$test_home/.local/state/omarchy/indicators"
+  touch "$test_home/.local/state/omarchy/indicators/stay-awake"
   start=$EPOCHREALTIME
   OMARCHY_PATH="$test_root" \
   HOME="$test_home" \
