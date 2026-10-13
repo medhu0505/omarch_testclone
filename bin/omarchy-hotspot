@@ -575,6 +575,19 @@ firewall_tag_present() {
   firewall_rule_present "$rules" "$expected"
 }
 
+# The same rule under any comment, or none. UFW treats a rule that differs
+# only by comment as the same rule: adding ours would relabel the user's rule
+# and a later delete would remove it.
+firewall_tag_equivalent_present() {
+  local rules=$1 iface=$2 subnet=$3 tag=$4 expected line
+  expected=$(firewall_expected_rule "$iface" "$subnet" "$tag") || return 1
+  expected=${expected% comment *}
+  while IFS= read -r line; do
+    [[ ${line% comment *} != "$expected" ]] || return 0
+  done <<<"$rules"
+  return 1
+}
+
 firewall_rules_file() {
   [[ -f $UFW_RULES_FILE && ! -L $UFW_RULES_FILE && -r $UFW_RULES_FILE ]] || return 1
   cat -- "$UFW_RULES_FILE"
@@ -676,16 +689,21 @@ firewall_remove_installed_tags() {
 }
 
 firewall_apply() {
-  local iface=$1 subnet=$2 rules tag
+  local iface=$1 subnet=$2 rules state tag
   local -a installed=() owned=()
   require_privileged
   firewall_scope_valid "$iface" "$subnet" || fail "invalid firewall scope"
   rules=$(ufw show added 2>/dev/null) || fail "could not read active UFW rules"
-  firewall_state_records >/dev/null || fail "could not read hotspot firewall state"
+  state=$(firewall_state_records) || fail "could not read hotspot firewall state"
 
   for tag in "${FIREWALL_TAGS[@]}"; do
     if firewall_tag_present "$rules" "$iface" "$subnet" "$tag"; then
-      owned+=("$tag")
+      # Only a rule this hotspot recorded installing is its to remove later;
+      # a matching rule that was already there stays the user's.
+      ! firewall_state_text_has "$state" "$iface" "$subnet" "$tag" || owned+=("$tag")
+      continue
+    fi
+    if firewall_tag_equivalent_present "$rules" "$iface" "$subnet" "$tag"; then
       continue
     fi
     if ! firewall_add_tag "$iface" "$subnet" "$tag"; then
@@ -730,27 +748,21 @@ firewall_remove_record() {
   firewall_state_remove_tags "$iface" "$subnet" "$tag"
 }
 
+# Removes only the rules recorded as installed by this hotspot; with no
+# records there is nothing of ours to remove, whatever UFW currently holds.
 firewall_remove() {
   local rules="" state="" iface subnet tag record
   local -a records=() failed=()
   require_privileged
   state=$(firewall_state_records) || fail "could not read hotspot firewall state"
-  [[ -z $state ]] || mapfile -t records <<<"$state"
+  [[ -n $state ]] || return 0
+  mapfile -t records <<<"$state"
   rules=$(ufw show added 2>/dev/null) || fail "could not read active UFW rules"
-  if ((${#records[@]} == 0)); then
-    iface=$(recorded_iface)
-    [[ -n $iface ]] || return 0
-    subnet=$(shared_subnet)
-    for tag in "${FIREWALL_TAGS[@]}"; do
-      firewall_remove_record "$rules" "$iface" "$subnet" "$tag" || failed+=("$tag")
-    done
-  else
-    # Keep going past a failed rule so one bad delete doesn't strand the rest.
-    for record in "${records[@]}"; do
-      IFS=$'\t' read -r iface subnet tag <<<"$record"
-      firewall_remove_record "$rules" "$iface" "$subnet" "$tag" || failed+=("$tag")
-    done
-  fi
+  # Keep going past a failed rule so one bad delete doesn't strand the rest.
+  for record in "${records[@]}"; do
+    IFS=$'\t' read -r iface subnet tag <<<"$record"
+    firewall_remove_record "$rules" "$iface" "$subnet" "$tag" || failed+=("$tag")
+  done
   ((${#failed[@]} == 0)) || fail "could not remove hotspot firewall rule ${failed[*]}"
 }
 
@@ -1103,8 +1115,12 @@ apply() {
 
   if profile_configured; then
     # SSID/band ride argv (not secret); the passphrase goes through the
-    # scriptable editor so it never shows up in /proc.
+    # scriptable editor so it never shows up in /proc. Band, channel and width
+    # change together: NM rejects a band whose saved channel or width belongs to
+    # another band (2.4 GHz with channel 149 or 80 MHz), so the width returns to
+    # auto, and an empty channel lets NM pick.
     nmcli connection modify "$PROFILE" ssid "$ssid" 802-11-wireless.band "$nm_band" \
+      802-11-wireless.channel "$nm_channel" 802-11-wireless.channel-width auto \
       connection.interface-name "$device" >/dev/null 2>&1 ||
       fail "could not apply hotspot settings"
     if [[ -z $(profile_shared_address) ]]; then
@@ -1116,16 +1132,12 @@ apply() {
       fail "could not apply hotspot password"
   else
     nmcli connection add type wifi ifname "$device" con-name "$PROFILE" ssid "$ssid" \
-      mode ap 802-11-wireless.band "$nm_band" wifi-sec.key-mgmt wpa-psk \
+      mode ap 802-11-wireless.band "$nm_band" 802-11-wireless.channel "$nm_channel" wifi-sec.key-mgmt wpa-psk \
       ipv4.method shared ipv4.addresses "$DEFAULT_SHARED_ADDRESS" autoconnect no >/dev/null ||
       fail "could not create hotspot profile"
     printf 'set wifi-sec.psk %s\nsave\nquit\n' "$password" |
       nmcli connection edit "$PROFILE" >/dev/null 2>&1 ||
       fail "could not set hotspot password"
-  fi
-
-  if [[ -n $nm_channel ]]; then
-    nmcli connection modify "$PROFILE" 802-11-wireless.channel "$nm_channel" >/dev/null 2>&1
   fi
 }
 
