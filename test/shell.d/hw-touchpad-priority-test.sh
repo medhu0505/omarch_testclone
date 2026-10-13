@@ -131,7 +131,51 @@ pass 'udev fallback only probes devices Hyprland lists as mice'
 mice apple-mtp-multi-touch-1
 check apple-mtp-multi-touch-1 'udev fallback preserves Hyprland numbered names'
 mice external-trackpad apple-mtp-multi-touch
-check external-trackpad 'a single named pad keeps precedence over the udev fallback'
+check apple-mtp-multi-touch 'an unnamed internal pad wins over a named external trackpad'
+mice apple-mtp-multi-touch external-trackpad
+check apple-mtp-multi-touch 'an unnamed internal pad wins in either registration order'
+
+reset_fixture
+mice external-pointer apple-mtp-multi-touch
+event 1 'External Pointer' ID_INPUT_TOUCHPAD=1 ID_INPUT_TOUCHPAD_INTEGRATION=external
+event 2 'Apple MTP multi-touch' ID_INPUT_TOUCHPAD=1 ID_INPUT_TOUCHPAD_INTEGRATION=internal
+check apple-mtp-multi-touch 'internal priority also applies when neither pad has a matching name'
+
+reset_fixture
+mice external-trackpad apple-mtp-multi-touch
+event 1 'Apple MTP multi-touch' ID_INPUT_TOUCHPAD=1
+check external-trackpad 'an unnamed pad with unknown integration retains the named fallback'
+event 1 'Apple MTP multi-touch' ID_INPUT_TOUCHPAD=1 ID_INPUT_TOUCHPAD_INTEGRATION=internal-extra
+check external-trackpad 'a partial integration value cannot promote an unnamed pad'
+event 1 'Apple MTP multi-touch' ID_INPUT_TOUCHPAD=1 ID_INPUT_TOUCHPAD_INTEGRATION=internal ID_INPUT_POINTINGSTICK=1
+check external-trackpad 'an unnamed pointing stick is not promoted'
+event 1 'Apple MTP multi-touch' ID_INPUT_TOUCHPAD=1 ID_INPUT_TOUCHPAD_INTEGRATION=internal
+event 2 'Apple MTP multi-touch' ID_INPUT_TOUCHPAD=1 ID_INPUT_TOUCHPAD_INTEGRATION=external
+check external-trackpad 'duplicate unnamed pads retain the named fallback'
+
+reset_fixture
+mice external-trackpad apple-mtp-multi-touch internal-touchpad
+event 1 'Apple MTP multi-touch' ID_INPUT_TOUCHPAD=1 ID_INPUT_TOUCHPAD_INTEGRATION=internal
+event 2 'Internal Touchpad' ID_INPUT_TOUCHPAD=1 ID_INPUT_TOUCHPAD_INTEGRATION=internal
+check external-trackpad 'named and unnamed internal candidates together retain the fallback'
+
+reset_fixture
+mice external-trackpad apple-mtp-multi-touch apple-mtp-multi-touch-1
+event 1 'Apple MTP multi-touch' ID_INPUT_TOUCHPAD=1 ID_INPUT_TOUCHPAD_INTEGRATION=internal
+check external-trackpad 'a suffix family prevents promotion of an unnamed internal pad'
+
+reset_fixture
+mice external-trackpad apple-mtp-multi-touch
+event 1 'Apple MTP multi-touch' ID_INPUT_TOUCHPAD=1 ID_INPUT_TOUCHPAD_INTEGRATION=internal
+event 2 'Unlisted Device'
+rm "$tmp_dir/input/event2/device/name"
+check external-trackpad 'an incomplete inventory prevents promotion of an unnamed internal pad'
+
+reset_fixture
+mice external-trackpad msft0001:00-093a:0255-touchpad msft0001:00-093a:0255-mouse unrelated-mouse
+event 1 'MSFT0001:00 093A:0255 Touchpad' ID_INPUT_TOUCHPAD=1 ID_INPUT_TOUCHPAD_INTEGRATION=internal
+event 2 'MSFT0001:00 093A:0255 Mouse' ID_INPUT_MOUSE=1 ID_INPUT_POINTINGSTICK=1
+check msft0001:00-093a:0255-touchpad 'the exact internal primary name is retained alongside its mouse sibling'
 
 reset_fixture
 mice
