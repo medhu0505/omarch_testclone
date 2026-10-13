@@ -53,11 +53,24 @@ if [[ ${1-} == -t && ${2-} == -f && ${3-} == UUID,TYPE ]]; then
   printf '%s\n' 'wired-uuid:802-3-ethernet' 'wifi-uuid:802-11-wireless' 'vpn-uuid:vpn' 'tun-uuid:tun'
   exit 0
 fi
+# Like nmcli, escape ':' and '\' in -g output unless --escape no is given.
+escape=yes
+if [[ ${1-} == --escape && ${2-} == no ]]; then
+  escape=no
+  shift 2
+fi
+nmcli_escape() {
+  if [[ $escape == yes ]]; then
+    sed -e 's/\\/\\\\/g' -e 's/:/\\:/g'
+  else
+    cat
+  fi
+}
 if [[ ${1-} == -g ]]; then
   property=${2-}
   uuid=${@: -1}
   file="${NMCLI_STATE}/profile-${uuid}.${property//./-}"
-  [[ -f $file ]] && printf '%s\n' "$(<"$file")"
+  [[ -f $file ]] && printf '%s\n' "$(<"$file")" | nmcli_escape
   exit 0
 fi
 if [[ ${1-} == connection && ${2-} == modify ]]; then

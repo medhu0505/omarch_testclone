@@ -42,7 +42,7 @@ done
 parse_input() {
   local input="$1"
 
-  if PARSE_OUTPUT=$(printf '%s\n' "$input" | PATH="$stub_bin:$PATH" OMARCHY_DNS_PARSE_ONLY=1 bash "$dns" Custom 2>&1); then
+  if PARSE_OUTPUT=$(printf '%s\n' "$input" | PATH="$stub_bin:$PATH" OMARCHY_DNS_CONFIG_ROOT="$test_tmp/root" OMARCHY_DNS_PARSE_ONLY=1 bash "$dns" Custom 2>&1); then
     PARSE_STATUS=0
   else
     PARSE_STATUS=$?
@@ -52,7 +52,7 @@ parse_input() {
 parse_stream() {
   local input="$1"
 
-  if PARSE_OUTPUT=$(printf '%s' "$input" | PATH="$stub_bin:$PATH" OMARCHY_DNS_PARSE_ONLY=1 bash "$dns" Custom 2>&1); then
+  if PARSE_OUTPUT=$(printf '%s' "$input" | PATH="$stub_bin:$PATH" OMARCHY_DNS_CONFIG_ROOT="$test_tmp/root" OMARCHY_DNS_PARSE_ONLY=1 bash "$dns" Custom 2>&1); then
     PARSE_STATUS=0
   else
     PARSE_STATUS=$?
@@ -90,6 +90,8 @@ assert_accept "2001:db8::30#sni.example" $'transport=dot\nservers=2001:db8::30#s
 assert_accept "[192.0.2.40]:5353" $'transport=plain\nservers=[192.0.2.40]:5353'
 assert_accept "[2001:db8::40]:5353" $'transport=plain\nservers=[2001:db8::40]:5353'
 assert_accept "192.0.2.50 2001:db8::50" $'transport=plain\nservers=192.0.2.50 2001:db8::50'
+assert_accept "64:ff9b::192.0.2.60" $'transport=plain\nservers=64:ff9b::192.0.2.60'
+assert_accept "::ffff:192.0.2.61#sni.example" $'transport=dot\nservers=::ffff:192.0.2.61#sni.example'
 
 assert_reject ""
 assert_reject " , ; : "
@@ -115,6 +117,10 @@ assert_reject "::"
 assert_reject "2001:db8::1::2"
 assert_reject "2001:db8:::1"
 assert_reject "gggg::1"
+assert_reject "::192.0.2.1:5"
+assert_reject "192.0.2.1::1"
+assert_reject "2001:db8:192.0.2.1::1"
+assert_reject "::192.0.2.1:5#sni.example"
 assert_reject "192.0.2.1#"
 assert_reject "#sni.example"
 assert_reject "192.0.2.1#sni.example#extra"
@@ -130,7 +136,17 @@ assert_reject "tcp://dns.example"
 assert_reject "192.0.2.1 dns.example"
 assert_reject "tls://dns.example 192.0.2.1"
 assert_reject "missing.example"
-assert_reject_stream $'192.0.2.50\n192.0.2.51'
+# Enter ends the input: only the first line is read, even if more follows.
+parse_stream $'192.0.2.50\n192.0.2.51'
+(( PARSE_STATUS == 0 )) || fail "reads custom input up to the first newline" "$PARSE_OUTPUT"
+[[ $PARSE_OUTPUT == $'transport=plain\nservers=192.0.2.50' ]] || fail "ignores input after the first newline" "$PARSE_OUTPUT"
+
+# An interactive terminal keeps stdin open after Enter; the line must still
+# be applied without waiting for EOF.
+if ! PARSE_OUTPUT=$({ printf '%s\n' 'dns.example'; sleep 5; } | PATH="$stub_bin:$PATH" OMARCHY_DNS_CONFIG_ROOT="$test_tmp/root" OMARCHY_DNS_PARSE_ONLY=1 timeout 3 bash "$dns" Custom 2>&1); then
+  fail "submits custom input on Enter while stdin stays open" "$PARSE_OUTPUT"
+fi
+[[ $PARSE_OUTPUT == transport=dot* ]] || fail "parses the line submitted with Enter" "$PARSE_OUTPUT"
 assert_reject_stream "$(printf '1%0.s' {1..4097})"
 
 long_token=$(printf '%*s' 600 '' | tr ' ' a)

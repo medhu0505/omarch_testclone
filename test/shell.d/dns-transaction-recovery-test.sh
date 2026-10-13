@@ -28,11 +28,25 @@ if [[ ${1-} == -t && ${2-} == -f && ${3-} == UUID,TYPE ]]; then
   count=$((count + 1))
   printf '%s\n' "$count" >"$count_file"
   printf '%s\n' 'wired-uuid:802-3-ethernet' 'wifi-uuid:802-11-wireless' 'vpn-uuid:vpn'
+  [[ ${NMCLI_LATE_PROFILE:-0} != 1 ]] || printf '%s\n' 'late-uuid:802-3-ethernet'
   if [[ ${NMCLI_CHANGE_PROFILE_LIST:-0} == 1 && $count -gt 1 ]]; then
     printf '%s\n' 'extra-uuid:802-3-ethernet'
   fi
   exit 0
 fi
+# Like nmcli, escape ':' and '\' in -g output unless --escape no is given.
+escape=yes
+if [[ ${1-} == --escape && ${2-} == no ]]; then
+  escape=no
+  shift 2
+fi
+nmcli_escape() {
+  if [[ $escape == yes ]]; then
+    sed -e 's/\\/\\\\/g' -e 's/:/\\:/g'
+  else
+    cat
+  fi
+}
 if [[ ${1-} == -g ]]; then
   property=${2-}
   uuid=${@: -1}
@@ -41,7 +55,7 @@ if [[ ${1-} == -g ]]; then
   if [[ ${NMCLI_MULTILINE_PROPERTY:-0} == 1 && $property == ipv4.dns ]]; then
     printf '%s\n' '192.0.2.10' 'unexpected-record'
   elif [[ -f $file ]]; then
-    cat "$file"
+    nmcli_escape <"$file"
   fi
   exit 0
 fi
@@ -327,9 +341,39 @@ export NMCLI_CHANGE_PROFILE_LIST NM_ACTIVE SYSTEMCTL_FAIL_RESOLVED_ONCE
 run_dns Cloudflare
 unset NMCLI_CHANGE_PROFILE_LIST NM_ACTIVE SYSTEMCTL_FAIL_RESOLVED_ONCE
 assert_failure "fails when a profile set is rolled back"
-[[ $(<"$(profile_file extra-uuid ipv4.ignore-auto-dns)") == no ]] || fail "a rolled-back run leaves a late profile with suppressed DHCP DNS" "$(<"$(profile_file extra-uuid ipv4.ignore-auto-dns)")"
-[[ $(<"$(profile_file extra-uuid ipv4.dns)") == "" ]] || fail "a rolled-back run leaves a late profile with provider DNS" "$(<"$(profile_file extra-uuid ipv4.dns)")"
+[[ $(<"$(profile_file extra-uuid ipv4.ignore-auto-dns)") == initial-extra-uuid-ipv4.ignore-auto-dns ]] || fail "a rolled-back run does not restore a late profile's own settings" "$(<"$(profile_file extra-uuid ipv4.ignore-auto-dns)")"
+[[ $(<"$(profile_file extra-uuid ipv4.dns)") == initial-extra-uuid-ipv4.dns ]] || fail "a rolled-back run leaves a late profile with provider DNS" "$(<"$(profile_file extra-uuid ipv4.dns)")"
 [[ $(<"$(profile_file wired-uuid ipv4.ignore-auto-dns)") == initial-wired-uuid-ipv4.ignore-auto-dns ]] || fail "a rolled-back run does not restore snapshotted profiles" "$(<"$(profile_file wired-uuid ipv4.ignore-auto-dns)")"
+
+init_case ipv6-rollback
+set_profile wired-uuid ipv6.dns "2001:db8::53 2001:db8::54"
+NM_ACTIVE=1
+SYSTEMCTL_FAIL_RESOLVED_ONCE=1
+export NM_ACTIVE SYSTEMCTL_FAIL_RESOLVED_ONCE
+run_dns Cloudflare
+unset NM_ACTIVE SYSTEMCTL_FAIL_RESOLVED_ONCE
+assert_failure "fails when resolved reload fails"
+[[ $(<"$(profile_file wired-uuid ipv6.dns)") == "2001:db8::53 2001:db8::54" ]] || fail "rollback restores IPv6 servers without nmcli escapes" "$(<"$(profile_file wired-uuid ipv6.dns)")"
+
+init_case untouched-profile-after-kill
+NM_ACTIVE=1
+SYSTEMCTL_KILL_RUN=1
+export NM_ACTIVE SYSTEMCTL_KILL_RUN
+run_dns Cloudflare
+unset SYSTEMCTL_KILL_RUN
+assert_failure "the simulated SIGKILL stops the run"
+# A connection created with manual DNS after the killed run is not the killed
+# run's to undo.
+set_profile late-uuid ipv4.ignore-auto-dns yes
+set_profile late-uuid ipv4.dns 192.0.2.200
+NMCLI_LATE_PROFILE=1
+export NMCLI_LATE_PROFILE
+: >"$CALL_LOG"
+run_dns Cloudflare
+unset NM_ACTIVE NMCLI_LATE_PROFILE
+assert_success "the next run recovers and applies"
+[[ $OUTPUT == *'interrupted run'* ]] || fail "recovers from the interrupted run" "$OUTPUT"
+! grep -Fq 'modify late-uuid ipv4.ignore-auto-dns no' "$CALL_LOG" || fail "recovery clears DNS on a connection the killed run never touched" "$(<"$CALL_LOG")"
 
 init_case enumeration-failure
 NMCLI_ENUMERATION_FAIL=1

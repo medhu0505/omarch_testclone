@@ -235,6 +235,10 @@ is_ipv6() {
   local address="$1" remainder left right left_count right_count total
 
   [[ $address == *:* && $address != "::" ]] || return 1
+  # An embedded IPv4 address may only be the final part.
+  if [[ $address == *.* ]]; then
+    [[ ${address##*:} == *.* && ${address%:*} != *.* ]] || return 1
+  fi
   if [[ $address == *"::"* ]]; then
     remainder=${address#*::}
     [[ $remainder != *"::"* ]] || return 1
@@ -683,7 +687,8 @@ snapshotted_profile() {
 
 # Every profile that exists right now gets the same treatment, so a connection
 # created after the snapshot cannot keep forced DNS that a later reset would
-# never clear.
+# never clear. Such a profile is snapshotted before its first change, so a
+# rollback returns it to its own settings rather than to a guessed default.
 modify_dns_profiles() {
   local action="$1" ipv4_dns="${2:-}" ipv6_dns="${3:-}"
   local listing uuid type
@@ -695,6 +700,9 @@ modify_dns_profiles() {
   listing=$(list_dns_profiles) || return 1
   while IFS=$'\t' read -r uuid type; do
     [[ -n $uuid ]] || continue
+    if [[ -n ${SNAPSHOT_DIR:-} ]] && ! snapshotted_profile "$uuid"; then
+      snapshot_profile "$uuid" "$type" || return 1
+    fi
     case "$action" in
       set)
         nmcli connection modify "$uuid" \
@@ -901,8 +909,39 @@ validate_profile_snapshot() {
   done
 }
 
+# Records a profile's DNS settings before this run touches it; rollback and
+# recovery restore exactly the profiles in this record and no others.
+snapshot_profile() {
+  local uuid="$1" type="$2" property value index profile
+
+  index=${#SNAPSHOT_PROFILE_IDS[@]}
+  profile="$SNAPSHOT_DIR/profile-$index"
+  if ! : >"$profile"; then
+    return 1
+  fi
+  for property in "${PROFILE_SNAPSHOT_PROPERTIES[@]}"; do
+    # IPv6 servers contain colons, which nmcli escapes unless told not to;
+    # the escaped form is not a value `connection modify` accepts back.
+    if ! value=$(nmcli --escape no -g "$property" connection show "$uuid" 2>/dev/null); then
+      return 1
+    fi
+    [[ $value != *$'\n'* && $value != *$'\r'* && $value != *$'\t'* ]] || return 1
+    if ! printf '%s\t%s\n' "$property" "$value" >>"$profile"; then
+      return 1
+    fi
+  done
+  if ! validate_profile_snapshot "$profile"; then
+    return 1
+  fi
+  if ! printf '%s\t%s\n' "$uuid" "$type" >>"$SNAPSHOT_DIR/profiles.index"; then
+    return 1
+  fi
+  SNAPSHOT_PROFILE_IDS+=("$uuid")
+  SNAPSHOT_PROFILE_TYPES+=("$type")
+}
+
 snapshot_profile_state() {
-  local uuid type property value index profile
+  local uuid type
   local -A seen=()
 
   SNAPSHOT_PROFILE_IDS=()
@@ -924,28 +963,7 @@ snapshot_profile_state() {
     fi
     seen["$uuid"]=$type
     networkmanager_dns_connection "$type" || continue
-    index=${#SNAPSHOT_PROFILE_IDS[@]}
-    profile="$SNAPSHOT_DIR/profile-$index"
-    if ! : >"$profile"; then
-      return 1
-    fi
-    for property in "${PROFILE_SNAPSHOT_PROPERTIES[@]}"; do
-      if ! value=$(nmcli -g "$property" connection show "$uuid" 2>/dev/null); then
-        return 1
-      fi
-      [[ $value != *$'\n'* && $value != *$'\r'* && $value != *$'\t'* ]] || return 1
-      if ! printf '%s\t%s\n' "$property" "$value" >>"$profile"; then
-        return 1
-      fi
-    done
-    if ! validate_profile_snapshot "$profile"; then
-      return 1
-    fi
-    if ! printf '%s\t%s\n' "$uuid" "$type" >>"$SNAPSHOT_DIR/profiles.index"; then
-      return 1
-    fi
-    SNAPSHOT_PROFILE_IDS+=("$uuid")
-    SNAPSHOT_PROFILE_TYPES+=("$type")
+    snapshot_profile "$uuid" "$type" || return 1
   done <"$SNAPSHOT_DIR/profiles.list"
   ((${#SNAPSHOT_PROFILE_IDS[@]} == ${#SNAPSHOT_PROFILE_TYPES[@]})) || return 1
 }
@@ -976,7 +994,7 @@ begin_dns_transaction() {
 # Rebuilds the in-memory snapshot state from a complete snapshot directory so
 # rollback_dns_transaction can run against it.
 load_snapshot() {
-  local directory="$1" path index uuid type extra
+  local directory="$1" path index
 
   SNAPSHOT_DIR=$directory
   SNAPSHOT_PATHS=()
@@ -990,6 +1008,14 @@ load_snapshot() {
       SNAPSHOT_PRESENT+=(0)
     fi
   done < <(snapshot_targets)
+
+  load_snapshot_profiles "$directory"
+}
+
+# The transaction body runs in a subshell, so profiles it snapshots before
+# their first change exist only in profiles.index; rollback reads them back.
+load_snapshot_profiles() {
+  local directory="$1" uuid type extra
 
   SNAPSHOT_PROFILE_IDS=()
   SNAPSHOT_PROFILE_TYPES=()
@@ -1140,31 +1166,13 @@ restore_profile_state() {
   return "$failed"
 }
 
-# A connection that appeared mid-transaction has no recorded prior state, so the
-# only safe end state is the one NetworkManager ships: no forced DNS.
-release_unsnapshotted_profiles() {
-  local listing="$1" uuid type failed=0
-
-  while IFS=$'\t' read -r uuid type; do
-    [[ -n $uuid ]] || continue
-    snapshotted_profile "$uuid" && continue
-    nmcli connection modify "$uuid" \
-      ipv4.ignore-auto-dns no \
-      ipv4.dns "" \
-      ipv6.ignore-auto-dns no \
-      ipv6.dns "" \
-      >/dev/null || failed=1
-  done <<<"$listing"
-  return "$failed"
-}
-
 rollback_dns_transaction() {
   local failed=0 listing
 
+  load_snapshot_profiles "$SNAPSHOT_DIR" || failed=1
   restore_file_state || failed=1
   if listing=$(list_dns_profiles); then
     restore_profile_state "$listing" || failed=1
-    release_unsnapshotted_profiles "$listing" || failed=1
   else
     failed=1
   fi
@@ -1255,16 +1263,15 @@ apply_custom_plain() {
   reload_dns_stack
 }
 
+# One line, like any prompt: an interactive terminal keeps stdin open after
+# Enter, so waiting for EOF would leave the command hanging.
 read_dns_input() {
   local input="" character status
 
   while true; do
     if IFS= read -r -n 1 character; then
-      if [[ -z $character ]]; then
-        input+=$'\n'
-      else
-        input+=$character
-      fi
+      [[ -n $character ]] || break
+      input+=$character
     else
       status=$?
       ((status == 1)) || return 1
