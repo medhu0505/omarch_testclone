@@ -62,14 +62,19 @@ pass "a machine without a Limine menu is left alone"
 
 # An unreadable menu (the ESP is often umask=0077) behind a denied sudo
 # prompt: the migration must fail, leaving itself pending, not report
-# success and get marked done.
-mkdir -p "$test_dir/esp"
-printf '#timeout: 3\n' >"$test_dir/esp/limine.conf"
-chmod 000 "$test_dir/esp"
-conf="$test_dir/esp/limine.conf"
-if SUDO_DENY=1 run_migration; then
-  fail "a denied sudo prompt was reported as a successful migration"
+# success and get marked done. Root ignores directory permissions, so
+# this case cannot be staged there.
+if (( $(id -u) == 0 )); then
+  echo "ok - a denied sudo prompt leaves the migration pending and the menu untouched # SKIP"
+else
+  mkdir -p "$test_dir/esp"
+  printf '#timeout: 3\n' >"$test_dir/esp/limine.conf"
+  chmod 000 "$test_dir/esp"
+  conf="$test_dir/esp/limine.conf"
+  if SUDO_DENY=1 run_migration; then
+    fail "a denied sudo prompt was reported as a successful migration"
+  fi
+  chmod 755 "$test_dir/esp"
+  grep -Fxq '#timeout: 3' "$conf" || fail "a denied sudo prompt changed the boot menu"
+  pass "a denied sudo prompt leaves the migration pending and the menu untouched"
 fi
-chmod 755 "$test_dir/esp"
-grep -Fxq '#timeout: 3' "$conf" || fail "a denied sudo prompt changed the boot menu"
-pass "a denied sudo prompt leaves the migration pending and the menu untouched"
