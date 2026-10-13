@@ -56,8 +56,9 @@ Item {
   function dismissLowBatteryWarning() {
     // Both services run in this shell, so call the notification service
     // directly rather than spawning omarchy-shell on every check.
+    // A notifications clone copied before dismissBySummary existed lacks it.
     var notifications = shell ? shell.firstPartyServiceFor("omarchy.notifications") : null
-    if (notifications) notifications.dismissBySummary("Time to recharge")
+    if (notifications && typeof notifications.dismissBySummary === "function") notifications.dismissBySummary("Time to recharge")
   }
 
   function applyPowerProfile() {
