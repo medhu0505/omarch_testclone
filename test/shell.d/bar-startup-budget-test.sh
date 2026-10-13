@@ -95,6 +95,12 @@ for name in pkill killall; do
   printf '#!/bin/bash\nexit 1\n' >"$stub_bin/$name"
   chmod +x "$stub_bin/$name"
 done
+# Nor may it change system state over D-Bus: the battery service applies a
+# power profile when UPower reports one.
+for name in omarchy-powerprofiles-set powerprofilesctl; do
+  printf '#!/bin/bash\nexit 0\n' >"$stub_bin/$name"
+  chmod +x "$stub_bin/$name"
+done
 
 # One cold start: launch, then poll the compositor until this shell's
 # bar surface is mapped at a real size — the bar drawn, in the
