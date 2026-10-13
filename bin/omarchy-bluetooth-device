@@ -29,8 +29,10 @@ trust_device() {
   bluetoothctl trust "$address" >/dev/null 2>&1 || true
 }
 
-adapter_pairable() {
-  [[ $(timeout 2s bluetoothctl show 2>/dev/null) == *"Pairable: yes"* ]]
+# Only a positive "no": an adapter that cannot be read is left alone rather than
+# raised and then switched off underneath an agent that was holding it.
+adapter_unpairable() {
+  [[ $(timeout 2s bluetoothctl show 2>/dev/null) == *"Pairable: no"* ]]
 }
 
 # BlueZ only flags the adapter pairable while a default agent is registered,
@@ -41,12 +43,13 @@ adapter_pairable() {
 # Raise the flag for the handshake and put it back the way it was.
 pair_device() {
   local raised=false
-  if ! adapter_pairable; then
-    bluetoothctl pairable on >/dev/null 2>&1 && raised=true
+  if adapter_unpairable; then
+    timeout 5s bluetoothctl pairable on >/dev/null 2>&1 && raised=true
   fi
   timeout 20s bluetoothctl pair "$address" >/dev/null 2>&1 || true
-  [[ $raised == true ]] && bluetoothctl pairable off >/dev/null 2>&1
-  return 0
+  if [[ $raised == true ]]; then
+    timeout 5s bluetoothctl pairable off >/dev/null 2>&1 || true
+  fi
 }
 
 case "$action" in

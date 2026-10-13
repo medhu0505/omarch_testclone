@@ -158,7 +158,10 @@ cat >"$mock_bin/bluetoothctl" <<'SH'
 
 printf '%s\n' "$*" >>"$BLUETOOTHCTL_LOG"
 [[ $1 == "power" && $2 == "on" ]] && echo yes >"$POWERED_FILE"
-[[ $1 == "pairable" ]] && echo "$2" >"$PAIRABLE_FILE"
+if [[ $1 == "pairable" ]]; then
+  [[ $2 == "off" && -n ${MOCK_PAIRABLE_OFF_FAILS:-} ]] && exit 1
+  echo "$2" >"$PAIRABLE_FILE"
+fi
 [[ $1 == "list" ]] &&
   for c in ${MOCK_CONTROLLERS:-AA:BB:CC:DD:EE:FF}; do printf 'Controller %s mock\n' "$c"; done
 # Per-controller state where a test set it, the shared file otherwise.
@@ -302,6 +305,17 @@ agent_log=$(bluetooth_pair_log yes)
 grep -q "pairable" "$agent_log" &&
   fail "bluetooth leaves pairable alone when the agent already holds it" "$(cat "$agent_log")"
 pass "bluetooth leaves pairable alone when the agent already holds it"
+
+# A show that never said "no" may be hiding an agent's Pairable, which lowering it afterwards would take away.
+unreadable_log=$(bluetooth_pair_log "")
+grep -q "pairable" "$unreadable_log" &&
+  fail "bluetooth leaves pairable alone when the adapter state is unreadable" "$(cat "$unreadable_log")"
+pass "bluetooth leaves pairable alone when the adapter state is unreadable"
+
+restore_failed_log=$(MOCK_PAIRABLE_OFF_FAILS=1 bluetooth_pair_log no)
+grep -qx "connect AA:BB:CC:DD:EE:FF" "$restore_failed_log" ||
+  fail "bluetooth still connects when lowering pairable fails" "$(cat "$restore_failed_log")"
+pass "bluetooth still connects when lowering pairable fails"
 
 # Blocking hits every radio at once, so the read has to span them too. A bare
 # bluetoothctl show reports the default controller and misses a powered dongle.
