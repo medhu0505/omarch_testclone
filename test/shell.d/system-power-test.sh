@@ -15,7 +15,6 @@ cat >"$mock_bin/systemd-run" <<'SH'
 
 printf 'systemd-run %s\n' "$*" >>"$CALL_LOG"
 [[ ${FAIL_SYSTEMD_RUN:-false} == "true" ]] && exit 1
-[[ " $* " == *" --on-active="* ]] && exit 0
 while [[ $1 == --* ]]; do shift; done
 # Capture the service command so its exit status is tested separately.
 printf '%q ' "$@" >"$CALL_LOG.worker"
@@ -72,16 +71,22 @@ run_power_command() {
   local action="$1"
 
   : >"$call_log"
-  rm -f "$CALL_LOG.grace"
+  rm -f "$CALL_LOG.grace" "$CALL_LOG.worker"
   "$ROOT/bin/omarchy-system-$action"
 }
 
 for action in reboot logout; do
   run_power_command "$action" || fail "$action service is scheduled"
   (( $(wc -l <"$call_log") == 1 )) || fail "$action preparation runs outside the launching terminal"
+  [[ -s $CALL_LOG.worker ]] || fail "$action schedules its worker"
+  grep -q -- '--property=RuntimeMaxSec=30s' "$CALL_LOG" || fail "$action bounds the worker lifetime"
   bash "$CALL_LOG.worker" || fail "$action worker succeeds"
   grep -q '^timeout 2s omarchy-hyprland-window-close-all --wait$' "$CALL_LOG" || fail "$action waits for application exit with a deadline"
   ! grep -q '^sleep ' "$CALL_LOG" || fail "$action has no fixed sleep"
+  rm -f "$CALL_LOG.grace"
+  BLOCK_WINDOW_CLOSE=true bash "$CALL_LOG.worker" || fail "$action proceeds after the close deadline"
+  ! grep -q '^omarchy-notification-send ' "$CALL_LOG" || fail "$action does not report a close timeout as failure"
+  rm -f "$CALL_LOG.grace"
   if FAIL_EXIT=true bash "$CALL_LOG.worker"; then
     fail "$action propagates a rejected exit request"
   fi
@@ -97,7 +102,8 @@ inhibit_line=$(grep -n '^systemd-inhibit ' "$CALL_LOG" | cut -d: -f1)
 osd_line=$(grep -n '^omarchy-osd ' "$CALL_LOG" | cut -d: -f1)
 (( inhibit_line < osd_line )) || fail "inhibition precedes preparation"
 grep -q '^omarchy-state clear re\*-required$' "$CALL_LOG" || fail "shutdown clears restart state"
-grep -q '^omarchy-hyprland-window-close-all ' "$CALL_LOG" || fail "shutdown closes windows"
+grep -q '^timeout 2s omarchy-hyprland-window-close-all --wait$' "$CALL_LOG" || fail "shutdown waits for applications with a deadline"
+! grep -q '^sleep ' "$CALL_LOG" || fail "shutdown has no fixed sleep"
 grep -q '^systemctl poweroff --no-wall$' "$CALL_LOG" || fail "poweroff runs after the grace period while inhibited"
 [[ ! -f $CALL_LOG.inhibited ]] || fail "accepted poweroff releases inhibition"
 ! grep -q '^omarchy-notification-send ' "$CALL_LOG" || fail "successful shutdown sends no failure notification"
@@ -116,6 +122,7 @@ pass "shutdown uses its own script when the service environment is stale"
 rm -f "$CALL_LOG.grace" "$CALL_LOG.poweroff"
 BLOCK_WINDOW_CLOSE=true bash "$CALL_LOG.worker" || fail "shutdown proceeds while window closing is blocked"
 [[ -f $CALL_LOG.poweroff ]] || fail "poweroff follows the window-close deadline"
+! grep -q '^omarchy-notification-send ' "$CALL_LOG" || fail "shutdown does not report a close timeout as failure"
 pass "blocked window closing cannot prevent poweroff"
 
 for action in reboot shutdown logout; do

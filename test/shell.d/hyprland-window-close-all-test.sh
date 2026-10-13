@@ -39,7 +39,7 @@ first_pid=$!
 sleep 0.4 &
 second_pid=$!
 export TEST_CLIENTS="[{\"address\":\"0xabc\",\"pid\":$first_pid},{\"address\":\"0xdef\",\"pid\":$second_pid},{\"address\":\"0x123\",\"pid\":$first_pid}]"
-"$ROOT/bin/omarchy-hyprland-window-close-all" --wait || fail "waiting succeeds"
+timeout 1s "$ROOT/bin/omarchy-hyprland-window-close-all" --wait || fail "waiting succeeds"
 ! kill -0 "$first_pid" 2>/dev/null || fail "wait includes first application"
 ! kill -0 "$second_pid" 2>/dev/null || fail "wait includes last application"
 pass "wait follows application exits, including multiple windows from one process"
@@ -48,5 +48,5 @@ pass "wait follows application exits, including multiple windows from one proces
 TEST_CLIENTS='[]' timeout 1s "$ROOT/bin/omarchy-hyprland-window-close-all" --wait || fail "empty desktop exits immediately"
 pass "empty desktop exits immediately"
 
-TEST_CLIENTS="[{\"address\":\"0xabc\",\"pid\":$first_pid},{\"address\":\"0xdef\",\"pid\":0},{\"address\":\"0x123\"}]" "$ROOT/bin/omarchy-hyprland-window-close-all" --wait || fail "already exited and missing PIDs succeed"
+TEST_CLIENTS="[{\"address\":\"0xabc\",\"pid\":$first_pid},{\"address\":\"0xdef\",\"pid\":0},{\"address\":\"0x123\"}]" timeout 1s "$ROOT/bin/omarchy-hyprland-window-close-all" --wait || fail "already exited and missing PIDs succeed"
 pass "already exited and missing PIDs succeed"
