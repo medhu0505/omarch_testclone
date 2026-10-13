@@ -215,7 +215,23 @@ if [[ ${1:-} == "delete" && ${2:-} == "route" ]]; then
   exit 1
 fi
 if [[ ${1:-} == "allow" || ( ${1:-} == "route" && ${2:-} != "delete" ) ]]; then
-  printf '%s\n' "$*" >>"$UFW_STATE"
+  # Like real UFW, a rule that differs only by comment is relabeled in place
+  # rather than added again.
+  added=$*
+  body=${added% comment *}
+  tmp="$TEST_TMP/ufw-state-next"
+  : >"$tmp"
+  replaced=0
+  while IFS= read -r rule; do
+    if (( replaced == 0 )) && [[ ${rule% comment *} == "$body" ]]; then
+      printf '%s\n' "$added" >>"$tmp"
+      replaced=1
+    else
+      printf '%s\n' "$rule" >>"$tmp"
+    fi
+  done <"$UFW_STATE"
+  (( replaced == 1 )) || printf '%s\n' "$added" >>"$tmp"
+  mv "$tmp" "$UFW_STATE"
   exit 0
 fi
 if [[ ${1:-} == "delete" || ( ${1:-} == "route" && ${2:-} == "delete" ) ]]; then
@@ -1052,6 +1068,25 @@ cmp -s "$UFW_STATE" "$TEST_TMP/preexisting-rules" || { echo "stop removed rules 
 DRIVER
 run_isolated "$TEST_TMP/preexisting-driver.sh"
 pass "rules that existed before start are never claimed or removed"
+
+reset_firewall_fixture
+cat >"$UFW_STATE" <<'RULES'
+allow in on wlan2 proto udp to any port 67 comment hotspot dhcp
+route allow in on wlan2 from 10.55.0.0/24
+RULES
+cp "$UFW_STATE" "$TEST_TMP/user-rules"
+cat >"$TEST_TMP/user-rules-driver.sh" <<'DRIVER'
+require_privileged() { :; }
+export UFW_SHOW_ALLOWED=1
+installed=$(firewall_apply wlan2 10.55.0.0/24)
+[[ $installed == $'dns-udp\ndns-tcp' ]] || { echo "apply reported installing: $installed" >&2; exit 1; }
+grep -qx 'allow in on wlan2 proto udp to any port 67 comment hotspot dhcp' "$UFW_STATE" ||
+  { echo "apply relabeled the user's DHCP rule: $(<"$UFW_STATE")" >&2; exit 1; }
+firewall_remove
+cmp -s "$UFW_STATE" "$TEST_TMP/user-rules" || { echo "stop removed the user's rules: $(<"$UFW_STATE")" >&2; exit 1; }
+DRIVER
+run_isolated "$TEST_TMP/user-rules-driver.sh"
+pass "a user's identical rule under another comment is left alone"
 
 reset_firewall_fixture
 : >"$OMARCHY_HOTSPOT_LOCK_FILE"
