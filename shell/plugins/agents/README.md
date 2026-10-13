@@ -74,6 +74,7 @@ light surfaces — and the bar glyph stands in when there is none.
 | `claude` | Anthropic's OAuth usage endpoint (5-hour session + 7-day weekly) | `~/.claude/projects` transcripts, opencode sessions on an Anthropic provider, plus `stats-cache.json` and `history.jsonl` as fallback |
 | `codex` | The Codex app-server RPC | native Codex CLI session files on the built-in `openai` provider (plus pi and opencode sessions) |
 | `grok` | The credits endpoint behind Grok's `/usage` view (the billing period's included usage) | Each session's `usage.json` (the ledger `grok usage` prints: tokens by model per finished turn), plus `summary.json` for sessions |
+| `muse` | Meta's key endpoint (`POST api.meta.ai/muse-code/key` with the OAuth login) — the mint is idempotent, so a running Muse is never rotated out, and its response carries the live window and weekly percentages | Muse's local session index (`~/.local/share/muse/session-index.db`) for sessions and prompts, plus per-call token events summed from `~/.local/share/muse/sessions/**/session.jsonl` with the cache split (Muse counts cached tokens inside `input_tokens`; the buckets decompose them so each token counts once) |
 | `fireworks` | Estimated prepaid balance: configured funding minus rated account costs | Fireworks billing API, grouped by day and model for the last 30 days |
 
 When `~/.local/state/omarchy/agents/accounts/<claude|codex|grok>.json`
