@@ -370,6 +370,13 @@ cleanup_on_exit() {
     kill "$sudo_keepalive_pid" 2>/dev/null || true
   fi
 
+  # Stopping the keepalive is not enough: the timestamp it refreshed stays
+  # valid for the sudo timeout, so the upgrade's authorization would outlive
+  # the script. Invalidate it here, as omarchy update does on every exit.
+  if (( EUID != 0 )); then
+    /usr/bin/sudo -k >/dev/null 2>&1 || true
+  fi
+
   # set -e aborts without a word, and the last thing on screen is a green
   # progress line, so a half-finished upgrade otherwise reads as a finished one.
   if (( exit_status != 0 && upgrade_started && ! upgrade_completed )); then
