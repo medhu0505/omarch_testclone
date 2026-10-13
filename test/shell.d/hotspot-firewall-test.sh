@@ -13,7 +13,7 @@ FORWARDING_STATE="$STATE_DIR/forwarding.state"
 UFW_RULES_FILE="$TEST_TMP/user.rules"
 mkdir -p "$STUB_BIN" "$STATE_DIR"
 
-export TEST_TMP TEST_STATE_DIR="$STATE_DIR" HOTSPOT_FUNCTIONS="$TEST_TMP/hotspot-functions.sh"
+export TEST_TMP TEST_STATE_DIR="$STATE_DIR" HOTSPOT_FUNCTIONS="$TEST_TMP/hotspot-functions.sh" TEST_PATHS="$TEST_TMP/test-paths.sh"
 export UFW_STATE="$TEST_TMP/ufw-state"
 export UFW_LOG="$TEST_TMP/ufw-log"
 export UFW_SHOW_LOG="$TEST_TMP/ufw-show-log"
@@ -253,6 +253,7 @@ cat >"$STUB_BIN/sudo" <<'STUB'
 printf 'sudo %s\n' "$*" >>"$PRIVILEGED_LOG"
 shift
 source "$HOTSPOT_FUNCTIONS"
+source "$TEST_PATHS"
 HOTSPOT_STATE_DIR="$TEST_STATE_DIR"
 FIREWALL_STATE_FILE="$TEST_STATE_DIR/firewall.state"
 FORWARDING_STATE_FILE="$TEST_STATE_DIR/forwarding.state"
@@ -275,11 +276,22 @@ while IFS= read -r line; do
   [[ $line == 'case "${1:-}" in' ]] && break
   printf '%s\n' "$line"
 done <"$ROOT/bin/omarchy-hotspot" >"$FUNCTIONS"
+# The OMARCHY_HOTSPOT_* overrides are ignored as root; pin the test paths so
+# in-process actions never touch the host lock, state or UFW rules under root.
+# Kept out of $FUNCTIONS so the root path checks still see the script's own values.
+{
+  printf 'UFW_RULES_FILE=%q\n' "$OMARCHY_HOTSPOT_UFW_RULES"
+  printf 'HOTSPOT_STATE_DIR=%q\n' "$TEST_STATE_DIR"
+  printf 'FIREWALL_STATE_FILE=%q\n' "$TEST_STATE_DIR/firewall.state"
+  printf 'FORWARDING_STATE_FILE=%q\n' "$TEST_STATE_DIR/forwarding.state"
+  printf 'HOTSPOT_LOCK_FILE=%q\n' "$OMARCHY_HOTSPOT_LOCK_FILE"
+  printf 'HOTSPOT_LOCK_WAIT=%q\n' "$OMARCHY_HOTSPOT_LOCK_WAIT"
+} >"$TEST_PATHS"
 
 run_isolated() {
   local driver=$1
   (
-    PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash -c 'source "$1"; source "$2"' _ "$FUNCTIONS" "$driver"
+    PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash -c 'source "$1"; source "$TEST_PATHS"; source "$2"' _ "$FUNCTIONS" "$driver"
   )
 }
 
@@ -1022,13 +1034,21 @@ reset_firewall_fixture
 : >"$OMARCHY_HOTSPOT_LOCK_FILE"
 exec {held_lock}<"$OMARCHY_HOTSPOT_LOCK_FILE"
 flock "$held_lock"
+# In-process, so the test lock and state also hold when the suite runs as root.
+cat >"$TEST_TMP/lock-driver.sh" <<'DRIVER'
+HOTSPOT_STATE_DIR="$TEST_STATE_DIR"
+FIREWALL_STATE_FILE="$TEST_STATE_DIR/firewall.state"
+FORWARDING_STATE_FILE="$TEST_STATE_DIR/forwarding.state"
+HOTSPOT_LOCK_WAIT="${LOCK_DRIVER_WAIT:-$HOTSPOT_LOCK_WAIT}"
+stop
+DRIVER
 set +e
-lock_output=$(OMARCHY_HOTSPOT_LOCK_WAIT=1 OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" stop 2>&1)
+lock_output=$(LOCK_DRIVER_WAIT=1 run_isolated "$TEST_TMP/lock-driver.sh" 2>&1)
 lock_status=$?
 set -e
 exec {held_lock}<&-
 (( lock_status != 0 )) || fail "a hotspot action waits for one already running"
 [[ $lock_output == *"another hotspot action is still running"* ]] || fail "a blocked action says why" "$lock_output"
 [[ ! -s $NMCLI_LOG ]] || fail "a blocked action changes nothing" "$(<"$NMCLI_LOG")"
-OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" stop
+run_isolated "$TEST_TMP/lock-driver.sh"
 pass "hotspot actions are serialized"
