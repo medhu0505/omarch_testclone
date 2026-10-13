@@ -132,13 +132,11 @@ cat >"$stub_bin/owe" <<'STUB'
 #!/bin/bash
 [[ $1 != render ]] || exit 1
 STUB
-# Keep successful desktop retries inside the fixture, including login-shell hooks.
-cat >"$stub_bin/bash" <<'STUB'
-#!/bin/bash
-[[ $1 != -lc ]] || exit 0
-exec /bin/bash "$@"
-STUB
-for command in omarchy-hook omarchy-theme-set-herdr-machines omarchy-theme-bg-cache omarchy-restart-hyprctl; do
+# Keep successful desktop retries inside the fixture: every retint runs directly
+# and would otherwise restyle the terminals and apps of whoever runs the test.
+mapfile -t retints < <(sed -n '/^\(visible\|other\)_theme_commands=(/,/^)/s/^ *\(omarchy-[a-z0-9-]*\) *$/\1/p' "$ROOT/bin/omarchy-theme-set")
+(( ${#retints[@]} > 0 )) || fail "theme retint commands are found to stub"
+for command in "${retints[@]}" omarchy-hook omarchy-theme-set-herdr-machines omarchy-theme-bg-cache omarchy-restart-hyprctl; do
   printf '#!/bin/bash\nexit 0\n' >"$stub_bin/$command"
 done
 chmod +x "$stub_bin/"*
