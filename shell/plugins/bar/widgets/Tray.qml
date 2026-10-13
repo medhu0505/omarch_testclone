@@ -29,10 +29,9 @@ BarWidget {
   readonly property int trayItemGap: 0
   readonly property int trayJoinGap: 0
   // Bar widgets dragged into the tray section sit in the drawer after the
-  // app icons. The bar draws them into sectionHost; sectionDropSpace is the
-  // empty place it offers to drop the first one.
+  // app icons. The bar draws them into sectionHost, and its dropSpace is the
+  // empty place offered to drop the first one.
   property Item sectionHost: null
-  property Item sectionDropSpace: null
   readonly property int sectionCount: bar && bar.layoutConfig && Array.isArray(bar.layoutConfig.tray) ? bar.layoutConfig.tray.length : 0
   readonly property real sectionExtent: sectionHost ? (vertical ? sectionHost.implicitHeight : sectionHost.implicitWidth) : 0
   readonly property bool hasDrawer: allItems.length > 0 || sectionCount > 0 || barDragging
@@ -834,14 +833,10 @@ BarWidget {
       return size
     }
 
-    Component.onCompleted: {
-      root.sectionHost = sectionArea
-      root.sectionDropSpace = dropSpace
-    }
-    Component.onDestruction: {
-      if (root.sectionHost === sectionArea) root.sectionHost = null
-      if (root.sectionDropSpace === dropSpace) root.sectionDropSpace = null
-    }
+    property alias dropSpace: dropSpace
+
+    Component.onCompleted: root.sectionHost = sectionArea
+    Component.onDestruction: if (root.sectionHost === sectionArea) root.sectionHost = null
 
     Item {
       id: dropSpace

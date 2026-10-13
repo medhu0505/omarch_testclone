@@ -98,11 +98,11 @@ Item {
   property bool tooltipShown: false
   property int tooltipRequest: 0
   property var activePopout: null
-  // An open panel from a widget in the tray section keeps the tray's drawer
-  // open, so the panel's widget stays on screen under it.
   // A widget is being dragged that could go into the tray section, so the
   // tray's drawer opens to show where.
   readonly property bool traySectionDragActive: !!barDragSource && !barDragSource.hostsTraySection
+  // An open panel from a widget in the tray section keeps the tray's drawer
+  // open, so the panel's widget stays on screen under it.
   readonly property bool traySectionPopoutOpen: {
     var owner = activePopout
     if (!owner) return false
@@ -2002,11 +2002,10 @@ Item {
       var point = mark.mapToItem(slot, mark.width / 2, mark.height / 2)
       return root.vertical ? point.y : point.x
     }
-    // The tray hosts the tray section in its drawer.
     // The tray, or a clone of it, hosts the tray section in its drawer; one
     // inside the drawer does not, so the section never holds itself.
     readonly property bool hostsTraySection: region !== "tray" && !!activeItem && "sectionHost" in activeItem
-    readonly property Item sectionDropSpace: hostsTraySection ? activeItem.sectionDropSpace : null
+    readonly property Item sectionDropSpace: hostsTraySection && activeItem.sectionHost ? activeItem.sectionHost.dropSpace : null
 
     function traySectionContains(x, y) {
       var host = hostsTraySection ? activeItem.sectionHost : null
@@ -2111,7 +2110,7 @@ Item {
     Loader {
       readonly property Item host: slot.hostsTraySection ? slot.activeItem.sectionHost : null
       parent: host || slot
-      active: !!host && root.layoutEntries("tray").length > 0
+      active: !!host
       sourceComponent: traySectionComponent
     }
 

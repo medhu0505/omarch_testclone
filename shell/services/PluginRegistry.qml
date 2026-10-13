@@ -247,18 +247,26 @@ QtObject {
     return { found: false }
   }
 
+  // The tray, or a clone standing in for it.
+  function isTray(id) {
+    var manifest = installedPlugins[id]
+    var metadata = manifest && Util.isPlainObject(manifest.omarchy) ? manifest.omarchy : null
+    return id === "omarchy.tray" || (!!metadata && Util.canonicalWidgetId(String(metadata.clonedFrom || "")) === "omarchy.tray")
+  }
+
   // The tray section is drawn inside the tray, so the tray cannot go there.
   function barTarget(config, placement, fallbackSection, id) {
     var target = placement || {}
     var section = ["left", "center", "right", "tray"].indexOf(String(target.section || "")) !== -1
       ? String(target.section) : fallbackSection
+    var tray = isTray(id)
     var trayError = { error: "the tray cannot go in its own drawer" }
-    if (id === "omarchy.tray" && section === "tray") return trayError
+    if (tray && section === "tray") return trayError
     var relativeId = String(target.before || target.after || "")
     if (relativeId) {
       var relative = findRelativeBarLocation(config, relativeId, section && target.section ? section : "")
       if (!relative.found) return { error: "could not find target widget " + relativeId }
-      if (id === "omarchy.tray" && relative.section === "tray") return trayError
+      if (tray && relative.section === "tray") return trayError
       return {
         section: relative.section,
         index: relative.index + (target.after ? 1 : 0)

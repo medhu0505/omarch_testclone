@@ -102,6 +102,9 @@ ShellRoot {
     var localPanel = manifest("local.grouped-panel", ["panel"], { panel: "Panel.qml" })
     localPanel.omarchy = { clonedFrom: "omarchy.grouped-panel" }
     scan += block("thirdparty", "/third/local-panel", localPanel)
+    var localTray = manifest("local.tray", ["bar-widget"], { barWidget: "Tray.qml" })
+    localTray.omarchy = { clonedFrom: "omarchy.tray" }
+    scan += block("thirdparty", "/third/local-tray", localTray)
     var localBar = manifest("local.bar", ["bar"], { bar: "Bar.qml" })
     localBar.omarchy = { clonedFrom: "omarchy.bar" }
     scan += block("thirdparty", "/third/local-bar", localBar)
@@ -128,6 +131,7 @@ ShellRoot {
       "local.future-auth",
       "local.grouped-panel",
       "local.hybrid",
+      "local.tray",
       "local.weather",
       "omarchy.bar",
       "omarchy.first-widget",
@@ -242,6 +246,8 @@ ShellRoot {
     root.assertEqual(registry.moveBarWidget("omarchy.tray", { section: "tray" }), "the tray cannot go in its own drawer", "registry keeps the tray out of its own drawer")
     root.assertEqual(registry.moveBarWidget("omarchy.tray", { after: "third.widget" }), "the tray cannot go in its own drawer", "registry keeps the tray out of its own drawer when placed beside a widget in it")
     root.assertDeepEqual(root.config.bar.layout.right, [{ id: "omarchy.tray" }], "a refused tray move leaves the tray where it was")
+    root.config = { version: 1, bar: { layout: { left: [], center: [], right: [{ id: "local.tray" }], tray: [] } }, plugins: [] }
+    root.assertEqual(registry.moveBarWidget("local.tray", { section: "tray" }), "the tray cannot go in its own drawer", "registry keeps a tray clone out of its own drawer")
 
     root.config = { version: 1, bar: { layout: { left: [], center: [], right: [] } }, plugins: [] }
     registry.setEnabled("third.widget", true, { section: "right", index: 0 })
