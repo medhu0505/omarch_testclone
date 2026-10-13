@@ -287,7 +287,7 @@ user_accounts_go_single() {
   disk=$(user_accounts_root_luks)
   if [[ -n $disk ]] && ! user_accounts_opens_disk "$disk" "$mine"; then
     while true; do
-      current=$(gum input --password --prompt "The disk password everyone uses now: ") || return 1
+      current=$(gum input --password --prompt "Current disk password: ") || return 1
       user_accounts_opens_disk "$disk" "$current" && break
       echo "That doesn't unlock the disk. Try again." >&2
     done
