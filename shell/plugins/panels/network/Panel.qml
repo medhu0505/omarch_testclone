@@ -973,9 +973,12 @@ Panel {
     hotspotStatusError = ""
   }
 
-  function refreshHotspot() {
+  // A poll never discards a status run already in flight; it just lets that
+  // run publish. Only a refresh after an action marks the in-flight result
+  // stale, since it may describe the state from before the action.
+  function refreshHotspot(discardRunning) {
     if (hotspotProc.running) {
-      hotspotRefreshPending = true
+      if (discardRunning) hotspotRefreshPending = true
       return
     }
     hotspotRefreshPending = false
@@ -1371,7 +1374,7 @@ Panel {
       }
       root.hotspotActionKind = ""
       Qt.callLater(function() {
-        root.refreshHotspot()
+        root.refreshHotspot(true)
         root.refresh()
       })
     }
