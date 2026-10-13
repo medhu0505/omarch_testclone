@@ -5,6 +5,30 @@
 
 default_browser=$(omarchy-cmd-default-browser)
 
+# Decode the escapes every desktop entry string value carries, before the Exec
+# quoting rules see it: the spec writes one literal backslash as \\\\.
+desktop_string_value() {
+  local value="$1" result="" i
+
+  for (( i = 0; i < ${#value}; i++ )); do
+    if [[ ${value:i:1} == '\' ]] && (( i + 1 < ${#value} )); then
+      case "${value:i+1:1}" in
+        s) result+=" " ;;
+        n) result+=$'\n' ;;
+        t) result+=$'\t' ;;
+        r) result+=$'\r' ;;
+        '\') result+='\' ;;
+        *) result+="${value:i:2}" ;;
+      esac
+      (( i++ ))
+    else
+      result+="${value:i:1}"
+    fi
+  done
+
+  printf '%s' "$result"
+}
+
 # Parse a .desktop Exec= line into tokens, honouring the desktop-entry quoting
 # rules, so a wrapped launcher (env VAR=val app, flatpak run App, python
 # script.py) keeps its full command line instead of collapsing to its first
@@ -12,7 +36,7 @@ default_browser=$(omarchy-cmd-default-browser)
 desktop_exec_tokens() {
   local line="$1"
   local token="" ch=""
-  local quoted=false
+  local quoted=false started=false
   local i
 
   exec_tokens=()
@@ -23,13 +47,9 @@ desktop_exec_tokens() {
     if [[ $quoted == true ]]; then
       if [[ $ch == '"' ]]; then
         quoted=false
-      elif [[ $ch == '\' ]]; then
-        if (( i + 1 < ${#line} )); then
-          token+="${line:i+1:1}"
-          (( i++ ))
-        else
-          token+="$ch"
-        fi
+      elif [[ $ch == '\' ]] && (( i + 1 < ${#line} )); then
+        token+="${line:i+1:1}"
+        (( i++ ))
       else
         token+="$ch"
       fi
@@ -39,28 +59,23 @@ desktop_exec_tokens() {
     case "$ch" in
       '"')
         quoted=true
-        ;;
-      '\')
-        if (( i + 1 < ${#line} )); then
-          token+="${line:i+1:1}"
-          (( i++ ))
-        else
-          token+="$ch"
-        fi
+        started=true
         ;;
       ' ' | $'\t')
-        if [[ -n $token ]]; then
+        if [[ $started == true ]]; then
           exec_tokens+=("$token")
           token=""
+          started=false
         fi
         ;;
       *)
         token+="$ch"
+        started=true
         ;;
     esac
   done
 
-  [[ -n $token ]] && exec_tokens+=("$token")
+  [[ $started == true ]] && exec_tokens+=("$token")
 }
 
 browser_file=""
@@ -76,35 +91,88 @@ if [[ -z $browser_file ]]; then
   exit 1
 fi
 
-exec_line=$(sed -n 's/^Exec=//p' "$browser_file" | head -1)
-desktop_exec_tokens "$exec_line"
+desktop_exec_tokens "$(desktop_string_value "$(sed -n 's/^Exec=//p' "$browser_file" | head -1)")"
+
+# The browser is the program an env wrapper runs, or the app a flatpak one runs,
+# never the wrapper: its name picks the private flag and the window to focus.
+browser_program=${exec_tokens[0]}
+wrapper=${browser_program##*/}
+flatpak_app="" flatpak_command=""
+scan=("${exec_tokens[@]}")
+for (( i = 1; i < ${#scan[@]}; i++ )); do
+  token=${scan[i]}
+
+  case "$wrapper" in
+    env)
+      case "$token" in
+        -u | -C | --unset | --chdir) (( i++ )) ;;
+        -S | --split-string | -S?* | --split-string=*)
+          if [[ $token == -S || $token == --split-string ]]; then
+            value=${scan[i + 1]} rest=("${scan[@]:i+2}")
+          else
+            value=${token#-S} value=${value#--split-string=} rest=("${scan[@]:i+1}")
+          fi
+          mapfile -t split < <(xargs -n1 printf '%s\n' <<<"$value" 2>/dev/null)
+          scan=("${scan[@]:0:i}" "${split[@]}" "${rest[@]}")
+          (( i-- ))
+          ;;
+        -* | *=*) ;;
+        *)
+          browser_program=$token
+          wrapper=${token##*/}
+          ;;
+      esac
+      ;;
+    flatpak)
+      case "$token" in
+        --command=*) flatpak_command=${token#--command=} ;;
+        -* | run) ;;
+        %* | @@*) break ;;
+        *) flatpak_app=$token; break ;;
+      esac
+      ;;
+    *) break ;;
+  esac
+done
+[[ $wrapper == flatpak ]] && browser_program=${flatpak_command:-$flatpak_app}
+
+private=false
+for argument in "$@"; do
+  [[ $argument == "--private" ]] && private=true
+done
 
 # Only a private launch needs the browser's flag, and probing a Firefox-family
 # browser's --help starts the whole binary, so ordinary launches skip it and
-# leave their arguments as they are.
+# leave their arguments as they are. A Flatpak is named, never probed, since
+# running its app with --help may start the browser itself.
 private_flag="--private"
-if [[ " $* " == *" --private "* ]]; then
-  if "${exec_tokens[0]}" --help 2>/dev/null | grep -q MOZ_LOG; then
+if [[ $private == true ]]; then
+  if [[ ${browser_program##*/} =~ edge || $flatpak_app == com.microsoft.Edge ]]; then
+    private_flag="--inprivate"
+  elif [[ -n $flatpak_app ]]; then
+    if [[ ${flatpak_app,,} =~ ^(org\.mozilla\.firefox|io\.gitlab\.librewolf-community|app\.zen_browser\.zen|net\.waterfox\.waterfox|one\.ablaze\.floorp)$ ]]; then
+      private_flag="--private-window"
+    else
+      private_flag="--incognito"
+    fi
+  elif "$browser_program" --help 2>/dev/null | grep -q MOZ_LOG; then
     private_flag="--private-window"
   else
     private_flag="--incognito"
-
-    # A wrapped Edge is a later command or Flatpak id; options and VAR=value never are.
-    for token in "${exec_tokens[@]}"; do
-      if [[ $token != -* && $token != *=* && ${token##*/} =~ ^(microsoft-edge|msedge|com\.microsoft\.Edge$) ]]; then
-        private_flag="--inprivate"
-      fi
-    done
-
-    if [[ ${exec_tokens[0]} =~ edge ]]; then
-      private_flag="--inprivate"
-    fi
   fi
 fi
 
 # The arguments go in where the URL field code is, in the order given, since
 # Firefox only opens a URL in the private window when it follows the flag.
-arguments=("${@/--private/$private_flag}")
+arguments=()
+for argument in "$@"; do
+  if [[ $argument == "--private" ]]; then
+    arguments+=("$private_flag")
+  else
+    arguments+=("$argument")
+  fi
+done
+
 browser_command=()
 arguments_placed=false
 
@@ -116,8 +184,14 @@ for token in "${exec_tokens[@]}"; do
         arguments_placed=true
       fi
       ;;
-    %i | %c | %k) ;;
-    *) browser_command+=("$token") ;;
+    %i)
+      icon=$(desktop_string_value "$(sed -n 's/^Icon=//p' "$browser_file" | head -1)")
+      [[ -n $icon ]] && browser_command+=(--icon "$icon")
+      ;;
+    %c) browser_command+=("$(desktop_string_value "$(sed -n 's/^Name=//p' "$browser_file" | head -1)")") ;;
+    %k) browser_command+=("$browser_file") ;;
+    %d | %D | %n | %N | %v | %m) ;;
+    *) browser_command+=("${token//%%/%}") ;;
   esac
 done
 
@@ -140,5 +214,5 @@ for argument in "$@"; do
 done
 
 if [[ -n $url && -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
-  omarchy-hyprland-focus-app "^$(basename "${exec_tokens[0]}" -stable).*$" || true
+  omarchy-hyprland-focus-app "^$(basename "$browser_program" -stable).*$" || true
 fi
