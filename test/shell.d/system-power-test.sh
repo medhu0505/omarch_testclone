@@ -32,7 +32,7 @@ trap 'rm -f "$CALL_LOG.inhibited"' EXIT
 "$@"
 SH
 
-for command in omarchy-state omarchy-hyprland-window-close-all omarchy-osd omarchy-notification-send sleep systemctl; do
+for command in uwsm omarchy-state omarchy-hyprland-window-close-all omarchy-osd omarchy-notification-send sleep timeout systemctl; do
   cat >"$mock_bin/$command" <<'SH'
 #!/bin/bash
 
@@ -41,34 +41,27 @@ printf '%s %s\n' "$command" "$*" >>"$CALL_LOG"
 case $command in
   omarchy-hyprland-window-close-all)
     if [[ ${BLOCK_WINDOW_CLOSE:-false} == "true" ]]; then
-      for (( attempt = 0; attempt < 200; attempt++ )); do
-        if [[ -f $CALL_LOG.poweroff ]]; then
-          touch "$CALL_LOG.close-finished"
-          exit 0
-        fi
-        /usr/bin/sleep 0.01
-      done
-      touch "$CALL_LOG.close-timeout"
-      exit 1
+      /usr/bin/sleep 10
     fi
     ;;
   omarchy-notification-send)
     [[ ${FAIL_NOTIFICATION:-false} != "true" ]] || exit 42
     ;;
-  sleep)
-    if [[ $1 == "2" ]]; then
-      # Synchronize with background preparation without a fixed test-time sleep.
-      for (( attempt = 0; attempt < 200; attempt++ )); do
-        grep -q '^omarchy-hyprland-window-close-all ' "$CALL_LOG" && break
-        /usr/bin/sleep 0.01
-      done
-      touch "$CALL_LOG.grace"
-    fi
+  timeout)
+    [[ $1 == "2s" ]] || exit 2
+    shift
+    /usr/bin/timeout 0.2s "$@"
+    status=$?
+    touch "$CALL_LOG.grace"
+    exit "$status"
     ;;
-  systemctl)
-    [[ $* == "poweroff --no-wall" && -f $CALL_LOG.inhibited && -f $CALL_LOG.grace ]] || exit 2
+  uwsm | systemctl)
+    [[ -f $CALL_LOG.grace ]] || exit 2
+    if [[ $1 == "poweroff" ]]; then
+      [[ -f $CALL_LOG.inhibited ]] || exit 2
+    fi
     touch "$CALL_LOG.poweroff"
-    [[ ${FAIL_POWEROFF:-false} != "true" ]]
+    [[ ${FAIL_POWEROFF:-false} != "true" && ${FAIL_EXIT:-false} != "true" ]]
     ;;
 esac
 SH
@@ -83,15 +76,18 @@ run_power_command() {
   "$ROOT/bin/omarchy-system-$action"
 }
 
-run_power_command reboot
-printf '%s\n' \
-  'systemd-run --user --collect --quiet --on-active=2s --timer-property=AccuracySec=100ms systemctl reboot --no-wall' \
-  'omarchy-osd -i reboot -m Rebooting -d 5000' \
-  'omarchy-state clear re*-required' \
-  'omarchy-hyprland-window-close-all ' \
-  'sleep 1' >"$test_tmp/reboot-expected.log"
-diff -u "$test_tmp/reboot-expected.log" "$call_log" || fail "reboot runs after being scheduled outside the terminal scope"
-pass "reboot runs after being scheduled outside the terminal scope"
+for action in reboot logout; do
+  run_power_command "$action" || fail "$action service is scheduled"
+  (( $(wc -l <"$call_log") == 1 )) || fail "$action preparation runs outside the launching terminal"
+  bash "$CALL_LOG.worker" || fail "$action worker succeeds"
+  grep -q '^timeout 2s omarchy-hyprland-window-close-all --wait$' "$CALL_LOG" || fail "$action waits for application exit with a deadline"
+  ! grep -q '^sleep ' "$CALL_LOG" || fail "$action has no fixed sleep"
+  if FAIL_EXIT=true bash "$CALL_LOG.worker"; then
+    fail "$action propagates a rejected exit request"
+  fi
+  grep -q "^omarchy-notification-send -u critical ${action^} failed " "$CALL_LOG" || fail "$action reports a rejected exit request"
+  pass "$action waits outside the launching terminal without a fixed delay"
+done
 
 run_power_command shutdown || fail "shutdown service is scheduled"
 grep -q '^systemd-run --user --collect --quiet --property=Type=exec --property=RuntimeMaxSec=30s .* --inhibit$' "$CALL_LOG" || fail "shutdown uses a bounded service outside the launching terminal"
@@ -119,14 +115,10 @@ pass "shutdown uses its own script when the service environment is stale"
 : >"$call_log"
 rm -f "$CALL_LOG.grace" "$CALL_LOG.poweroff"
 BLOCK_WINDOW_CLOSE=true bash "$CALL_LOG.worker" || fail "shutdown proceeds while window closing is blocked"
-for (( attempt = 0; attempt < 200; attempt++ )); do
-  [[ -f $CALL_LOG.close-finished || -f $CALL_LOG.close-timeout ]] && break
-  /usr/bin/sleep 0.01
-done
-[[ -f $CALL_LOG.close-finished && ! -f $CALL_LOG.close-timeout ]] || fail "poweroff releases the blocked window helper before its timeout"
-pass "blocked window closing cannot delay poweroff"
+[[ -f $CALL_LOG.poweroff ]] || fail "poweroff follows the window-close deadline"
+pass "blocked window closing cannot prevent poweroff"
 
-for action in reboot shutdown; do
+for action in reboot shutdown logout; do
   : >"$call_log"
   if FAIL_SYSTEMD_RUN=true "$ROOT/bin/omarchy-system-$action"; then
     fail "$action aborts when scheduling fails"

@@ -4,10 +4,19 @@
 # omarchy:examples=omarchy logout | omarchy system logout
 # omarchy:aliases=omarchy logout
 
-nohup bash -c "sleep 2 && uwsm stop" >/dev/null 2>&1 &
+if [[ ${1:-} == "--execute" ]]; then
+  omarchy-osd -i logout -m "Logging out" -d 5000
 
-omarchy-osd -i logout -m "Logging out" -d 5000
-
-# Now close all windows
-omarchy-hyprland-window-close-all
-sleep 1 # Allow apps like Chrome to shutdown correctly
+  # Proceed as soon as apps exit, with a bound for unresponsive windows.
+  timeout 2s omarchy-hyprland-window-close-all --wait
+  uwsm stop || {
+    status=$?
+    omarchy-notification-send -u critical "Logout failed" "Could not complete logout. Please try again."
+    exit "$status"
+  }
+else
+  # Survive closing the terminal that requested the session exit.
+  systemd-run --user --collect --quiet --property=Type=exec --property=RuntimeMaxSec=30s \
+    --setenv=PATH --setenv=HYPRLAND_INSTANCE_SIGNATURE --setenv=OMARCHY_PATH \
+    "$OMARCHY_PATH/bin/omarchy-system-logout" --execute
+fi
