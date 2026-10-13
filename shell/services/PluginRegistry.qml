@@ -507,10 +507,12 @@ QtObject {
     shellConfigMutator(function(config) {
       ensureConfigShape(config)
 
-      if (value && placement && (placement.before || placement.after)) {
-        var relativeId = String(placement.before || placement.after)
-        if (!findRelativeBarLocation(config, relativeId, String(placement.section || "")).found) {
-          lastEnableError = "could not find target widget " + relativeId
+      // A placement that cannot be honoured is refused before anything
+      // changes: a missing neighbour, or the tray asked into its own drawer.
+      if (value && isBarWidget && placement && Object.keys(placement).length) {
+        var requested = barTarget(config, placement, defaultBarWidgetSection(manifest), key)
+        if (requested.error) {
+          lastEnableError = requested.error
           return
         }
       }
@@ -550,7 +552,6 @@ QtObject {
           } else {
             var section = defaultBarWidgetSection(manifest)
             var target = barTarget(config, placement || {}, section, key)
-            if (target.error) target = barTarget(config, {}, section === "tray" ? "right" : section, key)
             config.bar.layout[target.section].splice(target.index, 0, entry)
             insertedWithPlacement = true
           }

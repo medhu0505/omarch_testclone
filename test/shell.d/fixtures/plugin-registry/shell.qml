@@ -248,6 +248,10 @@ ShellRoot {
     root.assertDeepEqual(root.config.bar.layout.right, [{ id: "omarchy.tray" }], "a refused tray move leaves the tray where it was")
     root.config = { version: 1, bar: { layout: { left: [], center: [], right: [{ id: "local.tray" }], tray: [] } }, plugins: [] }
     root.assertEqual(registry.moveBarWidget("local.tray", { section: "tray" }), "the tray cannot go in its own drawer", "registry keeps a tray clone out of its own drawer")
+    root.config = { version: 1, bar: { layout: { left: [], center: [], right: [], tray: [] } }, plugins: [] }
+    root.assertTrue(!registry.setEnabled("local.tray", true, { section: "tray" }), "enabling a tray into its own drawer is refused")
+    root.assertEqual(registry.lastEnableError, "the tray cannot go in its own drawer", "a refused tray enable says why")
+    root.assertDeepEqual(root.config.bar.layout.right, [], "a refused tray enable changes nothing")
 
     root.config = { version: 1, bar: { layout: { left: [], center: [], right: [] } }, plugins: [] }
     registry.setEnabled("third.widget", true, { section: "right", index: 0 })
