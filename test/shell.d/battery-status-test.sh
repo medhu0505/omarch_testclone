@@ -112,7 +112,6 @@ chmod +x "$hold_dir/bin/upower"
 hold_output=$(OMARCHY_POWER_SUPPLY_PATH="$hold_dir/power" PATH="$hold_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell)
 
 grep -Fx $'state\tcharging' <<<"$hold_output" >/dev/null || fail "a hold below its threshold is still charging"
-grep -Fx $'time\t12m' <<<"$hold_output" >/dev/null || fail "battery status falls back to UPower's time without the readings to work it out"
 pass "battery status doesn't trip a hold early"
 
 # Once the battery reaches the threshold, idle charging is holding.
@@ -128,6 +127,28 @@ sed -i 's/percentage:           80.0%/percentage:           40.0%/; s/energy-ful
 charging_output=$(OMARCHY_POWER_SUPPLY_PATH="$hold_dir/power" PATH="$hold_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell)
 grep -Fx $'time\t1h' <<<"$charging_output" >/dev/null || fail "time to full counts up to the charge limit" "$charging_output"
 pass "battery status times charging to the charge limit"
+
+# UPower's own estimate stands in when the draw is too small to divide by...
+printf '100000\n' >"$hold_dir/power/BAT0/power_now"
+idle_output=$(OMARCHY_POWER_SUPPLY_PATH="$hold_dir/power" PATH="$hold_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell)
+grep -Fx $'time\t12m' <<<"$idle_output" >/dev/null || fail "a negligible draw falls back to UPower's time" "$idle_output"
+
+# ...and when the energy reading is missing.
+printf '27800000\n' >"$hold_dir/power/BAT0/power_now"
+sed -i '/energy:               27.84 Wh/d' "$hold_dir/bin/upower"
+unread_output=$(OMARCHY_POWER_SUPPLY_PATH="$hold_dir/power" PATH="$hold_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell)
+grep -Fx $'time\t12m' <<<"$unread_output" >/dev/null || fail "a missing energy reading falls back to UPower's time" "$unread_output"
+pass "battery status falls back to UPower's time when it cannot work it out"
+
+# Another battery's charge limit does not shorten this one's time to full.
+sed -i 's/energy-full:          69.6 Wh/energy:               27.84 Wh\n  energy-full:          69.6 Wh/' "$hold_dir/bin/upower"
+rm "$hold_dir/power/BAT0/charge_control_end_threshold"
+sed -i '/charge-end-threshold: 80%/d' "$hold_dir/bin/upower"
+mkdir -p "$hold_dir/power/BAT1"
+printf '60\n' >"$hold_dir/power/BAT1/charge_control_end_threshold"
+unlimited_output=$(OMARCHY_POWER_SUPPLY_PATH="$hold_dir/power" PATH="$hold_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell)
+grep -Fx $'time\t1h 30m' <<<"$unlimited_output" >/dev/null || fail "time to full ignores another battery's charge limit" "$unlimited_output"
+pass "battery status times charging to its own battery's limit"
 
 if matches=$(rg -n 'omarchy-battery-(capacity|remaining|remaining-time)' "$ROOT/bin" "$ROOT/test" "$ROOT/shell" "$ROOT/docs"); then
   fail "battery status owns capacity and remaining calculations" "$matches"

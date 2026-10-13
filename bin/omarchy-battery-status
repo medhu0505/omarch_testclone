@@ -71,6 +71,8 @@ threshold_end=$(awk '/charge-end-threshold:/ { gsub(/%/, "", $2); print int($2);
 # which misses every battery with another name.
 [[ -n $threshold_end || ! -r $battery_path/charge_control_end_threshold ]] || threshold_end=$(<"$battery_path/charge_control_end_threshold")
 [[ -n $threshold_start || ! -r $battery_path/charge_control_start_threshold ]] || threshold_start=$(<"$battery_path/charge_control_start_threshold")
+# The time to full counts to this battery's own limit, never another one's.
+charge_limit=${threshold_end:-100}
 [[ -n $threshold_end ]] || threshold_end=$(cat "$power_supply_path"/BAT*/charge_control_end_threshold 2>/dev/null | head -1)
 [[ -n $threshold_start ]] || threshold_start=$(cat "$power_supply_path"/BAT*/charge_control_start_threshold 2>/dev/null | head -1)
 
@@ -79,7 +81,7 @@ threshold_end=$(awk '/charge-end-threshold:/ { gsub(/%/, "", $2); print int($2);
 # the draw, and stands in only when the readings to do the sum are missing.
 time_remaining=$(awk \
   -v energy="$energy" -v full="$energy_full" -v rate="${power_rate_raw:-0}" \
-  -v state="$state" -v limit="${threshold_end:-100}" -v fallback="$upower_hours" 'BEGIN {
+  -v state="$state" -v limit="$charge_limit" -v fallback="$upower_hours" 'BEGIN {
   if (rate < 0) rate = -rate
   if (energy != "" && full != "" && rate > 0.2) {
     hours = state == "charging" ? (full * limit / 100 - energy) / rate : energy / rate
