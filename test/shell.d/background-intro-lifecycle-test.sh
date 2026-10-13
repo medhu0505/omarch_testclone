@@ -15,7 +15,7 @@ const state = {
   framePoll: timer(), themeFade: timer(), themeFallback: timer(), startupFade: timer(),
   themeToken: '', transitionToken: '', themeBackground: '', themeColors: '', themeShell: '',
   themePaletteReady: false, themeNativeSize: null, themeOpacity: 1, backgroundService: null, cover: false, startupPending: false,
-  Color: { loadColors: value => loads.push(['colors', value]), loadShell: value => loads.push(['shell', value]) },
+  Commons: { Color: { loadColors: value => loads.push(['colors', value]), loadShell: value => loads.push(['shell', value]) } },
   Style: { scheduleRefresh: () => loads.push(['refresh']) },
   Util: { decodeBase64: value => value }
 }
