@@ -646,10 +646,10 @@ Item {
     }
   }
 
-  // The tray drawer reveals inward (away from the bar edge). Place it at the
-  // section's inner edge: start of the right section, end of the left/center
-  // sections. The drawer's reserved space then sits next to the bar center,
-  // not stranded mid-section.
+  // The tray drawer grows away from the end its section holds still. Place
+  // it at the section's inner edge: start of the right section, end of the
+  // left/center sections. The drawer then grows into the free space toward
+  // the next section instead of pushing the widgets beside it.
   function pinTrayToInner(entries, section) {
     return BarModel.pinTrayToInner(entries, section)
   }
