@@ -169,6 +169,39 @@ record=$(X_TOKEN=token-side COLLECT_ARGS="--force" collect)
   fail "empty transcripts do not invent prompts or active days" "$record"
 pass "empty transcripts do not invent prompts or active days"
 
+# Stamped offsets convert into the machine's local calendar day.
+python3 - "$ROOT/bin/omarchy-agent-usage-x" <<'PY'
+import importlib.machinery, importlib.util, os, sys
+loader = importlib.machinery.SourceFileLoader("collector", sys.argv[1])
+spec = importlib.util.spec_from_loader(loader.name, loader)
+collector = importlib.util.module_from_spec(spec)
+loader.exec_module(collector)
+obj = {
+  "role": "user",
+  "message": {
+    "content": [{
+      "type": "text",
+      "text": "<timestamp>Monday, Oct 12, 2026, 11:30 PM (UTC-5)</timestamp>\n<user_query>x</user_query>",
+    }]
+  },
+}
+os.environ["TZ"] = "UTC"
+# Reload local clock helpers after TZ change.
+import time
+time.tzset()
+day = collector.prompt_day(obj)
+assert str(day) == "2026-10-13", day
+os.environ["TZ"] = "America/Chicago"
+time.tzset()
+day = collector.prompt_day(obj)
+assert str(day) == "2026-10-12", day
+iso_day = collector.prompt_day({"role": "user", "createdAt": "2026-10-13T04:30:00Z"})
+assert str(iso_day) == "2026-10-12", iso_day
+print("ok")
+PY
+[[ $? -eq 0 ]] || fail "prompt stamps convert into the local calendar day"
+pass "prompt stamps convert into the local calendar day"
+
 # limits-only reuses the transcript scan.
 mkdir -p "$projects/extra"
 printf '%s\n' "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"<timestamp>${today_stamp}, 2:00 PM (UTC-5)</timestamp>\\n<user_query>later</user_query>\"}]}}" >"$projects/extra/session-c.jsonl"

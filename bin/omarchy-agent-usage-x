@@ -35,9 +35,10 @@ LIMITS_ONLY_SCAN_REUSE_SECONDS = 900
 # Cursor agent transcripts stamp user turns as
 # <timestamp>Monday, Oct 12, 2026, 6:27 PM (UTC-5)</timestamp>.
 TIMESTAMP_RE = re.compile(
-  r"<timestamp>\s*([A-Za-z]+,\s+[A-Za-z]+\s+\d{1,2},\s+\d{4},\s+\d{1,2}:\d{2}\s*[AP]M)\s*(?:\([^)]+\))?\s*</timestamp>",
+  r"<timestamp>\s*([A-Za-z]+,\s+[A-Za-z]+\s+\d{1,2},\s+\d{4},\s+\d{1,2}:\d{2}\s*[AP]M)\s*(?:\(([^)]+)\))?\s*</timestamp>",
   re.IGNORECASE,
 )
+TZ_OFFSET_RE = re.compile(r"^(?:UTC|GMT)([+-])(\d{1,2})(?::?(\d{2}))?$", re.IGNORECASE)
 
 
 def read_json(path: Path) -> Any:
@@ -147,8 +148,29 @@ def empty_stats() -> dict[str, Any]:
   }
 
 
+def local_tzinfo() -> timezone:
+  return datetime.now().astimezone().tzinfo or timezone.utc
+
+
+def parse_tz_label(label: str) -> timezone | None:
+  match = TZ_OFFSET_RE.fullmatch(label.strip())
+  if not match:
+    return None
+  sign = 1 if match.group(1) == "+" else -1
+  hours = int(match.group(2))
+  minutes = int(match.group(3) or 0)
+  return timezone(timedelta(hours=sign * hours, minutes=sign * minutes))
+
+
+def to_local_date(value: datetime) -> date:
+  """Calendar day in the machine's local zone (same basis as date.today())."""
+  if value.tzinfo is None:
+    value = value.replace(tzinfo=local_tzinfo())
+  return value.astimezone(local_tzinfo()).date()
+
+
 def prompt_day(obj: dict[str, Any]) -> date | None:
-  """Return the calendar day of a transcript turn when the turn itself names it."""
+  """Return the local calendar day of a transcript turn when the turn names it."""
   chunks: list[str] = []
   message = obj.get("message")
   if isinstance(message, dict):
@@ -171,9 +193,10 @@ def prompt_day(obj: dict[str, Any]) -> date | None:
     if not match:
       continue
     stamp = match.group(1)
+    zone = parse_tz_label(match.group(2) or "") or local_tzinfo()
     for fmt in ("%A, %b %d, %Y, %I:%M %p", "%A, %B %d, %Y, %I:%M %p"):
       try:
-        return datetime.strptime(stamp, fmt).date()
+        return to_local_date(datetime.strptime(stamp, fmt).replace(tzinfo=zone))
       except ValueError:
         continue
 
@@ -186,14 +209,15 @@ def prompt_day(obj: dict[str, Any]) -> date | None:
       if ms > 10_000_000_000:
         ms /= 1000.0
       try:
-        return datetime.fromtimestamp(ms, tz=timezone.utc).date()
+        return to_local_date(datetime.fromtimestamp(ms, tz=timezone.utc))
       except (OverflowError, OSError, ValueError):
         continue
     if isinstance(raw, str) and raw:
       try:
-        return datetime.fromisoformat(raw.replace("Z", "+00:00")).date()
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
       except ValueError:
         continue
+      return to_local_date(parsed)
   return None
 
 
