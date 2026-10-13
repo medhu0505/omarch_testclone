@@ -167,8 +167,10 @@ assert(
     /if \(iconIndexScan\.running\) \{[\s\S]*?root\.pendingIconIndexRescan = true[\s\S]*?\} else \{[\s\S]*?iconIndexScan\.running = true/.test(debounceMatch[1]),
   'app library queues a debounced icon rescan that fires while a scan is running'
 )
+const iconScanExitMatch = appLibraryQml.match(/id: iconIndexScan[\s\S]*?onExited: \{([\s\S]*?)\n    \}/)
 assert(
-  /onExited: \{[\s\S]*?root\.iconIndex = root\.pendingIconIndex[\s\S]*?if \(root\.pendingIconIndexRescan\) \{[\s\S]*?root\.pendingIconIndexRescan = false[\s\S]*?iconIndexDebounce\.restart\(\)/.test(appLibraryQml),
-  'app library runs exactly one follow-up scan after the in-flight scan exits when a rescan was queued'
+  iconScanExitMatch &&
+    /root\.iconIndex = root\.pendingIconIndex[\s\S]*?if \(root\.pendingIconIndexRescan\) \{[\s\S]*?root\.pendingIconIndexRescan = false[\s\S]*?iconIndexDebounce\.restart\(\)/.test(iconScanExitMatch[1]),
+  'app library schedules a follow-up scan when the in-flight scan exits with a rescan queued'
 )
 JS
