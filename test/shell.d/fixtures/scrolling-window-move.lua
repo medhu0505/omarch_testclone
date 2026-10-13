@@ -21,7 +21,7 @@ hl = {
   } },
 }
 local function window(x, id, opts)
-  local w = { address = tostring(x) .. ":" .. tostring(id), at = { x = x }, workspace = { id = id or 1, tiled_layout = "scrolling" }, mapped = true }
+  local w = { address = tostring(x) .. ":" .. tostring(id), at = { x = x, y = 0 }, size = { x = 100, y = 100 }, workspace = { id = id or 1, tiled_layout = "scrolling" }, mapped = true }
   for k, v in pairs(opts or {}) do w[k] = v end
   return w
 end
@@ -55,8 +55,30 @@ monitor = nil
 check("r", nil)
 check("r", nil) -- Repeated outward presses do not dispatch invalid monitor moves.
 active.workspace.tiled_layout = "dwindle"
+monitor = { name = "DP-2" }
+windows = { active, window(200, 1) }
+check("r", "swap")
+check("l", "move")
+local above = window(100, 1)
+above.address = "above"
+above.at.y = -100
+windows = { active, above }
+check("u", "swap")
+check("d", "move")
+local diagonal = window(300, 1)
+diagonal.at.y = -200
+windows = { active, diagonal }
+check("u", "move") -- A tile that does not overlap horizontally is not an above neighbor.
+check("r", "move") -- A tile that does not overlap vertically is not a right neighbor.
+monitors = { {} }
+check("r", "swap")
+monitors = { {}, {} }
+monitor = nil
+check("l", nil)
+active.workspace.tiled_layout = "floating"
 check("r", "swap")
 active.workspace.tiled_layout = "scrolling"
+check("u", "swap") -- Scrolling vertical bindings keep their original behavior.
 active.workspace.special = true
 check("r", "swap")
 active.workspace.special = false
