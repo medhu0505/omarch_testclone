@@ -10,9 +10,6 @@ if omarchy-hw-asus-rog && [[ -f $HOME/.config/wireplumber/wireplumber.conf.d/als
   for path in analog-output-speaker.conf analog-output-headphones.conf; do
     [[ -e $paths/$path ]] || cp "$OMARCHY_PATH/default/alsa-card-profile/mixer/paths/$path" "$paths/"
   done
-  if [[ ! -e $paths/analog-output.conf.common && ! -L $paths/analog-output.conf.common ]]; then
-    ln -s /usr/share/alsa-card-profile/mixer/paths/analog-output.conf.common "$paths/analog-output.conf.common"
-  fi
 
   # Installs on codecs other than ALC285 never got the install-time Master unmute,
   # and neither path turns Master on. Set it like a fresh install does, but only

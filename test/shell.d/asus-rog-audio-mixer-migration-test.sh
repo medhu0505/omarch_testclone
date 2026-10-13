@@ -74,8 +74,6 @@ installed="$home/.config/alsa-card-profile/mixer/paths"
 for path in analog-output-speaker analog-output-headphones; do
   cmp -s "$shipped/$path.conf" "$installed/$path.conf" || fail "migration installs the $path override"
 done
-[[ $(readlink "$installed/analog-output.conf.common") == "/usr/share/alsa-card-profile/mixer/paths/analog-output.conf.common" ]] ||
-  fail "migration links the common path beside the overrides"
 grep -qx 'systemctl --user try-restart wireplumber.service' "$home/calls" || fail "migration restarts a running WirePlumber"
 [[ $(cat "$home/.local/state/wireplumber/default-routes") == "routes" ]] || fail "migration keeps the user's saved routes"
 pass "migration installs the override paths and reloads WirePlumber"
@@ -90,10 +88,8 @@ home=$(soft_mixer_home custom)
 installed="$home/.config/alsa-card-profile/mixer/paths"
 mkdir -p "$installed"
 echo "custom" >"$installed/analog-output-speaker.conf"
-ln -s /nonexistent/common "$installed/analog-output.conf.common"
 run_migration "$home" || fail "migration succeeds beside user overrides"
 [[ $(cat "$installed/analog-output-speaker.conf") == "custom" ]] || fail "migration keeps a user's own path override"
-[[ $(readlink "$installed/analog-output.conf.common") == "/nonexistent/common" ]] || fail "migration keeps a user's own common path link"
 cmp -s "$shipped/analog-output-headphones.conf" "$installed/analog-output-headphones.conf" ||
   fail "migration still installs the path the user did not override"
 pass "migration leaves the user's own overrides alone"
