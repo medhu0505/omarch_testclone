@@ -119,17 +119,52 @@ ROOT_UUID="$(findmnt -no UUID /)"
 # top-level subvolume. Creating it via `btrfs subvolume create /swap` while the
 # root @ is mounted nests it as @/swap, which is exactly the broken layout.
 BTRFS_TOP="$(mktemp -d)"
+
+# Detect the nested @/swap layout (the broken one) before we touch anything.
+# If it is currently mounted at /swap with active swap, it must be taken out
+# of service BEFORE we delete the subvolume, otherwise the old swapfile stays
+# mapped and the delete either fails or leaves the system without working swap.
+STALE_MOUNTED=false
+if findmnt -n "$SWAP_MOUNT" &>/dev/null; then
+  swap_src="$(findmnt -no SOURCE -T "$SWAP_MOUNT" 2>/dev/null || true)"
+  swap_fsroot="$(findmnt -no FSROOT -T "$SWAP_MOUNT" 2>/dev/null || true)"
+  if [[ "$swap_src" == "$ROOT_DEVICE"* ]] && [[ "$swap_fsroot" == "/@/swap" ]]; then
+    STALE_MOUNTED=true
+  fi
+fi
+
 # Mount only long enough to (re)create or clean up subvolumes.
 sudo mount -t btrfs -o subvolid=5 "$ROOT_DEVICE" "$BTRFS_TOP"
+
+if sudo btrfs subvolume show "$BTRFS_TOP/@/swap" &>/dev/null; then
+  echo "Removing stale nested @/swap (broken layout)"
+  # Deactivate and unmount the old swap before deleting its subvolume.
+  if swapon --show | grep -q "$SWAP_FILE"; then
+    echo "  Disabling swap on $SWAP_FILE"
+    sudo swapoff "$SWAP_FILE"
+  fi
+  if findmnt -n "$SWAP_MOUNT" &>/dev/null; then
+    echo "  Unmounting $SWAP_MOUNT"
+    sudo umount "$SWAP_MOUNT"
+  fi
+  # The old swapfile (and its directory) live inside the nested subvolume.
+  # Remove them so the subvolume is empty and can actually be deleted.
+  if [[ -e "$SWAP_MOUNT/swapfile" ]]; then
+    sudo rm -f -- "$SWAP_MOUNT/swapfile"
+  fi
+  if [[ -d "$SWAP_MOUNT" ]] && [[ $STALE_MOUNTED == true ]]; then
+    sudo rmdir -- "$SWAP_MOUNT" 2>/dev/null || true
+  fi
+  sudo btrfs subvolume delete "$BTRFS_TOP/@/swap" || {
+    echo "Could not delete nested @/swap; leaving it in place" >&2
+  }
+fi
+
 if ! sudo btrfs subvolume show "$BTRFS_TOP/$SWAP_SUBVOLUME" &>/dev/null; then
   echo "Creating top-level Btrfs subvolume '$SWAP_SUBVOLUME'"
   sudo btrfs subvolume create "$BTRFS_TOP/$SWAP_SUBVOLUME"
 fi
-# Remove a stale nested @/swap left by a previous (broken) installer run.
-if sudo btrfs subvolume show "$BTRFS_TOP/@/swap" &>/dev/null; then
-  echo "Removing stale nested @/swap (broken layout)"
-  sudo btrfs subvolume delete "$BTRFS_TOP/@/swap"
-fi
+
 sudo umount "$BTRFS_TOP" && rmdir "$BTRFS_TOP"
 
 # Ensure @swap is mounted at /swap (nodatacow is required for a swapfile).
