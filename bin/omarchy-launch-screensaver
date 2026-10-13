@@ -35,7 +35,8 @@ ART_ROWS=0
 ART_COLS=0
 if [[ -r $ART ]]; then
   ART_ROWS=$(awk 'END { print NR }' "$ART")
-  ART_COLS=$(awk '{ n = length($0); if (n > m) m = n } END { print m + 0 }' "$ART")
+  # The block characters are three bytes each; outside a UTF-8 locale awk counts bytes, not columns.
+  ART_COLS=$(LC_ALL=C.UTF-8 awk '{ n = length($0); if (n > m) m = n } END { print m + 0 }' "$ART")
 fi
 
 # Largest font size that still fits the whole art on this monitor.
