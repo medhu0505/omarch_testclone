@@ -8,8 +8,9 @@ BarIndicator {
   readonly property var idleService: bar?.shell?.firstPartyServiceFor("omarchy.idle")
 
   active: idleService ? idleService.stayAwake : false
-  activeText: "󰅶"
-  inactiveText: "󰅶"
+  // A mug without a saucer, which drew a line under the cup.
+  activeText: ""
+  inactiveText: ""
   activeTooltipText: I18n.tr("Allow Idle Lock & Screensaver")
   inactiveTooltipText: I18n.tr("Stay Awake")
 

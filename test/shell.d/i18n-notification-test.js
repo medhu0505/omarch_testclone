@@ -63,4 +63,61 @@ esac
     assert.deepStrictEqual([...catalog[key].matchAll(/%(\d+)/g)].map(m => Number(m[1])).sort(), Array.from({ length: count }, (_, i) => i + 1))
   }
   console.log('ok - date and all five battery states in zh_CN/en/zh_TW; template arities')
+  // Exercise the real account event helpers without signing into any provider.
+  const accountSource = fs.readFileSync(path.join(root, 'bin/omarchy-agent-account-add'), 'utf8')
+  const eventFunctions = accountSource.match(/(?:say|finish|fail)\(\) \{[\s\S]*?\n\}/g).join('\n')
+  stub('omarchy-notification-send', 'printf "notification:%s\\n" "$*"\n')
+  for (const locale of ['zh_CN', 'en', 'zh_TW']) {
+    const env = { ...process.env, PATH: temp + ':' + process.env.PATH, OMARCHY_PATH: root, OMARCHY_UI_LANGUAGE: locale }
+    const runEvents = events => execFileSync('bash', ['-c', eventFunctions + '\nevents=$1\nname=Claude\nsay "Installing the Claude CLI…" "Installing the %1 CLI…" Claude\nfinish "Added A&B %2." "Added %1." "A&B %2"', 'fixture', events], { env, encoding: 'utf8' })
+    assert.strictEqual(runEvents('false'), 'Installing the Claude CLI…\n\nAdded A&B %2.\n')
+    const eventOutput = runEvents('true')
+    assert(eventOutput.includes(locale === 'zh_CN' ? '@@omarchy status 正在安装 Claude CLI…' : '@@omarchy status Installing the Claude CLI…'))
+    assert(eventOutput.includes(locale === 'zh_CN' ? '@@omarchy done 已添加 A&B %2。' : '@@omarchy done Added A&B %2.'))
+    const rawError = 'Provider error A&B $(whoami) %2'
+    let failure
+    try {
+      execFileSync('bash', ['-c', eventFunctions + '\nevents=true\nname=Claude\nfail "$1"', 'fixture', rawError], { env, encoding: 'utf8' })
+      assert.fail('fail must return a nonzero status')
+    } catch (error) { failure = error }
+    assert.strictEqual(failure.status, 1)
+    assert(failure.stdout.includes('@@omarchy error ' + rawError), 'provider error stays literal')
+    assert(failure.stdout.includes(locale === 'zh_CN' ? '无法添加 Claude 账号' : "Couldn't add the Claude account"))
+  }
+  console.log('ok - account events translate templates, preserve terminal output and keep provider errors literal')
+
+  // Simulate systemd's isolated worker environment; no real session or power action.
+  stub('systemd-run', `forwarded=()
+while [[ $1 == --* ]]; do
+  if [[ $1 == --setenv=* ]]; then
+    name=\${1#--setenv=}
+    forwarded+=("$name=\${!name}")
+  fi
+  shift
+done
+exec env -i "\${forwarded[@]}" bash "$@"
+`)
+  stub('systemd-inhibit', 'while [[ $1 == --* ]]; do shift; done\nexec bash "$@"\n')
+  stub('timeout', 'shift\nexec "$@"\n')
+  for (const command of ['omarchy-state', 'omarchy-hyprland-window-close-all', 'uwsm']) stub(command, 'exit 0\n')
+  stub('systemctl', 'exit "${SYSTEM_EXIT_CODE:-0}"\n')
+  stub('omarchy-osd', 'printf "osd:%s\\n" "$*"\n')
+  for (const locale of ['zh_CN', 'en', 'zh_TW']) {
+    for (const [action, chinese, english] of [['logout', '正在退出登录', 'Logging out'], ['reboot', '正在重启', 'Rebooting'], ['shutdown', '正在关机', 'Shutting down']]) {
+      const env = { ...process.env, PATH: temp + ':' + process.env.PATH, OMARCHY_PATH: root, OMARCHY_UI_LANGUAGE: locale, LANG: 'C' }
+      const output = execFileSync('bash', [path.join(root, 'bin/omarchy-system'), action], { env, encoding: 'utf8' })
+      assert(output.includes('-m ' + (locale === 'zh_CN' ? chinese : english)), 'worker inherits the UI override')
+    }
+  }
+  for (const locale of ['zh_CN', 'en', 'zh_TW']) {
+    const env = { ...process.env, PATH: temp + ':' + process.env.PATH, OMARCHY_PATH: root, OMARCHY_UI_LANGUAGE: locale, SYSTEM_EXIT_CODE: '17' }
+    let failure
+    try {
+      execFileSync('bash', [path.join(root, 'bin/omarchy-system'), 'reboot', '--execute'], { env, encoding: 'utf8' })
+      assert.fail('failed system action must keep its status')
+    } catch (error) { failure = error }
+    assert.strictEqual(failure.status, 17)
+    assert(failure.stdout.includes(locale === 'zh_CN' ? '重启失败 无法完成重启，请重试。' : 'Reboot failed Could not complete reboot. Please try again.'))
+  }
+  console.log('ok - logout, reboot and shutdown workers retain UI locale in isolated service environments')
 } finally { fs.rmSync(temp, { recursive: true, force: true }) }

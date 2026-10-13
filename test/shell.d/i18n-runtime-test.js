@@ -387,7 +387,7 @@ assert(
 console.log("- Test dynamic text opt-out protections...")
 // agents/Panel.qml protections
 const agentsQmlContent = fs.readFileSync(path.join(shellDir, "plugins/agents/Panel.qml"), "utf8")
-assert(agentsQmlContent.includes("translateTitle: false"), "agents PanelHero must set translateTitle: false")
+assert(agentsQmlContent.includes('title: I18n.tr("Agents")'), "agents PanelHero must translate its fixed title")
 assert(agentsQmlContent.includes("translateText: false"), "agents components must set translateText: false")
 
 // tailscale/Panel.qml protections
@@ -493,6 +493,10 @@ const enMenuMap = enMerged.items
 assert.strictEqual(menuMap["trigger.transcode"].label, "转码", "trigger.transcode must be '转码'")
 assert.strictEqual(menuMap["trigger.share"].label, "分享", "trigger.share must be '分享'")
 assert.strictEqual(menuMap["trigger.toggle"].label, "开关", "trigger.toggle must be '开关'")
+
+for (const label of ['Appearance', 'Animations', 'Dock', 'Typing', 'Keyboard Layouts', 'Input Methods', 'Clipboard History']) {
+  assert(zhCatalog[label] && zhCatalog[label] !== label, `new menu wording must be translated: ${label}`)
+}
 
 // Check all menu items
 let menuTranslatable = 0
@@ -617,6 +621,14 @@ const PRESERVED_QML_TERMS = new Set([
   "Kitty", "Agent", "Default Agent", "Fcitx", "WirePlumber", "NetworkManager"
 ])
 
+// World-clock greetings and city names are source data, used for speech,
+// search and geocoding; preserve their language and stable stored labels.
+const worldGreetings = require('../../shell/plugins/panels/elsewhen/Greetings.js')
+const worldModel = require('../../shell/plugins/panels/elsewhen/Model.js')
+const preservedWorldData = {
+  'shell/plugins/panels/elsewhen/Greetings.js': new Set(worldGreetings.languageKeys().flatMap(key => worldGreetings.bandsOf(key).map(band => band.text))),
+  'shell/plugins/panels/elsewhen/Model.js': new Set(worldModel.zoneOptions([]).concat(worldModel.SEED_CANDIDATES).map(city => city.label))
+}
 const allQmlFiles = walkQml(shellDir)
 const qmlAudit = {
   candidateLiterals: 0,
@@ -630,6 +642,10 @@ const qmlAudit = {
 for (const f of allQmlFiles) {
   const rel = path.relative(repoRoot, f)
   const content = fs.readFileSync(f, "utf8")
+  for (const match of content.matchAll(/I18n\.tr\("((?:\\.|[^"\\])*)"/g)) {
+    const key = JSON.parse('"' + match[1] + '"')
+    assert(key in zhCatalog, `${rel} has no Chinese catalog entry for ${key}`)
+  }
   const lines = content.split("\n")
 
   for (let i = 0; i < lines.length; i++) {
@@ -637,6 +653,7 @@ for (const f of allQmlFiles) {
     if (line.startsWith("//") || line.startsWith("/*")) continue
 
     for (const item of auditQmlLine(line, zhCatalog, PRESERVED_QML_TERMS)) {
+      if (preservedWorldData[rel] && item.literal !== undefined && preservedWorldData[rel].has(JSON.parse('"' + item.literal + '"'))) item.status = "PRESERVED"
       qmlAudit.candidateLiterals++
       if (['IGNORED', 'DYNAMIC'].includes(item.status)) qmlAudit.dynamicOrDeveloper++
       else if (item.status === 'PRESERVED') qmlAudit.preserved++

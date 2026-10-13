@@ -56,14 +56,6 @@
     "reason": "notif_title & notif_desc formatted via omarchy-i18n"
   },
   {
-    "file": "bin/omarchy-voxtype-install",
-    "surface": "notification",
-    "role": "title",
-    "pattern": "$notif_title",
-    "type": "LOCALIZED_VIA_VAR",
-    "reason": "notif_title & notif_desc formatted via omarchy-i18n"
-  },
-  {
     "file": "bin/omarchy-plugin-clone",
     "surface": "notification",
     "role": "title",
@@ -328,14 +320,6 @@
     "reason": "trans_saved is assigned from omarchy-i18n before this notification"
   },
   {
-    "file": "bin/omarchy-voxtype-install",
-    "surface": "notification",
-    "role": "body",
-    "pattern": "$notif_desc",
-    "type": "LOCALIZED_VIA_VAR",
-    "reason": "notif_desc is assigned from omarchy-i18n before this notification"
-  },
-  {
     "file": "bin/omarchy-windows-vm",
     "surface": "notification",
     "role": "body",
@@ -470,5 +454,53 @@
     "pattern": "$message",
     "type": "DYNAMIC",
     "reason": "o.notify accepts user configuration text; shell_quote(message) preserves it verbatim"
+  },
+  {
+    "file": "bin/omarchy-agent-account-add",
+    "surface": "notification",
+    "role": "title",
+    "pattern": "$message",
+    "type": "LOCALIZED_VIA_VAR",
+    "reason": "finish/fail translate the event template while preserving third-party errors as fallback"
+  },
+  {
+    "file": "bin/omarchy-agent-account-add",
+    "surface": "notification",
+    "role": "body",
+    "pattern": "$message",
+    "type": "LOCALIZED_VIA_VAR",
+    "reason": "fail translates the event template while preserving third-party errors as fallback"
+  },
+  {
+    "file": "bin/omarchy-hyprland-corners",
+    "surface": "notification",
+    "role": "title",
+    "pattern": "$LABEL",
+    "type": "LOCALIZED_VIA_VAR",
+    "reason": "All three case labels are translated before notification"
+  },
+  {
+    "file": "bin/omarchy-hyprland-workspace-layout-toggle",
+    "surface": "notification",
+    "role": "title",
+    "pattern": "$1",
+    "type": "LOCALIZED_VIA_VAR",
+    "reason": "notify_layout receives translated templates with the layout label as data"
+  },
+  {
+    "file": "bin/omarchy-hyprland-workspace-layout-default",
+    "surface": "notification",
+    "role": "title",
+    "pattern": "$1",
+    "type": "LOCALIZED_VIA_VAR",
+    "reason": "notify_layout receives a translated default layout template"
+  },
+  {
+    "file": "bin/omarchy-system",
+    "surface": "osd",
+    "role": "message",
+    "pattern": "$message",
+    "type": "LOCALIZED_VIA_VAR",
+    "reason": "All three action messages are translated in the action case"
   }
 ]
