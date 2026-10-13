@@ -231,15 +231,16 @@ if (( EUID != 0 )); then
     fi
     if [[ $call == 'connection modify omarchy-hotspot ssid Shared '* && $call == *' connection.interface-name wlan0' ]]; then
       modify_bound=1
-      # The reuse applies 2.4 GHz to a profile saved on 5 GHz; its channel has
-      # to change in the same call or NM rejects bg with a 5 GHz channel.
-      [[ $call == *' 802-11-wireless.band bg 802-11-wireless.channel 6 '* ]] || band_channel_split=1
+      # The reuse applies 2.4 GHz to a profile saved on 5 GHz; its channel and
+      # width have to change in the same call or NM rejects bg with a 5 GHz
+      # channel or an 80 MHz width.
+      [[ $call == *' 802-11-wireless.band bg 802-11-wireless.channel 6 802-11-wireless.channel-width auto '* ]] || band_channel_split=1
     fi
     [[ $call != 'connection modify omarchy-hotspot 802-11-wireless.channel '* ]] || band_channel_split=1
   done <"$NMCLI_LOG"
   (( add_bound == 1 )) || fail "new profile binds to the selected Wi-Fi interface"
   (( modify_bound == 1 )) || fail "existing profile is rebound to the selected Wi-Fi interface"
-  (( band_channel_split == 0 )) || fail "band and channel are saved in one NetworkManager call" "$(<"$NMCLI_LOG")"
+  (( band_channel_split == 0 )) || fail "band, channel and width are saved in one NetworkManager call" "$(<"$NMCLI_LOG")"
   nmcli_log=$(<"$NMCLI_LOG")
   [[ $nmcli_log != *"ifname p2p-dev-wlan9"* && $nmcli_log != *"connection.interface-name p2p-dev-wlan9"* ]] || fail "Wi-Fi selection never falls back to a P2P device"
   pass "NM profile create and reuse follow the selected Wi-Fi interface"
