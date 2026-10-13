@@ -230,7 +230,6 @@ Panel {
         visible: arrangement.visible,
         expanded: arrangement.expanded,
         showPresets: arrangement.showPresets,
-        confirming: arrangement.confirming,
         keyboardEditing: arrangement.keyboardEditing,
         monitors: arrangement.monitors,
         busy: arrangement.busy,

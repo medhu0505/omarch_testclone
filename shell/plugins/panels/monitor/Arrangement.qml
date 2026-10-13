@@ -21,11 +21,6 @@ Column {
   property var preview: []
   property var snapshot: []
   property var pendingPositions: null
-  property string token: ""
-  property string statePath: ""
-  property bool confirming: false
-  property double deadline: 0
-  property int remainingSeconds: 20
   property bool keyboardEditing: false
   property string dragging: ""
   property var dragOrigin: null
@@ -101,10 +96,10 @@ Column {
     preserveMessage = !!preserve
     error = preserve ? error : false
     busy = true
-    if (!preserve) message = action === "trial" ? "Applying layout…" : "Reading screens…"
+    if (!preserve) message = action === "apply" ? "Applying layout…" : "Reading screens…"
     var payload = { action: action }
     if (action !== "state") {
-      payload.positions = action === "trial" ? Model.positions(preview) : pendingPositions
+      payload.positions = action === "apply" ? Model.positions(preview) : pendingPositions
       payload.snapshot = snapshot
     }
     backend.command = backendCommand.concat(["--request", JSON.stringify(payload)])
@@ -121,7 +116,7 @@ Column {
   }
 
   function invalidate() {
-    if (token !== "") { refreshQueued = true; return }
+    if (busy) { refreshQueued = true; return }
     preview = []
     side = ""
     alignment = "top"
@@ -239,7 +234,7 @@ Column {
     else if (item === referencePicker && ready) referencePicker.open()
     else if (item === alignmentPicker && ready && side !== "") alignmentPicker.open()
     else if (item === applyButton) applyDraft()
-    else if (item === discardButton) { if (confirming) decide("revert"); else discard() }
+    else if (item === discardButton) discard()
     else if (item === refreshButton) refresh()
     else {
       for (var i = 0; i < sides.length; i++)
@@ -248,48 +243,9 @@ Column {
   }
 
   function applyDraft() {
-    if (confirming) decide("keep")
-    else if (canApply) request("trial")
-  }
-
-  function decide(action) {
-    if (!confirming || decision.running) return
-    decision.command = backendCommand.concat(["--request", JSON.stringify({action: action, token: token})])
-    confirming = false
-    message = action === "keep" ? "Keeping layout…" : "Restoring previous layout…"
-    decision.running = true
-  }
-
-  function updateTrial() {
-    if (!token) return
-    try {
-      var state = JSON.parse(trialState.text())
-      if (state.status === "confirming") {
-        confirming = true
-        deadline = state.deadline
-        remainingSeconds = Math.max(0, Math.ceil(deadline - Date.now() / 1000))
-        message = "Does the pointer move between screens as expected? Keep this layout or it will revert."
-        return
-      }
-      if (["kept", "reverted", "error"].indexOf(state.status) < 0) return
-      var finishedToken = token
-      token = ""
-      statePath = ""
-      confirming = false
-      busy = false
-      error = state.status === "error"
-      message = state.message
-      preview = []
-      side = ""
+    if (canApply) {
       keyboardEditing = false
-      applied()
-      decision.command = backendCommand.concat(["--request", JSON.stringify({action: "dismiss", token: finishedToken})])
-      if (!decision.running) decision.running = true
-      refreshQueued = false
-      refresh(true)
-    } catch (failure) {
-      // Atomic replacement may briefly race a file notification; the next load
-      // carries the complete state. The worker owns the confirmation deadline.
+      request("apply")
     }
   }
 
@@ -320,15 +276,7 @@ Column {
     } else {
       try {
         var response = JSON.parse(backendOutput.text)
-        if (action === "trial") {
-          if (typeof response.token !== "string" || !/^[a-f0-9]{32}$/.test(response.token) || typeof response.statePath !== "string")
-            throw new Error("Invalid confirmation response")
-          token = response.token
-          statePath = response.statePath
-          busy = true
-          keyboardEditing = false
-          return
-        } else if (action === "apply") {
+        if (action === "apply") {
           message = response.message
           error = false
           preview = []
@@ -340,7 +288,7 @@ Column {
           if (!Array.isArray(response.monitors) || !Array.isArray(response.snapshot)) throw new Error("Invalid display response")
           if (action === "preview") {
             preview = response.monitors
-            message = side ? moving + " " + side + " of " + reference + ", aligned " + alignment + ". Preview only." : "Unsaved arrangement. Apply layout to test it."
+            message = side ? moving + " " + side + " of " + reference + ", aligned " + alignment + ". Preview only." : "Unsaved arrangement. Apply layout to save it."
           } else {
             monitors = response.monitors
             snapshot = response.snapshot
@@ -375,34 +323,8 @@ Column {
     onExited: function(exitCode) { root.finish(exitCode) }
     // Failed-to-start emits runningChanged without exited.
     onRunningChanged: if (!running && root.busy) Qt.callLater(function() {
-      if (root.busy && root.token === "" && !backend.running) root.finish(1)
+      if (root.busy && !backend.running) root.finish(1)
     })
-  }
-
-  Process {
-    id: decision
-    stderr: StdioCollector { id: decisionError; waitForEnd: true }
-    onExited: function(exitCode) {
-      if (exitCode !== 0 && root.token !== "") {
-        root.confirming = true
-        root.error = true
-        root.message = String(decisionError.text).trim() || "Cannot confirm the layout. It will revert automatically."
-      }
-    }
-  }
-  FileView {
-    id: trialState
-    path: root.statePath
-    watchChanges: true
-    printErrors: false
-    onFileChanged: reload()
-    onLoaded: root.updateTrial()
-  }
-  Timer {
-    interval: 200
-    repeat: true
-    running: root.confirming
-    onTriggered: root.remainingSeconds = Math.max(0, Math.ceil(root.deadline - Date.now() / 1000))
   }
 
   Connections {
@@ -565,11 +487,11 @@ Column {
         id: applyButton
         objectName: "arrangementApply"
         width: (parent.width - parent.spacing) / 2
-        text: root.confirming ? "Keep layout" : root.busy && root.requestAction === "trial" ? "Applying…" : "Apply layout"
+        text: root.busy && root.requestAction === "apply" ? "Applying…" : "Apply layout"
         foreground: root.foreground
         fontFamily: root.fontFamily
         bordered: true
-        enabled: root.confirming || root.canApply
+        enabled: root.canApply
         opacity: enabled ? 1 : 0.45
         hasCursor: root.cursorIndex === root.indexOf(applyButton)
         onClicked: root.applyDraft()
@@ -579,13 +501,13 @@ Column {
         id: discardButton
         objectName: "arrangementDiscard"
         width: (parent.width - parent.spacing) / 2
-        text: root.confirming ? "Revert (" + root.remainingSeconds + "s)" : "Discard changes"
+        text: "Discard changes"
         foreground: root.foreground
         fontFamily: root.fontFamily
-        enabled: root.confirming || (root.ready && root.preview.length > 0)
+        enabled: root.ready && root.preview.length > 0
         opacity: enabled ? 1 : 0.45
         hasCursor: root.cursorIndex === root.indexOf(discardButton)
-        onClicked: { if (root.confirming) root.decide("revert"); else root.discard() }
+        onClicked: root.discard()
         onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(discardButton), discardButton) }
       }
     }

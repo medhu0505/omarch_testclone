@@ -14,7 +14,6 @@ ShellRoot {
   property var failures: []
   property var checks: []
   property bool finished: false
-  property bool autoKeep: true
   property bool keyboardFixtureActive: false
   property int droppedY: 0
   readonly property var ui: controls.item
@@ -95,8 +94,6 @@ ShellRoot {
       root.ticks++
       if (root.ticks > 2800) { root.failures.push("Timed out in phase " + root.phase); root.finish(); return }
       if (control.running) return
-      if (root.autoKeep && ui && ui.confirming) root.child("arrangementApply").clicked()
-      if (root.autoKeep && secondUi && secondUi.confirming) root.child("arrangementApply", secondUi).clicked()
       switch (root.phase) {
       case 0:
         root.configure({reset: true, delay: 0.6})
@@ -138,6 +135,7 @@ ShellRoot {
         root.phase++
         break
       case 6:
+        if (root.child("arrangementApply").text === "Keep layout") { root.check(false, "One Apply click must save without asking for Keep"); root.finish(); return }
         if (ui.busy) return
         root.check(root.screen("DP-2").y === 1080 && ui.message.indexOf("saved") >= 0 && !ui.canApply, "Apply saves and refreshes the actual layout")
         root.done("successful Apply")
@@ -367,7 +365,6 @@ ShellRoot {
         ui.displayCount = 1
         root.check(!ui.visible && !ui.expanded, "Losing the second display also closes the controls")
         root.done("conditional collapsible Arrangement")
-        root.autoKeep = false
         root.configure({reset: true})
         ui.displayCount = 3
         root.child("arrangementToggle").clicked()
@@ -404,17 +401,15 @@ ShellRoot {
         root.phase++
         break
       case 46:
-        if (!ui.confirming) return
-        root.check(ui.busy && !root.child("arrangementMoving").enabled && root.child("arrangementDiscard").text.indexOf("Revert") >= 0,
-                   "Apply presents Keep/Revert while blocking conflicting changes")
-        root.child("arrangementApply").clicked()
+        if (ui.busy) return
+        root.check(root.child("arrangementApply").text === "Apply layout" && root.child("arrangementDiscard").text === "Discard changes",
+                   "Apply completes without Keep or Revert controls")
+        root.check(root.screen("DP-3").x === -1280 && root.screen("DP-3").y === root.droppedY && root.screen("DP-2").y === 1080,
+                   "One Apply click saves all drafted screens together")
         root.phase++
         break
       case 47:
-        if (ui.busy) return
-        root.check(root.screen("DP-3").x === -1280 && root.screen("DP-3").y === root.droppedY && root.screen("DP-2").y === 1080,
-                   "Keep saves all drafted screens together")
-        root.done("mouse drag, arbitrary offsets and multi-screen Keep")
+        root.done("mouse drag, arbitrary offsets and single-click Apply")
         ui.selectScreen("DP-3")
         root.child("arrangementAbove").clicked()
         root.phase++
@@ -425,65 +420,68 @@ ShellRoot {
         root.phase++
         break
       case 49:
-        if (!ui.confirming) return
-        root.child("arrangementDiscard").clicked()
+        if (ui.busy) return
+        root.check(root.screen("DP-3").y === -720 && ui.message.indexOf("saved") >= 0, "Apply saves the next arrangement immediately")
+        root.beforeTime = Date.now()
+        ui.active = false
         root.phase++
         break
       case 50:
-        if (ui.busy) return
-        root.check(root.screen("DP-3").y === root.droppedY && ui.message.indexOf("restored") >= 0, "Revert restores the previous layout")
-        root.done("manual confirmation Revert")
-        ui.nudge(0, 1)
+        if (Date.now() - root.beforeTime < 21000) return
+        root.done("saved layout persists past the former confirmation deadline")
+        ui.active = true
         root.phase++
         break
       case 51:
         if (ui.busy) return
-        root.check(ui.preview[2].y === root.droppedY + 1, "Keyboard movement changes one logical pixel")
-        root.child("arrangementDiscard").clicked()
-        root.check(!ui.canApply && ui.preview.length === 0 && root.screen("DP-3").y === root.droppedY,
-                   "Discard clears the draft without moving physical screens")
-        root.done("precise keyboard movement and Discard")
-        root.child("arrangementAbove").clicked()
+        root.check(root.screen("DP-3").y === -720 && ui.ready, "Reopening after 21 seconds reads the saved layout without reverting")
+        root.droppedY = root.screen("DP-3").y
+        ui.nudge(0, -1)
         root.phase++
         break
       case 52:
         if (ui.busy) return
-        root.child("arrangementApply").clicked()
+        root.check(ui.preview[2].y === root.droppedY - 1, "Keyboard movement changes one logical pixel")
+        root.child("arrangementDiscard").clicked()
+        root.check(!ui.canApply && ui.preview.length === 0 && root.screen("DP-3").y === root.droppedY,
+                   "Discard clears the draft without moving physical screens")
+        root.done("precise keyboard movement and Discard")
+        ui.nudge(0, -1)
         root.phase++
         break
       case 53:
-        if (!ui.confirming) return
-        root.beforeTime = Date.now()
+        if (ui.busy) return
+        root.child("arrangementApply").clicked()
         ui.active = false
         root.phase++
         break
       case 54:
         if (ui.busy) return
-        root.check(Date.now() - root.beforeTime >= 18000 && !ui.confirming && ui.message.indexOf("restored") >= 0,
-                   "Closing the panel still reverts an unconfirmed layout after the deadline")
         ui.active = true
         root.phase++
         break
       case 55:
         if (ui.busy) return
-        root.check(root.screen("DP-3").y === root.droppedY, "Reopening reads the restored layout")
-        root.done("confirmation timeout while panel is closed")
-        ui.nudge(0, 1)
+        root.check(root.screen("DP-3").y === root.droppedY - 1, "Closing during Apply still finishes saving the layout")
+        root.droppedY -= 1
+        root.done("closing during immediate Apply")
+        ui.nudge(0, -1)
         root.phase++
         break
       case 56:
         if (ui.busy) return
         ui.selectScreen("DP-2")
-        root.child("arrangementLeft").clicked()
+        root.child("arrangementAbove").clicked()
         root.phase++
         break
       case 57:
         if (ui.busy) return
-        root.check(ui.error && ui.canApply && ui.preview[2].y === root.droppedY + 1 && ui.preview[1].y === 1080,
+        root.check(ui.error && ui.canApply && ui.preview[2].y === root.droppedY - 1 && ui.preview[1].y === 1080,
                    "A rejected second preset keeps the earlier valid draft moves")
         root.child("arrangementDiscard").clicked()
         root.done("invalid preset preserves earlier draft")
-        ui.nudge(0, 1)
+        ui.selectScreen("DP-3")
+        ui.nudge(0, -1)
         root.phase++
         break
       case 58:
@@ -504,7 +502,7 @@ ShellRoot {
         ui.keyboardEditing = true
         keyboard.forceActiveFocus()
         pointer.keyClick(Qt.Key_Return)
-        root.check(!ui.keyboardEditing && !ui.busy && !ui.confirming && ui.canApply,
+        root.check(!ui.keyboardEditing && !ui.busy && ui.canApply,
                    "Enter finishes editing without starting the highlighted Apply action")
         root.child("arrangementDiscard").clicked()
         root.done("hover and Enter end keyboard editing safely")

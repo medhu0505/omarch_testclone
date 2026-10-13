@@ -44,7 +44,7 @@ Drag the numbered screens in the diagram to match the monitors on your desk. Nea
 
 **Identify screens** shows the matching number, display name and connector on each physical screen for four seconds. Clicking again restarts the timer. Identification does not change the layout.
 
-Click **Apply layout** to test the arrangement. Move your pointer between screens, then click **Keep layout** to save it. **Revert** restores the previous layout immediately; without confirmation, it returns automatically after 20 seconds, including if you close the panel. The optional terminal command below applies directly without this confirmation step.
+Click **Apply layout** to apply and save the arrangement immediately. No second confirmation is needed, and the saved layout stays in place when you close the panel. If applying fails, the previous configuration and live layout are restored.
 
 Open **Position controls** for preset placements. Choose the screen to move and its reference screen, then choose **Left**, **Right**, **Above** or **Below**. For left/right placement, **Align screens** offers **Top**, **Center** or **Bottom**. For above/below placement, it offers **Left**, **Center** or **Right**. Defaults are top and left alignment. To make precise adjustments with the keyboard, navigate to the diagram and press Enter. Arrow keys move the selected screen one logical pixel; Enter or Escape finishes editing. Changes remain a preview until Apply.
 
