@@ -1064,9 +1064,11 @@ apply() {
 
   if profile_configured; then
     # SSID/band ride argv (not secret); the passphrase goes through the
-    # scriptable editor so it never shows up in /proc.
+    # scriptable editor so it never shows up in /proc. Band and channel change
+    # together: NM rejects a band whose saved channel belongs to the other band
+    # (2.4 GHz with channel 149), and an empty channel lets NM pick.
     nmcli connection modify "$PROFILE" ssid "$ssid" 802-11-wireless.band "$nm_band" \
-      connection.interface-name "$device" >/dev/null 2>&1 ||
+      802-11-wireless.channel "$nm_channel" connection.interface-name "$device" >/dev/null 2>&1 ||
       fail "could not apply hotspot settings"
     if [[ -z $(profile_shared_address) ]]; then
       nmcli connection modify "$PROFILE" ipv4.method shared ipv4.addresses "$DEFAULT_SHARED_ADDRESS" >/dev/null 2>&1 ||
@@ -1077,16 +1079,12 @@ apply() {
       fail "could not apply hotspot password"
   else
     nmcli connection add type wifi ifname "$device" con-name "$PROFILE" ssid "$ssid" \
-      mode ap 802-11-wireless.band "$nm_band" wifi-sec.key-mgmt wpa-psk \
+      mode ap 802-11-wireless.band "$nm_band" 802-11-wireless.channel "$nm_channel" wifi-sec.key-mgmt wpa-psk \
       ipv4.method shared ipv4.addresses "$DEFAULT_SHARED_ADDRESS" autoconnect no >/dev/null ||
       fail "could not create hotspot profile"
     printf 'set wifi-sec.psk %s\nsave\nquit\n' "$password" |
       nmcli connection edit "$PROFILE" >/dev/null 2>&1 ||
       fail "could not set hotspot password"
-  fi
-
-  if [[ -n $nm_channel ]]; then
-    nmcli connection modify "$PROFILE" 802-11-wireless.channel "$nm_channel" >/dev/null 2>&1
   fi
 }
 

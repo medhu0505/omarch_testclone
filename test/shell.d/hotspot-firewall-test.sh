@@ -131,7 +131,7 @@ case "$*" in
       :
     done
     ;;
-  'connection add type wifi ifname wlan2 con-name omarchy-hotspot ssid Shared mode ap 802-11-wireless.band bg wifi-sec.key-mgmt wpa-psk ipv4.method shared ipv4.addresses 10.42.0.1/24 autoconnect no')
+  'connection add type wifi ifname wlan2 con-name omarchy-hotspot ssid Shared mode ap 802-11-wireless.band bg 802-11-wireless.channel 6 wifi-sec.key-mgmt wpa-psk ipv4.method shared ipv4.addresses 10.42.0.1/24 autoconnect no')
     touch "$PROFILE_STATE"
     ;;
   'connection up omarchy-hotspot')
