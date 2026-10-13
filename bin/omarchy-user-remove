@@ -83,16 +83,16 @@ if user_accounts_is_admin "$name"; then
   [[ -n $other_admins ]] || fail "'$name' is the last administrator; make someone else an administrator first"
 fi
 
-as_root true || fail "couldn't get administrator rights (sudo)"
-
 # Leaving one account makes this a single-user computer again: the remaining
 # administrator's password unlocks the disk, root and the login. Ask for it
-# before anything is deleted.
+# before anything is deleted; it also opens sudo, so nothing asks twice.
 last_password=""
 if (( $(user_accounts_login_count) == 2 )); then
   interactive || fail "removing '$name' leaves one account, which changes how this computer unlocks, so run it in a terminal"
   echo "$name is the only other account, so after removing them your password will unlock the disk and root again, and you'll be logged in automatically."
   last_password=$(user_accounts_ask_own_password "$self") || fail "cancelled"
+else
+  as_root true || fail "couldn't get administrator rights (sudo)"
 fi
 
 home=$(getent passwd "$name" | cut -d: -f6)

@@ -192,12 +192,14 @@ user_accounts_root_locked() {
   [[ $(as_root passwd -S root 2>/dev/null | awk '{ print $2 }') == "L" ]]
 }
 
-# Asks until the user types their own login password, and prints it.
+# Asks until the user types their own login password, and prints it. It also
+# opens sudo with it, so the steps that follow don't ask again; the hash check
+# stands even when sudo needs no password.
 user_accounts_ask_own_password() {
   local password
   while true; do
     password=$(gum input --password --prompt "Your password ($1): ") || return 1
-    if user_accounts_password_is "$1" "$password"; then
+    if printf '%s\n' "$password" | sudo -S -p '' true 2>/dev/null && user_accounts_password_is "$1" "$password"; then
       printf '%s\n' "$password"
       return 0
     fi
@@ -205,42 +207,64 @@ user_accounts_ask_own_password() {
   done
 }
 
-# Before the second login account: one person no longer owns everything. The
-# disk password, which everyone who starts the computer types, must stop being
-# the first administrator's own password; root is locked; and the login screen
-# asks who is logging in instead of logging the owner in automatically.
-user_accounts_go_multi() {
-  local self=$1 disk mine choice
-  disk=$(user_accounts_root_luks)
+# Asks for a new password twice until both match and the check in $2 (a
+# function given the password) accepts it, and prints it.
+user_accounts_ask_new_password() {
+  local prompt=$1 check=$2 password confirmation
+  while true; do
+    password=$(gum input --password --prompt "$prompt: ") || return 1
+    confirmation=$(gum input --password --prompt "Repeat it: ") || return 1
+    if [[ -z $password ]]; then
+      echo "The password can't be empty." >&2
+    elif [[ $password != "$confirmation" ]]; then
+      echo "The passwords don't match. Try again." >&2
+    elif "$check" "$password"; then
+      printf '%s\n' "$password"
+      return 0
+    fi
+  done
+}
+
+# What going from one login account to two changes, and the go-ahead for it.
+user_accounts_explain_multi() {
   echo "This will be the second account on this computer, so:"
-  if [[ -n $disk ]]; then
+  if [[ -n $(user_accounts_root_luks) ]]; then
     echo "  • the disk password is shared with everyone who starts the computer, so it must differ from your password"
   fi
   echo "  • the login screen asks who is logging in, instead of logging you in automatically"
   echo "  • root is locked; administrators use sudo"
-  gum confirm "Continue?" || return 1
+  gum confirm "Continue?"
+}
 
-  if [[ -n $disk ]]; then
-    mine=$(user_accounts_ask_own_password "$self") || return 1
-    if user_accounts_opens_disk "$disk" "$mine"; then
-      choice=$(gum choose --header "Your password also unlocks the disk. Which one do you want to change?" \
-        "A new disk password, to share" "A new password for me") || return 1
-      if [[ $choice == "A new disk password, to share" ]]; then
-        omarchy-drive-password || return 1
-        if user_accounts_opens_disk "$disk" "$mine"; then
-          echo "Your password still unlocks the disk." >&2
-          return 1
-        fi
-        user_accounts_log "disk password changed by $self, so it no longer matches their login password"
-      else
-        passwd || return 1
-        mine=$(user_accounts_ask_own_password "$self") || return 1
-        if user_accounts_opens_disk "$disk" "$mine"; then
-          echo "Your new password still unlocks the disk; it has to differ from the disk password." >&2
-          return 1
-        fi
-        user_accounts_log "login password of $self changed, so it no longer matches the disk password"
+# Before the second login account: one person no longer owns everything. The
+# disk password, which everyone who starts the computer types, must stop being
+# the first administrator's own password; root is locked; and the login screen
+# asks who is logging in instead of logging the owner in automatically. $2 is
+# the administrator's password, already checked.
+user_accounts_go_multi() {
+  local self=$1 mine=$2 disk choice new
+  disk=$(user_accounts_root_luks)
+  if [[ -n $disk ]] && user_accounts_opens_disk "$disk" "$mine"; then
+    choice=$(gum choose --header "Your password also unlocks the disk. Which one do you want to change?" \
+      "A new disk password, to share" "A new password for me") || return 1
+    if [[ $choice == "A new disk password, to share" ]]; then
+      _user_accounts_not_mine() {
+        [[ $1 != "$mine" ]] || { echo "That's your own password; the disk needs a different one." >&2; return 1; }
+      }
+      new=$(user_accounts_ask_new_password "New disk password, to share" _user_accounts_not_mine) || return 1
+      printf '%s\n%s\n' "$mine" "$new" | omarchy-drive-password --system-stdin || return 1
+      if user_accounts_opens_disk "$disk" "$mine" || ! user_accounts_opens_disk "$disk" "$new"; then
+        echo "The disk password didn't change." >&2
+        return 1
       fi
+      user_accounts_log "disk password changed by $self, so it no longer matches their login password"
+    else
+      _user_accounts_not_disk() {
+        ! user_accounts_opens_disk "$disk" "$1" || { echo "That one unlocks the disk; choose one that doesn't." >&2; return 1; }
+      }
+      new=$(user_accounts_ask_new_password "Your new password" _user_accounts_not_disk) || return 1
+      printf '%s:%s\n' "$self" "$new" | as_root chpasswd || return 1
+      user_accounts_log "login password of $self changed, so it no longer matches the disk password"
     fi
   fi
 
@@ -259,11 +283,15 @@ user_accounts_go_multi() {
 # encrypted install automatic login once the disk is unlocked. $2 is the
 # remaining administrator's password, already checked.
 user_accounts_go_single() {
-  local self=$1 mine=$2 disk
+  local self=$1 mine=$2 disk current
   disk=$(user_accounts_root_luks)
   if [[ -n $disk ]] && ! user_accounts_opens_disk "$disk" "$mine"; then
-    echo "Now the disk password: enter its current password, then your own password as the new one."
-    omarchy-drive-password || return 1
+    while true; do
+      current=$(gum input --password --prompt "The disk password everyone uses now: ") || return 1
+      user_accounts_opens_disk "$disk" "$current" && break
+      echo "That doesn't unlock the disk. Try again." >&2
+    done
+    printf '%s\n%s\n' "$current" "$mine" | omarchy-drive-password --system-stdin || return 1
     if ! user_accounts_opens_disk "$disk" "$mine"; then
       echo "Your password doesn't unlock the disk yet. Run omarchy-drive-password and use your own password as the new one." >&2
       return 1

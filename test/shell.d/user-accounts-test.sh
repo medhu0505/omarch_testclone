@@ -34,6 +34,14 @@ if [[ $1 == "-l" && $2 == "-U" ]]; then
   echo "    (root) NOPASSWD: /usr/bin/omarchy-dns Cloudflare"
   exit 0
 fi
+# -S takes the password from stdin; the commands check it against its hash.
+while [[ ${1:-} == -* ]]; do
+  case "$1" in
+  -S) read -r _ || true ;;
+  -p) shift ;;
+  esac
+  shift
+done
 exec "$@"
 SH
 
@@ -94,11 +102,15 @@ cat >"$mock_bin/cryptsetup" <<'SH'
 [[ $(cat) == "$(cat "$OMARCHY_TEST_DIR/disk_password")" ]] || exit 2
 SH
 
+# The current and new disk passwords arrive on stdin, as with the real one.
 cat >"$mock_bin/omarchy-drive-password" <<'SH'
 #!/bin/bash
-echo "omarchy-drive-password" >>"$OMARCHY_TEST_DIR/calls.log"
-[[ -z ${OMARCHY_TEST_DRIVE_FAIL:-} ]] || exit 1
-printf '%s' "$OMARCHY_TEST_NEW_DISK" >"$OMARCHY_TEST_DIR/disk_password"
+echo "omarchy-drive-password $*" >>"$OMARCHY_TEST_DIR/calls.log"
+[[ $1 == "--system-stdin" ]] || exit 9
+IFS= read -r current
+IFS= read -r new
+[[ -z ${OMARCHY_TEST_DRIVE_FAIL:-} && $current == "$(cat "$OMARCHY_TEST_DIR/disk_password")" ]] || exit 1
+[[ -n ${OMARCHY_TEST_DRIVE_NOOP:-} ]] || printf '%s' "$new" >"$OMARCHY_TEST_DIR/disk_password"
 SH
 
 # passwd: root's status and lock, and the administrator changing their own
@@ -502,6 +514,10 @@ only_alice() {
   sed -i -E '/^(bob|carl):/d' "$test_tmp/passwd" "$test_tmp/group"
 }
 
+password_prompts() {
+  grep -c -- "--password" "$test_tmp/gum.log"
+}
+
 reset_fixtures
 only_alice
 touch "$test_tmp/encrypted"
@@ -516,8 +532,8 @@ pass "the second account needs a terminal, and nothing changes without one"
 reset_fixtures
 only_alice
 touch "$test_tmp/encrypted"
-answers no carolpw carolpw yes alicepw "A new disk password, to share"
-output=$(OMARCHY_TEST_NEW_DISK=sharedpw run_tty add carol) || fail "a second account with a new shared disk password" "$output"
+answers yes alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
+output=$(run_tty add carol) || fail "a second account with a new shared disk password" "$output"
 has_user carol &&
   [[ $(cat "$test_tmp/disk_password") == "sharedpw" ]] &&
   [[ $(cat "$test_tmp/root_status") == "L" ]] &&
@@ -531,20 +547,42 @@ grep -q "disk password changed by alice" "$test_tmp/journal" && grep -q "root ac
   grep -q "automatic login turned off by alice" "$test_tmp/journal" || fail "each change writes a journal line" "$(cat "$test_tmp/journal")"
 pass "a second account with a new shared disk password: disk changed, root locked, autologin off"
 
+[[ $(password_prompts) == 5 ]] || fail "the second account asks for five passwords: yours, theirs twice, the shared one twice" "$(cat "$test_tmp/gum.log")"
+grep -qx "omarchy-drive-password --system-stdin" "$test_tmp/calls.log" || fail "the disk change gets both passwords from the command" "$(cat "$test_tmp/calls.log")"
+pass "the second account asks for each password once: yours, theirs twice, the shared one twice"
+
 reset_fixtures
 only_alice
 touch "$test_tmp/encrypted"
-answers no carolpw carolpw yes alicepw "A new password for me" newalicepw
-output=$(OMARCHY_TEST_NEW_LOGIN=newalicepw run_tty add carol) || fail "a second account with a new password for the administrator" "$output"
-has_user carol && [[ $(cat "$test_tmp/disk_password") == "alicepw" ]] && grep -qx "passwd (own)" "$test_tmp/calls.log" ||
+answers yes alicepw no carolpw carolpw "A new disk password, to share" alicepw alicepw sharedpw sharedpw
+output=$(run_tty add carol) || fail "your own password is refused as the shared disk password" "$output"
+[[ $output == *"That's your own password"* && $(cat "$test_tmp/disk_password") == "sharedpw" ]] ||
+  fail "your own password is refused as the shared disk password" "$output"
+pass "your own password is refused as the shared disk password"
+
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers yes alicepw no carolpw carolpw "A new password for me" newalicepw newalicepw
+output=$(run_tty add carol) || fail "a second account with a new password for the administrator" "$output"
+has_user carol && [[ $(cat "$test_tmp/disk_password") == "alicepw" ]] && grep -qx "alice:newalicepw" "$test_tmp/chpasswd.log" ||
   fail "a second account with a new password for the administrator keeps the disk password" "$output"
 pass "a second account with a new password for the administrator keeps the disk password"
 
 reset_fixtures
 only_alice
 touch "$test_tmp/encrypted"
-answers no carolpw carolpw yes wrongpw alicepw "A new disk password, to share"
-output=$(OMARCHY_TEST_NEW_DISK=sharedpw run_tty add carol) || fail "a mistyped own password is asked again" "$output"
+answers yes alicepw no carolpw carolpw "A new password for me" alicepw alicepw newalicepw newalicepw
+output=$(run_tty add carol) || fail "a new own password that unlocks the disk is refused" "$output"
+[[ $output == *"That one unlocks the disk"* ]] && grep -qx "alice:newalicepw" "$test_tmp/chpasswd.log" ||
+  fail "a new own password that unlocks the disk is refused" "$output"
+pass "a new own password that unlocks the disk is refused"
+
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers yes wrongpw alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
+output=$(run_tty add carol) || fail "a mistyped own password is asked again" "$output"
 [[ $output == *"That isn't your password"* ]] && has_user carol || fail "a mistyped own password is asked again" "$output"
 pass "a mistyped own password is asked again"
 
@@ -552,24 +590,24 @@ reset_fixtures
 only_alice
 touch "$test_tmp/encrypted"
 printf 'otherdiskpw' >"$test_tmp/disk_password"
-answers no carolpw carolpw yes alicepw
+answers yes alicepw no carolpw carolpw
 output=$(run_tty add carol) || fail "already separate passwords need no change" "$output"
-has_user carol && ! grep -q "choose" "$test_tmp/gum.log" && ! grep -q "omarchy-drive-password\|passwd (own)" "$test_tmp/calls.log" &&
+has_user carol && ! grep -q "choose" "$test_tmp/gum.log" && ! grep -q "omarchy-drive-password" "$test_tmp/calls.log" &&
   [[ $(cat "$test_tmp/root_status") == "L" ]] || fail "already separate passwords need no change, but root is still locked" "$output"
 pass "already separate passwords need no change, but root is still locked"
 
 reset_fixtures
 only_alice
-answers no carolpw carolpw yes
+answers yes alicepw no carolpw carolpw
 output=$(run_tty add carol) || fail "an unencrypted install skips the disk" "$output"
-has_user carol && ! grep -q "Your password" "$test_tmp/gum.log" && [[ $output != *"disk password"* ]] ||
+has_user carol && ! grep -q "choose" "$test_tmp/gum.log" && [[ $output != *"disk password"* ]] ||
   fail "an unencrypted install skips the disk" "$output"
 pass "an unencrypted install skips the disk"
 
 reset_fixtures
 only_alice
 touch "$test_tmp/encrypted"
-answers no carolpw carolpw no
+answers no
 if run_tty add carol >/dev/null; then fail "declining the switch-over adds no one"; fi
 has_user carol && fail "declining the switch-over adds no one"
 [[ $(cat "$test_tmp/root_status") == "P" && -e $test_tmp/autologin.conf ]] || fail "declining the switch-over changes nothing"
@@ -578,22 +616,22 @@ pass "declining the switch-over adds no one and changes nothing"
 reset_fixtures
 only_alice
 touch "$test_tmp/encrypted"
-answers no carolpw carolpw yes alicepw "A new disk password, to share"
+answers yes alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
 if OMARCHY_TEST_DRIVE_FAIL=1 run_tty add carol >/dev/null; then fail "a disk password that didn't change stops the switch-over"; fi
 has_user carol && fail "a disk password that didn't change stops the switch-over"
 [[ $(cat "$test_tmp/root_status") == "P" ]] || fail "a disk password that didn't change leaves root alone"
 pass "a disk password that didn't change stops the switch-over and adds no one"
 
-# omarchy-drive-password can also finish without changing anything (no drive
-# chosen), so the result is checked, not its exit status.
+# omarchy-drive-password can also finish without changing anything, so the
+# result is checked, not its exit status.
 reset_fixtures
 only_alice
 touch "$test_tmp/encrypted"
-answers no carolpw carolpw yes alicepw "A new disk password, to share"
-if output=$(OMARCHY_TEST_NEW_DISK=alicepw run_tty add carol); then fail "a disk still on the administrator's password stops the switch-over"; fi
-[[ $output == *"Your password still unlocks the disk"* ]] && ! has_user carol ||
-  fail "a disk still on the administrator's password stops the switch-over" "$output"
-pass "a disk still on the administrator's password stops the switch-over"
+answers yes alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
+if output=$(OMARCHY_TEST_DRIVE_NOOP=1 run_tty add carol); then fail "an unchanged disk stops the switch-over"; fi
+[[ $output == *"The disk password didn't change"* ]] && ! has_user carol ||
+  fail "an unchanged disk stops the switch-over" "$output"
+pass "an unchanged disk stops the switch-over"
 
 reset_fixtures
 answers no carolpw carolpw
@@ -619,8 +657,8 @@ pass "leaving one account needs a terminal, and nothing is removed without one"
 
 two_accounts
 touch "$test_tmp/encrypted"
-answers alicepw yes
-output=$(OMARCHY_TEST_NEW_DISK=alicepw run_tty remove bob) || fail "back to one account re-couples disk, root and login" "$output"
+answers alicepw yes sharedpw
+output=$(run_tty remove bob) || fail "back to one account re-couples disk, root and login" "$output"
 ! has_user bob &&
   [[ $(cat "$test_tmp/disk_password") == "alicepw" ]] &&
   grep -qx "root:alicepw" "$test_tmp/chpasswd.log" &&
@@ -630,6 +668,17 @@ output=$(OMARCHY_TEST_NEW_DISK=alicepw run_tty remove bob) || fail "back to one 
   fail "back to one account says what it will do, and what it did" "$output"
 [[ $(head -n 1 "$test_tmp/journal") == "login user 'bob' removed by alice"* ]] || fail "the removal is logged before the switch back" "$(cat "$test_tmp/journal")"
 pass "back to one account re-couples disk, root and login, and logs in automatically again"
+
+[[ $(password_prompts) == 2 ]] || fail "back to one account asks for two passwords: yours and the shared disk one" "$(cat "$test_tmp/gum.log")"
+pass "back to one account asks for two passwords: yours and the shared disk one"
+
+two_accounts
+touch "$test_tmp/encrypted"
+answers alicepw yes wrongdiskpw sharedpw
+output=$(run_tty remove bob) || fail "a mistyped disk password is asked again" "$output"
+[[ $output == *"That doesn't unlock the disk"* && $(cat "$test_tmp/disk_password") == "alicepw" ]] ||
+  fail "a mistyped disk password is asked again" "$output"
+pass "a mistyped disk password is asked again"
 
 two_accounts
 touch "$test_tmp/encrypted"
