@@ -123,28 +123,31 @@ shell_ipc_quiet() {
   OMARCHY_PATH="$test_root" "$ROOT/bin/omarchy-shell" -q "$@"
 }
 
-lock_mapped() {
+# mapped|absent|unknown: a failed compositor query proves nothing.
+lock_state() {
   local layers
-  layers=$(hyprctl -j layers 2>/dev/null || true)
-  [[ -n $layers ]] && jq -e --argjson pid "$QS_PID" '
+  layers=$(hyprctl -j layers 2>/dev/null) || { echo unknown; return; }
+  [[ -n $layers ]] || { echo unknown; return; }
+  if jq -e --argjson pid "$QS_PID" '
     [.. | objects | select(.namespace? == "omarchy-lock-preview" and .pid == $pid and .w > 0 and .h > 0)] | length > 0
-  ' <<<"$layers" >/dev/null 2>&1
+  ' <<<"$layers" >/dev/null 2>&1; then
+    echo mapped
+  else
+    echo absent
+  fi
 }
 
 wait_lock() { # mapped|absent
   local want="$1"
   for _ in {1..300}; do
-    if [[ $want == "mapped" ]]; then
-      lock_mapped && return 0
-    else
-      lock_mapped || return 0
-    fi
+    [[ $(lock_state) == "$want" ]] && return 0
     kill -0 "$QS_PID" 2>/dev/null || return 1
     sleep 0.01
   done
   return 1
 }
 
+launch_start=$EPOCHREALTIME
 OMARCHY_PATH="$test_root" \
 HOME="$test_home" \
 XDG_CONFIG_HOME="$test_home/.config" \
@@ -155,19 +158,31 @@ PATH="$stub_bin:$ROOT/bin:$PATH" \
 QS_PID=$!
 
 for _ in {1..80}; do
-  shell_ipc_quiet shell ping >/dev/null 2>&1 && break
+  # Not the quiet form: -q succeeds even when no shell answers.
+  [[ $(shell_ipc shell ping 2>/dev/null || true) == "ok" ]] && break
   kill -0 "$QS_PID" 2>/dev/null || { sed -n '1,120p' "$log" >&2; fail "lock test shell becomes available"; }
   sleep 0.1
 done
 
-# The lock handler answers once its service is registered.
+# The lock handler answers once its service is registered, which is
+# after the service's LockView has been built: this first measurement
+# includes view construction, the rounds below only show/hide it.
 ready=""
+ready_ms=""
 for _ in {1..80}; do
-  [[ $(shell_ipc lock status 2>/dev/null || true) == '{"locked":'* ]] && { ready=1; break; }
+  if [[ $(shell_ipc lock status 2>/dev/null || true) == '{"locked":'* ]]; then
+    ready=1
+    end=$EPOCHREALTIME
+    ready_ms=$(( (${end/[.,]/} - ${launch_start/[.,]/}) / 1000 ))
+    break
+  fi
   kill -0 "$QS_PID" 2>/dev/null || break
   sleep 0.1
 done
 [[ -n $ready ]] || { sed -n '1,120p' "$log" >&2; fail "lock service becomes available"; }
+READY_BUDGET_MS=$(( ${OMARCHY_LOCK_READY_BUDGET_MS:-750} * SPEED_PERCENT / 100 ))
+(( ready_ms <= READY_BUDGET_MS )) || fail "lock view is built within ${READY_BUDGET_MS}ms of shell start" "Lock service answered after ${ready_ms}ms."
+pass "lock view is built within ${READY_BUDGET_MS}ms of shell start (${ready_ms}ms)"
 
 appear_ms() {
   local start end
