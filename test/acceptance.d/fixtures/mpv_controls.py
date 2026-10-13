@@ -44,7 +44,7 @@ def test():
       player = subprocess.Popen([
         'mpv', f'--config-dir={config}', '--player-operation-mode=pseudo-gui', '--keep-open=yes', '--idle=yes', f'--geometry={os.environ.get("MPV_ACCEPTANCE_GEOMETRY", "800x600")}',
         '--title=mpv controls verification', '--pause=yes', '--audio=no', '--ao=null', '--hwdec=no', f'--vo={os.environ.get("MPV_ACCEPTANCE_VO", "gpu")}',
-        f'--input-ipc-server={ipc}',f'--script-opts=omarchy-theme-theme_file={theme}', str(media)],
+        f'--input-ipc-server={ipc}',f'--script-opts=omarchy-theme-theme_file={theme},omarchy-controls-debug=yes', str(media)],
         stdout=log, stderr=subprocess.STDOUT)
       try:
         deadline = time.monotonic()+10
@@ -138,13 +138,16 @@ def test():
         dims=prop('osd-dimensions')
         scale=max(.75,min(1.6,dims['h']/720))
         if dims['w']/scale >= 850:
-          start=dims['w']-470*scale
-          y=dims['h']-40*scale
-          command('mouse',round(start+12*scale),round(y))
+          layout=prop('user-data/omarchy/layout')
+          slider=next(r for r in prop('user-data/omarchy/control-regions') if r['id']=='volume-slider')
+          scale=layout['scale']
+          start=slider['x']*scale
+          y=(slider['y']+slider['h']/2)*scale
+          command('mouse',round(start+slider['w']*.12*scale),round(y))
           time.sleep(.1)
           command('keydown','MBTN_LEFT');time.sleep(.1)
           before=prop('volume')
-          command('mouse',round(start+70*scale),round(y))
+          command('mouse',round(start+slider['w']*.70*scale),round(y))
           deadline=time.monotonic()+3
           after=prop('volume')
           while after <= before+20 and time.monotonic()<deadline:

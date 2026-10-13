@@ -147,12 +147,12 @@ def test():
         wait('user-data/mpv/console/open',False)
         command('script-message','set-omarchy-theme','automatic')
         wait('user-data/omarchy/theme-selection','automatic')
-        # Appearance > Transparency still offers all three modes.
+        # Appearance > Toolbar background still offers all three modes.
         for expected in ('solid','translucent','gradient'):
           command('script-binding','omarchy_controls/appearance-menu');wait('user-data/mpv/console/open',True)
           command('keypress','DOWN');command('keypress','ENTER');time.sleep(.2)
           capture('transparency-menu')
-          search={'solid':'Solid','translucent':'Uniform','gradient':'Gradient'}[expected]
+          search={'solid':'Opaque','translucent':'Translucent','gradient':'Gradient'}[expected]
 
           for character in search:command('keypress',character)
           time.sleep(.15)
