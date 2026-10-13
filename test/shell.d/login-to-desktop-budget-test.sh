@@ -163,6 +163,12 @@ cold_login_ms() {
   elapsed=""
   pid=""
   for _ in {1..800}; do
+    # The launcher relaunches a shell that dies; follow the replacement
+    # instead of timing the dead one's bar forever.
+    if [[ -n $pid ]] && ! kill -0 "$pid" 2>/dev/null; then
+      pid=""
+      QS_PID=""
+    fi
     if [[ -z $pid ]]; then
       pid=$(launcher_shell_pid || true)
       [[ -n $pid ]] && QS_PID=$pid
