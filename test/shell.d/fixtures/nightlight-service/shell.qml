@@ -276,6 +276,68 @@ ShellRoot {
         root.wait(1200),
         root.withLog(function(lines) {
           root.assertTrue(root.indexOf(lines, "set 2500") < 0, "a live warmth during a save never reaches hyprsunset: " + lines.join(" | "))
+        }),
+
+        // A toggle still waiting on a slow reading when a live warmth is
+        // chosen came first, so it cannot undo the warmth once its reading
+        // lands: the newest choice wins.
+        root.setControl("save-delay", "0"),
+        root.setScreen(6500),
+        root.refreshed,
+        root.setControl("get-delay", "0.8"),
+        function(next) {
+          root.service.toggle()
+          next()
+        },
+        root.wait(100),
+        function(next) {
+          root.assertTrue(root.service.setTemperature(3000) === true, "a live warmth is accepted while a toggle waits on a reading")
+          next()
+        },
+        root.wait(1400),
+        root.setControl("get-delay", "0"),
+        root.withLog(function(lines) {
+          var applied = root.sets(lines)
+          root.assertTrue(applied.length > 0 && applied[applied.length - 1] === "set 3000", "an earlier toggle does not undo a newer live warmth: " + lines.join(" | "))
+        }),
+        function(next) {
+          root.assertTrue(root.service.temperature === 3000, "the newer live warmth stays: " + root.service.temperature)
+          next()
+        },
+
+        // Leaving the config without previewing anything keeps a warmth chosen
+        // elsewhere (the Display panel); only a preview the editor made is
+        // undone.
+        root.setScreen(4000),
+        root.refreshed,
+        function(next) {
+          root.assertTrue(root.service.setTemperature(3000) === true, "a live warmth differs from the saved one")
+          next()
+        },
+        root.wait(400),
+        root.setScreen(3000),
+        function(next) {
+          root.service.endPreview()
+          next()
+        },
+        root.wait(400),
+        root.withLog(function(lines) {
+          root.assertTrue(root.sets(lines).length === 0, "ending without a preview leaves a live warmth alone: " + lines.join(" | "))
+        }),
+        function(next) {
+          root.assertTrue(root.service.temperature === 3000, "a live warmth survives a config opened and closed: " + root.service.temperature)
+          root.service.previewWarmth(2600)
+          next()
+        },
+        root.wait(400),
+        function(next) {
+          root.service.endPreview()
+          next()
+        },
+        root.wait(400),
+        root.withLog(function(lines) {
+          var applied = root.sets(lines)
+          root.assertTrue(applied.indexOf("set 2600") >= 0 && applied[applied.length - 1] === "set 3000", "ending a preview restores the warmth from before it, not the saved one: " + lines.join(" | "))
         })
       ])
     }

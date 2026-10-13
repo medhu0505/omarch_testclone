@@ -93,29 +93,51 @@ Item {
     return root.shell.summon(root.pluginId, JSON.stringify({ reason: String(reason || "") }))
   }
 
-  // Live warmth preview from the config editor. Only touches the screen while
-  // night light is on, so dragging the slider by day never tints it, and never
-  // during a save, which owns the screen's warmth until it finishes.
-  function previewWarmth(temperature) {
-    if (!root.enabled || root.saving) return
-    applyTemperature(NightlightModel.clampTemperature(temperature))
-  }
-
   // The Display panel's warmth slider: sets the screen to any warmth from the
   // warmest step up to neutral, which turns night light off. It is a live
   // setting like the toggle, not a config change; the saved warmth stays what
   // it was. During a save it is ignored, like a preview, and the slider follows
   // `temperature` back once the save re-reads the screen.
+  //
+  // Toggles still waiting on a reading came before this choice. Letting them
+  // flip once the reading lands would replace this warmth with the saved one
+  // or neutral, so they are dropped: an absolute warmth supersedes any
+  // relative flip asked for earlier.
   function setTemperature(temperature) {
     if (root.saving) return false
+    root.pendingToggles = 0
     applyTemperature(NightlightModel.clampLiveTemperature(temperature))
     return true
   }
 
-  // Puts the saved warmth back after a preview the editor did not save.
+  // The warmth on screen when the config editor first previewed a change, or
+  // null when it has not. Ending the preview returns to exactly that, so a
+  // live warmth chosen elsewhere (the Display panel) survives the editor being
+  // opened, looked at, and closed.
+  property var warmthBeforePreview: null
+
+  // Live warmth preview from the config editor. Only touches the screen while
+  // night light is on, so dragging the slider by day never tints it, and never
+  // during a save, which owns the screen's warmth until it finishes.
+  function previewWarmth(temperature) {
+    if (!root.enabled || root.saving) return
+    if (root.warmthBeforePreview === null) root.warmthBeforePreview = root.temperature
+    applyTemperature(NightlightModel.clampTemperature(temperature))
+  }
+
+  // Undoes a preview the editor did not save, back to the warmth from before
+  // it. Without a preview there is nothing to undo.
   function endPreview() {
-    if (root.saving) return
-    if (root.enabled && root.temperature !== root.nightTemperature) applyTemperature(root.nightTemperature)
+    var before = root.warmthBeforePreview
+    root.warmthBeforePreview = null
+    if (root.saving || before === null) return
+    if (root.temperature !== before) applyTemperature(before)
+  }
+
+  // A saved config makes the preview the new warmth, so there is nothing left
+  // to undo.
+  function keepPreview() {
+    root.warmthBeforePreview = null
   }
 
   // Called by the config editor. The command writes the profiles and the
@@ -221,6 +243,7 @@ Item {
       var requested = root.requestedDuringSave
       root.requestedDuringSave = ""
       root.saving = false
+      if (ok) root.keepPreview()
       root.saveError = ok ? "" : (String(saveStderr.text || "").trim().split("\n").pop() || "Saving failed")
       scheduleView.reload()
       // A toggle made during the save is the latest word. Use the warmth just

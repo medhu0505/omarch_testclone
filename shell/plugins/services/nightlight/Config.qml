@@ -80,8 +80,9 @@ Item {
   }
 
   function close() {
-    // A save still running owns the screen's warmth; restoring the preview
-    // now would race it.
+    // Undoes a warmth preview made in this card, if there was one; the service
+    // remembers what was on screen before it. A save still running owns the
+    // screen's warmth, so restoring now would race it.
     if (root.opened && !root.saved && !root.saving && root.service) root.service.endPreview()
     root.opened = false
   }
