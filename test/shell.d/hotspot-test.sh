@@ -12,6 +12,10 @@ mkdir -p "$STUB_BIN"
 
 cat >"$STUB_BIN/iw" <<'STUB'
 #!/bin/bash
+if [[ ${1:-} == "phy" && -n ${2:-} && ${3:-} != "info" ]]; then
+  printf '%s\n' 'Usage:	iw [options] command'
+  exit 0
+fi
 if [[ ${1:-} == "dev" ]]; then
   printf '%s\n' "Interface ${2:-}" '  type managed' '  wiphy 0'
   exit 0
@@ -114,6 +118,10 @@ pass "no-route status returns a complete upstream=none response"
 
 cat >"$STUB_BIN/iw" <<'STUB'
 #!/bin/bash
+if [[ ${1:-} == "phy" && -n ${2:-} && ${3:-} != "info" ]]; then
+  printf '%s\n' 'Usage:	iw [options] command'
+  exit 0
+fi
 if [[ ${1:-} == "dev" ]]; then
   case ${2:-} in
     wlan0) printf '%s\n' 'Interface wlan0' '  type managed' '  wiphy 0' ;;
@@ -239,6 +247,10 @@ pass "stale profile interface heals to a present AP-capable Wi-Fi device"
 
 cat >"$STUB_BIN/iw" <<'STUB'
 #!/bin/bash
+if [[ ${1:-} == "phy" && -n ${2:-} && ${3:-} != "info" ]]; then
+  printf '%s\n' 'Usage:	iw [options] command'
+  exit 0
+fi
 exit 1
 STUB
 chmod +x "$STUB_BIN/iw"
@@ -279,6 +291,10 @@ pass "missing PHY information stays diagnosable"
 # clients JSON has to stay on its own line all the way into the panel model.
 cat >"$STUB_BIN/iw" <<'STUB'
 #!/bin/bash
+if [[ ${1:-} == "phy" && -n ${2:-} && ${3:-} != "info" ]]; then
+  printf '%s\n' 'Usage:	iw [options] command'
+  exit 0
+fi
 if [[ ${1:-} == "dev" && ${2:-} == "wlan0" ]]; then
   case ${3:-} in
     info) printf '%s\n' 'Interface wlan0' '  type AP' '  wiphy 0' ;;

@@ -76,6 +76,10 @@ STUB
 
 cat >"$STUB_BIN/iw" <<'STUB'
 #!/bin/bash
+if [[ ${1:-} == "phy" && -n ${2:-} && ${3:-} != "info" ]]; then
+  printf '%s\n' 'Usage:	iw [options] command'
+  exit 0
+fi
 if [[ ${1:-} == "dev" && ${2:-} == "wlan2" ]]; then
   printf '%s\n' 'Interface wlan2' '  type managed' '  wiphy 2'
   exit 0

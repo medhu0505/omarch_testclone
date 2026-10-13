@@ -107,7 +107,7 @@ ap_capable() {
   local phy
   phy=$(phy_for_iface "$1") || return 1
   [[ -n $phy ]] || return 1
-  iw phy "$phy" 2>/dev/null | awk -v phy="$phy" '
+  iw phy "$phy" info 2>/dev/null | awk -v phy="$phy" '
     $1 == "Wiphy" { selected = ($2 == phy) }
     selected && /^[[:space:]]*\*[[:space:]]*AP[[:space:]]*$/ { capable = 1 }
     END { exit capable ? 0 : 1 }
@@ -115,14 +115,14 @@ ap_capable() {
 }
 
 # Bands the selected interface's PHY reports, comma-separated ("2.4,5").
-# `iw phy` only exposes band presence, not per-band AP support, so this
+# `iw phy <phy> info` only exposes band presence, not per-band AP support, so this
 # over-approximates; an AP that fails on a reported band surfaces the real
 # NetworkManager reason instead of a silent fallback.
 ap_bands() {
   local phy
   phy=$(phy_for_iface "$1") || return 0
   [[ -n $phy ]] || return 0
-  iw phy "$phy" 2>/dev/null | awk -v phy="$phy" '
+  iw phy "$phy" info 2>/dev/null | awk -v phy="$phy" '
     $1 == "Wiphy" { selected = ($2 == phy) }
     selected && /^[[:space:]]*Band 1:[[:space:]]*$/ { out = emit(out, "2.4") }
     selected && /^[[:space:]]*Band 2:[[:space:]]*$/ { out = emit(out, "5") }
