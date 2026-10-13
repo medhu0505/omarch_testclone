@@ -277,12 +277,12 @@ end)
 mp.set_property('osd-font',opts.font)
 -- Use this controller's themed sliders instead of mpv's text-colored OSD bar.
 mp.set_property_bool('osd-bar',false)
-local surface_labels={solid='Solid',translucent='Uniform translucent',gradient='Gradient'}
+local surface_labels={solid='Opaque',translucent='Translucent',gradient='Gradient'}
 local function set_surface_mode(mode,quiet)
   if not surface_labels[mode] then return end
   surface_mode=mode
   reveal_until=mp.get_time()+3
-  if not quiet then mp.osd_message('Controls: '..surface_labels[mode],1.5) end
+  if not quiet then mp.osd_message('Toolbar background: '..surface_labels[mode],1.5) end
   wake()
 end
 local function transparency_menu()
@@ -291,7 +291,7 @@ local function transparency_menu()
     items[i]=surface_labels[mode]..(mode == surface_mode and ' (current)' or '')
     if mode == surface_mode then selected=i end
   end
-  input.select({prompt='Controls transparency:',items=items,default_item=selected,
+  input.select({prompt='Toolbar background:',items=items,default_item=selected,
     submit=function(index) set_surface_mode(modes[index],true) end})
 end
 local reveal_labels={separate='Separate · hover each toolbar',together='Together · show both toolbars'}
@@ -317,7 +317,7 @@ appearance_menu=function()
   local theme=prop('user-data/omarchy/theme-selection','automatic')
   input.select({prompt='Appearance:',keep_open=true,default_item=1,
     items={'Theme · '..(theme == 'automatic' and 'Automatic' or theme),
-      'Transparency · '..surface_labels[surface_mode]..' · Ctrl+F9',
+      'Toolbar background · '..surface_labels[surface_mode]..' · Ctrl+F9',
       'Toolbar reveal · '..(reveal_mode == 'together' and 'Together' or 'Separate')},
     submit=function(index)
       if index == 1 then mp.commandv('script-message-to','omarchy_theme','select-omarchy-theme')
@@ -597,7 +597,7 @@ render = function()
     if label ~= '' then text(x+(glyph and 33 or w/2),y+17,label,15,fg,glyph and 4 or 5) end
     if hot then
       local help={menu='Menu · history, devices, key bindings, help',
-        appearance='Appearance · theme and transparency',
+        appearance='Appearance · theme and toolbar background',
         prev='Previous playlist entry'..key_hint('<','playlist-prev'),
         next='Next playlist entry'..key_hint('>','playlist-next'),
         play='Play / pause'..key_hint('SPACE','cycle pause','Space'),
