@@ -1,0 +1,387 @@
+#!/usr/bin/python3
+# omarchy:summary=Print The X Subscription usage record as JSON
+# omarchy:args=[--force] [--limits-only]
+# omarchy:hidden=true
+"""Collect The X Subscription usage into one display-ready JSON record.
+
+The shared first-party pool (Cursor + Grok) and plan come from Cursor's
+dashboard API using the sign-in in ~/.config/cursor/auth.json. Local prompt
+and session counts come from Cursor agent transcripts under ~/.cursor/projects.
+The agents panel only ever reads the JSON this prints.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import tempfile
+import time
+import urllib.error
+import urllib.request
+from collections import defaultdict
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any
+
+AGENT_ID = "x"
+AGENT_NAME = "X Subscription"
+AUTH_HELP = "Run `cursor-agent login`, or sign in to Cursor, to refresh X Subscription usage."
+API_BASE = "https://api2.cursor.sh"
+PROBE_REUSE_SECONDS = 60
+LIMITS_ONLY_SCAN_REUSE_SECONDS = 900
+
+
+def read_json(path: Path) -> Any:
+  try:
+    return json.loads(path.read_text(encoding="utf-8"))
+  except Exception:
+    return None
+
+
+def write_json(path: Path, payload: Any) -> None:
+  path.parent.mkdir(parents=True, exist_ok=True)
+  fd, tmp = tempfile.mkstemp(prefix=path.name + ".", dir=str(path.parent))
+  try:
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+      json.dump(payload, handle)
+    os.replace(tmp, path)
+  except Exception:
+    Path(tmp).unlink(missing_ok=True)
+    raise
+
+
+def cache_root() -> Path:
+  return Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "omarchy" / "agent-usage"
+
+
+def auth_path() -> Path:
+  config = Path(os.environ.get("XDG_CONFIG_HOME") or (Path.home() / ".config"))
+  return config / "cursor" / "auth.json"
+
+
+def load_token() -> str | None:
+  data = read_json(auth_path())
+  if not isinstance(data, dict):
+    return None
+  token = data.get("accessToken")
+  return token if isinstance(token, str) and token else None
+
+
+def rpc(token: str, method: str, body: dict | None = None) -> dict[str, Any]:
+  request = urllib.request.Request(
+    f"{API_BASE}/{method}",
+    data=json.dumps(body or {}).encode(),
+    headers={
+      "Authorization": f"Bearer {token}",
+      "Content-Type": "application/json",
+      "Connect-Protocol-Version": "1",
+      "Accept": "application/json",
+      "User-Agent": "omarchy-agent-usage-x/1.0",
+    },
+    method="POST",
+  )
+  with urllib.request.urlopen(request, timeout=20) as response:
+    payload = json.loads(response.read().decode())
+  return payload if isinstance(payload, dict) else {}
+
+
+def ms_to_iso(value: Any) -> str:
+  try:
+    ms = int(str(value))
+  except (TypeError, ValueError):
+    return ""
+  if ms <= 0:
+    return ""
+  return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def pct_to_unit(value: Any) -> float:
+  try:
+    n = float(value)
+  except (TypeError, ValueError):
+    return -1.0
+  if n < 0:
+    return -1.0
+  # Cursor currently reports 0–100 style percents; accept either scale.
+  if n > 1.0:
+    n = n / 100.0
+  return min(max(n, 0.0), 1.0)
+
+
+def empty_stats() -> dict[str, Any]:
+  today = date.today()
+  recent = [{"date": (today - timedelta(days=i)).isoformat(), "messageCount": 0} for i in range(6, -1, -1)]
+  return {
+    "hasLocalStats": False,
+    "hasPromptStats": True,
+    "usageUnit": "prompts",
+    "todayPrompts": 0,
+    "todaySessions": 0,
+    "todayTotalTokens": 0,
+    "todayTokensByModel": {},
+    "recentDays": recent,
+    "totalPrompts": 0,
+    "totalSessions": 0,
+    "activeDays": 0,
+    "activeDates": [],
+    "modelUsage": {},
+  }
+
+
+def local_stats() -> dict[str, Any]:
+  today = date.today()
+  by_day: dict[str, int] = defaultdict(int)
+  sessions: set[str] = set()
+  today_sessions: set[str] = set()
+  today_prompts = 0
+  roots = [Path.home() / ".cursor" / "projects"]
+  files: list[Path] = []
+  for root in roots:
+    if root.exists():
+      files.extend(root.glob("**/agent-transcripts/**/*.jsonl"))
+
+  for path in files:
+    try:
+      session = path.stem
+      sessions.add(session)
+      day = date.fromtimestamp(path.stat().st_mtime)
+      with path.open(encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+          line = line.strip()
+          if not line:
+            continue
+          try:
+            obj = json.loads(line)
+          except Exception:
+            continue
+          role = obj.get("role") or obj.get("type")
+          if role not in ("user", "human"):
+            continue
+          by_day[day.isoformat()] += 1
+          if day == today:
+            today_prompts += 1
+            today_sessions.add(session)
+    except Exception:
+      continue
+
+  recent = []
+  for i in range(6, -1, -1):
+    day = (today - timedelta(days=i)).isoformat()
+    recent.append({"date": day, "messageCount": by_day.get(day, 0)})
+
+  active_dates = sorted(by_day.keys())
+  total_prompts = sum(by_day.values())
+  stats = empty_stats()
+  stats.update(
+    {
+      "hasLocalStats": bool(files),
+      "todayPrompts": today_prompts,
+      "todaySessions": len(today_sessions),
+      "recentDays": recent,
+      "totalPrompts": total_prompts or len(files),
+      "totalSessions": len(sessions) or len(files),
+      "activeDays": len(active_dates) or (1 if files else 0),
+      "activeDates": active_dates[-30:],
+    }
+  )
+  return stats
+
+
+def cached_local_stats(reuse_seconds: int) -> dict[str, Any]:
+  cache = cache_root() / "x-scan.json"
+  if reuse_seconds > 0 and cache.exists():
+    age = time.time() - cache.stat().st_mtime
+    if age <= reuse_seconds:
+      cached = read_json(cache)
+      if isinstance(cached, dict) and "totalPrompts" in cached:
+        return cached
+  stats = local_stats()
+  write_json(cache, stats)
+  return stats
+
+
+def plan_label(token: str) -> str:
+  try:
+    plan = rpc(token, "aiserver.v1.DashboardService/GetPlanInfo")
+  except Exception:
+    return ""
+  info = plan.get("planInfo") or {}
+  if not isinstance(info, dict):
+    return ""
+  name = str(info.get("planName") or "").strip()
+  price = str(info.get("price") or "").strip()
+  period = str(info.get("includedUsagePeriod") or "")
+  period_label = "monthly" if "MONTHLY" in period else ("weekly" if "WEEKLY" in period else "")
+  label = " · ".join(part for part in (name, price) if part)
+  if label and period_label:
+    label = f"{label} · shared {period_label} pool"
+  return label
+
+
+def usable_cached_limits(cached: dict[str, Any]) -> list[dict[str, Any]]:
+  entries = cached.get("limits")
+  if not isinstance(entries, list):
+    return []
+  now = datetime.now(timezone.utc)
+  out = []
+  for entry in entries:
+    if not isinstance(entry, dict):
+      continue
+    raw = str(entry.get("resetsAt") or "")
+    if raw:
+      try:
+        resets_at = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+      except ValueError:
+        continue
+      if resets_at.tzinfo is None:
+        resets_at = resets_at.replace(tzinfo=timezone.utc)
+      if resets_at <= now:
+        continue
+    out.append(entry)
+  return out
+
+
+def probe_limits(token: str) -> dict[str, Any]:
+  result: dict[str, Any] = {
+    "limits": [],
+    "tierLabel": "",
+    "usageStatusText": "",
+    "authHelpText": AUTH_HELP,
+    "live": False,
+    "fetchedAtMs": 0,
+  }
+  result["tierLabel"] = plan_label(token) or AGENT_NAME
+  try:
+    usage = rpc(token, "aiserver.v1.DashboardService/GetCurrentPeriodUsage", {})
+  except urllib.error.HTTPError as error:
+    result["usageStatusText"] = "Waiting for auth" if error.code in (401, 403) else "X Subscription limits unavailable"
+    return result
+  except Exception:
+    result["usageStatusText"] = "X Subscription limits unavailable"
+    return result
+
+  plan_usage = usage.get("planUsage") or {}
+  if not isinstance(plan_usage, dict):
+    plan_usage = {}
+  resets_at = ms_to_iso(usage.get("billingCycleEnd"))
+  auto = pct_to_unit(plan_usage.get("autoPercentUsed"))
+  api = pct_to_unit(plan_usage.get("apiPercentUsed"))
+  total = pct_to_unit(plan_usage.get("totalPercentUsed"))
+  limits: list[dict[str, Any]] = []
+  if auto >= 0:
+    limits.append(
+      {
+        "label": "Included pool (Cursor + Grok)",
+        "percent": auto,
+        "resetsAt": resets_at,
+        "title": "First-party",
+      }
+    )
+  if api > 0:
+    limits.append(
+      {
+        "label": "API / named models",
+        "percent": api,
+        "resetsAt": resets_at,
+        "title": "API",
+      }
+    )
+  if total >= 0 and (auto < 0 or abs(total - auto) > 0.01):
+    limits.append(
+      {
+        "label": "Total included",
+        "percent": total,
+        "resetsAt": resets_at,
+        "title": "Total",
+      }
+    )
+
+  if not limits:
+    result["usageStatusText"] = "X Subscription limits unavailable"
+    return result
+
+  result.update(
+    limits=limits,
+    live=True,
+    fetchedAtMs=round(time.time() * 1000),
+    authHelpText="",
+    usageStatusText="",
+  )
+  return result
+
+
+def collect_limits(token: str | None, force: bool) -> dict[str, Any]:
+  cache = cache_root() / "x-limits.json"
+  cached = read_json(cache) if isinstance(read_json(cache), dict) else {}
+  fallback = usable_cached_limits(cached if isinstance(cached, dict) else {})
+  result: dict[str, Any] = {
+    "limits": [],
+    "tierLabel": str((cached or {}).get("tierLabel") or ""),
+    "usageStatusText": "",
+    "authHelpText": AUTH_HELP,
+    "live": False,
+    "fetchedAtMs": int((cached or {}).get("fetchedAtMs") or 0),
+  }
+
+  if not token:
+    result["limits"] = fallback
+    result["usageStatusText"] = "Cursor auth missing" if not fallback else "Sign-in expired"
+    return result
+
+  fetched_at = int((cached or {}).get("fetchedAtMs") or 0)
+  age_ms = round(time.time() * 1000) - fetched_at
+  if not force and fallback and fetched_at and age_ms <= PROBE_REUSE_SECONDS * 1000:
+    result.update(limits=fallback, live=True, authHelpText="", tierLabel=result["tierLabel"] or AGENT_NAME)
+    return result
+
+  probe = probe_limits(token)
+  if probe["live"]:
+    write_json(
+      cache,
+      {
+        "fetchedAtMs": probe["fetchedAtMs"],
+        "tierLabel": probe["tierLabel"],
+        "limits": probe["limits"],
+      },
+    )
+    return probe
+
+  result["limits"] = fallback
+  result["usageStatusText"] = probe["usageStatusText"] or result["usageStatusText"]
+  result["authHelpText"] = probe["authHelpText"]
+  if fallback:
+    result["usageStatusText"] = result["usageStatusText"] or "Showing last known limits"
+  return result
+
+
+def main() -> None:
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--force", action="store_true")
+  parser.add_argument("--limits-only", action="store_true")
+  args = parser.parse_args()
+
+  token = load_token()
+  limits = collect_limits(token, args.force)
+  reuse = LIMITS_ONLY_SCAN_REUSE_SECONDS if args.limits_only and not args.force else 0
+  stats = cached_local_stats(reuse)
+  ready = bool(limits["limits"]) or bool(stats.get("totalPrompts") or stats.get("totalSessions"))
+  record = {
+    "schemaVersion": 1,
+    "id": AGENT_ID,
+    "name": AGENT_NAME,
+    "updatedAt": datetime.now(timezone.utc).isoformat(),
+    "ready": ready,
+    "tierLabel": limits["tierLabel"],
+    "usageStatusText": limits["usageStatusText"],
+    "authHelpText": limits["authHelpText"] if not limits["limits"] else "",
+    "limits": limits["limits"],
+    "limitsStale": not limits["live"],
+    "limitsFetchedAt": limits["fetchedAtMs"],
+  }
+  record.update(stats)
+  print(json.dumps(record, separators=(",", ":")))
+
+
+if __name__ == "__main__":
+  main()

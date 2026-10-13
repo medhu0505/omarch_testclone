@@ -75,6 +75,7 @@ light surfaces — and the bar glyph stands in when there is none.
 | `codex` | The Codex app-server RPC | native Codex CLI session files on the built-in `openai` provider (plus pi and opencode sessions) |
 | `grok` | The credits endpoint behind Grok's `/usage` view (the billing period's included usage) | Each session's `usage.json` (the ledger `grok usage` prints: tokens by model per finished turn), plus `summary.json` for sessions |
 | `fireworks` | Estimated prepaid balance: configured funding minus rated account costs | Fireworks billing API, grouped by day and model for the last 30 days |
+| `x` | Cursor dashboard shared first-party pool (Cursor + Grok on The X Subscription) via `GetCurrentPeriodUsage` / `GetPlanInfo` | Cursor agent transcripts under `~/.cursor/projects/**/agent-transcripts` |
 
 When `~/.local/state/omarchy/agents/accounts/<claude|codex|grok>.json`
 registers more than one account, the `claude`, `codex`, and `grok` records
@@ -104,6 +105,12 @@ again. Fireworks reads
 pi stores in `~/.pi/agent/auth.json` when Fireworks is signed in there
 (honoring `PI_CODING_AGENT_DIR`, and pi's literal and `$ENV_VAR` key forms),
 and finally the key opencode stores in `~/.local/share/opencode/auth.json`.
+
+X Subscription reads the Cursor sign-in in `~/.config/cursor/auth.json`
+(the same token `cursor-agent login` writes). Its limits describe the shared
+included pool for Cursor and Grok on that plan; local prompt counts come from
+Cursor agent transcripts. There is no separate Cursor collector — the shared
+pool is this one record.
 
 ### Fireworks balance
 
