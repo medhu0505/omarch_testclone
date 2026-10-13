@@ -442,8 +442,20 @@ if (hotspotStatusProcess) {
   assert(/Qt\.callLater\(function\(\) \{[\s\S]*root\.completeHotspotStatus\(/.test(hotspotStatusProcess[0]), 'network defers hotspot status completion so stderr is drained first')
 }
 
-const refreshHotspotSource = panelSource.match(/function refreshHotspot\(\) \{[\s\S]*?\n {2}\}/)
+const refreshHotspotSource = panelSource.match(/function refreshHotspot\(discardRunning\) \{[\s\S]*?\n {2}\}/)
 assert(refreshHotspotSource, 'network has a hotspot status poller')
+if (refreshHotspotSource) {
+  let hotspotProc = { running: true, command: null, runGeneration: 0 }
+  let hotspotRefreshPending = false
+  let hotspotStatusGeneration = 3
+  const hotspotCommand = 'omarchy-hotspot'
+  eval(refreshHotspotSource[0])
+  refreshHotspot()
+  assert(hotspotRefreshPending === false, 'a poll during a running status lets that run publish')
+  refreshHotspot(true)
+  assert(hotspotRefreshPending === true, 'a refresh after an action discards the in-flight pre-action status')
+}
+assert(/onTriggered: root\.refreshHotspot\(\)/.test(panelSource), 'the periodic poll never discards a running status')
 if (refreshHotspotSource) {
   assert(/hotspotStatusGeneration\+\+\s*\n\s*hotspotProc\.command = \[hotspotCommand, "status"\]\s*\n\s*hotspotProc\.runGeneration = hotspotStatusGeneration\s*\n\s*hotspotProc\.running = true/.test(refreshHotspotSource[0]), 'network stamps each hotspot status run with the generation it was started for')
 }

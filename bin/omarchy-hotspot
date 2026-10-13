@@ -23,10 +23,15 @@ SCRIPT_PATH=$(readlink -f "${BASH_SOURCE[0]}")
 if (( EUID == 0 )) || [[ $SCRIPT_PATH == /usr/share/omarchy/bin/* ]]; then
   UFW_RULES_FILE="/etc/ufw/user.rules"
   HOTSPOT_STATE_DIR="/var/lib/omarchy/hotspot"
+  HOTSPOT_LOCK_FILE=""
+  HOTSPOT_LOCK_WAIT=30
 else
   UFW_RULES_FILE="${OMARCHY_HOTSPOT_UFW_RULES:-/etc/ufw/user.rules}"
   HOTSPOT_STATE_DIR="${OMARCHY_HOTSPOT_STATE_DIR:-/var/lib/omarchy/hotspot}"
+  HOTSPOT_LOCK_FILE="${OMARCHY_HOTSPOT_LOCK_FILE:-}"
+  HOTSPOT_LOCK_WAIT="${OMARCHY_HOTSPOT_LOCK_WAIT:-30}"
 fi
+HOTSPOT_LOCK_HELD=0
 FIREWALL_STATE_FILE="$HOTSPOT_STATE_DIR/firewall.state"
 FORWARDING_STATE_FILE="$HOTSPOT_STATE_DIR/forwarding.state"
 FIREWALL_TAGS=(dhcp dns-udp dns-tcp forward)
@@ -102,7 +107,7 @@ ap_capable() {
   local phy
   phy=$(phy_for_iface "$1") || return 1
   [[ -n $phy ]] || return 1
-  iw phy "$phy" 2>/dev/null | awk -v phy="$phy" '
+  iw phy "$phy" info 2>/dev/null | awk -v phy="$phy" '
     $1 == "Wiphy" { selected = ($2 == phy) }
     selected && /^[[:space:]]*\*[[:space:]]*AP[[:space:]]*$/ { capable = 1 }
     END { exit capable ? 0 : 1 }
@@ -110,14 +115,14 @@ ap_capable() {
 }
 
 # Bands the selected interface's PHY reports, comma-separated ("2.4,5").
-# `iw phy` only exposes band presence, not per-band AP support, so this
+# `iw phy <phy> info` only exposes band presence, not per-band AP support, so this
 # over-approximates; an AP that fails on a reported band surfaces the real
 # NetworkManager reason instead of a silent fallback.
 ap_bands() {
   local phy
   phy=$(phy_for_iface "$1") || return 0
   [[ -n $phy ]] || return 0
-  iw phy "$phy" 2>/dev/null | awk -v phy="$phy" '
+  iw phy "$phy" info 2>/dev/null | awk -v phy="$phy" '
     $1 == "Wiphy" { selected = ($2 == phy) }
     selected && /^[[:space:]]*Band 1:[[:space:]]*$/ { out = emit(out, "2.4") }
     selected && /^[[:space:]]*Band 2:[[:space:]]*$/ { out = emit(out, "5") }
@@ -437,7 +442,11 @@ hotspot_state_dir_usable() {
 
 hotspot_state_prepare() {
   local -a owner=()
-  hotspot_state_dir_usable "invalid hotspot state directory"
+  # A fresh system has no state directory yet; only an existing one (or a
+  # symlink in its place) has to prove it is trustworthy before it is used.
+  if [[ -e $HOTSPOT_STATE_DIR || -L $HOTSPOT_STATE_DIR ]]; then
+    hotspot_state_dir_usable "invalid hotspot state directory"
+  fi
   (( EUID == 0 )) && owner=(-o 0 -g 0)
   install -d "${owner[@]}" -m 0755 "$HOTSPOT_STATE_DIR" || fail "could not create hotspot state directory"
   chmod 0755 "$HOTSPOT_STATE_DIR" || fail "could not secure hotspot state directory"
@@ -644,7 +653,7 @@ firewall_delete_tag() {
       ufw delete allow in on "$iface" from "$subnet" proto tcp to any port 53 comment "$UFW_OWNER:dns" >/dev/null
       ;;
     forward)
-      ufw delete route allow in on "$iface" from "$subnet" comment "$UFW_OWNER:forward" >/dev/null
+      ufw route delete allow in on "$iface" from "$subnet" comment "$UFW_OWNER:forward" >/dev/null
       ;;
     *) return 1 ;;
   esac
@@ -723,7 +732,7 @@ firewall_remove_record() {
 
 firewall_remove() {
   local rules="" state="" iface subnet tag record
-  local -a records=()
+  local -a records=() failed=()
   require_privileged
   state=$(firewall_state_records) || fail "could not read hotspot firewall state"
   [[ -z $state ]] || mapfile -t records <<<"$state"
@@ -733,16 +742,16 @@ firewall_remove() {
     [[ -n $iface ]] || return 0
     subnet=$(shared_subnet)
     for tag in "${FIREWALL_TAGS[@]}"; do
-      firewall_remove_record "$rules" "$iface" "$subnet" "$tag" ||
-        fail "could not remove hotspot firewall rule $tag"
+      firewall_remove_record "$rules" "$iface" "$subnet" "$tag" || failed+=("$tag")
     done
-    return
+  else
+    # Keep going past a failed rule so one bad delete doesn't strand the rest.
+    for record in "${records[@]}"; do
+      IFS=$'\t' read -r iface subnet tag <<<"$record"
+      firewall_remove_record "$rules" "$iface" "$subnet" "$tag" || failed+=("$tag")
+    done
   fi
-  for record in "${records[@]}"; do
-    IFS=$'\t' read -r iface subnet tag <<<"$record"
-    firewall_remove_record "$rules" "$iface" "$subnet" "$tag" ||
-      fail "could not remove hotspot firewall rule $tag"
-  done
+  ((${#failed[@]} == 0)) || fail "could not remove hotspot firewall rule ${failed[*]}"
 }
 
 firewall_warn_unsupported() {
@@ -766,7 +775,9 @@ privileged_run() {
   shift
   function=$(privileged_function "$action") || return 2
   if (( EUID == 0 )); then
-    "$function" "$@"
+    # A subshell, so a helper's fail() ends that step rather than the caller,
+    # just as it would in the separate sudo/pkexec process.
+    ("$function" "$@")
   elif [[ -t 0 ]]; then
     sudo "$(self_path)" "$action" "$@"
   else
@@ -861,13 +872,40 @@ forwarding_enable() {
   fi
 }
 
+# Another router that may have come up after the hotspot claimed forwarding:
+# a second NetworkManager shared connection, or a container/VM bridge. The
+# hotspot's marker only says who turned forwarding on first.
+forwarding_other_user() {
+  local name method link
+  while IFS= read -r name; do
+    [[ -n $name && $name != "$PROFILE" ]] || continue
+    for method in ipv4.method ipv6.method; do
+      [[ $(nm_get "$method" connection show "$name" | head -n 1) != shared ]] || {
+        printf 'NetworkManager connection %s\n' "$name"
+        return 0
+      }
+    done
+  done < <(LC_ALL=C nmcli -e no -g NAME connection show --active 2>/dev/null || true)
+  while IFS= read -r link; do
+    case $link in
+      docker* | br-* | virbr* | podman* | cni* | lxcbr* | incusbr* | lxdbr*)
+        printf 'interface %s\n' "$link"
+        return 0
+        ;;
+    esac
+  done < <(ip -o link show 2>/dev/null | awk -F': ' '{ sub(/@.*/, "", $2); print $2 }' || true)
+  return 1
+}
+
 forwarding_restore() {
-  local current
+  local current other
   require_privileged
   forwarding_state_owned || return 0
   current=$(sysctl -n net.ipv4.ip_forward 2>/dev/null) || fail "could not read IPv4 forwarding state"
   [[ $current == "0" || $current == "1" ]] || fail "invalid IPv4 forwarding state '$current'"
-  if [[ $current == "1" ]]; then
+  if [[ $current == "1" ]] && other=$(forwarding_other_user); then
+    echo "hotspot: leaving IPv4 forwarding on; still routing for $other" >&2
+  elif [[ $current == "1" ]]; then
     sysctl -q -w net.ipv4.ip_forward=0 >/dev/null || fail "could not restore IPv4 forwarding"
     ipv4_forwarding_enabled && fail "IPv4 forwarding did not become disabled"
   fi
@@ -908,6 +946,7 @@ generate_password() {
 # apply() writes the profile; start() writes it the same way, then brings the AP up.
 start() {
   local ssid=$1 band=${2:-2.4}
+  hotspot_lock
 
   if omarchy-cmd-missing dnsmasq; then
     fail "dnsmasq is missing; run 'omarchy migrate' to install the hotspot dependency"
@@ -924,6 +963,43 @@ start() {
   if ! ipv4_forwarding_enabled; then
     rollback_start "IPv4 forwarding is not enabled after hotspot activation" 1
   fi
+}
+
+# Serialize everything that changes the profile, firewall rules or forwarding
+# state, so a menu, terminal and panel action cannot interleave and roll each
+# other back. Privileged helper re-execs run inside a held lock and never take
+# it themselves; teardown and setup take it in their root instance, after
+# require_root, so the unprivileged process never holds it across the exec.
+# The lock lives in the invoking user's runtime directory. A root instance
+# re-execed through sudo/pkexec (teardown, setup) uses that same user's lock,
+# so it excludes the user's panel and menu actions too.
+hotspot_lock_path() {
+  local uid
+  if [[ -n $HOTSPOT_LOCK_FILE ]]; then
+    printf '%s\n' "$HOTSPOT_LOCK_FILE"
+  elif (( EUID != 0 )); then
+    printf '%s\n' "${XDG_RUNTIME_DIR:-/run/user/$EUID}/omarchy-hotspot.lock"
+  else
+    uid=${PKEXEC_UID:-${SUDO_UID:-0}}
+    if [[ $uid =~ ^[1-9][0-9]*$ && -d /run/user/$uid ]]; then
+      printf '%s\n' "/run/user/$uid/omarchy-hotspot.lock"
+    else
+      printf '%s\n' /run/lock/omarchy-hotspot.lock
+    fi
+  fi
+}
+
+hotspot_lock() {
+  local fd lock
+  (( HOTSPOT_LOCK_HELD == 0 )) || return 0
+  lock=$(hotspot_lock_path)
+  # noclobber creates with O_EXCL, which never follows a symlink planted in
+  # place of the lock; an existing lock is then only opened read-only.
+  [[ -e $lock || -L $lock ]] || (set -C; umask 022; : >"$lock") 2>/dev/null || true
+  [[ -f $lock && ! -L $lock ]] || fail "unsafe hotspot lock: $lock"
+  exec {fd}<"$lock" || fail "could not open the hotspot lock"
+  flock -w "$HOTSPOT_LOCK_WAIT" "$fd" || fail "another hotspot action is still running"
+  HOTSPOT_LOCK_HELD=1
 }
 
 ap_down() {
@@ -948,6 +1024,7 @@ hotspot_release() {
 # Leaving forwarding on would keep the host routing for every interface long
 # after the AP is gone; the next start() turns both back on.
 stop() {
+  hotspot_lock
   ap_down || return 1
   hotspot_host_state_owned || return 0
   privileged_run release
@@ -956,6 +1033,7 @@ stop() {
 # Flip the current state. When nothing has been configured yet, hand over to
 # the network panel instead of inventing credentials.
 toggle() {
+  hotspot_lock
   if profile_active; then
     stop
   elif profile_configured; then
@@ -1008,6 +1086,7 @@ qr() {
 # the profile on first use, then updates it. start() reuses this path.
 apply() {
   local ssid=$1 band=${2:-2.4} password device nm_band nm_channel
+  hotspot_lock
 
   device=$(ap_iface)
   [[ -n $device ]] || fail "no Wi-Fi device found"
@@ -1054,15 +1133,18 @@ apply() {
 # is up). Privileged via sudo/pkexec.
 teardown() {
   require_root teardown
+  hotspot_lock
   local backend iface
   local -a failed=()
+  # Each cleanup step runs in a subshell so one step's fail() cannot skip the
+  # rest; every failure is reported together at the end.
   ap_down || failed+=("AP deactivation")
-  forwarding_restore_if_owned || failed+=("IPv4 forwarding restore")
+  (forwarding_restore_if_owned) || failed+=("IPv4 forwarding restore")
   backend=$(firewall_backend)
   iface=$(recorded_iface)
   [[ -n $iface ]] || iface=$(ap_iface)
   case $backend in
-    ufw) firewall_remove || failed+=("firewall removal") ;;
+    ufw) (firewall_remove) || failed+=("firewall removal") ;;
     firewalld | nftables) firewall_warn_unsupported "$backend" "$iface" ;;
     none) echo "hotspot: no active firewall found; nothing to remove" >&2 ;;
   esac
@@ -1073,6 +1155,7 @@ teardown() {
 # report dependency readiness. Privileged via sudo/pkexec.
 setup() {
   require_root setup
+  hotspot_lock
   local backend iface subnet
   backend=$(firewall_backend)
   iface=$(ap_iface)
