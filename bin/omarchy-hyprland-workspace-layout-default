@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# omarchy:summary=Show or set the layout of workspaces without one of their own: dwindle, scrolling, or floating
+# omarchy:args=[dwindle|scrolling|floating]
+# omarchy:examples=omarchy hyprland workspace layout default | omarchy hyprland workspace layout default scrolling
+
+# Layout changes replace one notification instead of stacking a new one for
+# each press, so cycling through the layouts leaves a single, current one.
+notify_layout() {
+  local state="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/workspace-layout-notification"
+  local last id
+  [[ -r $state ]] && read -r last <"$state"
+  if id=$(omarchy-notification-send -p -r "${last:-0}" -g 󱂬 "$1") && [[ $id =~ ^[0-9]+$ ]]; then
+    mkdir -p "$(dirname "$state")" && printf '%s\n' "$id" >"$state"
+  fi
+}
+
+MODES_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/workspace-layouts"
+DEFAULT_FILE="$MODES_DIR/default.lua"
+
+# Without a saved default, Hyprland's own layout is the default, which the
+# user's looknfeel may have set.
+if (( $# == 0 )); then
+  MODE=$(sed -n 's/.*default = "\([a-z]*\)".*/\1/p' "$DEFAULT_FILE" 2>/dev/null)
+  [[ -n $MODE ]] || MODE=$(hyprctl getoption general.layout -j 2>/dev/null | jq -r '.str // empty')
+  echo "${MODE:-dwindle}"
+  exit 0
+fi
+
+case $1 in
+  dwindle) LABEL=tiling ;;
+  scrolling | floating) LABEL=$1 ;;
+  *)
+    echo "Usage: omarchy-hyprland-workspace-layout-default [dwindle|scrolling|floating]" >&2
+    exit 1
+    ;;
+esac
+
+mkdir -p "$MODES_DIR"
+
+# A workspace with windows on it keeps the layout it has, so changing the
+# default never rearranges work in progress: it is saved as that workspace's
+# own layout. Empty workspaces, and those not opened yet, take the new default.
+while read -r workspace; do
+  [[ -f $MODES_DIR/$workspace.lua ]] && continue
+  current=$(omarchy-hyprland-workspace-layout-current "$workspace")
+  if [[ $current != "$1" ]]; then
+    printf 'o.workspace_mode({ workspace = "%s", mode = "%s" })\n' "$workspace" "$current" >"$MODES_DIR/$workspace.lua"
+  fi
+done < <(hyprctl workspaces -j | jq -r '.[] | select(.id >= 1 and (.windows // 0) > 0) | .id')
+
+# Saved even for dwindle, so the choice also wins over a layout set in the
+# user's own looknfeel. Workspaces given a layout with Super + L keep theirs.
+printf 'o.workspace_mode({ default = "%s" })\n' "$1" >"$DEFAULT_FILE"
+
+hyprctl reload >/dev/null
+omarchy-shell -q omarchy.workspaces refresh
+omarchy-shell -q omarchy.dock refresh
+notify_layout "Default layout set to $LABEL"
