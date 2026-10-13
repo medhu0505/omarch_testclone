@@ -146,6 +146,10 @@ cold_login_ms() {
   local start end elapsed pid
 
   : >"$log"
+  # Every sample is a fresh login: the first launch writes a session
+  # marker that later launches read as "already consumed" and skip the
+  # login intro work for.
+  rm -f "$test_home/.local/state/omarchy/background-intro.session-id"
   start=$EPOCHREALTIME
   OMARCHY_PATH="$test_root" \
   HOME="$test_home" \
