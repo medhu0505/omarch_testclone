@@ -60,16 +60,19 @@ def urlopen(request, timeout=None):
   calls["n"] += 1
   if os.environ.get("X_FAIL_USAGE") == "1":
     raise urllib.error.HTTPError(request.full_url, 401, "Unauthorized", hdrs=None, fp=None)
-  if os.environ.get("X_REJECT_API") == "1":
-    raise AssertionError(f"unexpected API call: {request.full_url}")
   method = request.full_url.split("://", 1)[-1].split("/", 1)[-1]
   if method.endswith("GetAggregatedUsageEvents"):
+    if os.environ.get("X_FAIL_AGG") == "1":
+      raise TimeoutError("dashboard day aggregate timed out")
     # Optional day-token fixture for the tokens-by-day test.
     rows = json.loads(os.environ.get("X_DAY_AGG", "[]"))
     class Resp(io.BytesIO):
       def __enter__(self): return self
       def __exit__(self, *a): return False
     return Resp(json.dumps({"aggregations": rows}).encode())
+  # Limits-reuse tests only reject plan/usage probes, not day-token scans.
+  if os.environ.get("X_REJECT_API") == "1":
+    raise AssertionError(f"unexpected API call: {request.full_url}")
   if method not in responses:
     raise AssertionError(f"unexpected method {method}")
   auth = request.get_header("Authorization") or request.get_header("authorization")
@@ -215,7 +218,35 @@ rm -f "$XDG_CACHE_HOME"/omarchy/agent-usage/x-tokens-*.json
 record=$(X_TOKEN=token-side X_DAY_AGG="$agg" COLLECT_ARGS="--force" collect)
 [[ $(jq -c '{todayTotalTokens, weekTokens: ([.recentDays[].messageCount] | add), model: .todayTokensByModel["grok-4.7-high-fast"]}' <<<"$record") == '{"todayTotalTokens":125,"weekTokens":875,"model":125}' ]] ||
   fail "dashboard day aggregates fill token counts for the week" "$record"
+[[ $(jq -r '.scope' <<<"$record") == "account" ]] ||
+  fail "dashboard token totals are account-scoped so sync does not double them" "$record"
 pass "dashboard day aggregates fill token counts for the week"
+
+# A timed-out day aggregate keeps the last known week totals.
+record=$(X_TOKEN=token-side X_FAIL_AGG=1 COLLECT_ARGS="--force" collect)
+[[ $(jq -c '{weekTokens: ([.recentDays[].messageCount] | add), today: .todayTotalTokens, stale: .limitsStale, status: .usageStatusText}' <<<"$record") == '{"weekTokens":875,"today":125,"stale":true,"status":"Showing last known token totals"}' ]] ||
+  fail "a failed day aggregate keeps the last known token totals" "$record"
+pass "a failed day aggregate keeps the last known token totals"
+
+# Merging token dates must not shrink a prompt activeDays count past 30.
+python3 - "$ROOT/bin/omarchy-agent-usage-x" <<'PY'
+import importlib.machinery, importlib.util, sys
+loader = importlib.machinery.SourceFileLoader("collector", sys.argv[1])
+spec = importlib.util.spec_from_loader(loader.name, loader)
+collector = importlib.util.module_from_spec(spec)
+loader.exec_module(collector)
+# Simulate main()'s merge: 80 prompt days truncated to 30 dates, plus token days.
+prompt_active_days = 80
+prompt_dates = {f"2026-01-{i:02d}" for i in range(1, 31)}
+token_days = ["2026-10-01", "2026-10-02"]
+merged_dates = sorted(prompt_dates | set(token_days))
+active_days = max(prompt_active_days, len(merged_dates))
+assert active_days == 80, active_days
+assert len(merged_dates[-30:]) == 30
+print("ok")
+PY
+[[ $? -eq 0 ]] || fail "activeDays keeps the full prompt-day count when merging token dates"
+pass "activeDays keeps the full prompt-day count when merging token dates"
 
 # limits-only reuses the transcript scan.
 
