@@ -91,6 +91,17 @@ function brightnessName(percent) {
   return "Night owl"
 }
 
+// Label for the warmth slider, in the same spirit as brightnessName. Anything
+// at or above hyprsunset's identity point reads as night light off.
+function warmthName(kelvin) {
+  var k = Math.round(Number(kelvin))
+  if (!isFinite(k) || k >= 6000) return "Off"
+  if (k >= 5000) return "Faint"
+  if (k >= 4000) return "Warm"
+  if (k >= 3250) return "Sunset"
+  return "Ember"
+}
+
 function parseDisplays(raw) {
   var displays = []
   try {
@@ -119,6 +130,7 @@ if (typeof module !== "undefined") {
     matchingScaleIndex: matchingScaleIndex,
     availableScales: availableScales,
     brightnessName: brightnessName,
+    warmthName: warmthName,
     parseDisplays: parseDisplays
   }
 }

@@ -473,6 +473,10 @@ ShellRoot {
         var target = service()
         if (target && typeof target.setNightlight === "function") target.setNightlight(value)
       },
+      _setTemperature: function(value) {
+        var target = service()
+        return target && typeof target.setTemperature === "function" ? target.setTemperature(value) === true : false
+      },
       _setDoNotDisturb: function(value) {
         var target = service()
         if (target && typeof target.setDoNotDisturb === "function") target.setDoNotDisturb(value)
@@ -498,6 +502,17 @@ ShellRoot {
     api.enabled = Qt.binding(function() {
       var target = service()
       return target ? target.enabled === true : false
+    })
+    // Scalars only: the Display panel's warmth slider reads these.
+    api.temperature = Qt.binding(function() {
+      var target = service()
+      if (!target || id !== "omarchy.nightlight" || target.temperature === null || target.temperature === undefined) return null
+      var value = Number(target.temperature)
+      return isFinite(value) ? value : null
+    })
+    api.saving = Qt.binding(function() {
+      var target = service()
+      return target && id === "omarchy.nightlight" ? target.saving === true : false
     })
     api.doNotDisturb = Qt.binding(function() {
       var target = service()

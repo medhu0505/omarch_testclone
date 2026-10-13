@@ -50,6 +50,8 @@ The first time you turn night light on, Omarchy opens the night light config. It
 
 The warmth slider changes the screen as you drag it whenever night light is on, schedule or not, so you can pick a warmth by eye. Save keeps it, and both the schedule and `Super + Ctrl + N` use it from then on; closing without saving puts the old warmth back.
 
+For a quick change that isn't saved, the Display panel in the top bar has a Warmth slider under Brightness. It goes from 2500K at the warm end to 6500K, which is night light off, in 250K steps. Drag it, or move to it and nudge it with the left and right arrow keys. It sets the screen just like `Super + Ctrl + N` does and follows it, but it doesn't change the saved warmth. The next toggle or scheduled change uses the saved warmth again.
+
 Bring the config back any time from Setup > Config > Night Light Config in the Omarchy menu, or with `omarchy nightlight config edit`. `omarchy nightlight config` prints the current settings, and `omarchy nightlight config set on 07:00 20:30 3800` sets them without the card.
 
 Saving writes `~/.config/hypr/hyprsunset.conf` for you and starts hyprsunset at login while the schedule is on. If you had written your own profiles in that file, the first save keeps a copy next to it as `hyprsunset.conf.bak.<number>` and the save notification tells you where.

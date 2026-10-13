@@ -57,6 +57,11 @@ assertDeepEqual(
 assertEqual(monitor.brightnessName(96), 'Sun blast', 'monitor names very bright displays')
 assertEqual(monitor.brightnessName(12), 'Candlelit', 'monitor names dim displays')
 
+assertEqual(monitor.warmthName(6500), 'Off', 'monitor names neutral warmth as off')
+assertEqual(monitor.warmthName(6000), 'Off', 'monitor names the identity point as off')
+assertEqual(monitor.warmthName(4000), 'Warm', 'monitor names the default night warmth')
+assertEqual(monitor.warmthName(2500), 'Ember', 'monitor names the warmest step')
+
 assertDeepEqual(
   monitor.parseDisplays(JSON.stringify([
     { name: 'eDP-1', enabled: true, focused: false, width: 1920, height: 1080 },

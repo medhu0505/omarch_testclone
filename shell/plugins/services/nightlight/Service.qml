@@ -101,6 +101,17 @@ Item {
     applyTemperature(NightlightModel.clampTemperature(temperature))
   }
 
+  // The Display panel's warmth slider: sets the screen to any warmth from the
+  // warmest step up to neutral, which turns night light off. It is a live
+  // setting like the toggle, not a config change; the saved warmth stays what
+  // it was. During a save it is ignored, like a preview, and the slider follows
+  // `temperature` back once the save re-reads the screen.
+  function setTemperature(temperature) {
+    if (root.saving) return false
+    applyTemperature(NightlightModel.clampLiveTemperature(temperature))
+    return true
+  }
+
   // Puts the saved warmth back after a preview the editor did not save.
   function endPreview() {
     if (root.saving) return
@@ -327,6 +338,10 @@ Item {
 
     function config(): string {
       return root.openConfig("") ? "opened" : "unavailable"
+    }
+
+    function temperature(kelvin: string): string {
+      return root.setTemperature(Number(kelvin)) ? String(root.temperature) : "saving"
     }
 
     function configStatus(): string {

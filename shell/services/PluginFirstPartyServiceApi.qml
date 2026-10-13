@@ -8,12 +8,15 @@ QtObject {
 
   property bool stayAwake: false
   property bool enabled: false
+  property var temperature: null
+  property bool saving: false
   property bool doNotDisturb: false
   property var activePlayer: null
   property var sourcePlayers: []
 
   property var _setIdleEnabled: null
   property var _setNightlight: null
+  property var _setTemperature: null
   property var _setDoNotDisturb: null
   property var _runAction: null
   property var _playerKey: null
@@ -25,6 +28,12 @@ QtObject {
 
   function setNightlight(value) {
     if (serviceId === "omarchy.nightlight" && _setNightlight) _setNightlight(!!value)
+  }
+
+  function setTemperature(kelvin) {
+    var value = Number(kelvin)
+    if (serviceId !== "omarchy.nightlight" || !_setTemperature || !isFinite(value)) return false
+    return _setTemperature(value) === true
   }
 
   function setDoNotDisturb(value) {

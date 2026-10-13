@@ -239,7 +239,44 @@ ShellRoot {
           root.assertTrue(root.lastSave && root.lastSave.ok === false, "a failed save reports failure")
           root.assertTrue(root.lastSave && root.lastSave.error === "Could not write hyprsunset.conf", "a failed save passes on the command's error: " + JSON.stringify(root.lastSave))
           next()
-        }
+        },
+
+        // The Display panel's warmth slider sets the screen directly, snapped
+        // to its step, and its neutral end turns night light off.
+        root.setControl("save-exit", "0"),
+        root.setScreen(6500),
+        root.refreshed,
+        function(next) {
+          root.assertTrue(root.service.setTemperature(3870) === true, "a live warmth is accepted")
+          root.assertTrue(root.service.temperature === 3750, "a live warmth shows at once, snapped to its step: " + root.service.temperature)
+          root.assertTrue(root.service.enabled, "a live warmth turns night light on")
+          next()
+        },
+        root.wait(600),
+        function(next) {
+          root.assertTrue(root.service.setTemperature(9000) === true, "a live neutral is accepted")
+          root.assertTrue(!root.service.enabled, "a live neutral turns night light off")
+          next()
+        },
+        root.wait(600),
+        root.withLog(function(lines) {
+          var applied = root.sets(lines)
+          root.assertTrue(applied.indexOf("set 3750") >= 0 && applied[applied.length - 1] === "set 6500", "live warmth reaches hyprsunset in order: " + lines.join(" | "))
+        }),
+
+        // A live warmth during a save is refused and never reaches hyprsunset.
+        root.setScreen(4000),
+        root.refreshed,
+        root.setControl("save-delay", "0.6"),
+        function(next) {
+          root.service.saveConfig(true, "07:00", "20:00", 3400, null)
+          root.assertTrue(root.service.setTemperature(2500) === false, "a live warmth is refused during a save")
+          next()
+        },
+        root.wait(1200),
+        root.withLog(function(lines) {
+          root.assertTrue(root.indexOf(lines, "set 2500") < 0, "a live warmth during a save never reaches hyprsunset: " + lines.join(" | "))
+        })
       ])
     }
   }

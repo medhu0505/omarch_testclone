@@ -5,6 +5,7 @@ import Quickshell.Io
 import qs.Ui
 import qs.Commons
 import "Model.js" as Model
+import "../../services/nightlight/NightlightModel.js" as NightlightModel
 
 Panel {
   id: root
@@ -30,10 +31,24 @@ Panel {
   // Carry sub-notch touchpad deltas between wheel events.
   property real wheelAccumulator: 0
 
+  // Warmth is the night light service's screen temperature: the same value
+  // the toggle and the schedule set, so the slider follows whichever of them
+  // changed it last. It is a live setting, not the saved night light warmth.
+  readonly property var nightlightService: bar?.shell?.firstPartyServiceFor("omarchy.nightlight")
+  readonly property bool warmthAvailable: !!nightlightService
+  // A night light save restarts hyprsunset; the service ignores warmth changes
+  // until it finishes, so the slider is frozen meanwhile.
+  readonly property bool warmthLocked: warmthAvailable && nightlightService.saving === true
+  // The service records a new temperature as soon as it is asked for, so the
+  // knob never waits on hyprsunset to answer.
+  readonly property int warmthKelvin: NightlightModel.liveTemperature(warmthAvailable ? nightlightService.temperature : null)
+
   // Cursor model shared by keyboard and mouse. Sections:
   //   "brightness" - single slider row, selectedIndex = -1 sentinel
   //                  (mirrors Audio's slider rows). Only present if a
   //                  controllable backlight was detected.
+  //   "warmth"     - night light temperature slider, same sentinel. Only
+  //                  present while the night light service is running.
   //   "scale"      - 6 Button scale presets; treated as a single
   //                  horizontal row from j/k's perspective. h/l moves
   //                  between presets, identical to bluetooth's header.
@@ -75,27 +90,32 @@ Panel {
   readonly property var visibleSections: {
     var list = []
     if (brightnessAvailable) list.push("brightness")
+    if (warmthAvailable) list.push("warmth")
     list.push("textsize")
     list.push("scale")
     if (displays.length > 1) list.push("monitors")
     return list
   }
 
+  // Lone slider rows: only the -1 sentinel, no indexed items.
+  function sectionIsSlider(section) {
+    return section === "brightness" || section === "warmth" || section === "textsize"
+  }
+
   function sectionCount(section) {
-    if (section === "brightness") return 0  // only the slider sentinel at -1
-    if (section === "textsize") return 0    // slider sentinel at -1, like brightness
+    if (sectionIsSlider(section)) return 0
     if (section === "scale") return scaleValues.length
     if (section === "monitors") return displays.length
     return 0
   }
 
   function sectionIsSingleRow(section) {
-    // brightness and text size are lone sliders; scale presets sit horizontally.
-    return section === "brightness" || section === "textsize" || section === "scale"
+    // Sliders are lone rows; scale presets sit horizontally.
+    return sectionIsSlider(section) || section === "scale"
   }
 
   function sectionFirstIndex(section) {
-    if (section === "brightness" || section === "textsize") return -1
+    if (sectionIsSlider(section)) return -1
     return 0
   }
 
@@ -146,6 +166,21 @@ Panel {
     setBrightness(root.brightnessPercent + delta)
   }
 
+  // ---- Warmth (night light temperature, via the night light service) ----
+  function setWarmth(value) {
+    if (!warmthAvailable || warmthLocked) return
+    nightlightService.setTemperature(NightlightModel.clampLiveTemperature(value))
+  }
+
+  function adjustWarmth(deltaSteps) {
+    if (focusSection !== "warmth") return
+    setWarmth(root.warmthKelvin + deltaSteps * NightlightModel.LIVE_TEMPERATURE_STEP)
+  }
+
+  function warmthName(kelvin) {
+    return Model.warmthName(kelvin)
+  }
+
   function activateCursor() {
     if (focusSection === "scale" && selectedIndex >= 0 && selectedIndex < scaleValues.length) {
       setScale(scaleValues[selectedIndex])
@@ -155,7 +190,7 @@ Panel {
       var d = displays[selectedIndex]
       if (d) toggleDisplay(d.name, d.enabled)
     }
-    // brightness: no separate action; the slider value is the action.
+    // brightness/warmth: no separate action; the slider value is the action.
   }
 
   function clampCursor() {
@@ -168,8 +203,8 @@ Panel {
     }
     var count = sectionCount(focusSection)
     if (sectionIsSingleRow(focusSection)) {
-      // brightness/text size use the -1 sentinel; scale clamps into the presets.
-      if (focusSection === "brightness" || focusSection === "textsize") selectedIndex = -1
+      // Sliders use the -1 sentinel; scale clamps into the presets.
+      if (sectionIsSlider(focusSection)) selectedIndex = -1
       else if (selectedIndex < 0 || selectedIndex >= count) selectedIndex = 0
       return
     }
@@ -211,6 +246,7 @@ Panel {
     return JSON.stringify({
       brightness: root.brightnessPercent,
       brightnessAvailable: root.brightnessAvailable,
+      warmth: root.warmthAvailable ? root.warmthKelvin : null,
       focusedMonitor: root.focusedMonitor,
       scale: root.monitorScale,
       displays: root.displays
@@ -366,6 +402,9 @@ Panel {
       if (brightnessAvailable) {
         focusSection = "brightness"
         selectedIndex = -1
+      } else if (warmthAvailable) {
+        focusSection = "warmth"
+        selectedIndex = -1
       } else {
         focusSection = "scale"
         selectedIndex = 0
@@ -375,6 +414,7 @@ Panel {
   }
 
   onBrightnessAvailableChanged: clampCursor()
+  onWarmthAvailableChanged: clampCursor()
   onDisplaysChanged: clampCursor()
   onScaleValuesChanged: clampCursor()
   onVisibleSectionsChanged: clampCursor()
@@ -505,6 +545,7 @@ Panel {
         if (dy !== 0) root.moveCursor(dy)
         else if (dx !== 0) {
           if (root.focusSection === "brightness") root.adjustBrightness(dx * 5)
+          else if (root.focusSection === "warmth") root.adjustWarmth(dx)
           else if (root.focusSection === "textsize") root.adjustTextSize(dx)
           else if (root.focusSection === "scale") root.moveCursorH(dx)
         }
@@ -653,6 +694,102 @@ Panel {
                 onHoveredChanged: if (hovered && !root.reflowingText) {
                   root.cursorActive = true
                   root.focusSection = "brightness"
+                  root.selectedIndex = -1
+                }
+              }
+            }
+          }
+
+          // ---------- Warmth ----------
+          PanelSeparator {
+            visible: root.warmthAvailable
+            foreground: root.bar.foreground
+          }
+
+          Column {
+            visible: root.warmthAvailable
+            width: parent.width
+            spacing: Style.space(6)
+
+            Item {
+              width: parent.width
+              implicitHeight: Math.max(warmthHeader.implicitHeight, warmthValue.implicitHeight)
+
+              PanelSectionHeader {
+                id: warmthHeader
+                text: "WARMTH"
+                foreground: root.bar.foreground
+                fontFamily: root.bar.fontFamily
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+              }
+
+              Row {
+                anchors.right: parent.right
+                anchors.rightMargin: Style.space(6)
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Style.space(6)
+
+                readonly property int shownKelvin: warmthSlider.dragging
+                  ? NightlightModel.clampLiveTemperature(warmthSlider.liveValue)
+                  : root.warmthKelvin
+
+                Rectangle {
+                  readonly property var tint: NightlightModel.kelvinColor(parent.shownKelvin)
+                  width: Style.space(10)
+                  height: width
+                  radius: width / 2
+                  anchors.verticalCenter: parent.verticalCenter
+                  color: Qt.rgba(tint.r, tint.g, tint.b, 1)
+                  border.width: 1
+                  border.color: Util.alpha(root.bar.foreground, 0.25)
+                }
+
+                Text {
+                  id: warmthValue
+                  textFormat: Text.PlainText
+                  text: root.warmthName(parent.shownKelvin).toUpperCase() + " · " + parent.shownKelvin + "K"
+                  color: Qt.darker(root.bar.foreground, 1.4)
+                  font.family: root.bar.fontFamily
+                  font.pixelSize: Style.font.caption
+                  font.bold: true
+                  anchors.verticalCenter: parent.verticalCenter
+                }
+              }
+            }
+
+            CursorSurface {
+              id: warmthRow
+              width: parent.width
+              height: warmthSlider.implicitHeight + Style.spacing.controlGap
+              hasCursor: root.cursorActive && root.focusSection === "warmth" && root.selectedIndex === -1
+              onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(warmthRow)
+              foreground: root.bar.foreground
+              outline: true
+              opacity: root.warmthLocked ? 0.5 : 1
+
+              // Left is warm, right is neutral: the knob at the far right is
+              // night light off.
+              PanelSlider {
+                id: warmthSlider
+                bar: root.bar
+                anchors.fill: parent
+                anchors.leftMargin: Style.space(6)
+                anchors.rightMargin: Style.space(6)
+                enabled: !root.warmthLocked
+                minimum: NightlightModel.MIN_TEMPERATURE
+                maximum: NightlightModel.NEUTRAL_TEMPERATURE
+                step: NightlightModel.LIVE_TEMPERATURE_STEP
+                integer: true
+                value: root.warmthKelvin
+                onMoved: function(v) { root.setWarmth(v) }
+                onReleased: function(v) { root.setWarmth(v) }
+              }
+
+              HoverHandler {
+                onHoveredChanged: if (hovered && !root.reflowingText) {
+                  root.cursorActive = true
+                  root.focusSection = "warmth"
                   root.selectedIndex = -1
                 }
               }

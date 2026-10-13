@@ -62,6 +62,17 @@ assertEqual(nightlight.describeSchedule(true, '07:00', '07:00').valid, false, 'n
 const warm = nightlight.kelvinColor(2500)
 const neutral = nightlight.kelvinColor(5500)
 assert(warm.r === 1 && warm.b < neutral.b, 'nightlight schedule swatch gets warmer as kelvin drops')
+const live = nightlight.kelvinColor(nightlight.NEUTRAL_TEMPERATURE)
+assert(live.b > neutral.b, 'nightlight swatch reaches neutral for the Display panel slider')
+
+assertEqual(nightlight.clampLiveTemperature(1000), nightlight.MIN_TEMPERATURE, 'live warmth clamps to the warmest step')
+assertEqual(nightlight.clampLiveTemperature(9000), nightlight.NEUTRAL_TEMPERATURE, 'live warmth clamps to neutral')
+assertEqual(nightlight.clampLiveTemperature(3870), 3750, 'live warmth snaps to its step')
+assertEqual(nightlight.clampLiveTemperature('oops'), nightlight.NEUTRAL_TEMPERATURE, 'live warmth falls back to neutral')
+assertEqual(nightlight.isNightlight(nightlight.clampLiveTemperature(9000)), false, 'live warmth at the top turns night light off')
+assertEqual(nightlight.liveTemperature(null), nightlight.NEUTRAL_TEMPERATURE, 'live warmth reads an unreachable hyprsunset as neutral')
+assertEqual(nightlight.liveTemperature(3850), 3850, 'live warmth shows an off-step reading as is')
+assertEqual(nightlight.liveTemperature(1000), nightlight.MIN_TEMPERATURE, 'live warmth keeps a very warm reading on the slider')
 JS
 
 TMPDIR=$(mktemp -d)

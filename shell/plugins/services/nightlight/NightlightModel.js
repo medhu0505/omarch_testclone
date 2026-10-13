@@ -10,6 +10,12 @@ var MAX_TEMPERATURE = 5500
 var TEMPERATURE_STEP = 100
 var DEFAULT_SCHEDULE = { scheduled: false, day: "07:00", night: "20:00", temperature: 4000 }
 
+// The live warmth slider in the Display panel runs all the way to neutral, so
+// it can also clear the screen. It sets the screen only; it never changes the
+// saved warmth. Keep the top in sync with the service's dayTemperature.
+var NEUTRAL_TEMPERATURE = 6500
+var LIVE_TEMPERATURE_STEP = 250
+
 function temperatureFromOutput(output) {
   var match = String(output === undefined || output === null ? "" : output).match(/[0-9]+/)
   return match ? Number(match[0]) : null
@@ -87,10 +93,29 @@ function clampTemperature(value) {
   return Math.max(MIN_TEMPERATURE, Math.min(MAX_TEMPERATURE, number))
 }
 
+// A live warmth from the Display panel: MIN_TEMPERATURE up to neutral, in
+// LIVE_TEMPERATURE_STEP notches.
+function clampLiveTemperature(value) {
+  var number = Math.round(Number(value) / LIVE_TEMPERATURE_STEP) * LIVE_TEMPERATURE_STEP
+  if (!isFinite(number)) return NEUTRAL_TEMPERATURE
+  return Math.max(MIN_TEMPERATURE, Math.min(NEUTRAL_TEMPERATURE, number))
+}
+
+// What the Display panel's warmth slider shows for a reading: an unreachable
+// hyprsunset leaves the screen untouched, which is neutral.
+function liveTemperature(temperature) {
+  var number = Number(temperature)
+  if (temperature === null || temperature === undefined || !isFinite(number)) return NEUTRAL_TEMPERATURE
+  return Math.max(MIN_TEMPERATURE, Math.min(NEUTRAL_TEMPERATURE, Math.round(number)))
+}
+
 // Roughly the color a white pixel takes at a given warmth, for the editor's
 // swatch. Tanner Helland's blackbody fit, which is plenty for a preview.
 function kelvinColor(kelvin) {
-  var t = clampTemperature(kelvin) / 100
+  // Up to neutral, so the Display panel's live slider can show it too.
+  var k = Number(kelvin)
+  if (!isFinite(k)) k = DEFAULT_SCHEDULE.temperature
+  var t = Math.max(MIN_TEMPERATURE, Math.min(NEUTRAL_TEMPERATURE, k)) / 100
   var r = t <= 66 ? 255 : 329.698727446 * Math.pow(t - 60, -0.1332047592)
   var g = t <= 66 ? 99.4708025861 * Math.log(t) - 161.1195681661 : 288.1221695283 * Math.pow(t - 60, -0.0755148492)
   var b = t >= 66 ? 255 : (t <= 19 ? 0 : 138.5177312231 * Math.log(t - 10) - 305.0447927307)
@@ -158,6 +183,10 @@ if (typeof module !== "undefined") {
     MAX_TEMPERATURE: MAX_TEMPERATURE,
     TEMPERATURE_STEP: TEMPERATURE_STEP,
     DEFAULT_SCHEDULE: DEFAULT_SCHEDULE,
+    NEUTRAL_TEMPERATURE: NEUTRAL_TEMPERATURE,
+    LIVE_TEMPERATURE_STEP: LIVE_TEMPERATURE_STEP,
+    clampLiveTemperature: clampLiveTemperature,
+    liveTemperature: liveTemperature,
     temperatureFromOutput: temperatureFromOutput,
     isNightlight: isNightlight,
     isTime: isTime,
