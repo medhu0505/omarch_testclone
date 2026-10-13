@@ -82,10 +82,11 @@ Item {
     var id = String(desktopId || "")
     if (!id) return
     root.beginLaunchFeedback(name)
-    // Pass the file name with its extension: gtk-launch only appends ".desktop"
-    // when the argument doesn't already end with it, so ids that themselves end
-    // in ".desktop" (e.g. org.telegram.desktop) would otherwise never resolve.
-    Util.execDetached("gtk-launch " + Util.shellQuote(id + ".desktop"))
+    // Start gtk-launch inside a scope under app-graphical.slice so apps do not
+    // inherit wayland-wm@.service. Keeping gtk-launch as the desktop-entry
+    // resolver supports IDs with spaces and entries that UWSM rejects.
+    // Keep the .desktop suffix or ids like org.telegram.desktop won't resolve.
+    Util.execDetached("uwsm-app -- gtk-launch " + Util.shellQuote(id + ".desktop"))
   }
 
   function remove(desktopId, name) {
@@ -130,12 +131,12 @@ Item {
     return [
       'dirs="$HOME/.icons $HOME/.local/share/icons";',
       'IFS=":"; for d in ${XDG_DATA_DIRS:-/usr/local/share:/usr/share}; do dirs="$dirs $d/icons"; done; unset IFS;',
-      'for ext in svg png; do',
+      '{',
       '  for base in $dirs; do',
-      '    [[ -d $base ]] && find "$base" \\( -path "*/apps/*" -o -path "*/devices/*" \\) -name "*.$ext" 2>/dev/null;',
+      '    [[ -d $base ]] && find "$base" \\( -path "*/apps/*" -o -path "*/devices/*" \\) \\( -name "*.svg" -o -name "*.png" \\) 2>/dev/null;',
       '  done;',
-      '  find /usr/share/pixmaps -maxdepth 1 -name "*.$ext" 2>/dev/null;',
-      'done'
+      '  find /usr/share/pixmaps -maxdepth 1 \\( -name "*.svg" -o -name "*.png" \\) 2>/dev/null;',
+      '} | awk \'/\\.svg$/ { print; next } { png[++n] = $0 } END { for (i = 1; i <= n; i++) print png[i] }\''
     ].join(' ')
   }
 
@@ -190,6 +191,10 @@ Item {
     property string text: ""
   }
 
+  // Both scans must run in non-login shells. A login shell sources the user's
+  // profile, and tools like mise touch ~/.local/share on activation — a
+  // directory the desktop-entry watcher monitors — so every scan would
+  // trigger the next one, pinning a core at idle.
   Process {
     id: hiddenEntryScan
     command: ["bash", "-c", root.hiddenEntryScanCommand()]

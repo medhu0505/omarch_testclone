@@ -6,7 +6,7 @@
   },
   "bar": {
     "position": "top",
-    "transparent": false,
+    "background": "opaque",
     "centerAnchor": "omarchy.clock",
     "layout": {
       "left": [
@@ -28,6 +28,9 @@
           "verticalFormat": "HH\n\u2014\nmm"
         },
         {
+          "id": "omarchy.elsewhen"
+        },
+        {
           "id": "omarchy.weather"
         },
         {
@@ -36,10 +39,13 @@
       ],
       "right": [
         {
+          "id": "omarchy.keyboard-layout"
+        },
+        {
           "id": "omarchy.tray"
         },
         {
-          "id": "omarchy.model-usage"
+          "id": "omarchy.agents"
         },
         {
           "id": "omarchy.bluetooth"
