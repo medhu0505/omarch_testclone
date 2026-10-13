@@ -76,6 +76,10 @@ PATH="$mock_path:$ROOT/bin:$PATH" TEST_TMP="$test_tmp" \
   fail "package group is passed to pacman for installation"
 pass "pkg add accepts a group whose member packages are installed"
 
+PATH="$mock_path:$ROOT/bin:$PATH" TEST_TMP="$test_tmp" \
+  "$ROOT/bin/omarchy-pkg-add" example-group
+pass "pkg add accepts an already-installed group"
+
 rm -f "$test_tmp/install-command"
 PATH="$mock_path:$ROOT/bin:$PATH" "$ROOT/bin/omarchy-pkg-add" regular-package
 
@@ -89,3 +93,9 @@ if INCOMPLETE_GROUP=1 PATH="$mock_path:$ROOT/bin:$PATH" TEST_TMP="$test_tmp" \
   fail "pkg add reports a group with a missing member"
 fi
 pass "pkg add reports a group with a missing member"
+
+if PATH="$mock_path:$ROOT/bin:$PATH" TEST_TMP="$test_tmp" \
+  "$ROOT/bin/omarchy-pkg-add" unknown-package; then
+  fail "pkg add rejects a name that is neither installed nor a group"
+fi
+pass "pkg add rejects a name that is neither installed nor a group"
