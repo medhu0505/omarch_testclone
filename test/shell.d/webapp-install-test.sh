@@ -61,8 +61,10 @@ else
 fi
 grep -Fxq 'Exec=omarchy-launch-webapp https://localhost:47990 --ignore-certificate-errors' "$(desktop_for Local)" ||
   fail "webapp install writes the custom exec" "$(cat "$(desktop_for Local)")"
-! grep -q '^StartupWMClass=' "$(desktop_for Local)" ||
-  fail "a custom exec does not get a guessed window class" "$(cat "$(desktop_for Local)")"
+# A custom Exec still opens the web app at this URL, so the window class
+# follows from the URL and the launcher can still find its windows.
+grep -Fxq 'StartupWMClass=chrome-localhost__-Default' "$(desktop_for Local)" ||
+  fail "a custom exec gets the window class its URL names" "$(cat "$(desktop_for Local)")"
 pass "webapp install keeps a custom https exec"
 
 for url in "javascript:alert(1)" "file:///etc/passwd" "data:text/html,hi" "ftp://example.com" "ext://x"; do
