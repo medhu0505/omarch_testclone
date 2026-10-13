@@ -254,6 +254,8 @@ Panel {
     target: UPower.displayDevice
     function onStateChanged() { root.refreshBattery() }
   }
+  // A startup lookup that came back empty would leave the bar without limits; retry only until one lands.
+  Timer { interval: 30000; running: root.batteryPresent && !root.opened && root.batteryInfo.percentage === undefined; repeat: true; onTriggered: root.refreshBattery() }
 
   // Rotate the status phrase while the panel is open and we're in a
   // rotating state (charging or on battery). The text swap is wrapped in a

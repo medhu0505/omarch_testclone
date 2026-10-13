@@ -59,5 +59,6 @@ assert(/openPanelIndicatorWidth:.*showPercentage.*button\.glyphPaintedWidth : 0/
 assert(/IpcHandler[\s\S]*?function togglePercentage\(\) \{ root\.togglePercentage\(\) \}/.test(panelSource), 'power exposes togglePercentage over IPC')
 assert(/manageIpc: false/.test(panelSource), 'power owns its IPC handler so it can extend the target methods')
 assert(/target: UPower\.displayDevice\s*function onStateChanged\(\) \{ root\.refreshBattery\(\) \}/.test(panelSource), 'power re-reads charge limits when the battery state changes')
-assert(!/Timer \{[^\n]*!root\.opened/.test(panelSource), 'power does not poll the battery script while the panel is closed')
+const closedPolls = panelSource.match(/Timer \{[^}]*refreshBattery\(\)[^}]*\}/g) || []
+assert(closedPolls.length === 1 && /running: root\.batteryPresent && !root\.opened && root\.batteryInfo\.percentage === undefined/.test(closedPolls[0]), 'power retries the closed-panel battery lookup only until it lands')
 JS
