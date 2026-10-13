@@ -1813,6 +1813,15 @@ ShellRoot {
     // It lives in shell.json rather than in the plugin's manifest because the
     // manifest travels with the plugin: a claim inside one cannot be evidence,
     // and PluginRegistry only honours a claim this record backs.
+    //
+    // Trust boundary: this is a same-session IPC call. Anything in the user
+    // session that can reach the shell can write a forged record here — no more
+    // than it could edit shell.json by hand — so this record is not a defence
+    // against a compromised user session, and it is not meant to be one. Its
+    // purpose is to stop a *shipped* plugin from stamping itself with host
+    // capabilities (omarchy.lock / omarchy.polkit) by asserting
+    // `omarchy.clonedFrom` inside its own manifest. If shell IPC exposure ever
+    // widens beyond the user session, this method needs authentication.
     function recordCloneProvenance(id: string, sourceId: string): string {
       if (!id || !sourceId) return "missing id"
       shell.mutateShellConfig(function(config) {

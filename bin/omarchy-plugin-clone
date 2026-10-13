@@ -152,6 +152,9 @@ stage=""
 # Record where this clone came from before the shell scans it: the shell only
 # honours omarchy.clonedFrom for a plugin this record backs, so the field in
 # manifest.json stays a claim rather than proof.
+# The record is same-session trust (see recordCloneProvenance in shell/shell.qml):
+# it stops a shipped plugin from self-asserting provenance, it does not defend
+# against a compromised user session.
 omarchy-shell shell recordCloneProvenance "$new_id" "$source_id" >/dev/null
 omarchy-shell shell rescanPlugins >/dev/null
 discovered=0
