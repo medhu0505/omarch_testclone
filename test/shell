@@ -54,8 +54,8 @@ export workdir
 # assertion, so aborting the run there too would hide every file after it --
 # one packaging failure was masking 114 of 134 files.
 if (( ${#parallel_tests[@]} > 0 )); then
-  printf '%s\n' "${parallel_tests[@]}" |
-    xargs -P "$(nproc)" -n 1 bash -c 'run_one "$1"' _
+  printf '%s\0' "${parallel_tests[@]}" |
+    xargs -0 -P "$(nproc)" -n 1 bash -c 'run_one "$1"' _
 fi
 for test in "${exclusive_tests[@]}"; do
   run_one "$test"
