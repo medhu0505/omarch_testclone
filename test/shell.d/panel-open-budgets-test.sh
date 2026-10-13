@@ -174,8 +174,21 @@ panels=(omarchy.audio omarchy.bluetooth omarchy.monitor omarchy.network)
 if compgen -G "/sys/class/power_supply/BAT*" >/dev/null; then
   panels+=(omarchy.power)
 else
-  echo "ok - panel omarchy.power first open and reopen # SKIP no battery"
+  skip "panel omarchy.power first open and reopen (no battery)"
 fi
+
+# listPlugins reports discovered manifests, not registered IPC handlers:
+# widget components load asynchronously, so wait until each panel's own
+# handler answers a (harmless, already-closed) close before timing it.
+for panel in "${panels[@]}"; do
+  ready=""
+  for _ in {1..80}; do
+    if shell_ipc "$panel" close >/dev/null 2>&1; then ready=1; break; fi
+    kill -0 "$QS_PID" 2>/dev/null || break
+    sleep 0.1
+  done
+  [[ -n $ready ]] || { sed -n '1,120p' "$log" >&2; fail "panel $panel IPC handler becomes available"; }
+done
 
 open_ms() { # panel-id -> ms on stdout, fails when it never maps
   local id="$1" start end
