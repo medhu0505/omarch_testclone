@@ -63,6 +63,13 @@ def urlopen(request, timeout=None):
   if os.environ.get("X_REJECT_API") == "1":
     raise AssertionError(f"unexpected API call: {request.full_url}")
   method = request.full_url.split("://", 1)[-1].split("/", 1)[-1]
+  if method.endswith("GetAggregatedUsageEvents"):
+    # Optional day-token fixture for the tokens-by-day test.
+    rows = json.loads(os.environ.get("X_DAY_AGG", "[]"))
+    class Resp(io.BytesIO):
+      def __enter__(self): return self
+      def __exit__(self, *a): return False
+    return Resp(json.dumps({"aggregations": rows}).encode())
   if method not in responses:
     raise AssertionError(f"unexpected method {method}")
   auth = request.get_header("Authorization") or request.get_header("authorization")
@@ -202,7 +209,16 @@ PY
 [[ $? -eq 0 ]] || fail "prompt stamps convert into the local calendar day"
 pass "prompt stamps convert into the local calendar day"
 
+# Dashboard day aggregates fill recentDays.messageCount with tokens.
+agg='[{"modelIntent":"grok-4.7-high-fast","inputTokens":100,"outputTokens":20,"cacheReadTokens":5,"cacheWriteTokens":0}]'
+rm -f "$XDG_CACHE_HOME"/omarchy/agent-usage/x-tokens-*.json
+record=$(X_TOKEN=token-side X_DAY_AGG="$agg" COLLECT_ARGS="--force" collect)
+[[ $(jq -c '{todayTotalTokens, weekTokens: ([.recentDays[].messageCount] | add), model: .todayTokensByModel["grok-4.7-high-fast"]}' <<<"$record") == '{"todayTotalTokens":125,"weekTokens":875,"model":125}' ]] ||
+  fail "dashboard day aggregates fill token counts for the week" "$record"
+pass "dashboard day aggregates fill token counts for the week"
+
 # limits-only reuses the transcript scan.
+
 mkdir -p "$projects/extra"
 printf '%s\n' "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"<timestamp>${today_stamp}, 2:00 PM (UTC-5)</timestamp>\\n<user_query>later</user_query>\"}]}}" >"$projects/extra/session-c.jsonl"
 record=$(X_TOKEN=token-side COLLECT_ARGS="--limits-only" collect)

@@ -5,9 +5,10 @@
 """Collect The X Subscription usage into one display-ready JSON record.
 
 The shared first-party pool (Cursor + Grok) and plan come from Cursor's
-dashboard API using the sign-in in ~/.config/cursor/auth.json. Local prompt
-and session counts come from Cursor agent transcripts under ~/.cursor/projects.
-The agents panel only ever reads the JSON this prints.
+dashboard API using the sign-in in ~/.config/cursor/auth.json. Tokens by day
+and by model come from the same dashboard's GetAggregatedUsageEvents. Local
+prompt and session counts come from Cursor agent transcripts under
+~/.cursor/projects. The agents panel only ever reads the JSON this prints.
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ import time
 import urllib.error
 import urllib.request
 from collections import defaultdict
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time as dt_time, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -97,6 +98,7 @@ def rpc(token: str, method: str, body: dict | None = None) -> dict[str, Any]:
       "Connect-Protocol-Version": "1",
       "Accept": "application/json",
       "User-Agent": "omarchy-agent-usage-x/1.0",
+      "x-cursor-client-type": "cli",
     },
     method="POST",
   )
@@ -167,6 +169,97 @@ def to_local_date(value: datetime) -> date:
   if value.tzinfo is None:
     value = value.replace(tzinfo=local_tzinfo())
   return value.astimezone(local_tzinfo()).date()
+
+
+def empty_token_bucket() -> dict[str, int]:
+  return {
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 0,
+  }
+
+
+def day_windows(today: date, count: int = 7) -> list[tuple[str, int, int]]:
+  """Local calendar days as (date, startMs, endMs), oldest first."""
+  windows = []
+  for offset in range(count - 1, -1, -1):
+    day = today - timedelta(days=offset)
+    start = datetime.combine(day, dt_time.min).astimezone()
+    end = datetime.combine(day + timedelta(days=1), dt_time.min).astimezone()
+    windows.append((day.isoformat(), int(start.timestamp() * 1000), int(end.timestamp() * 1000)))
+  return windows
+
+
+def summarize_day_rows(rows: list[Any]) -> dict[str, dict[str, int]]:
+  usage: dict[str, dict[str, int]] = {}
+  for row in rows:
+    if not isinstance(row, dict):
+      continue
+    model = str(row.get("modelIntent") or "cursor")
+    bucket = usage.setdefault(model, empty_token_bucket())
+    bucket["inputTokens"] += int(float(row.get("inputTokens") or 0))
+    bucket["outputTokens"] += int(float(row.get("outputTokens") or 0))
+    bucket["cacheReadInputTokens"] += int(float(row.get("cacheReadTokens") or 0))
+    bucket["cacheCreationInputTokens"] += int(float(row.get("cacheWriteTokens") or 0))
+  return usage
+
+
+def remote_token_stats(token: str) -> dict[str, Any]:
+  """Fill recentDays.messageCount with real token totals from Cursor's dashboard."""
+  today = date.today()
+  recent: list[dict[str, Any]] = []
+  model_usage: dict[str, dict[str, int]] = {}
+  today_by_model: dict[str, int] = {}
+  active_dates: list[str] = []
+
+  for index, (day, start_ms, end_ms) in enumerate(day_windows(today, 7)):
+    try:
+      payload = rpc(
+        token,
+        "aiserver.v1.DashboardService/GetAggregatedUsageEvents",
+        {"startDate": str(start_ms), "endDate": str(end_ms)},
+      )
+    except Exception:
+      payload = {}
+    rows = payload.get("aggregations") if isinstance(payload, dict) else None
+    usage = summarize_day_rows(rows if isinstance(rows, list) else [])
+    tokens = 0
+    for model, bucket in usage.items():
+      carried = model_usage.setdefault(model, empty_token_bucket())
+      for key, value in bucket.items():
+        carried[key] += value
+      tokens += sum(bucket.values())
+    recent.append({"date": day, "messageCount": tokens})
+    if tokens > 0:
+      active_dates.append(day)
+    if index == 6:
+      today_by_model = {
+        model: sum(bucket.values()) for model, bucket in usage.items() if sum(bucket.values()) > 0
+      }
+
+  return {
+    "recentDays": recent,
+    "todayTotalTokens": sum(today_by_model.values()),
+    "todayTokensByModel": today_by_model,
+    "modelUsage": model_usage,
+    "tokenActiveDates": active_dates,
+  }
+
+
+def cached_remote_token_stats(token: str, reuse_seconds: int) -> dict[str, Any]:
+  cache = cache_root() / f"x-tokens-{token_fingerprint(token)}.json"
+  today = date.today().isoformat()
+  if reuse_seconds > 0 and cache.exists():
+    cached = read_json(cache)
+    if isinstance(cached, dict) and cached.get("scanDate") == today and "recentDays" in cached:
+      age = time.time() - cache.stat().st_mtime
+      if age <= reuse_seconds:
+        return cached
+  stats = remote_token_stats(token)
+  stats["scanDate"] = today
+  write_json(cache, stats)
+  return stats
 
 
 def prompt_day(obj: dict[str, Any]) -> date | None:
@@ -478,7 +571,22 @@ def main() -> None:
   limits = collect_limits(token, args.force)
   reuse = LIMITS_ONLY_SCAN_REUSE_SECONDS if args.limits_only and not args.force else 0
   stats = cached_local_stats(reuse)
-  ready = bool(limits["limits"]) or bool(stats.get("totalPrompts") or stats.get("totalSessions"))
+  if token:
+    tokens = cached_remote_token_stats(token, reuse)
+    stats["recentDays"] = tokens.get("recentDays") or stats.get("recentDays")
+    stats["todayTotalTokens"] = int(tokens.get("todayTotalTokens") or 0)
+    stats["todayTokensByModel"] = tokens.get("todayTokensByModel") or {}
+    stats["modelUsage"] = tokens.get("modelUsage") or {}
+    token_days = tokens.get("tokenActiveDates") or []
+    prompt_days = stats.get("activeDates") or []
+    active = sorted(set(prompt_days) | set(token_days))
+    stats["activeDates"] = active[-30:]
+    stats["activeDays"] = len(active)
+    if token_days or stats.get("todayTotalTokens"):
+      stats["hasLocalStats"] = True
+  ready = bool(limits["limits"]) or bool(
+    stats.get("totalPrompts") or stats.get("totalSessions") or stats.get("todayTotalTokens")
+  )
   record = {
     "schemaVersion": 1,
     "id": AGENT_ID,
