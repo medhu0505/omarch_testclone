@@ -90,6 +90,17 @@ if [[ ${1-} == reload && ${2-} == NetworkManager.service ]]; then
   exit 0
 fi
 if [[ ${1-} == reload && ${2-} == systemd-resolved.service ]]; then
+  if [[ ${SYSTEMCTL_KILL_RUN:-0} == 1 ]]; then
+    # Simulate SIGKILL of the whole omarchy-dns run mid-transaction.
+    victims=()
+    pid=$PPID
+    while ((pid > 1)) && grep -qa 'omarchy-dns' "/proc/$pid/cmdline" 2>/dev/null; do
+      victims+=("$pid")
+      pid=$(awk '{print $4}' "/proc/$pid/stat")
+    done
+    kill -KILL "${victims[@]}"
+    exit 1
+  fi
   if [[ ${SYSTEMCTL_FAIL_RESOLVED_ONCE:-0} == 1 ]]; then
     count_file="$TEST_ROOT/resolved-failure-count"
     count=0
@@ -353,9 +364,56 @@ unset SYSTEMCTL_FAIL_RESOLVED FAIL_ROLLBACK_STAGE
 assert_failure "reports a failed transaction rollback"
 [[ $OUTPUT == *'rollback did not complete'* ]] || fail "reports rollback failure" "$OUTPUT"
 shopt -s nullglob
+retired=("$config_root"/var/lock/.omarchy-dns-failed.*)
 snapshots=("$config_root"/var/lock/.omarchy-dns-snapshot.*)
 shopt -u nullglob
-((${#snapshots[@]} > 0)) || fail "retains a recovery snapshot after rollback failure"
+((${#retired[@]} > 0)) || fail "retains a recovery snapshot after rollback failure"
+((${#snapshots[@]} == 0)) || fail "a failed rollback leaves its snapshot where recovery would retry it"
+run_dns DHCP
+assert_success "a retained snapshot does not block later DNS changes"
+[[ -d ${retired[0]} ]] || fail "later runs keep the retained snapshot for manual recovery"
+
+init_case killed-mid-transaction
+NM_ACTIVE=1
+SYSTEMCTL_KILL_RUN=1
+export NM_ACTIVE SYSTEMCTL_KILL_RUN
+before=$(profile_snapshot)
+run_dns Cloudflare
+unset SYSTEMCTL_KILL_RUN
+assert_failure "the simulated SIGKILL stops the run"
+[[ -f $nm_conf ]] || fail "the killed run leaves its changes applied" "$OUTPUT"
+[[ $(profile_snapshot) != "$before" ]] || fail "the killed run leaves profile changes applied"
+shopt -s nullglob
+snapshots=("$config_root"/var/lock/.omarchy-dns-snapshot.*)
+shopt -u nullglob
+((${#snapshots[@]} == 1)) || fail "the killed run leaves its snapshot behind" "${#snapshots[@]} snapshots"
+: >"$CALL_LOG"
+run_dns DHCP
+unset NM_ACTIVE
+assert_success "the next run recovers and applies"
+[[ $OUTPUT == *'interrupted run'* ]] || fail "reports recovery from an interrupted run" "$OUTPUT"
+grep -Fxq 'connection modify wired-uuid ipv4.dns initial-wired-uuid-ipv4.dns' "$CALL_LOG" || fail "recovery restores the snapshotted profile settings" "$(<"$CALL_LOG")"
+recovered=$(grep -n 'modify wired-uuid ipv4.dns initial-wired-uuid-ipv4.dns' "$CALL_LOG" | head -1 | cut -d: -f1)
+reset=$(grep -n 'modify wired-uuid ipv4.ignore-auto-dns no' "$CALL_LOG" | tail -1 | cut -d: -f1)
+((recovered < reset)) || fail "recovery runs before the new transaction" "$(<"$CALL_LOG")"
+[[ ! -e $nm_conf ]] || fail "the follow-up DHCP run removes the NetworkManager file" "$(<"$nm_conf")"
+[[ ! -e ${snapshots[0]} ]] || fail "recovery removes the recovered snapshot"
+
+init_case incomplete-snapshot
+mkdir "$config_root/var/lock/.omarchy-dns-snapshot.partial"
+printf '%s\n' 'stale' >"$config_root/var/lock/.omarchy-dns-snapshot.partial/file-0"
+run_dns DHCP
+assert_success "discards a snapshot cut short before any change"
+[[ ! -e $config_root/var/lock/.omarchy-dns-snapshot.partial ]] || fail "removes the incomplete snapshot"
+[[ $OUTPUT != *'interrupted run'* ]] || fail "does not restore from an incomplete snapshot" "$OUTPUT"
+
+init_case unsafe-snapshot
+mkdir "$test_tmp/unsafe-target"
+ln -s "$test_tmp/unsafe-target" "$config_root/var/lock/.omarchy-dns-snapshot.link"
+run_dns DHCP
+assert_success "configures DNS next to an unsafe snapshot entry"
+[[ $OUTPUT == *'unsafe DNS snapshot'* ]] || fail "reports the unsafe snapshot entry" "$OUTPUT"
+[[ -L $config_root/var/lock/.omarchy-dns-snapshot.link && -d $test_tmp/unsafe-target ]] || fail "leaves an unsafe snapshot entry untouched"
 
 init_case legacy-managed
 printf '%s\n' '# Managed by omarchy-dns. Custom DNS-over-TLS endpoint; remove with `omarchy dns DHCP`.' '[Resolve]' 'DNS=192.0.2.70#dot.example' 'DNSOverTLS=opportunistic' >"$legacy_drop_in"

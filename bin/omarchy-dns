@@ -856,12 +856,16 @@ release_dns_lock() {
   fi
 }
 
+snapshot_targets() {
+  printf '%s\n' "$NM_DNS_CONF" "$RESOLVED_DROP_IN" "$LEGACY_RESOLVED_DROP_IN" "$RESOLVED_CONF"
+}
+
 snapshot_file_state() {
   local path index backup
 
   SNAPSHOT_PATHS=()
   SNAPSHOT_PRESENT=()
-  for path in "$NM_DNS_CONF" "$RESOLVED_DROP_IN" "$LEGACY_RESOLVED_DROP_IN" "$RESOLVED_CONF"; do
+  while IFS= read -r path; do
     index=${#SNAPSHOT_PATHS[@]}
     SNAPSHOT_PATHS+=("$path")
     if [[ -e $path || -L $path ]]; then
@@ -873,7 +877,7 @@ snapshot_file_state() {
     else
       SNAPSHOT_PRESENT+=(0)
     fi
-  done
+  done < <(snapshot_targets)
 }
 
 validate_profile_snapshot() {
@@ -906,6 +910,9 @@ snapshot_profile_state() {
   if ! nmcli -t -f UUID,TYPE connection show >"$SNAPSHOT_DIR/profiles.list"; then
     return 1
   fi
+  if ! : >"$SNAPSHOT_DIR/profiles.index"; then
+    return 1
+  fi
   while IFS=: read -r uuid type; do
     if [[ -z $uuid && -z $type ]]; then
       continue
@@ -934,6 +941,9 @@ snapshot_profile_state() {
     if ! validate_profile_snapshot "$profile"; then
       return 1
     fi
+    if ! printf '%s\t%s\n' "$uuid" "$type" >>"$SNAPSHOT_DIR/profiles.index"; then
+      return 1
+    fi
     SNAPSHOT_PROFILE_IDS+=("$uuid")
     SNAPSHOT_PROFILE_TYPES+=("$type")
   done <"$SNAPSHOT_DIR/profiles.list"
@@ -951,11 +961,93 @@ begin_dns_transaction() {
   if ((snapshot_status == 0)); then
     snapshot_profile_state || snapshot_status=$?
   fi
+  # The marker goes last: a snapshot without it was cut short before anything
+  # was changed, so recovery can simply discard it.
+  if ((snapshot_status == 0)); then
+    : >"$SNAPSHOT_DIR/complete" || snapshot_status=$?
+  fi
   if ((snapshot_status != 0)); then
     rm -rf -- "$SNAPSHOT_DIR" || true
     SNAPSHOT_DIR=
     return 1
   fi
+}
+
+# Rebuilds the in-memory snapshot state from a complete snapshot directory so
+# rollback_dns_transaction can run against it.
+load_snapshot() {
+  local directory="$1" path index uuid type extra
+
+  SNAPSHOT_DIR=$directory
+  SNAPSHOT_PATHS=()
+  SNAPSHOT_PRESENT=()
+  while IFS= read -r path; do
+    index=${#SNAPSHOT_PATHS[@]}
+    SNAPSHOT_PATHS+=("$path")
+    if [[ -e $directory/file-$index || -L $directory/file-$index ]]; then
+      SNAPSHOT_PRESENT+=(1)
+    else
+      SNAPSHOT_PRESENT+=(0)
+    fi
+  done < <(snapshot_targets)
+
+  SNAPSHOT_PROFILE_IDS=()
+  SNAPSHOT_PROFILE_TYPES=()
+  [[ -f $directory/profiles.index && ! -L $directory/profiles.index ]] || return 1
+  while IFS=$'\t' read -r uuid type extra; do
+    [[ -n $uuid && -n $type && -z ${extra:-} && $uuid != *:* && $type != *:* ]] || return 1
+    networkmanager_dns_connection "$type" || return 1
+    validate_profile_snapshot "$directory/profile-${#SNAPSHOT_PROFILE_IDS[@]}" || return 1
+    SNAPSHOT_PROFILE_IDS+=("$uuid")
+    SNAPSHOT_PROFILE_TYPES+=("$type")
+  done <"$directory/profiles.index"
+}
+
+# Keeps a snapshot for manual recovery under a name recovery will not pick up
+# again, so one unrecoverable run cannot block every later DNS change.
+retire_snapshot() {
+  local directory="$1" retired
+
+  retired="$(dirname "$directory")/.omarchy-dns-failed.${directory##*.omarchy-dns-snapshot.}"
+  if mv -- "$directory" "$retired"; then
+    printf 'DNS recovery snapshot retained at %s\n' "$retired" >&2
+  else
+    printf 'DNS recovery snapshot retained at %s\n' "$directory" >&2
+    return 1
+  fi
+}
+
+# A run killed mid-transaction (SIGKILL, power loss) never reaches its
+# rollback, and the kernel drops its flock, so the next run gets the lock with
+# that run's changes half applied. Holding the lock, any snapshot still in the
+# lock directory belongs to a run that is gone: roll back to it first.
+recover_orphaned_snapshots() {
+  local snapshot_base orphan
+  local -a orphans=()
+
+  snapshot_base=$(dirname "$DNS_LOCK_FILE")
+  shopt -s nullglob
+  orphans=("$snapshot_base"/.omarchy-dns-snapshot.*)
+  shopt -u nullglob
+  for orphan in "${orphans[@]}"; do
+    if [[ -L $orphan || ! -d $orphan || ! -O $orphan ]]; then
+      printf 'Warning: ignoring unsafe DNS snapshot: %s\n' "$orphan" >&2
+      continue
+    fi
+    if [[ ! -f $orphan/complete ]]; then
+      rm -rf -- "$orphan" || return 1
+      continue
+    fi
+
+    printf 'Restoring DNS configuration left by an interrupted run.\n' >&2
+    if load_snapshot "$orphan" && rollback_dns_transaction; then
+      finish_dns_transaction
+    else
+      printf '%s\n' "Warning: could not restore DNS configuration from an interrupted run." >&2
+      retire_snapshot "$orphan" || return 1
+      SNAPSHOT_DIR=
+    fi
+  done
 }
 
 restore_file_state() {
@@ -1091,6 +1183,10 @@ run_dns_transaction() {
   local status rollback_status=0
 
   acquire_dns_lock || return 1
+  if ! recover_orphaned_snapshots; then
+    release_dns_lock
+    return 1
+  fi
   if ! begin_dns_transaction; then
     release_dns_lock
     return 1
@@ -1109,7 +1205,8 @@ run_dns_transaction() {
       finish_dns_transaction
     else
       printf '%s\n' "Error: DNS configuration rollback did not complete." >&2
-      printf 'DNS recovery snapshot retained at %s\n' "$SNAPSHOT_DIR" >&2
+      retire_snapshot "$SNAPSHOT_DIR" || true
+      SNAPSHOT_DIR=
     fi
     release_dns_lock
     return "$status"
