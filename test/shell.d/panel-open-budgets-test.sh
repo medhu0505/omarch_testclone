@@ -171,7 +171,7 @@ done
 panels=(omarchy.audio omarchy.bluetooth omarchy.monitor omarchy.network)
 # The power panel hides itself without a battery, so it can only be
 # timed where one exists.
-if compgen -G "/sys/class/power_supply/BAT*" >/dev/null; then
+if "$ROOT/bin/omarchy-battery-present" >/dev/null 2>&1; then
   panels+=(omarchy.power)
 else
   skip "panel omarchy.power first open and reopen (no battery)"
