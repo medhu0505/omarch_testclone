@@ -1,7 +1,9 @@
 local move = dofile(os.getenv("OMARCHY_PATH") .. "/default/hypr/scrolling-window-move.lua")
 local active, windows, monitor, dispatched
+local monitors = { {}, {} }
 hl = {
   get_active_window = function() return active end,
+  get_monitors = function() return monitors end,
   get_windows = function(filter)
     local result = {}
     for _, w in ipairs(windows) do
@@ -40,6 +42,9 @@ active = window(100, 1)
 windows = { active, window(200, 1) }
 monitor = { name = "DP-2" }
 check("r", "swap") -- Includes a column beyond the visible viewport.
+monitors = { {} }
+check("l", "swap") -- A single monitor keeps the original dispatcher, including wrap behavior.
+monitors = { {}, {} }
 check("l", "move") -- Empty destination monitor requires no target window.
 windows = { active, window(0, 1) }
 check("l", "swap")

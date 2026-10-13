@@ -4,7 +4,7 @@ return function(direction)
   local window = hl.get_active_window()
   if not window then return end
   local workspace = window.workspace
-  if window.floating or not workspace or workspace.special or workspace.tiled_layout ~= "scrolling" then
+  if #hl.get_monitors() < 2 or window.floating or not workspace or workspace.special or workspace.tiled_layout ~= "scrolling" then
     hl.dispatch(hl.dsp.window.swap({ direction = direction }))
     return
   end
