@@ -383,3 +383,71 @@ foreign=$(printf '%s' "$hostile_clients" | jq -r '.[] | select(.mac == "aa:bb:cc
 unrelated=$(printf '%s' "$hostile_clients" | jq -r '[.[] | select(.mac == "aa:bb:cc:dd:ee:09")] | length')
 [[ $unrelated == "0" ]] || fail "a station that is not associated is not reported" "$unrelated"
 pass "a hostile neighbour table cannot widen the status contract"
+
+# Connected clients must survive the status protocol: one key per line, so the
+# clients JSON has to stay on its own line all the way into the panel model.
+cat >"$STUB_BIN/iw" <<'STUB'
+#!/bin/bash
+if [[ ${1:-} == "dev" && ${2:-} == "wlan0" ]]; then
+  case ${3:-} in
+    info) printf '%s\n' 'Interface wlan0' '  type AP' '  wiphy 0' ;;
+    link) printf '%s\n' 'Connected to aa:bb:cc:dd:ee:00' '  freq: 2437' ;;
+    station)
+      printf '%s\n' \
+        'Station aa:bb:cc:dd:ee:01 (on wlan0)' '  inactive time:  10 ms' '  signal:   -42 [-42] dBm' \
+        'Station aa:bb:cc:dd:ee:02 (on wlan0)' '  inactive time:  20 ms' '  signal:   -67 [-67] dBm'
+      ;;
+    *) exit 1 ;;
+  esac
+  exit 0
+fi
+if [[ ${1:-} == "phy" ]]; then
+  printf '%s\n' 'Wiphy phy0' '  Band 1:' '    * AP'
+  exit 0
+fi
+exit 1
+STUB
+
+cat >"$STUB_BIN/nmcli" <<'STUB'
+#!/bin/bash
+if [[ ${1:-} == "--show-secrets" ]]; then
+  printf '%s\n' 'savedpassword'
+  exit 0
+fi
+case "$*" in
+  '-t -f DEVICE,TYPE device status') printf '%s\n' 'wlan0:wifi' ;;
+  '-t -f NAME connection show --active') printf '%s\n' 'omarchy-hotspot' ;;
+  '-e no -g NAME connection show') printf '%s\n' 'omarchy-hotspot' ;;
+  '-e no -g GENERAL.DEVICE connection show omarchy-hotspot') printf '%s\n' 'wlan0' ;;
+  '-e no -g 802-11-wireless.ssid connection show omarchy-hotspot') printf '%s\n' 'Shared Hotspot' ;;
+  '-e no -g 802-11-wireless.band connection show omarchy-hotspot') printf '%s\n' 'bg' ;;
+  *) exit 1 ;;
+esac
+STUB
+
+cat >"$STUB_BIN/ip" <<'STUB'
+#!/bin/bash
+if [[ $* == '-j addr show dev wlan0' ]]; then
+  printf '%s\n' '[{"addr_info":[{"family":"inet","local":"10.42.0.1"}]}]'
+  exit 0
+fi
+exit 2
+STUB
+chmod +x "$STUB_BIN/iw" "$STUB_BIN/nmcli" "$STUB_BIN/ip"
+
+PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" status >"$TEST_TMP/clients-status.out" 2>"$TEST_TMP/clients-status.err"
+grep -Fxq $'client_count\t2' "$TEST_TMP/clients-status.out" || fail "status counts connected clients" "$(<"$TEST_TMP/clients-status.out")"
+while IFS= read -r line; do
+  [[ $line == *$'\t'* ]] || fail "every status line carries a key" "$(<"$TEST_TMP/clients-status.out")"
+done <"$TEST_TMP/clients-status.out"
+
+export HOTSPOT_STATUS_FILE="$TEST_TMP/clients-status.out"
+run_node_test <<'JS'
+const fs = require('fs')
+const network = requireFromRoot('shell/plugins/panels/network/Model.js')
+const status = network.parseHotspotStatus(fs.readFileSync(process.env.HOTSPOT_STATUS_FILE, 'utf8'))
+const clients = network.hotspotClients(status)
+if (clients.length !== 2) fail('the panel renders a row for every connected client', JSON.stringify(status))
+if (clients[0].mac !== 'aa:bb:cc:dd:ee:01' || clients[1].signal !== -67) fail('client rows keep their MAC and signal', JSON.stringify(clients))
+pass('connected clients reach the panel model through real status output')
+JS
