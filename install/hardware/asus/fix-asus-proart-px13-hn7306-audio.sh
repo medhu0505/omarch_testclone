@@ -29,9 +29,13 @@
 # come up off and stay off -- not just at boot, but after every WirePlumber
 # restart, since each restart re-probes and re-activates the profile the
 # same way. A systemd drop-in re-applies them after every WirePlumber
-# start, once its own profile activation has settled (setting them too
-# early gets them reset right back to off by that activation). It runs in
-# the background so it never delays or fails the WirePlumber start. This is
+# start. Setting them before its profile activation settles gets them reset
+# right back to off, and how long that takes varies, so rather than wait a
+# fixed time it checks the switches every second, turns back on any that
+# read off, and stops once all four have stayed on for three checks in a
+# row (or after 30 seconds, if the card never shows up). It runs in the
+# background so it never delays or fails the WirePlumber start. Inside the
+# unit, "$$" is systemd's escape for a literal "$". This is
 # safe with respect to user mute preferences: it only touches this
 # hardware enable gate, which has no exposure in any mute UI on this
 # card -- actual user mute (volume slider, mute key) is PipeWire's own
@@ -171,7 +175,20 @@ EOF
 
   sudo install -Dm644 /dev/stdin /etc/systemd/user/wireplumber.service.d/asus-proart-px13-hn7306-speaker-enable.conf <<'EOF'
 [Service]
-ExecStartPost=-/bin/bash -c '(sleep 3; for c in "Left Spk Switch" "Right Spk Switch" "Left Spk2 Switch" "Right Spk2 Switch"; do amixer -c amdsoundwire cset iface=MIXER,name="$c" on >/dev/null 2>&1; done) &'
+ExecStartPost=-/bin/bash -c '( \
+  stable=0; \
+  for (( i = 0; i < 30 && stable < 3; i++ )); do \
+    sleep 1; \
+    (( stable++ )); \
+    for c in "Left Spk Switch" "Right Spk Switch" "Left Spk2 Switch" "Right Spk2 Switch"; do \
+      state=$$(amixer -c amdsoundwire cget iface=MIXER,name="$$c" 2>/dev/null); \
+      if [[ $$state != *": values=on"* || $$state == *": values="*off* ]]; then \
+        stable=0; \
+        amixer -c amdsoundwire cset iface=MIXER,name="$$c" on >/dev/null 2>&1; \
+      fi; \
+    done; \
+  done \
+) &'
 EOF
 
   for control in "Left Spk Switch" "Right Spk Switch" "Left Spk2 Switch" "Right Spk2 Switch"; do
