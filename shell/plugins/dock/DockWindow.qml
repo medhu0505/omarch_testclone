@@ -573,7 +573,7 @@ PanelWindow {
       MenuRow {
         visible: menu.hasEntry && menu.running
         text: "New Window"
-        onTriggered: window.dock.launch(menu.item)
+        onTriggered: window.dock.newWindow(menu.item)
       }
 
       MenuRow {
