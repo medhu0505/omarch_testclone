@@ -189,12 +189,14 @@ fi
 # zero/absent start.
 setup_battery pending-charge 0 "" "80"
 shell_output=$(run_shell)
+grep -Fx $'state\tpending-charge' <<<"$shell_output" >/dev/null || fail "end-only dead pack keeps its raw state"
 if matches=$(rg -n '^state\tholding$' <<<"$shell_output"); then
   fail "zero-start end-only limit does not turn a dead pack into a hold" "$matches"
 fi
 
 setup_battery pending-charge 0 "0" "80"
 shell_output=$(run_shell)
+grep -Fx $'state\tpending-charge' <<<"$shell_output" >/dev/null || fail "zero-start dead pack keeps its raw state"
 if matches=$(rg -n '^state\tholding$' <<<"$shell_output"); then
   fail "zero-start limit does not turn a dead pack into a hold" "$matches"
 fi
@@ -212,6 +214,7 @@ grep -Fx $'threshold\t75-80%' <<<"$shell_output" >/dev/null || fail "threshold l
 # after plug-in, while the EC briefly reports pending-charge).
 setup_battery pending-charge 9 "75" "80"
 shell_output=$(run_shell)
+grep -Fx $'state\tpending-charge' <<<"$shell_output" >/dev/null || fail "below-limit pending charge keeps its raw state"
 if matches=$(rg -n '^state\tholding$' <<<"$shell_output"); then
   fail "below-limit pending charge does not report as holding" "$matches"
 fi
