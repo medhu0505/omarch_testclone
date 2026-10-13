@@ -186,7 +186,7 @@ case "$*" in
   '-e no -g ipv4.addresses connection show omarchy-hotspot')
     printf '%s\n' "${SHARED_ADDRESS:-10.42.0.1/24}"
     ;;
-  'connection add type wifi ifname wlan0 con-name omarchy-hotspot ssid Shared mode ap 802-11-wireless.band a wifi-sec.key-mgmt wpa-psk ipv4.method shared ipv4.addresses 10.42.0.1/24 autoconnect no') touch "$PROFILE_STATE" ;;
+  'connection add type wifi ifname wlan0 con-name omarchy-hotspot ssid Shared mode ap 802-11-wireless.band a 802-11-wireless.channel 36 wifi-sec.key-mgmt wpa-psk ipv4.method shared ipv4.addresses 10.42.0.1/24 autoconnect no') touch "$PROFILE_STATE" ;;
   'connection edit omarchy-hotspot')
     while IFS= read -r line; do
       :
@@ -233,16 +233,23 @@ if (( EUID != 0 )); then
 
   add_bound=0
   modify_bound=0
+  band_channel_split=0
   while IFS= read -r call; do
     if [[ $call == 'connection add type wifi ifname wlan0 '* ]]; then
       add_bound=1
     fi
     if [[ $call == 'connection modify omarchy-hotspot ssid Shared '* && $call == *' connection.interface-name wlan0' ]]; then
       modify_bound=1
+      # The reuse applies 2.4 GHz to a profile saved on 5 GHz; its channel and
+      # width have to change in the same call or NM rejects bg with a 5 GHz
+      # channel or an 80 MHz width.
+      [[ $call == *' 802-11-wireless.band bg 802-11-wireless.channel 6 802-11-wireless.channel-width auto '* ]] || band_channel_split=1
     fi
+    [[ $call != 'connection modify omarchy-hotspot 802-11-wireless.channel '* ]] || band_channel_split=1
   done <"$NMCLI_LOG"
   (( add_bound == 1 )) || fail "new profile binds to the selected Wi-Fi interface"
   (( modify_bound == 1 )) || fail "existing profile is rebound to the selected Wi-Fi interface"
+  (( band_channel_split == 0 )) || fail "band, channel and width are saved in one NetworkManager call" "$(<"$NMCLI_LOG")"
   nmcli_log=$(<"$NMCLI_LOG")
   [[ $nmcli_log != *"ifname p2p-dev-wlan9"* && $nmcli_log != *"connection.interface-name p2p-dev-wlan9"* ]] || fail "Wi-Fi selection never falls back to a P2P device"
   pass "NM profile create and reuse follow the selected Wi-Fi interface"
