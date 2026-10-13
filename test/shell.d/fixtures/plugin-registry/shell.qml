@@ -102,6 +102,9 @@ ShellRoot {
     var localPanel = manifest("local.grouped-panel", ["panel"], { panel: "Panel.qml" })
     localPanel.omarchy = { clonedFrom: "omarchy.grouped-panel" }
     scan += block("thirdparty", "/third/local-panel", localPanel)
+    var localTray = manifest("local.tray", ["bar-widget"], { barWidget: "Tray.qml" })
+    localTray.omarchy = { clonedFrom: "omarchy.tray" }
+    scan += block("thirdparty", "/third/local-tray", localTray)
     var localBar = manifest("local.bar", ["bar"], { bar: "Bar.qml" })
     localBar.omarchy = { clonedFrom: "omarchy.bar" }
     scan += block("thirdparty", "/third/local-bar", localBar)
@@ -128,6 +131,7 @@ ShellRoot {
       "local.future-auth",
       "local.grouped-panel",
       "local.hybrid",
+      "local.tray",
       "local.weather",
       "omarchy.bar",
       "omarchy.first-widget",
@@ -267,6 +271,29 @@ ShellRoot {
     root.assertEqual(registry.setBarWidget("third.widget", "size", 7, {}), "", "registry sets widget options")
     root.assertEqual(root.config.bar.layout.right[0].size, 7, "registry persists widget options")
 
+    // The tray section is a section of its own, in the tray's drawer.
+    root.assertEqual(registry.moveBarWidget("third.widget", { section: "tray" }), "", "registry moves widgets into the tray section")
+    root.assertDeepEqual(root.config.bar.layout.right, [], "a widget moved into the tray section leaves its section")
+    root.assertDeepEqual(root.config.bar.layout.tray, [{ id: "third.widget", size: 7 }], "the tray section keeps the widget's settings")
+    root.assertEqual(registry.setBarWidget("third.widget", "size", 9, {}), "", "registry finds widgets in the tray section")
+    root.assertEqual(root.config.bar.layout.tray[0].size, 9, "registry sets options on widgets in the tray section")
+    registry.setEnabled("third.widget", true)
+    root.assertDeepEqual(root.config.bar.layout.right, [], "enabling a widget in the tray section does not add it to the bar again")
+    root.assertEqual(registry.moveBarWidget("third.widget", { section: "right" }), "", "registry moves widgets out of the tray section")
+    root.assertDeepEqual(root.config.bar.layout.tray, [], "a widget moved out of the tray section leaves it")
+
+    root.config = { version: 1, bar: { layout: { left: [], center: [], right: [{ id: "omarchy.tray" }], tray: [{ id: "third.widget" }] } }, plugins: [] }
+    root.assertEqual(registry.moveBarWidget("omarchy.tray", { section: "tray" }), "the tray cannot go in its own drawer", "registry keeps the tray out of its own drawer")
+    root.assertEqual(registry.moveBarWidget("omarchy.tray", { after: "third.widget" }), "the tray cannot go in its own drawer", "registry keeps the tray out of its own drawer when placed beside a widget in it")
+    root.assertDeepEqual(root.config.bar.layout.right, [{ id: "omarchy.tray" }], "a refused tray move leaves the tray where it was")
+    root.config = { version: 1, bar: { layout: { left: [], center: [], right: [{ id: "local.tray" }], tray: [] } }, plugins: [] }
+    root.assertEqual(registry.moveBarWidget("local.tray", { section: "tray" }), "the tray cannot go in its own drawer", "registry keeps a tray clone out of its own drawer")
+    root.config = { version: 1, bar: { layout: { left: [], center: [], right: [], tray: [] } }, plugins: [{ id: "local.tray", size: 7 }] }
+    root.assertTrue(!registry.setEnabled("local.tray", true, { section: "tray" }), "enabling a tray into its own drawer is refused")
+    root.assertEqual(registry.lastEnableError, "the tray cannot go in its own drawer", "a refused tray enable says why")
+    root.assertDeepEqual(root.config.bar.layout.right, [], "a refused tray enable changes nothing")
+    root.assertDeepEqual(root.config.plugins, [{ id: "local.tray", size: 7 }], "a refused tray enable preserves saved settings")
+
     root.config = { version: 1, bar: { layout: { left: [], center: [], right: [] } }, plugins: [] }
     registry.setEnabled("third.widget", true, { section: "right", index: 0 })
     root.assertDeepEqual(root.config.bar.layout.right, [{ id: "third.widget" }], "enabling with placement is one registry transition")
@@ -367,25 +394,29 @@ ShellRoot {
     root.assertTrue(root.config.cloneBarSources === undefined, "restoring a configured clone clears its source snapshot")
 
     var originalWidget = { id: "omarchy.first-widget", size: 4, serverUrl: "http://source.test", options: { origin: "source" }, inherited: true }
-    for (var putClone = 0; putClone < 2; putClone++) {
-      for (var enableSource = 0; enableSource < 2; enableSource++) {
-        root.config = {
-          version: 1,
-          bar: { layout: { left: [], center: [JSON.parse(JSON.stringify(originalWidget))], right: [] } },
-          plugins: [{ id: "local.first-widget", size: 7, serverUrl: "http://clone.test", options: { origin: "clone" }, apiKey: "test-key" }]
+    for (var sectionIndex = 0; sectionIndex < 2; sectionIndex++) {
+      var cloneSection = ["center", "tray"][sectionIndex]
+      for (var putClone = 0; putClone < 2; putClone++) {
+        for (var enableSource = 0; enableSource < 2; enableSource++) {
+          root.config = {
+            version: 1,
+            bar: { layout: { left: [], center: [], right: [], tray: [] } },
+            plugins: [{ id: "local.first-widget", size: 7, serverUrl: "http://clone.test", options: { origin: "clone" }, apiKey: "test-key" }]
+          }
+          root.config.bar.layout[cloneSection] = [JSON.parse(JSON.stringify(originalWidget))]
+          if (putClone) registry.putBarWidget("local.first-widget", {})
+          else registry.setEnabled("local.first-widget", true)
+          root.assertDeepEqual((root.config.cloneBarSources || {})["local.first-widget"], originalWidget, "source snapshot preserves its complete settings")
+          root.config = JSON.parse(JSON.stringify(root.config))
+          registry.setBarWidget("local.first-widget", "options", { origin: "edited clone" }, {})
+          registry.setEnabled("local.first-widget", true)
+          root.assertDeepEqual((root.config.cloneBarSources || {})["local.first-widget"], originalWidget, "repeat enable never overwrites the source snapshot")
+          if (enableSource) registry.setEnabled("omarchy.first-widget", true)
+          else registry.setEnabled("local.first-widget", false)
+          root.assertDeepEqual(root.config.bar.layout[cloneSection], [originalWidget], "round trip restores original scalars and nested settings")
+          root.assertTrue(root.config.cloneBarSources === undefined, "round trip clears source snapshot")
+          root.assertDeepEqual(root.config.plugins, [], "round trip leaves no redundant plugin entry")
         }
-        if (putClone) registry.putBarWidget("local.first-widget", {})
-        else registry.setEnabled("local.first-widget", true)
-        root.assertDeepEqual((root.config.cloneBarSources || {})["local.first-widget"], originalWidget, "source snapshot preserves its complete settings")
-        root.config = JSON.parse(JSON.stringify(root.config))
-        registry.setBarWidget("local.first-widget", "options", { origin: "edited clone" }, {})
-        registry.setEnabled("local.first-widget", true)
-        root.assertDeepEqual((root.config.cloneBarSources || {})["local.first-widget"], originalWidget, "repeat enable never overwrites the source snapshot")
-        if (enableSource) registry.setEnabled("omarchy.first-widget", true)
-        else registry.setEnabled("local.first-widget", false)
-        root.assertDeepEqual(root.config.bar.layout.center, [originalWidget], "round trip restores original scalars and nested settings")
-        root.assertTrue(root.config.cloneBarSources === undefined, "round trip clears source snapshot")
-        root.assertDeepEqual(root.config.plugins, [], "round trip leaves no redundant plugin entry")
       }
     }
 
