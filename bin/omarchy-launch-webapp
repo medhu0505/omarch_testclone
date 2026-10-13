@@ -14,11 +14,11 @@ esac
 
 browsers+=(chromium.desktop google-chrome.desktop brave-browser.desktop brave-origin.desktop microsoft-edge.desktop vivaldi-stable.desktop opera.desktop helium.desktop)
 
-# Desktop entries are looked up as xdg does, the first one found winning, with
-# the Nix profile ahead of the system dirs as omarchy-launch-browser reads it. A
-# browser counts as installed when that entry's command resolves. An entry that
-# starts with a wrapper such as env cannot take --app on the browser's behalf, so
-# it is skipped.
+# Desktop entries are looked up as xdg does, with the Nix profile ahead of the
+# system dirs as omarchy-launch-browser reads it. An unusable Nix entry is
+# skipped so it cannot hide a working system copy. A browser counts as installed
+# when its entry's command resolves. An entry that starts with a wrapper such as
+# env cannot take --app on the browser's behalf, so it is skipped.
 IFS=: read -ra data_dirs <<<"${XDG_DATA_HOME:-$HOME/.local/share}:$HOME/.nix-profile/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 
 browser_command() {
@@ -32,8 +32,9 @@ browser_command() {
       return 0
     fi
 
-    # Launchers read the first entry found, so one that does not resolve hides
-    # any later copy and the browser is not installed.
+    [[ $data_dir == "$HOME/.nix-profile/share" ]] && continue
+
+    # Other entries keep xdg's first-entry shadowing rule.
     return 1
   done
 

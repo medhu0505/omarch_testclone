@@ -109,3 +109,12 @@ launch_webapp vivaldi-stable.desktop || fail "web app launch reads the Nix profi
 grep -Fxq 'launch:uwsm-app -- vivaldi-nix --app=https://example.test/app --flag' "$TEST_LOG" ||
   fail "the Nix profile's entry comes ahead of the system one" "$(cat "$TEST_LOG")"
 pass "the Nix profile's entry comes ahead of the system one"
+
+# A stale Nix entry must not hide a working system copy of the same browser ID,
+# even when another Chromium-based browser appears earlier in the fallback list.
+desktop_entry "$test_home/.nix-profile/share/applications/vivaldi-stable.desktop" "$scratch/removed-nix-browser"
+desktop_entry "$system_apps/brave-browser.desktop" brave
+launch_webapp vivaldi-stable.desktop || fail "web app launch skips a stale Nix entry" "$(cat "$scratch/err")"
+grep -Fxq 'launch:uwsm-app -- vivaldi-stable --app=https://example.test/app --flag' "$TEST_LOG" ||
+  fail "a stale Nix entry falls through to the system copy of the same browser" "$(cat "$TEST_LOG")"
+pass "a stale Nix entry falls through to the system copy of the same browser"
