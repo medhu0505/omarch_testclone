@@ -2253,7 +2253,9 @@ Item {
       var data = Util.parseModuleJson(raw)
       var klass = data.class || data.alt || ""
 
-      outputText = data.text || String(raw || "").trim()
+      // JSON decides on its own: an empty (or missing) "text" hides the widget,
+      // the way Waybar does. Only plain output falls back to the raw line.
+      outputText = data.plain === true ? String(raw || "").trim() : String(data.text || "")
       outputTooltip = data.tooltip || String(setting("tooltip", ""))
       outputActive = klass === "active" || (Array.isArray(klass) && klass.indexOf("active") !== -1)
     }

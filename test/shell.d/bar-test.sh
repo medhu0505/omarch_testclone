@@ -45,6 +45,17 @@ if ! rg -q 'pluginObjectOwners\.get\(target\)' "$ROOT/shell/plugins/bar/Bar.qml"
 fi
 pass "bar coalesces plugin api resyncs and looks ownership up by target"
 
+# A custom command widget whose JSON text is empty used to fall back to the raw
+# output, so the whole JSON line was painted on the bar. The parsed JSON now
+# decides on its own; only plain output keeps the raw line.
+if ! rg -q 'outputText = data\.plain === true \? String\(raw \|\| ""\)\.trim\(\) : String\(data\.text \|\| ""\)' "$ROOT/shell/plugins/bar/Bar.qml"; then
+  fail "custom command modules must not show the raw JSON when its text is empty"
+fi
+if ! rg -q 'return \{ text: text, plain: true \}' "$ROOT/shell/Commons/Util.qml"; then
+  fail "module JSON parsing must keep plain output distinguishable from parsed JSON"
+fi
+pass "custom command modules hide on an empty JSON text"
+
 # Both bar orientations used to be instantiated and toggled with `visible`,
 # doubling every indicator (and every process an indicator spawns) per bar.
 if ! rg -q 'sourceComponent: root\.vertical \? verticalIndicatorsTree : horizontalIndicatorsTree' \
