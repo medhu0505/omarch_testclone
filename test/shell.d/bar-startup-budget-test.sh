@@ -83,6 +83,10 @@ test_home="$TMPDIR/home"
 stub_bin="$TMPDIR/bin"
 log="$TMPDIR/quickshell.log"
 mkdir -p "$test_root" "$test_home" "$stub_bin"
+# Nobody touches the seat during a run, so without this the scratch
+# shell's idle service would eventually screensave/lock the real desktop.
+mkdir -p "$test_home/.local/state/omarchy/indicators"
+touch "$test_home/.local/state/omarchy/indicators/stay-awake"
 cp -a "$ROOT/shell" "$test_root/shell"
 ln -s "$ROOT/config" "$test_root/config"
 ln -s "$ROOT/bin" "$test_root/bin"
@@ -102,6 +106,11 @@ for name in omarchy-powerprofiles-set powerprofilesctl; do
   printf '#!/bin/bash\nexit 0\n' >"$stub_bin/$name"
   chmod +x "$stub_bin/$name"
 done
+# The shell runs some commands under `bash -lc`, and a login shell resets
+# PATH and OMARCHY_PATH from /etc/omarchy.conf, which would put the
+# session's checkout and its real commands back ahead of these stubs.
+printf '#!/bin/bash\n[[ ${1:-} == "-lc" ]] && shift && set -- -c "$@"\nexec /bin/bash "$@"\n' >"$stub_bin/bash"
+chmod +x "$stub_bin/bash"
 
 # One cold start: launch, then poll the compositor until this shell's
 # bar surface is mapped at a real size — the bar drawn, in the
