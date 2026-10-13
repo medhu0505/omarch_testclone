@@ -618,7 +618,7 @@ firewall_delete_tag() {
       ufw delete allow in on "$iface" from "$subnet" proto tcp to any port 53 comment "$UFW_OWNER:dns" >/dev/null
       ;;
     forward)
-      ufw delete route allow in on "$iface" from "$subnet" comment "$UFW_OWNER:forward" >/dev/null
+      ufw route delete allow in on "$iface" from "$subnet" comment "$UFW_OWNER:forward" >/dev/null
       ;;
     *) return 1 ;;
   esac
@@ -697,7 +697,7 @@ firewall_remove_record() {
 
 firewall_remove() {
   local rules="" state="" iface subnet tag record
-  local -a records=()
+  local -a records=() failed=()
   require_privileged
   state=$(firewall_state_records) || fail "could not read hotspot firewall state"
   [[ -z $state ]] || mapfile -t records <<<"$state"
@@ -707,16 +707,16 @@ firewall_remove() {
     [[ -n $iface ]] || return 0
     subnet=$(shared_subnet)
     for tag in "${FIREWALL_TAGS[@]}"; do
-      firewall_remove_record "$rules" "$iface" "$subnet" "$tag" ||
-        fail "could not remove hotspot firewall rule $tag"
+      firewall_remove_record "$rules" "$iface" "$subnet" "$tag" || failed+=("$tag")
     done
-    return
+  else
+    # Keep going past a failed rule so one bad delete doesn't strand the rest.
+    for record in "${records[@]}"; do
+      IFS=$'\t' read -r iface subnet tag <<<"$record"
+      firewall_remove_record "$rules" "$iface" "$subnet" "$tag" || failed+=("$tag")
+    done
   fi
-  for record in "${records[@]}"; do
-    IFS=$'\t' read -r iface subnet tag <<<"$record"
-    firewall_remove_record "$rules" "$iface" "$subnet" "$tag" ||
-      fail "could not remove hotspot firewall rule $tag"
-  done
+  ((${#failed[@]} == 0)) || fail "could not remove hotspot firewall rule ${failed[*]}"
 }
 
 firewall_warn_unsupported() {

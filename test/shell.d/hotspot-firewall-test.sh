@@ -209,13 +209,24 @@ if [[ ${1:-} == "show" && ${2:-} == "added" ]]; then
   exit 0
 fi
 printf '%s\n' "$*" >>"$UFW_LOG"
-if [[ ${1:-} == "allow" || ${1:-} == "route" ]]; then
+# Real ufw only accepts `route delete RULE`; `delete route RULE` is a syntax error.
+if [[ ${1:-} == "delete" && ${2:-} == "route" ]]; then
+  echo "ERROR: Invalid syntax" >&2
+  exit 1
+fi
+if [[ ${1:-} == "allow" || ( ${1:-} == "route" && ${2:-} != "delete" ) ]]; then
   printf '%s\n' "$*" >>"$UFW_STATE"
   exit 0
 fi
-if [[ ${1:-} == "delete" ]]; then
-  shift
-  target=$*
+if [[ ${1:-} == "delete" || ( ${1:-} == "route" && ${2:-} == "delete" ) ]]; then
+  if [[ ${1:-} == "route" ]]; then
+    shift 2
+    target="route $*"
+  else
+    shift
+    target=$*
+  fi
+  [[ -z ${UFW_FAIL_DELETE:-} || $target != *"$UFW_FAIL_DELETE"* ]] || exit 1
   tmp="$TEST_TMP/ufw-state-next"
   : >"$tmp"
   while IFS= read -r rule; do
@@ -987,6 +998,25 @@ set -e
 [[ $teardown_output == *"IPv4 forwarding restore"* ]] || fail "teardown reports the in-process failure with the others" "$teardown_output"
 ! grep -q 'omarchy-hotspot:' "$UFW_STATE" || fail "an in-process failure does not skip firewall removal" "$(<"$UFW_STATE")"
 pass "an in-process teardown failure does not skip the remaining cleanup"
+
+reset_firewall_fixture
+run_isolated "$TEST_TMP/seed-complete-driver.sh"
+cat >"$TEST_TMP/remove-continues-driver.sh" <<'DRIVER'
+require_privileged() { :; }
+HOTSPOT_STATE_DIR="$TEST_STATE_DIR"
+FIREWALL_STATE_FILE="$TEST_STATE_DIR/firewall.state"
+export UFW_SHOW_ALLOWED=1 UFW_FAIL_DELETE=route
+firewall_remove
+DRIVER
+set +e
+remove_output=$(run_isolated "$TEST_TMP/remove-continues-driver.sh" 2>&1)
+remove_status=$?
+set -e
+(( remove_status != 0 )) || fail "a failed rule delete fails firewall removal"
+[[ $remove_output == *"could not remove hotspot firewall rule forward"* ]] || fail "removal names the rule it could not delete" "$remove_output"
+[[ $(grep -c 'omarchy-hotspot:' "$UFW_STATE") == 1 ]] || fail "a failed rule delete does not strand the other rules" "$(<"$UFW_STATE")"
+grep -q 'omarchy-hotspot:forward' "$UFW_STATE" || fail "only the failed rule is left behind" "$(<"$UFW_STATE")"
+pass "a failed rule delete does not stop the remaining rules being removed"
 
 reset_firewall_fixture
 : >"$OMARCHY_HOTSPOT_LOCK_FILE"
