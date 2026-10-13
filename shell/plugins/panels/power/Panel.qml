@@ -249,9 +249,11 @@ Panel {
 
   Timer { interval: 5000; running: root.opened; repeat: true; onTriggered: root.refresh() }
 
-  // The bar icon needs limits even while the panel is closed; poll the
-  // battery script only so a real PendingCharge hold shows correctly.
-  Timer { interval: 30000; running: root.batteryPresent && !root.opened; repeat: true; onTriggered: root.refreshBattery() }
+  // The bar icon needs limits while the panel is closed; re-read them when UPower's state changes rather than on a timer.
+  Connections {
+    target: UPower.displayDevice
+    function onStateChanged() { root.refreshBattery() }
+  }
 
   // Rotate the status phrase while the panel is open and we're in a
   // rotating state (charging or on battery). The text swap is wrapped in a
