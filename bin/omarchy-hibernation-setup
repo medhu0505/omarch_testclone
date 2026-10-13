@@ -13,6 +13,12 @@ for arg in "$@"; do
   esac
 done
 
+# Resume is Limine-oriented and hibernate is unreliable on Asahi.
+if omarchy-hw-aarch64-apple; then
+  echo "Skipping hibernation setup (not supported on Apple Silicon)"
+  exit 0
+fi
+
 POWER_IMAGE_SIZE="${OMARCHY_HIBERNATION_IMAGE_SIZE_PATH:-/sys/power/image_size}"
 
 if [[ ! -f $POWER_IMAGE_SIZE ]]; then
