@@ -23,8 +23,10 @@ signed_in() {
   jq -nc --arg token "$1" '{accessToken: $token}' >"$XDG_CONFIG_HOME/cursor/auth.json"
 }
 
+# COLLECT_ARGS unset => --force. COLLECT_ARGS="" => no flags (reuse allowed).
 collect() {
-  COLLECTOR="$ROOT/bin/omarchy-agent-usage-x" BILLING_END_MS="$billing_end_ms" python3 - "$@" <<'PY'
+  COLLECTOR="$ROOT/bin/omarchy-agent-usage-x" BILLING_END_MS="$billing_end_ms" \
+    AUTO_PCT="${AUTO_PCT:-37.5}" python3 - "$@" <<'PY'
 import importlib.machinery, importlib.util, io, json, os, sys, urllib.error
 
 loader = importlib.machinery.SourceFileLoader("collector", os.environ["COLLECTOR"])
@@ -33,6 +35,7 @@ collector = importlib.util.module_from_spec(spec)
 loader.exec_module(collector)
 
 end = int(os.environ["BILLING_END_MS"])
+auto = float(os.environ["AUTO_PCT"])
 responses = {
   "aiserver.v1.DashboardService/GetPlanInfo": {
     "planInfo": {
@@ -44,31 +47,42 @@ responses = {
   "aiserver.v1.DashboardService/GetCurrentPeriodUsage": {
     "billingCycleEnd": end,
     "planUsage": {
-      "autoPercentUsed": 37.5,
+      "autoPercentUsed": auto,
       "apiPercentUsed": 0,
-      "totalPercentUsed": 37.5,
+      "totalPercentUsed": auto,
     },
   },
 }
 
+calls = {"n": 0}
+
 def urlopen(request, timeout=None):
-  method = request.full_url.split("://", 1)[-1].split("/", 1)[-1]
-  if os.environ.get("X_FAIL_USAGE") == "1" and method.endswith("GetCurrentPeriodUsage"):
+  calls["n"] += 1
+  if os.environ.get("X_FAIL_USAGE") == "1":
     raise urllib.error.HTTPError(request.full_url, 401, "Unauthorized", hdrs=None, fp=None)
+  if os.environ.get("X_REJECT_API") == "1":
+    raise AssertionError(f"unexpected API call: {request.full_url}")
+  method = request.full_url.split("://", 1)[-1].split("/", 1)[-1]
   if method not in responses:
     raise AssertionError(f"unexpected method {method}")
   auth = request.get_header("Authorization") or request.get_header("authorization")
-  assert auth.split(" ", 1)[1] == "token-main"
-  # urlopen returns a context-manager response in modern Python; BytesIO alone
-  # lacks __enter__. Mimic a minimal response.
+  expected = os.environ.get("X_TOKEN", "token-main")
+  assert auth.split(" ", 1)[1] == expected
+
   class Resp(io.BytesIO):
     def __enter__(self): return self
     def __exit__(self, *a): return False
+
   return Resp(json.dumps(responses[method]).encode())
 
 collector.urllib.request.urlopen = urlopen
-sys.argv = ["omarchy-agent-usage-x"] + (os.environ.get("COLLECT_ARGS") or "--force").split()
+if "COLLECT_ARGS" in os.environ:
+  args = os.environ["COLLECT_ARGS"].split() if os.environ["COLLECT_ARGS"] else []
+else:
+  args = ["--force"]
+sys.argv = ["omarchy-agent-usage-x"] + args
 collector.main()
+print(f"\n__calls__={calls['n']}", file=sys.stderr)
 PY
 }
 
@@ -85,42 +99,79 @@ record=$(collect)
 [[ $(jq -r '.authHelpText' <<<"$record") == "" ]] || fail "a successful probe drops the login hint" "$record"
 pass "X Subscription plan and shared pool come from Cursor dashboard APIs"
 
-# Reused limits keep the login hint off.
-record=$(COLLECT_ARGS="" collect)
-[[ $(jq -c '{percent: .limits[0].percent, help: .authHelpText, stale: .limitsStale}' <<<"$record") == '{"percent":0.375,"help":"","stale":false}' ]] ||
+# 0–100 API percents at and below 1 stay 1% / 0.5%, not a full bar.
+record=$(AUTO_PCT=1 COLLECT_ARGS="--force" collect)
+[[ $(jq -r '.limits[0].percent' <<<"$record") == "0.01" ]] ||
+  fail "1% used from the API is 0.01, not a full bar" "$record"
+record=$(AUTO_PCT=0.5 COLLECT_ARGS="--force" collect)
+[[ $(jq -r '.limits[0].percent' <<<"$record") == "0.005" ]] ||
+  fail "0.5% used from the API is 0.005" "$record"
+pass "small API percentages stay small"
+
+# Reused limits must not hit the network again.
+record=$(X_REJECT_API=1 COLLECT_ARGS="" collect 2>"$test_tmp/reuse.err")
+[[ $(jq -c '{percent: .limits[0].percent, help: .authHelpText, stale: .limitsStale}' <<<"$record") == '{"percent":0.005,"help":"","stale":false}' ]] ||
   fail "reused X Subscription limits drop the login hint" "$record"
+grep -q 'unexpected API call' "$test_tmp/reuse.err" &&
+  fail "cache reuse still called the API" "$(cat "$test_tmp/reuse.err")"
 pass "reused X Subscription limits drop the login hint"
 
-# A failed probe keeps the last numbers and says so.
+# A failed probe keeps the last numbers for this login and says so.
 record=$(collect)
 record=$(X_FAIL_USAGE=1 COLLECT_ARGS="--force" collect)
 [[ $(jq -c '{usageStatusText, first: .limits[0].percent, stale: .limitsStale}' <<<"$record") == '{"usageStatusText":"Waiting for auth","first":0.375,"stale":true}' ]] ||
   fail "a failed probe keeps the last shared-pool numbers" "$record"
 pass "a failed probe keeps the last shared-pool numbers"
 
-# Local Cursor transcripts become prompt/session stats.
+# A different Cursor login never inherits the previous account's cache.
+signed_in token-side
+record=$(X_TOKEN=token-side AUTO_PCT=12 COLLECT_ARGS="--force" collect)
+[[ $(jq -c '{percent: .limits[0].percent, stale: .limitsStale}' <<<"$record") == '{"percent":0.12,"stale":false}' ]] ||
+  fail "a new Cursor login probes its own shared pool" "$record"
+caches=$(find "$XDG_CACHE_HOME/omarchy/agent-usage" -name 'x-limits-*.json' | wc -l)
+((caches >= 2)) || fail "each Cursor login keeps its own limits cache" "caches=$caches"
+pass "a new Cursor login probes its own shared pool"
+
+# Local Cursor transcripts become prompt/session stats from each turn's stamp.
 projects="$HOME/.cursor/projects/demo/agent-transcripts"
 mkdir -p "$projects"
-now=$(date +%s)
-cat >"$projects/session-a.jsonl" <<'JSONL'
-{"role":"user","content":"hello"}
+today_stamp=$(python3 -c 'import datetime as dt; print(dt.date.today().strftime("%A, %b %-d, %Y"))')
+old_stamp="Monday, Jan 5, 2026"
+cat >"$projects/session-a.jsonl" <<JSONL
+{"role":"user","message":{"content":[{"type":"text","text":"<timestamp>${old_stamp}, 9:00 AM (UTC-5)</timestamp>\\n<user_query>old</user_query>"}]}}
 {"role":"assistant","content":"hi"}
-{"role":"user","content":"again"}
+{"role":"user","message":{"content":[{"type":"text","text":"<timestamp>${today_stamp}, 10:00 AM (UTC-5)</timestamp>\\n<user_query>today</user_query>"}]}}
+{"role":"user","message":{"content":[{"type":"text","text":"<timestamp>${today_stamp}, 11:00 AM (UTC-5)</timestamp>\\n<user_query>again</user_query>"}]}}
 JSONL
-cat >"$projects/session-b.jsonl" <<'JSONL'
-{"type":"human","content":"other"}
+cat >"$projects/session-b.jsonl" <<JSONL
+{"type":"human","message":{"content":[{"type":"text","text":"<timestamp>${today_stamp}, 1:00 PM (UTC-5)</timestamp>\\n<user_query>other</user_query>"}]}}
 JSONL
-touch -d "@$now" "$projects/session-a.jsonl" "$projects/session-b.jsonl"
+# Continuing an old file today must not move its undated/old prompts onto today.
+cat >"$projects/session-old.jsonl" <<'JSONL'
+{"role":"user","content":"no stamp here"}
+{"role":"assistant","content":"ok"}
+JSONL
+touch -d "2026-01-02 12:00:00" "$projects/session-old.jsonl"
+touch -d "$(date '+%Y-%m-%d %H:%M:%S')" "$projects/session-a.jsonl" "$projects/session-b.jsonl"
 rm -f "$XDG_CACHE_HOME"/omarchy/agent-usage/x-scan.json
-record=$(COLLECT_ARGS="--force" collect)
-[[ $(jq -c '{hasLocalStats, todayPrompts, todaySessions, totalPrompts, totalSessions}' <<<"$record") == '{"hasLocalStats":true,"todayPrompts":3,"todaySessions":2,"totalPrompts":3,"totalSessions":2}' ]] ||
-  fail "X Subscription counts prompts from Cursor agent transcripts" "$record"
-pass "X Subscription counts prompts from Cursor agent transcripts"
+record=$(X_TOKEN=token-side COLLECT_ARGS="--force" collect)
+[[ $(jq -c '{hasLocalStats, todayPrompts, todaySessions, totalPrompts, totalSessions, weekTokens: ([.recentDays[].messageCount] | add)}' <<<"$record") == '{"hasLocalStats":true,"todayPrompts":3,"todaySessions":2,"totalPrompts":5,"totalSessions":3,"weekTokens":0}' ]] ||
+  fail "X Subscription counts dated prompts and keeps recentDays in tokens" "$record"
+pass "X Subscription counts dated prompts and keeps recentDays in tokens"
+
+# Empty / assistant-only transcripts do not invent activity.
+mkdir -p "$projects/empty"
+: >"$projects/empty/blank.jsonl"
+printf '%s\n' '{"role":"assistant","content":"only reply"}' >"$projects/empty/assistant-only.jsonl"
+rm -f "$XDG_CACHE_HOME"/omarchy/agent-usage/x-scan.json
+record=$(X_TOKEN=token-side COLLECT_ARGS="--force" collect)
+[[ $(jq -c '{totalPrompts, totalSessions, activeDays}' <<<"$record") == '{"totalPrompts":5,"totalSessions":3,"activeDays":2}' ]] ||
+  fail "empty transcripts do not invent prompts or active days" "$record"
+pass "empty transcripts do not invent prompts or active days"
 
 # limits-only reuses the transcript scan.
 mkdir -p "$projects/extra"
-printf '%s\n' '{"role":"user","content":"later"}' >"$projects/extra/session-c.jsonl"
-touch -d "@$now" "$projects/extra/session-c.jsonl"
-record=$(COLLECT_ARGS="--limits-only" collect)
-[[ $(jq -r '.totalSessions' <<<"$record") == 2 ]] || fail "a limits-only refresh reuses the transcript scan" "$record"
+printf '%s\n' "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"<timestamp>${today_stamp}, 2:00 PM (UTC-5)</timestamp>\\n<user_query>later</user_query>\"}]}}" >"$projects/extra/session-c.jsonl"
+record=$(X_TOKEN=token-side COLLECT_ARGS="--limits-only" collect)
+[[ $(jq -r '.totalSessions' <<<"$record") == 3 ]] || fail "a limits-only refresh reuses the transcript scan" "$record"
 pass "a limits-only refresh reuses the transcript scan"

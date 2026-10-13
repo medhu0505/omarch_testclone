@@ -13,8 +13,10 @@ The agents panel only ever reads the JSON this prints.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import re
 import tempfile
 import time
 import urllib.error
@@ -30,6 +32,12 @@ AUTH_HELP = "Run `cursor-agent login`, or sign in to Cursor, to refresh X Subscr
 API_BASE = "https://api2.cursor.sh"
 PROBE_REUSE_SECONDS = 60
 LIMITS_ONLY_SCAN_REUSE_SECONDS = 900
+# Cursor agent transcripts stamp user turns as
+# <timestamp>Monday, Oct 12, 2026, 6:27 PM (UTC-5)</timestamp>.
+TIMESTAMP_RE = re.compile(
+  r"<timestamp>\s*([A-Za-z]+,\s+[A-Za-z]+\s+\d{1,2},\s+\d{4},\s+\d{1,2}:\d{2}\s*[AP]M)\s*(?:\([^)]+\))?\s*</timestamp>",
+  re.IGNORECASE,
+)
 
 
 def read_json(path: Path) -> Any:
@@ -68,6 +76,16 @@ def load_token() -> str | None:
   return token if isinstance(token, str) and token else None
 
 
+def token_fingerprint(token: str) -> str:
+  return hashlib.sha1(token.encode("utf-8")).hexdigest()[:16]
+
+
+def limits_cache_path(token: str | None) -> Path:
+  if token:
+    return cache_root() / f"x-limits-{token_fingerprint(token)}.json"
+  return cache_root() / "x-limits.json"
+
+
 def rpc(token: str, method: str, body: dict | None = None) -> dict[str, Any]:
   request = urllib.request.Request(
     f"{API_BASE}/{method}",
@@ -97,20 +115,20 @@ def ms_to_iso(value: Any) -> str:
 
 
 def pct_to_unit(value: Any) -> float:
+  """Convert Cursor's 0–100 `*PercentUsed` fields to a 0–1 panel unit."""
   try:
     n = float(value)
   except (TypeError, ValueError):
     return -1.0
   if n < 0:
     return -1.0
-  # Cursor currently reports 0–100 style percents; accept either scale.
-  if n > 1.0:
-    n = n / 100.0
-  return min(max(n, 0.0), 1.0)
+  return min(n / 100.0, 1.0)
 
 
 def empty_stats() -> dict[str, Any]:
   today = date.today()
+  # recentDays.messageCount is token totals across agents; keep prompts in
+  # todayPrompts/totalPrompts so the hero does not call them tokens.
   recent = [{"date": (today - timedelta(days=i)).isoformat(), "messageCount": 0} for i in range(6, -1, -1)]
   return {
     "hasLocalStats": False,
@@ -129,12 +147,63 @@ def empty_stats() -> dict[str, Any]:
   }
 
 
+def prompt_day(obj: dict[str, Any]) -> date | None:
+  """Return the calendar day of a transcript turn when the turn itself names it."""
+  chunks: list[str] = []
+  message = obj.get("message")
+  if isinstance(message, dict):
+    content = message.get("content")
+    if isinstance(content, str):
+      chunks.append(content)
+    elif isinstance(content, list):
+      for part in content:
+        if isinstance(part, dict) and isinstance(part.get("text"), str):
+          chunks.append(part["text"])
+        elif isinstance(part, str):
+          chunks.append(part)
+  for key in ("content", "text"):
+    value = obj.get(key)
+    if isinstance(value, str):
+      chunks.append(value)
+
+  for chunk in chunks:
+    match = TIMESTAMP_RE.search(chunk)
+    if not match:
+      continue
+    stamp = match.group(1)
+    for fmt in ("%A, %b %d, %Y, %I:%M %p", "%A, %B %d, %Y, %I:%M %p"):
+      try:
+        return datetime.strptime(stamp, fmt).date()
+      except ValueError:
+        continue
+
+  for key in ("createdAt", "timestamp", "time"):
+    raw = obj.get(key)
+    if raw is None:
+      continue
+    if isinstance(raw, (int, float)):
+      ms = float(raw)
+      if ms > 10_000_000_000:
+        ms /= 1000.0
+      try:
+        return datetime.fromtimestamp(ms, tz=timezone.utc).date()
+      except (OverflowError, OSError, ValueError):
+        continue
+    if isinstance(raw, str) and raw:
+      try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).date()
+      except ValueError:
+        continue
+  return None
+
+
 def local_stats() -> dict[str, Any]:
   today = date.today()
   by_day: dict[str, int] = defaultdict(int)
   sessions: set[str] = set()
   today_sessions: set[str] = set()
   today_prompts = 0
+  total_prompts = 0
   roots = [Path.home() / ".cursor" / "projects"]
   files: list[Path] = []
   for root in roots:
@@ -144,8 +213,7 @@ def local_stats() -> dict[str, Any]:
   for path in files:
     try:
       session = path.stem
-      sessions.add(session)
-      day = date.fromtimestamp(path.stat().st_mtime)
+      session_prompts = 0
       with path.open(encoding="utf-8", errors="replace") as handle:
         for line in handle:
           line = line.strip()
@@ -155,33 +223,44 @@ def local_stats() -> dict[str, Any]:
             obj = json.loads(line)
           except Exception:
             continue
+          if not isinstance(obj, dict):
+            continue
           role = obj.get("role") or obj.get("type")
           if role not in ("user", "human"):
+            continue
+          session_prompts += 1
+          total_prompts += 1
+          day = prompt_day(obj)
+          if day is None:
+            # Undated turns still count toward totals, but must not land on
+            # today just because the file was touched later.
             continue
           by_day[day.isoformat()] += 1
           if day == today:
             today_prompts += 1
             today_sessions.add(session)
+      if session_prompts:
+        sessions.add(session)
     except Exception:
       continue
 
   recent = []
   for i in range(6, -1, -1):
     day = (today - timedelta(days=i)).isoformat()
-    recent.append({"date": day, "messageCount": by_day.get(day, 0)})
+    # Token field; Cursor transcripts do not expose token ledgers here.
+    recent.append({"date": day, "messageCount": 0})
 
   active_dates = sorted(by_day.keys())
-  total_prompts = sum(by_day.values())
   stats = empty_stats()
   stats.update(
     {
-      "hasLocalStats": bool(files),
+      "hasLocalStats": total_prompts > 0 or bool(sessions),
       "todayPrompts": today_prompts,
       "todaySessions": len(today_sessions),
       "recentDays": recent,
-      "totalPrompts": total_prompts or len(files),
-      "totalSessions": len(sessions) or len(files),
-      "activeDays": len(active_dates) or (1 if files else 0),
+      "totalPrompts": total_prompts,
+      "totalSessions": len(sessions),
+      "activeDays": len(active_dates),
       "activeDates": active_dates[-30:],
     }
   )
@@ -219,7 +298,15 @@ def plan_label(token: str) -> str:
   return label
 
 
-def usable_cached_limits(cached: dict[str, Any]) -> list[dict[str, Any]]:
+def usable_cached_limits(cached: dict[str, Any], token: str | None) -> list[dict[str, Any]]:
+  if token:
+    cached_fp = str(cached.get("tokenFingerprint") or "")
+    if cached_fp and cached_fp != token_fingerprint(token):
+      return []
+  elif cached.get("tokenFingerprint"):
+    # No sign-in: never surface another account's numbers as current.
+    return []
+
   entries = cached.get("limits")
   if not isinstance(entries, list):
     return []
@@ -312,16 +399,17 @@ def probe_limits(token: str) -> dict[str, Any]:
 
 
 def collect_limits(token: str | None, force: bool) -> dict[str, Any]:
-  cache = cache_root() / "x-limits.json"
-  cached = read_json(cache) if isinstance(read_json(cache), dict) else {}
-  fallback = usable_cached_limits(cached if isinstance(cached, dict) else {})
+  cache = limits_cache_path(token)
+  raw_cached = read_json(cache)
+  cached = raw_cached if isinstance(raw_cached, dict) else {}
+  fallback = usable_cached_limits(cached, token)
   result: dict[str, Any] = {
     "limits": [],
-    "tierLabel": str((cached or {}).get("tierLabel") or ""),
+    "tierLabel": str(cached.get("tierLabel") or ""),
     "usageStatusText": "",
     "authHelpText": AUTH_HELP,
     "live": False,
-    "fetchedAtMs": int((cached or {}).get("fetchedAtMs") or 0),
+    "fetchedAtMs": int(cached.get("fetchedAtMs") or 0),
   }
 
   if not token:
@@ -329,7 +417,7 @@ def collect_limits(token: str | None, force: bool) -> dict[str, Any]:
     result["usageStatusText"] = "Cursor auth missing" if not fallback else "Sign-in expired"
     return result
 
-  fetched_at = int((cached or {}).get("fetchedAtMs") or 0)
+  fetched_at = int(cached.get("fetchedAtMs") or 0)
   age_ms = round(time.time() * 1000) - fetched_at
   if not force and fallback and fetched_at and age_ms <= PROBE_REUSE_SECONDS * 1000:
     result.update(limits=fallback, live=True, authHelpText="", tierLabel=result["tierLabel"] or AGENT_NAME)
@@ -343,6 +431,7 @@ def collect_limits(token: str | None, force: bool) -> dict[str, Any]:
         "fetchedAtMs": probe["fetchedAtMs"],
         "tierLabel": probe["tierLabel"],
         "limits": probe["limits"],
+        "tokenFingerprint": token_fingerprint(token),
       },
     )
     return probe
