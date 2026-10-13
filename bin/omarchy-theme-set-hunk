@@ -8,7 +8,7 @@
 # Hunk only repaints when the palette actually changed. The second nudge waits in the
 # background: omarchy-theme-set holds its theme-set hook until every retint returns.
 
-if pgrep -x hunk >/dev/null; then
-  pkill -WINCH -x hunk
-  (sleep 1; pkill -WINCH -x hunk) >/dev/null 2>&1 </dev/null &
+if pgrep -u "$UID" -x hunk >/dev/null; then
+  pkill -u "$UID" -WINCH -x hunk
+  (sleep 1; pkill -u "$UID" -WINCH -x hunk) >/dev/null 2>&1 </dev/null &
 fi
