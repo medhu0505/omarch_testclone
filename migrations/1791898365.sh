@@ -25,21 +25,26 @@ if [[ ! -f $limine_conf ]]; then
   sudo test -f "$limine_conf" || exit 0
 fi
 
-changed=""
+set_timeout=""
+added_quiet=""
 if ! sudo grep -Eqi '^[[:space:]]*timeout:' "$limine_conf"; then
   if sudo grep -Eqi '^[[:space:]]*#timeout:' "$limine_conf"; then
     sudo sed -i -E 's/^[[:space:]]*#timeout:.*/timeout: 1/I' "$limine_conf"
   else
     sudo sed -i '1i timeout: 1' "$limine_conf"
   fi
-  changed=1
+  set_timeout=1
 fi
 
 if ! sudo grep -Eqi '^[[:space:]]*quiet:' "$limine_conf"; then
   sudo sed -i -E '/^[[:space:]]*timeout:/I a quiet: yes' "$limine_conf"
-  changed=1
+  added_quiet=1
 fi
 
-if [[ -n $changed ]]; then
+if [[ -n $set_timeout && -n $added_quiet ]]; then
   echo "The boot menu now waits 1 second and stays quiet until a key is pressed"
+elif [[ -n $set_timeout ]]; then
+  echo "The boot menu now waits 1 second"
+elif [[ -n $added_quiet ]]; then
+  echo "The boot now stays quiet until a key is pressed; the boot timeout was left as it was"
 fi
