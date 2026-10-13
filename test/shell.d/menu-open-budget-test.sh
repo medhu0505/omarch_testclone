@@ -121,22 +121,24 @@ shell_ipc_quiet() {
   OMARCHY_PATH="$test_root" "$ROOT/bin/omarchy-shell" -q "$@"
 }
 
-menu_mapped() {
+# mapped|absent|unknown: a failed compositor query proves nothing.
+menu_state() {
   local layers
-  layers=$(hyprctl -j layers 2>/dev/null || true)
-  [[ -n $layers ]] && jq -e --argjson pid "$QS_PID" '
+  layers=$(hyprctl -j layers 2>/dev/null) || { echo unknown; return; }
+  [[ -n $layers ]] || { echo unknown; return; }
+  if jq -e --argjson pid "$QS_PID" '
     [.. | objects | select(.namespace? == "omarchy-menu" and .pid == $pid and .w > 0 and .h > 0)] | length > 0
-  ' <<<"$layers" >/dev/null 2>&1
+  ' <<<"$layers" >/dev/null 2>&1; then
+    echo mapped
+  else
+    echo absent
+  fi
 }
 
 wait_menu() { # mapped|absent
   local want="$1"
   for _ in {1..200}; do
-    if [[ $want == "mapped" ]]; then
-      menu_mapped && return 0
-    else
-      menu_mapped || return 0
-    fi
+    [[ $(menu_state) == "$want" ]] && return 0
     kill -0 "$QS_PID" 2>/dev/null || return 1
     sleep 0.01
   done
@@ -153,7 +155,8 @@ PATH="$stub_bin:$ROOT/bin:$PATH" \
 QS_PID=$!
 
 for _ in {1..80}; do
-  shell_ipc_quiet shell ping >/dev/null 2>&1 && break
+  # Not the quiet form: -q succeeds even when no shell answers.
+  [[ $(shell_ipc shell ping 2>/dev/null || true) == "ok" ]] && break
   kill -0 "$QS_PID" 2>/dev/null || { sed -n '1,120p' "$log" >&2; fail "menu test shell becomes available"; }
   sleep 0.1
 done
