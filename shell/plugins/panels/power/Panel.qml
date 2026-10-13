@@ -15,6 +15,7 @@ Panel {
   // permits — needed for the togglePercentage method below.
   manageIpc: false
   property var batteryInfo: ({})
+  property bool batteryRefreshQueued: false
   property var systemInfo: ({})
   property var profiles: []
   property string activeProfile: ""
@@ -151,7 +152,9 @@ Panel {
   function refreshBattery() {
     if (!batteryPresent) return
 
-    if (!batteryProc.running) batteryProc.running = true
+    // A lookup already running may have read the limits before this change; run once more after it.
+    if (batteryProc.running) batteryRefreshQueued = true
+    else batteryProc.running = true
   }
 
   function updateKeyValue(raw, targetName) {
@@ -228,6 +231,11 @@ Panel {
     id: batteryProc
     command: ["omarchy-battery-status", "--shell"]
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.updateKeyValue(text, "battery") }
+    onExited: {
+      if (!root.batteryRefreshQueued) return
+      root.batteryRefreshQueued = false
+      Qt.callLater(root.refreshBattery)
+    }
   }
 
   Process {
