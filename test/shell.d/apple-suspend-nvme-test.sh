@@ -84,9 +84,19 @@ run_migration() {
     bash -euo pipefail "$migration" >/dev/null
 }
 
+# Exactly what the leaf wrote before this change.
 write_old_unit() {
   mkdir -p "$(dirname "$unit")"
-  printf '%s\n' '[Service]' "ExecStart=/bin/bash -c 'echo 0 > /sys/bus/pci/devices/0000\:01\:00.0/d3cold_allowed'" >"$unit"
+  cat >"$unit" <<'EOF'
+[Unit]
+Description=Omarchy NVMe Suspend Fix for MacBook
+
+[Service]
+ExecStart=/bin/bash -c 'echo 0 > /sys/bus/pci/devices/0000\:01\:00.0/d3cold_allowed'
+
+[Install]
+WantedBy=multi-user.target
+EOF
 }
 
 # A 15-inch install from before the fix carries the service aimed at its GPU.
@@ -112,3 +122,36 @@ rm -rf "${test_tmp:?}/etc"
 run_migration 0x8086
 [[ ! -s $calls ]] || fail "the migration skips machines that never had the service" "$(cat "$calls")"
 pass "the migration skips machines that never had the service"
+
+# The unit the leaf writes now, without the escaped colons, is still Omarchy's to remove.
+run_leaf MacBook8,1 0x106b >/dev/null
+run_migration 0x1002
+[[ ! -e $unit ]] || fail "the migration removes the unit the current leaf writes"
+pass "the migration removes the unit the current leaf writes"
+
+# An administrator who edited the unit, say to point it at the drive on 02:00.0, keeps it.
+write_old_unit
+sed -i 's/01\\:00.0/02\\:00.0/' "$unit"
+cp "$unit" "$test_tmp/edited-unit"
+run_migration 0x1002
+cmp -s "$unit" "$test_tmp/edited-unit" || fail "the migration leaves an edited unit alone"
+[[ ! -s $calls ]] || fail "the migration does not disable an edited unit" "$(cat "$calls")"
+pass "the migration leaves an edited unit alone"
+
+rm -f "$unit"
+write_old_unit
+# Root reads it regardless, so only a user can see the unreadable case.
+if (( EUID != 0 )); then
+  chmod 000 "$unit"
+  run_migration 0x1002
+  [[ -f $unit && ! -s $calls ]] || fail "the migration leaves a unit it cannot read alone" "$(cat "$calls")"
+  pass "the migration leaves a unit it cannot read alone"
+fi
+
+rm -f "$unit"
+write_old_unit
+mv "$unit" "$test_tmp/linked-unit"
+ln -s "$test_tmp/linked-unit" "$unit"
+run_migration 0x1002
+[[ -L $unit && ! -s $calls ]] || fail "the migration leaves a linked unit alone" "$(cat "$calls")"
+pass "the migration leaves a linked unit alone"
