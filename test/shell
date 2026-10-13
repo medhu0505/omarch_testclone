@@ -20,9 +20,15 @@ fi
 
 # Files that need the live compositor or desktop to themselves run one at
 # a time after the parallel batch; everything else runs through a job
-# pool sized to the machine. A file can also opt out of the pool with an
-# `# omarchy:exclusive` marker near its top.
+# pool sized to the machine. Timing-sensitive files stay out of the pool
+# too: the budget guards calibrate against the machine's speed, which a
+# busy pool distorts, and sleep-lock asserts tight unscaled timings.
+# A file can also opt out of the pool with an `# omarchy:exclusive`
+# marker near its top.
 is_exclusive() {
+  local name
+  name=$(basename "$1")
+  [[ $name == *budget* || $name == "sleep-lock-test.sh" ]] && return 0
   grep -q 'require_compositor\|# omarchy:exclusive' "$1"
 }
 
