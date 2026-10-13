@@ -1,0 +1,658 @@
+#!/usr/bin/python3
+# omarchy:summary=Print The X Subscription usage record as JSON
+# omarchy:args=[--force] [--limits-only]
+# omarchy:hidden=true
+"""Collect The X Subscription usage into one display-ready JSON record.
+
+The shared first-party pool (Cursor + Grok) and plan come from Cursor's
+dashboard API using the sign-in in ~/.config/cursor/auth.json. Tokens by day
+and by model come from the same dashboard's GetAggregatedUsageEvents. Local
+prompt and session counts come from Cursor agent transcripts under
+~/.cursor/projects. The agents panel only ever reads the JSON this prints.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import tempfile
+import time
+import urllib.error
+import urllib.request
+from collections import defaultdict
+from datetime import date, datetime, time as dt_time, timedelta, timezone
+from pathlib import Path
+from typing import Any
+
+AGENT_ID = "x"
+AGENT_NAME = "X Subscription"
+AUTH_HELP = "Run `cursor-agent login`, or sign in to Cursor, to refresh X Subscription usage."
+API_BASE = "https://api2.cursor.sh"
+PROBE_REUSE_SECONDS = 60
+LIMITS_ONLY_SCAN_REUSE_SECONDS = 900
+# Cursor agent transcripts stamp user turns as
+# <timestamp>Monday, Oct 12, 2026, 6:27 PM (UTC-5)</timestamp>.
+TIMESTAMP_RE = re.compile(
+  r"<timestamp>\s*([A-Za-z]+,\s+[A-Za-z]+\s+\d{1,2},\s+\d{4},\s+\d{1,2}:\d{2}\s*[AP]M)\s*(?:\(([^)]+)\))?\s*</timestamp>",
+  re.IGNORECASE,
+)
+TZ_OFFSET_RE = re.compile(r"^(?:UTC|GMT)([+-])(\d{1,2})(?::?(\d{2}))?$", re.IGNORECASE)
+
+
+def read_json(path: Path) -> Any:
+  try:
+    return json.loads(path.read_text(encoding="utf-8"))
+  except Exception:
+    return None
+
+
+def write_json(path: Path, payload: Any) -> None:
+  path.parent.mkdir(parents=True, exist_ok=True)
+  fd, tmp = tempfile.mkstemp(prefix=path.name + ".", dir=str(path.parent))
+  try:
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+      json.dump(payload, handle)
+    os.replace(tmp, path)
+  except Exception:
+    Path(tmp).unlink(missing_ok=True)
+    raise
+
+
+def cache_root() -> Path:
+  return Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "omarchy" / "agent-usage"
+
+
+def auth_path() -> Path:
+  config = Path(os.environ.get("XDG_CONFIG_HOME") or (Path.home() / ".config"))
+  return config / "cursor" / "auth.json"
+
+
+def load_token() -> str | None:
+  data = read_json(auth_path())
+  if not isinstance(data, dict):
+    return None
+  token = data.get("accessToken")
+  return token if isinstance(token, str) and token else None
+
+
+def token_fingerprint(token: str) -> str:
+  return hashlib.sha1(token.encode("utf-8")).hexdigest()[:16]
+
+
+def limits_cache_path(token: str | None) -> Path:
+  if token:
+    return cache_root() / f"x-limits-{token_fingerprint(token)}.json"
+  return cache_root() / "x-limits.json"
+
+
+def rpc(token: str, method: str, body: dict | None = None) -> dict[str, Any]:
+  request = urllib.request.Request(
+    f"{API_BASE}/{method}",
+    data=json.dumps(body or {}).encode(),
+    headers={
+      "Authorization": f"Bearer {token}",
+      "Content-Type": "application/json",
+      "Connect-Protocol-Version": "1",
+      "Accept": "application/json",
+      "User-Agent": "omarchy-agent-usage-x/1.0",
+      "x-cursor-client-type": "cli",
+    },
+    method="POST",
+  )
+  with urllib.request.urlopen(request, timeout=20) as response:
+    payload = json.loads(response.read().decode())
+  return payload if isinstance(payload, dict) else {}
+
+
+def ms_to_iso(value: Any) -> str:
+  try:
+    ms = int(str(value))
+  except (TypeError, ValueError):
+    return ""
+  if ms <= 0:
+    return ""
+  return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def pct_to_unit(value: Any) -> float:
+  """Convert Cursor's 0–100 `*PercentUsed` fields to a 0–1 panel unit."""
+  try:
+    n = float(value)
+  except (TypeError, ValueError):
+    return -1.0
+  if n < 0:
+    return -1.0
+  return min(n / 100.0, 1.0)
+
+
+def empty_stats() -> dict[str, Any]:
+  today = date.today()
+  # recentDays.messageCount is token totals across agents; keep prompts in
+  # todayPrompts/totalPrompts so the hero does not call them tokens.
+  recent = [{"date": (today - timedelta(days=i)).isoformat(), "messageCount": 0} for i in range(6, -1, -1)]
+  return {
+    "hasLocalStats": False,
+    "hasPromptStats": True,
+    "usageUnit": "prompts",
+    "todayPrompts": 0,
+    "todaySessions": 0,
+    "todayTotalTokens": 0,
+    "todayTokensByModel": {},
+    "recentDays": recent,
+    "totalPrompts": 0,
+    "totalSessions": 0,
+    "activeDays": 0,
+    "activeDates": [],
+    "modelUsage": {},
+  }
+
+
+def local_tzinfo() -> timezone:
+  return datetime.now().astimezone().tzinfo or timezone.utc
+
+
+def parse_tz_label(label: str) -> timezone | None:
+  match = TZ_OFFSET_RE.fullmatch(label.strip())
+  if not match:
+    return None
+  sign = 1 if match.group(1) == "+" else -1
+  hours = int(match.group(2))
+  minutes = int(match.group(3) or 0)
+  return timezone(timedelta(hours=sign * hours, minutes=sign * minutes))
+
+
+def to_local_date(value: datetime) -> date:
+  """Calendar day in the machine's local zone (same basis as date.today())."""
+  if value.tzinfo is None:
+    value = value.replace(tzinfo=local_tzinfo())
+  return value.astimezone(local_tzinfo()).date()
+
+
+def empty_token_bucket() -> dict[str, int]:
+  return {
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 0,
+  }
+
+
+def day_windows(today: date, count: int = 7) -> list[tuple[str, int, int]]:
+  """Local calendar days as (date, startMs, endMs), oldest first."""
+  windows = []
+  for offset in range(count - 1, -1, -1):
+    day = today - timedelta(days=offset)
+    start = datetime.combine(day, dt_time.min).astimezone()
+    end = datetime.combine(day + timedelta(days=1), dt_time.min).astimezone()
+    windows.append((day.isoformat(), int(start.timestamp() * 1000), int(end.timestamp() * 1000)))
+  return windows
+
+
+def summarize_day_rows(rows: list[Any]) -> dict[str, dict[str, int]]:
+  usage: dict[str, dict[str, int]] = {}
+  for row in rows:
+    if not isinstance(row, dict):
+      continue
+    model = str(row.get("modelIntent") or "cursor")
+    bucket = usage.setdefault(model, empty_token_bucket())
+    bucket["inputTokens"] += int(float(row.get("inputTokens") or 0))
+    bucket["outputTokens"] += int(float(row.get("outputTokens") or 0))
+    bucket["cacheReadInputTokens"] += int(float(row.get("cacheReadTokens") or 0))
+    bucket["cacheCreationInputTokens"] += int(float(row.get("cacheWriteTokens") or 0))
+  return usage
+
+
+def remote_token_stats(token: str, previous: dict[str, Any] | None = None) -> dict[str, Any]:
+  """Fill recentDays.messageCount with real token totals from Cursor's dashboard.
+
+  A failed day keeps the last known count for that date instead of writing zero,
+  so a timeout cannot wipe the panel's week of tokens.
+  """
+  previous = previous if isinstance(previous, dict) else {}
+  prev_by_day = {
+    str(row.get("date")): row
+    for row in (previous.get("recentDays") or [])
+    if isinstance(row, dict) and row.get("date")
+  }
+  today = date.today()
+  recent: list[dict[str, Any]] = []
+  model_usage: dict[str, dict[str, int]] = {}
+  today_by_model: dict[str, int] = {}
+  active_dates: list[str] = []
+  any_ok = False
+  any_fail = False
+
+  for index, (day, start_ms, end_ms) in enumerate(day_windows(today, 7)):
+    usage: dict[str, dict[str, int]] | None = None
+    try:
+      payload = rpc(
+        token,
+        "aiserver.v1.DashboardService/GetAggregatedUsageEvents",
+        {"startDate": str(start_ms), "endDate": str(end_ms)},
+      )
+      rows = payload.get("aggregations") if isinstance(payload, dict) else None
+      usage = summarize_day_rows(rows if isinstance(rows, list) else [])
+      any_ok = True
+    except Exception:
+      any_fail = True
+      usage = None
+
+    if usage is None:
+      kept = prev_by_day.get(day) or {"date": day, "messageCount": 0}
+      tokens = int(kept.get("messageCount") or 0)
+      recent.append({"date": day, "messageCount": tokens})
+    else:
+      tokens = 0
+      for model, bucket in usage.items():
+        carried = model_usage.setdefault(model, empty_token_bucket())
+        for key, value in bucket.items():
+          carried[key] += value
+        tokens += sum(bucket.values())
+      recent.append({"date": day, "messageCount": tokens})
+      if index == 6:
+        today_by_model = {
+          model: sum(bucket.values()) for model, bucket in usage.items() if sum(bucket.values()) > 0
+        }
+
+    if tokens > 0:
+      active_dates.append(day)
+
+  if not any_ok and previous.get("recentDays"):
+    carried = dict(previous)
+    carried["tokensStale"] = True
+    return carried
+
+  # A partial week isn't a trustworthy model ledger; keep the last full one.
+  if any_fail and isinstance(previous.get("modelUsage"), dict):
+    model_usage = previous.get("modelUsage") or model_usage
+    if not today_by_model:
+      today_by_model = previous.get("todayTokensByModel") or {}
+
+  today_total = sum(today_by_model.values())
+  if not today_total and recent:
+    today_total = int(recent[-1].get("messageCount") or 0)
+
+  return {
+    "recentDays": recent,
+    "todayTotalTokens": int(today_total),
+    "todayTokensByModel": today_by_model,
+    "modelUsage": model_usage,
+    "tokenActiveDates": active_dates,
+    "tokensStale": any_fail,
+  }
+
+
+def cached_remote_token_stats(token: str, reuse_seconds: int) -> dict[str, Any]:
+  cache = cache_root() / f"x-tokens-{token_fingerprint(token)}.json"
+  today = date.today().isoformat()
+  cached = read_json(cache) if cache.exists() else None
+  cached = cached if isinstance(cached, dict) else {}
+  if reuse_seconds > 0 and cached.get("scanDate") == today and "recentDays" in cached:
+    age = time.time() - cache.stat().st_mtime
+    if age <= reuse_seconds:
+      return cached
+  stats = remote_token_stats(token, cached)
+  # Never replace a good cache with a total failure.
+  if stats.get("recentDays") or not cached.get("recentDays"):
+    stats["scanDate"] = today
+    write_json(cache, stats)
+    return stats
+  cached = dict(cached)
+  cached["tokensStale"] = True
+  return cached
+
+
+def prompt_day(obj: dict[str, Any]) -> date | None:
+  """Return the local calendar day of a transcript turn when the turn names it."""
+  chunks: list[str] = []
+  message = obj.get("message")
+  if isinstance(message, dict):
+    content = message.get("content")
+    if isinstance(content, str):
+      chunks.append(content)
+    elif isinstance(content, list):
+      for part in content:
+        if isinstance(part, dict) and isinstance(part.get("text"), str):
+          chunks.append(part["text"])
+        elif isinstance(part, str):
+          chunks.append(part)
+  for key in ("content", "text"):
+    value = obj.get(key)
+    if isinstance(value, str):
+      chunks.append(value)
+
+  for chunk in chunks:
+    match = TIMESTAMP_RE.search(chunk)
+    if not match:
+      continue
+    stamp = match.group(1)
+    zone = parse_tz_label(match.group(2) or "") or local_tzinfo()
+    for fmt in ("%A, %b %d, %Y, %I:%M %p", "%A, %B %d, %Y, %I:%M %p"):
+      try:
+        return to_local_date(datetime.strptime(stamp, fmt).replace(tzinfo=zone))
+      except ValueError:
+        continue
+
+  for key in ("createdAt", "timestamp", "time"):
+    raw = obj.get(key)
+    if raw is None:
+      continue
+    if isinstance(raw, (int, float)):
+      ms = float(raw)
+      if ms > 10_000_000_000:
+        ms /= 1000.0
+      try:
+        return to_local_date(datetime.fromtimestamp(ms, tz=timezone.utc))
+      except (OverflowError, OSError, ValueError):
+        continue
+    if isinstance(raw, str) and raw:
+      try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+      except ValueError:
+        continue
+      return to_local_date(parsed)
+  return None
+
+
+def local_stats() -> dict[str, Any]:
+  today = date.today()
+  by_day: dict[str, int] = defaultdict(int)
+  sessions: set[str] = set()
+  today_sessions: set[str] = set()
+  today_prompts = 0
+  total_prompts = 0
+  roots = [Path.home() / ".cursor" / "projects"]
+  files: list[Path] = []
+  for root in roots:
+    if root.exists():
+      files.extend(root.glob("**/agent-transcripts/**/*.jsonl"))
+
+  for path in files:
+    try:
+      session = path.stem
+      session_prompts = 0
+      with path.open(encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+          line = line.strip()
+          if not line:
+            continue
+          try:
+            obj = json.loads(line)
+          except Exception:
+            continue
+          if not isinstance(obj, dict):
+            continue
+          role = obj.get("role") or obj.get("type")
+          if role not in ("user", "human"):
+            continue
+          session_prompts += 1
+          total_prompts += 1
+          day = prompt_day(obj)
+          if day is None:
+            # Undated turns still count toward totals, but must not land on
+            # today just because the file was touched later.
+            continue
+          by_day[day.isoformat()] += 1
+          if day == today:
+            today_prompts += 1
+            today_sessions.add(session)
+      if session_prompts:
+        sessions.add(session)
+    except Exception:
+      continue
+
+  recent = []
+  for i in range(6, -1, -1):
+    day = (today - timedelta(days=i)).isoformat()
+    # Token field; Cursor transcripts do not expose token ledgers here.
+    recent.append({"date": day, "messageCount": 0})
+
+  active_dates = sorted(by_day.keys())
+  stats = empty_stats()
+  stats.update(
+    {
+      "hasLocalStats": total_prompts > 0 or bool(sessions),
+      "todayPrompts": today_prompts,
+      "todaySessions": len(today_sessions),
+      "recentDays": recent,
+      "totalPrompts": total_prompts,
+      "totalSessions": len(sessions),
+      "activeDays": len(active_dates),
+      "activeDates": active_dates[-30:],
+    }
+  )
+  return stats
+
+
+def cached_local_stats(reuse_seconds: int) -> dict[str, Any]:
+  cache = cache_root() / "x-scan.json"
+  if reuse_seconds > 0 and cache.exists():
+    age = time.time() - cache.stat().st_mtime
+    if age <= reuse_seconds:
+      cached = read_json(cache)
+      if isinstance(cached, dict) and "totalPrompts" in cached:
+        return cached
+  stats = local_stats()
+  write_json(cache, stats)
+  return stats
+
+
+def plan_label(token: str) -> str:
+  try:
+    plan = rpc(token, "aiserver.v1.DashboardService/GetPlanInfo")
+  except Exception:
+    return ""
+  info = plan.get("planInfo") or {}
+  if not isinstance(info, dict):
+    return ""
+  name = str(info.get("planName") or "").strip()
+  price = str(info.get("price") or "").strip()
+  period = str(info.get("includedUsagePeriod") or "")
+  period_label = "monthly" if "MONTHLY" in period else ("weekly" if "WEEKLY" in period else "")
+  label = " · ".join(part for part in (name, price) if part)
+  if label and period_label:
+    label = f"{label} · shared {period_label} pool"
+  return label
+
+
+def usable_cached_limits(cached: dict[str, Any], token: str | None) -> list[dict[str, Any]]:
+  if token:
+    cached_fp = str(cached.get("tokenFingerprint") or "")
+    if cached_fp and cached_fp != token_fingerprint(token):
+      return []
+  elif cached.get("tokenFingerprint"):
+    # No sign-in: never surface another account's numbers as current.
+    return []
+
+  entries = cached.get("limits")
+  if not isinstance(entries, list):
+    return []
+  now = datetime.now(timezone.utc)
+  out = []
+  for entry in entries:
+    if not isinstance(entry, dict):
+      continue
+    raw = str(entry.get("resetsAt") or "")
+    if raw:
+      try:
+        resets_at = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+      except ValueError:
+        continue
+      if resets_at.tzinfo is None:
+        resets_at = resets_at.replace(tzinfo=timezone.utc)
+      if resets_at <= now:
+        continue
+    out.append(entry)
+  return out
+
+
+def probe_limits(token: str) -> dict[str, Any]:
+  result: dict[str, Any] = {
+    "limits": [],
+    "tierLabel": "",
+    "usageStatusText": "",
+    "authHelpText": AUTH_HELP,
+    "live": False,
+    "fetchedAtMs": 0,
+  }
+  result["tierLabel"] = plan_label(token) or AGENT_NAME
+  try:
+    usage = rpc(token, "aiserver.v1.DashboardService/GetCurrentPeriodUsage", {})
+  except urllib.error.HTTPError as error:
+    result["usageStatusText"] = "Waiting for auth" if error.code in (401, 403) else "X Subscription limits unavailable"
+    return result
+  except Exception:
+    result["usageStatusText"] = "X Subscription limits unavailable"
+    return result
+
+  plan_usage = usage.get("planUsage") or {}
+  if not isinstance(plan_usage, dict):
+    plan_usage = {}
+  resets_at = ms_to_iso(usage.get("billingCycleEnd"))
+  auto = pct_to_unit(plan_usage.get("autoPercentUsed"))
+  api = pct_to_unit(plan_usage.get("apiPercentUsed"))
+  total = pct_to_unit(plan_usage.get("totalPercentUsed"))
+  limits: list[dict[str, Any]] = []
+  if auto >= 0:
+    limits.append(
+      {
+        "label": "Included pool (Cursor + Grok)",
+        "percent": auto,
+        "resetsAt": resets_at,
+        "title": "First-party",
+      }
+    )
+  if api > 0:
+    limits.append(
+      {
+        "label": "API / named models",
+        "percent": api,
+        "resetsAt": resets_at,
+        "title": "API",
+      }
+    )
+  if total >= 0 and (auto < 0 or abs(total - auto) > 0.01):
+    limits.append(
+      {
+        "label": "Total included",
+        "percent": total,
+        "resetsAt": resets_at,
+        "title": "Total",
+      }
+    )
+
+  if not limits:
+    result["usageStatusText"] = "X Subscription limits unavailable"
+    return result
+
+  result.update(
+    limits=limits,
+    live=True,
+    fetchedAtMs=round(time.time() * 1000),
+    authHelpText="",
+    usageStatusText="",
+  )
+  return result
+
+
+def collect_limits(token: str | None, force: bool) -> dict[str, Any]:
+  cache = limits_cache_path(token)
+  raw_cached = read_json(cache)
+  cached = raw_cached if isinstance(raw_cached, dict) else {}
+  fallback = usable_cached_limits(cached, token)
+  result: dict[str, Any] = {
+    "limits": [],
+    "tierLabel": str(cached.get("tierLabel") or ""),
+    "usageStatusText": "",
+    "authHelpText": AUTH_HELP,
+    "live": False,
+    "fetchedAtMs": int(cached.get("fetchedAtMs") or 0),
+  }
+
+  if not token:
+    result["limits"] = fallback
+    result["usageStatusText"] = "Cursor auth missing" if not fallback else "Sign-in expired"
+    return result
+
+  fetched_at = int(cached.get("fetchedAtMs") or 0)
+  age_ms = round(time.time() * 1000) - fetched_at
+  if not force and fallback and fetched_at and age_ms <= PROBE_REUSE_SECONDS * 1000:
+    result.update(limits=fallback, live=True, authHelpText="", tierLabel=result["tierLabel"] or AGENT_NAME)
+    return result
+
+  probe = probe_limits(token)
+  if probe["live"]:
+    write_json(
+      cache,
+      {
+        "fetchedAtMs": probe["fetchedAtMs"],
+        "tierLabel": probe["tierLabel"],
+        "limits": probe["limits"],
+        "tokenFingerprint": token_fingerprint(token),
+      },
+    )
+    return probe
+
+  result["limits"] = fallback
+  result["usageStatusText"] = probe["usageStatusText"] or result["usageStatusText"]
+  result["authHelpText"] = probe["authHelpText"]
+  if fallback:
+    result["usageStatusText"] = result["usageStatusText"] or "Showing last known limits"
+  return result
+
+
+def main() -> None:
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--force", action="store_true")
+  parser.add_argument("--limits-only", action="store_true")
+  args = parser.parse_args()
+
+  token = load_token()
+  limits = collect_limits(token, args.force)
+  reuse = LIMITS_ONLY_SCAN_REUSE_SECONDS if args.limits_only and not args.force else 0
+  stats = cached_local_stats(reuse)
+  tokens: dict[str, Any] = {}
+  if token:
+    tokens = cached_remote_token_stats(token, reuse)
+    stats["recentDays"] = tokens.get("recentDays") or stats.get("recentDays")
+    stats["todayTotalTokens"] = int(tokens.get("todayTotalTokens") or 0)
+    stats["todayTokensByModel"] = tokens.get("todayTokensByModel") or {}
+    stats["modelUsage"] = tokens.get("modelUsage") or {}
+    token_days = tokens.get("tokenActiveDates") or []
+    prompt_active_days = int(stats.get("activeDays") or 0)
+    prompt_dates = set(stats.get("activeDates") or [])
+    merged_dates = sorted(prompt_dates | set(token_days))
+    stats["activeDates"] = merged_dates[-30:]
+    # Keep the full prompt-day count; only the date list is capped at 30.
+    stats["activeDays"] = max(prompt_active_days, len(merged_dates))
+    if token_days or stats.get("todayTotalTokens"):
+      stats["hasLocalStats"] = True
+    if tokens.get("tokensStale") and not limits["usageStatusText"]:
+      limits["usageStatusText"] = "Showing last known token totals"
+  ready = bool(limits["limits"]) or bool(
+    stats.get("totalPrompts") or stats.get("totalSessions") or stats.get("todayTotalTokens")
+  )
+  record = {
+    "schemaVersion": 1,
+    "id": AGENT_ID,
+    "name": AGENT_NAME,
+    "updatedAt": datetime.now(timezone.utc).isoformat(),
+    "ready": ready,
+    # Dashboard token totals are account-global; synced machines must not sum them.
+    "scope": "account",
+    "tierLabel": limits["tierLabel"],
+    "usageStatusText": limits["usageStatusText"],
+    "authHelpText": limits["authHelpText"] if not limits["limits"] else "",
+    "limits": limits["limits"],
+    "limitsStale": not limits["live"] or bool(tokens.get("tokensStale") if token else False),
+    "limitsFetchedAt": limits["fetchedAtMs"],
+  }
+  record.update(stats)
+  print(json.dumps(record, separators=(",", ":")))
+
+
+if __name__ == "__main__":
+  main()
