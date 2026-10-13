@@ -15,6 +15,7 @@ Panel {
   // permits — needed for the togglePercentage method below.
   manageIpc: false
   property var batteryInfo: ({})
+  property bool batteryRefreshQueued: false
   property var systemInfo: ({})
   property var profiles: []
   property string activeProfile: ""
@@ -48,14 +49,21 @@ Panel {
     setProfile(profiles[profileIndex])
   }
 
+  // Raw charge limits reported by omarchy-battery-status; empty until the
+  // first refresh lands and absent entirely on machines without a limit.
+  readonly property var batteryLimits: ({
+    start: batteryInfo.threshold_start,
+    end: batteryInfo.threshold_end
+  })
+
   function batteryIcon() {
     var device = UPower.displayDevice
-    return Model.batteryIcon(device, root.discharging, upowerStates())
+    return Model.batteryIcon(device, root.discharging, upowerStates(), root.batteryLimits)
   }
 
   function modeLabel() {
     var device = UPower.displayDevice
-    return Model.modeLabel(device, root.discharging, upowerStates())
+    return Model.modeLabel(device, root.discharging, upowerStates(), root.batteryLimits)
   }
 
   function profileIcon(name) {
@@ -72,7 +80,7 @@ Panel {
   }
   readonly property bool chargeThresholdActive: {
     var device = UPower.displayDevice
-    return Model.chargeThresholdActive(device, root.discharging, upowerStates())
+    return Model.chargeThresholdActive(device, root.discharging, upowerStates(), root.batteryLimits)
   }
   readonly property bool batteryFull: fullyCharged || (!root.discharging && batteryFraction >= 1)
   readonly property bool batteryFlowIdle: batteryFull || chargeThresholdActive
@@ -136,9 +144,17 @@ Panel {
   function refresh() {
     if (!batteryPresent) return
 
-    if (!batteryProc.running) batteryProc.running = true
+    refreshBattery()
     if (!profilesProc.running) profilesProc.running = true
     if (!systemProc.running) systemProc.running = true
+  }
+
+  function refreshBattery() {
+    if (!batteryPresent) return
+
+    // A lookup already running may have read the limits before this change; run once more after it.
+    if (batteryProc.running) batteryRefreshQueued = true
+    else batteryProc.running = true
   }
 
   function updateKeyValue(raw, targetName) {
@@ -200,7 +216,12 @@ Panel {
     }
   }
 
-  onBatteryPresentChanged: if (!batteryPresent) close()
+  onBatteryPresentChanged: {
+    if (!batteryPresent) close()
+    else refreshBattery()
+  }
+
+  Component.onCompleted: refreshBattery()
 
   visible: batteryPresent
   implicitWidth: batteryPresent ? button.implicitWidth : 0
@@ -210,6 +231,11 @@ Panel {
     id: batteryProc
     command: ["omarchy-battery-status", "--shell"]
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: root.updateKeyValue(text, "battery") }
+    onExited: {
+      if (!root.batteryRefreshQueued) return
+      root.batteryRefreshQueued = false
+      Qt.callLater(root.refreshBattery)
+    }
   }
 
   Process {
@@ -230,6 +256,14 @@ Panel {
   }
 
   Timer { interval: 5000; running: root.opened; repeat: true; onTriggered: root.refresh() }
+
+  // The bar icon needs limits while the panel is closed; re-read them when UPower's state changes rather than on a timer.
+  Connections {
+    target: UPower.displayDevice
+    function onStateChanged() { root.refreshBattery() }
+  }
+  // A startup lookup that came back empty would leave the bar without limits; retry only until one lands.
+  Timer { interval: 30000; running: root.batteryPresent && !root.opened && root.batteryInfo.percentage === undefined; repeat: true; onTriggered: root.refreshBattery() }
 
   // Rotate the status phrase while the panel is open and we're in a
   // rotating state (charging or on battery). The text swap is wrapped in a
