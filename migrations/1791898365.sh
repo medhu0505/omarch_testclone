@@ -17,7 +17,13 @@ if [[ -z $limine_conf ]]; then
   limine_conf="${esp:-/boot}/limine.conf"
 fi
 
-sudo test -f "$limine_conf" || exit 0
+if [[ ! -f $limine_conf ]]; then
+  # The ESP is often mounted umask=0077, so an unreadable menu is not a
+  # missing one; and a denied prompt must leave this migration pending,
+  # not done, so authentication failure stops it here.
+  sudo -v
+  sudo test -f "$limine_conf" || exit 0
+fi
 
 changed=""
 if ! sudo grep -Eqi '^[[:space:]]*timeout:' "$limine_conf"; then
