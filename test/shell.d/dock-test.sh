@@ -214,3 +214,8 @@ grep -qF 'var command = root.terminalCommand(DesktopEntries.byId(id))' "$ROOT/sh
   grep -qF '"omarchy-launch-tui "' "$ROOT/shell/services/AppLibrary.qml" ||
   fail "the app library launches terminal apps through the TUI launcher"
 pass "the app library launches terminal apps through the TUI launcher"
+
+grep -qF 'Util.execArgv(["uwsm-app", "--"].concat(argv))' "$ROOT/shell/services/AppLibrary.qml" &&
+  grep -qF 'root.appLibrary.launchAction(entry.id, actionId, entry.name)' "$ROOT/shell/plugins/dock/Dock.qml" ||
+  fail "the dock runs a desktop action through the app's scope, not the action's own execute"
+pass "the dock runs a desktop action through the app's scope, not the action's own execute"
