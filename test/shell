@@ -72,7 +72,7 @@ if [[ ${1-} == --one ]]; then
   # theirs several folders below TMPDIR.
   work=$(mktemp -d /tmp/ot.XXXXXX)
   mkdir "$work/home" "$work/t"
-  log="$RUN_DIR/logs/$name.$ROUND.log"
+  log=$(mktemp "$RUN_DIR/logs/${name}.${ROUND}.XXXXXX.log")
 
   # Built from nothing, so a laptop and a CI container see the same thing.
   # --default-signal: bash starts background jobs with SIGINT/SIGQUIT
@@ -84,13 +84,17 @@ if [[ ${1-} == --one ]]; then
     HOME="$work/home" TMPDIR="$work/t"
     # In a desktop session the runtime tests drive the live compositor, as they do
     # under a plain `bash test/shell.d/x-test.sh`; without one they skip, as in CI.
-    ${HYPRLAND_INSTANCE_SIGNATURE:+HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE"
-      WAYLAND_DISPLAY="${WAYLAND_DISPLAY-}" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR-}"}
+    ${HYPRLAND_INSTANCE_SIGNATURE:+HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE"}
+    ${WAYLAND_DISPLAY:+WAYLAND_DISPLAY="$WAYLAND_DISPLAY"}
+    ${XDG_RUNTIME_DIR:+XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR"}
     USER="$TEST_USER" LOGNAME="$TEST_USER"
     SHELL=/bin/bash LANG=C.UTF-8 TERM=dumb PYTHONDONTWRITEBYTECODE=1
     OMARCHY_PATH="$ROOT"
     ${OMARCHY_PKGS_PATH:+OMARCHY_PKGS_PATH="$OMARCHY_PKGS_PATH"}
     ${OMARCHY_ISO_PATH:+OMARCHY_ISO_PATH="$OMARCHY_ISO_PATH"}
+    ${OMARCHY_THEME_SET_BUDGET_MS:+OMARCHY_THEME_SET_BUDGET_MS="$OMARCHY_THEME_SET_BUDGET_MS"}
+    ${OMARCHY_MENU_GUARD_BUDGET_MS:+OMARCHY_MENU_GUARD_BUDGET_MS="$OMARCHY_MENU_GUARD_BUDGET_MS"}
+    ${OMARCHY_MENU_SINGLE_GUARD_BUDGET_MS:+OMARCHY_MENU_SINGLE_GUARD_BUDGET_MS="$OMARCHY_MENU_SINGLE_GUARD_BUDGET_MS"}
     timeout --kill-after=10 "$TIMEOUT" bash "$test")
 
   start=$(date +%s%N)
@@ -105,15 +109,30 @@ if [[ ${1-} == --one ]]; then
       ;;
     pidns)
       chown -R "$TEST_USER": "$work"
+      target_uid=$(id -u "$TEST_USER")
+      target_gid=$(id -g "$TEST_USER")
+      mkdir -p -m 755 /run/user 2>/dev/null || true
+      mkdir -p -m 700 "/run/user/$target_uid" 2>/dev/null || true
+      chown "$target_uid:$target_gid" "/run/user/$target_uid" 2>/dev/null || true
       unshare --pid --fork --kill-child --mount --mount-proc \
         "$SELF" --pid1 \
-        setpriv --reuid="$TEST_USER" --regid="$TEST_USER" --init-groups \
+        setpriv --reuid="$TEST_USER" --regid="$target_gid" --init-groups \
         "${run[@]}" >"$log" 2>&1 </dev/null || rc=$?
       ;;
     pgroup)
       # A background job isn't a group leader, so setsid execs in place and
       # its PID is the new process group's ID.
-      setsid "${run[@]}" >"$log" 2>&1 </dev/null &
+      cmd=("${run[@]}")
+      if (( EUID == 0 )) && [[ -n ${TEST_USER:-} && $TEST_USER != root ]]; then
+        chown -R "$TEST_USER": "$work"
+        target_uid=$(id -u "$TEST_USER")
+        target_gid=$(id -g "$TEST_USER")
+        mkdir -p -m 755 /run/user 2>/dev/null || true
+        mkdir -p -m 700 "/run/user/$target_uid" 2>/dev/null || true
+        chown "$target_uid:$target_gid" "/run/user/$target_uid" 2>/dev/null || true
+        cmd=(setpriv --reuid="$TEST_USER" --regid="$target_gid" --init-groups "${run[@]}")
+      fi
+      setsid "${cmd[@]}" >"$log" 2>&1 </dev/null &
       pgid=$!
       wait "$pgid" || rc=$?
       kill -KILL -- "-$pgid" 2>/dev/null || true
@@ -159,7 +178,11 @@ while (( $# > 0 )); do
   case $1 in
     -j) jobs=$2; shift 2 ;;
     --seed) seed=$2; shift 2 ;;
-    --rounds) rounds=$2; shift 2 ;;
+    --rounds)
+      rounds=$2
+      (( rounds > 0 )) || { echo "test/shell: --rounds must be a positive integer" >&2; exit 2; }
+      shift 2
+      ;;
     --for) duration=$2; rounds=0; shift 2 ;;
     --timeout) TIMEOUT=$2; shift 2 ;;
     --report) report=$2; shift 2 ;;
@@ -173,11 +196,11 @@ done
 
 deadline=
 if [[ -n $duration ]]; then
+  [[ $duration =~ ^[1-9][0-9]*[hms]$ ]] || { echo "test/shell: --for takes 30m, 2h or 90s (must be positive)" >&2; exit 2; }
   case $duration in
     *h) deadline=$(( $(date +%s) + ${duration%h} * 3600 )) ;;
     *m) deadline=$(( $(date +%s) + ${duration%m} * 60 )) ;;
     *s) deadline=$(( $(date +%s) + ${duration%s} )) ;;
-    *) echo "test/shell: --for takes 30m, 2h or 90s" >&2; exit 2 ;;
   esac
 fi
 
@@ -192,11 +215,15 @@ if (( ${#names[@]} == 0 )); then
   done
   shopt -u nullglob
 else
+  declare -A seen_names=()
   for n in "${names[@]}"; do
     n=${n%.sh}
     n=${n%-test}
     [[ -f "$TEST_DIR/$n-test.sh" ]] || { echo "test/shell: no test $n" >&2; exit 2; }
-    tests+=("$TEST_DIR/$n-test.sh")
+    if [[ -z ${seen_names[$n]:-} ]]; then
+      seen_names[$n]=1
+      tests+=("$TEST_DIR/$n-test.sh")
+    fi
   done
 fi
 if (( ${#tests[@]} == 0 )); then
@@ -211,11 +238,11 @@ if [[ -n $shard ]]; then
   [[ $shard =~ ^([0-9]+)/([0-9]+)$ ]] && (( BASH_REMATCH[1] >= 1 && BASH_REMATCH[1] <= BASH_REMATCH[2] )) ||
     { echo "test/shell: --shard takes K/N with 1 <= K <= N" >&2; exit 2; }
   mapfile -t tests < <(awk -v k="${BASH_REMATCH[1]}" -v n="${BASH_REMATCH[2]}" -v dir="$TEST_DIR" '
-    NR == FNR { if ($1 ~ /^[0-9]+$/) ms[dir "/" $2 ".sh"] = $1; next }
+    FILENAME == ARGV[1] { if ($1 ~ /^[0-9]+$/) ms[dir "/" $2 ".sh"] = $1; next }
     { print (($0 in ms) ? ms[$0] : 1000), $0 }
   ' "${slow:-/dev/null}" <(printf '%s\n' "${tests[@]}") | sort -k1,1nr -k2 | awk -v k="${BASH_REMATCH[1]}" -v n="${BASH_REMATCH[2]}" '
     { best = 1; for (i = 2; i <= n; i++) if (load[i] < load[best]) best = i
-      load[best] += $1; if (best == k) print $2 }')
+      load[best] += $1; if (best == k) { sub(/^[0-9]+[[:space:]]+/, ""); print } }')
   (( ${#tests[@]} > 0 )) || { echo "test/shell: shard $shard is empty" >&2; exit 2; }
 fi
 
@@ -258,49 +285,127 @@ command -v mise >/dev/null && TOOL_PATH=$(cd "$ROOT" && mise bin-paths 2>/dev/nu
 
 # Under $TMPDIR, so test-runner-test's nested runs are cleaned with its sandbox.
 RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/omarchy-test-run.XXXXXX")
-mkdir "$RUN_DIR/logs"
+mkdir -m 700 "$RUN_DIR/logs"
 : >"$RUN_DIR/results.jsonl"
-[[ $CONTAIN == pidns ]] && chmod 755 "$RUN_DIR" && chmod 777 "$RUN_DIR/logs"
+if [[ -z ${OMARCHY_PKGS_PATH:-} ]]; then
+  for candidate in \
+    "$ROOT/../omarchy-pkgs/pkgbuilds" \
+    "$ROOT/../omarchy/omarchy-pkgs/pkgbuilds" \
+    "$ROOT/../../omarchy-pkgs/pkgbuilds" \
+    "$ROOT/../omacom/omarchy-pkgs/pkgbuilds" \
+    "$ROOT/../../omacom/omarchy-pkgs/pkgbuilds" \
+    "${HOME:-}/Work/omacom/omarchy-pkgs/pkgbuilds"; do
+    pkgbuilds=("$candidate"/*/PKGBUILD)
+    if [[ -f ${pkgbuilds[0]:-} ]]; then
+      OMARCHY_PKGS_PATH=$(CDPATH= cd -- "$candidate" && pwd)
+      break
+    fi
+  done
+fi
+
+if [[ -z ${OMARCHY_ISO_PATH:-} ]]; then
+  for candidate in \
+    "$ROOT/../omarchy-iso" \
+    "$ROOT/../omarchy/omarchy-iso" \
+    "$ROOT/../../omarchy-iso" \
+    "$ROOT/../omacom/omarchy-iso" \
+    "$ROOT/../../omacom/omarchy-iso" \
+    "${HOME:-}/Work/omacom/omarchy-iso"; do
+    if [[ -d $candidate/configs ]]; then
+      OMARCHY_ISO_PATH=$(CDPATH= cd -- "$candidate" && pwd)
+      break
+    fi
+  done
+fi
+
 export ROOT SELF RUN_DIR TIMEOUT CONTAIN TEST_USER TOOL_PATH
 export OMARCHY_PKGS_PATH="${OMARCHY_PKGS_PATH-}" OMARCHY_ISO_PATH="${OMARCHY_ISO_PATH-}"
+export OMARCHY_THEME_SET_BUDGET_MS="${OMARCHY_THEME_SET_BUDGET_MS-}"
+export OMARCHY_MENU_GUARD_BUDGET_MS="${OMARCHY_MENU_GUARD_BUDGET_MS-}"
+export OMARCHY_MENU_SINGLE_GUARD_BUDGET_MS="${OMARCHY_MENU_SINGLE_GUARD_BUDGET_MS-}"
 
 tree_state() { git -C "$ROOT" status --porcelain --untracked-files=all 2>/dev/null || true; }
 tree_before=$(tree_state)
+if [[ -n $tree_before ]]; then
+  echo "test/shell: working tree is dirty; commit or stash changes before running tests" >&2
+  exit 2
+fi
+
+is_compositor_test() {
+  grep -q 'require_compositor' "$1" 2>/dev/null
+}
+
+is_destructive_test() {
+  local base
+  base=$(basename "$1")
+  case "$base" in
+    unowned-system-paths*|*passwordless*|*factory-reset*|*polkit*|*sudoers*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+tier1_standard=()
+tier2_compositor=()
+tier3_epilogue=()
+
+for t in "${tests[@]}"; do
+  if is_destructive_test "$t"; then
+    tier3_epilogue+=("$t")
+  elif is_compositor_test "$t"; then
+    tier2_compositor+=("$t")
+  else
+    tier1_standard+=("$t")
+  fi
+done
 
 printf '# %d files, %d at a time, contain=%s, timeout=%ss, seed=%s\n' \
   "${#tests[@]}" "$jobs" "$CONTAIN" "$TIMEOUT" "$seed"
 
-# ---------------------------------------------------------------------------
-# Rounds
 # Files that take 3 s or more, by a previous run's timings, longest first.
-slow_tests=() fast_tests=("${tests[@]}")
+slow_tests=() fast_tests=("${tier1_standard[@]}")
 if [[ -n $slow ]]; then
   mapfile -t slow_tests < <(awk -v dir="$TEST_DIR" '
     NR == FNR { selected[$0] = 1; next }
-    $1 + 0 >= 3000 && ((dir "/" $2 ".sh") in selected) { print $1, dir "/" $2 ".sh" }
-  ' <(printf '%s\n' "${tests[@]}") "$slow" | sort -rn | cut -d' ' -f2-)
-  mapfile -t fast_tests < <(printf '%s\n' "${tests[@]}" | grep -vxF -f <(printf '%s\n' "${slow_tests[@]}" | grep .) || true)
+    $1 + 0 >= 3000 && ((dir "/" $2 ".sh") in selected) && !seen[dir "/" $2 ".sh"]++ {
+      print $1, dir "/" $2 ".sh"
+    }
+  ' <(printf '%s\n' "${tier1_standard[@]}") "$slow" | sort -rn | cut -d' ' -f2-)
+  mapfile -t fast_tests < <(printf '%s\n' "${tier1_standard[@]}" | grep -vxF -f <(printf '%s\n' "${slow_tests[@]}" | grep .) || true)
 fi
 
 round=0
 tree_dirty=0
 while :; do
   (( rounds > 0 && round >= rounds )) && break
-  [[ -n $deadline ]] && (( $(date +%s) >= deadline )) && break
+  (( round > 0 )) && [[ -n $deadline ]] && (( $(date +%s) >= deadline )) && break
   round=$(( round + 1 ))
   export ROUND=$round
   round_seed=$(( seed + round - 1 ))
 
-  # A seeded shuffle: random order, replayable with --seed. A round lasts as
-  # long as its last file, so the known-slow ones go first, longest first.
-  { printf '%s\n' "${slow_tests[@]}"
-    printf '%s\n' "${fast_tests[@]}" | shuf --random-source=<(yes "$round_seed"); } \
-    | grep . | xargs -d '\n' -P "$jobs" -I{} "$SELF" --one {}
+  # Phase 1: Pure & standard parallel tests (longest first, seeded shuffle)
+  if (( ${#tier1_standard[@]} > 0 )); then
+    { printf '%s\n' "${slow_tests[@]}"
+      printf '%s\n' "${fast_tests[@]}" | shuf --random-source=<(yes "$round_seed"); } \
+      | grep . | xargs -d '\n' -P "$jobs" -I{} "$SELF" --one {}
+  fi
+
+  # Phase 2: Compositor / UI tree (run sequentially so shared screen/compositor are not raced)
+  if (( ${#tier2_compositor[@]} > 0 )); then
+    printf '%s\n' "${tier2_compositor[@]}" | shuf --random-source=<(yes "$round_seed") \
+      | grep . | xargs -d '\n' -P 1 -I{} "$SELF" --one {}
+  fi
+
+  # Phase 3: Epilogue (Global & Destructive - run last)
+  if (( ${#tier3_epilogue[@]} > 0 )); then
+    printf '%s\n' "${tier3_epilogue[@]}" | shuf --random-source=<(yes "$round_seed") \
+      | grep . | xargs -d '\n' -P 1 -I{} "$SELF" --one {}
+  fi
 
   if [[ $(tree_state) != "$tree_before" ]]; then
     echo "not ok - round $round changed the source tree:" >&2
     diff <(printf '%s\n' "$tree_before") <(tree_state) >&2 || true
     tree_dirty=1
+    break
   fi
   (( rounds == 1 )) || printf '# round %d done (seed %d)\n' "$round" "$round_seed"
 done
@@ -347,8 +452,8 @@ if (( ${#skipped[@]} > 0 )); then
   printf '  %s\n' "${skipped[@]}"
 fi
 status=0
-if (( ${reported:-0} != ${#tests[@]} * round )); then
-  printf '%d of %d file runs reported a result\n' "${reported:-0}" "$(( ${#tests[@]} * round ))" >&2
+if (( round == 0 || ${reported:-0} != ${#tests[@]} * round )); then
+  printf '%d of %d file runs reported a result\n' "${reported:-0}" "$(( ${#tests[@]} * (round > 0 ? round : 1) ))" >&2
   status=1
 fi
 if (( ${#failed[@]} > 0 )); then
