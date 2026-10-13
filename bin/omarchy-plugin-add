@@ -46,7 +46,7 @@ select_bar_widget_placement() {
     "$PLUGINS_DIR/$id/manifest.json" >/dev/null 2>&1 || return 0
 
   default_section=$(jq -r '.barWidget.defaultSection // "center"' "$PLUGINS_DIR/$id/manifest.json")
-  section=$(printf '%s\n' left center right |
+  section=$(printf '%s\n' left center tray right |
     gum choose --header="Place $id in which bar section?" --selected "$default_section") || return 0
   [[ -n $section ]] || return 0
   ENABLE_PLACEMENT=(--section "$section")
@@ -92,6 +92,13 @@ if [[ -z $url ]]; then
   url=$(gum input --prompt "Git URL of the plugin repo: ") || fail "cancelled"
   [[ -n $url ]] || fail "a git URL is required"
 fi
+
+# Refuse a URL that names a git option or a transport helper before cloning, so
+# an untrusted URL cannot run a command before the plugin is validated or
+# enabled. The check is shared with omarchy-theme-install and explains itself; a
+# missing checker leaves this non-zero, which refuses the URL rather than
+# cloning it.
+omarchy-git-url-check "$url" || exit 1
 
 if (( ! ASSUME_YES )); then
   cat >&2 <<WARN
