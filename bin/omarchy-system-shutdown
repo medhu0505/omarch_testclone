@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# omarchy:summary=Shut down after closing application windows
-# omarchy:examples=omarchy shutdown | omarchy system shutdown
-# omarchy:aliases=omarchy shutdown
-
-"$OMARCHY_PATH/bin/omarchy-system-exit" shutdown

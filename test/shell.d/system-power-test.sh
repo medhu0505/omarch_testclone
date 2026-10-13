@@ -85,7 +85,7 @@ run_power_command() {
 
   : >"$call_log"
   rm -f "$CALL_LOG.grace" "$CALL_LOG.worker" "$CALL_LOG.environment"
-  "$ROOT/bin/omarchy-system-$action"
+  "$ROOT/bin/omarchy-system" "$action"
 }
 
 for action in reboot logout; do
@@ -142,7 +142,7 @@ pass "blocked window closing cannot prevent poweroff"
 
 for action in reboot shutdown logout; do
   : >"$call_log"
-  if FAIL_SYSTEMD_RUN=true "$ROOT/bin/omarchy-system-$action"; then
+  if FAIL_SYSTEMD_RUN=true "$ROOT/bin/omarchy-system" "$action"; then
     fail "$action aborts when scheduling fails"
   fi
 
@@ -176,3 +176,31 @@ done
 FAIL_INHIBIT=true FAIL_NOTIFICATION=true bash "$CALL_LOG.worker"
 [[ $? == 17 ]] || fail "notification failure preserves the shutdown error"
 pass "notification failure preserves the shutdown error"
+
+for action in logout reboot shutdown; do
+  for route in "$action" "system $action"; do
+    : >"$call_log"
+    read -ra args <<<"$route"
+    "$ROOT/bin/omarchy" "${args[@]}" || fail "$route dispatches"
+    grep -q "omarchy-system $action --execute$" "$call_log" || fail "$route forwards the action"
+    : >"$call_log"
+    "$ROOT/bin/omarchy" "${args[@]}" --help >/dev/null || fail "$route help succeeds"
+    [[ ! -s $call_log ]] || fail "$route help never schedules a session exit"
+  done
+  pass "$action aliases and system routes forward the action safely"
+done
+
+for action in logout reboot shutdown; do
+  : >"$call_log"
+  "$ROOT/bin/omarchy-system" "$action" --help >/dev/null || fail "direct $action help succeeds"
+  if "$ROOT/bin/omarchy-system" "$action" --typo >/dev/null 2>&1; then
+    fail "direct $action rejects an unknown mode"
+  fi
+  if "$ROOT/bin/omarchy-system" "$action" --execute unexpected >/dev/null 2>&1; then
+    fail "direct $action rejects extra arguments"
+  fi
+  [[ ! -s $call_log ]] || fail "direct $action help and invalid arguments never schedule an exit"
+  pass "direct $action help and invalid arguments are safe"
+done
+"$ROOT/bin/omarchy" system lock --help | grep -q 'omarchy-system-lock' || fail "system lock remains routed to its own command"
+pass "existing system subcommands keep their routes"

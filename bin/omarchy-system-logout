@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# omarchy:summary=Log out after closing application windows
-# omarchy:examples=omarchy logout | omarchy system logout
-# omarchy:aliases=omarchy logout
-
-"$OMARCHY_PATH/bin/omarchy-system-exit" logout

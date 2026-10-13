@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# omarchy:summary=Reboot after closing application windows
-# omarchy:examples=omarchy reboot | omarchy system reboot
-# omarchy:aliases=omarchy reboot
-
-"$OMARCHY_PATH/bin/omarchy-system-exit" reboot

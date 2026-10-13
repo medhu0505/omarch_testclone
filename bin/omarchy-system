@@ -1,14 +1,27 @@
 #!/bin/bash
 
-# omarchy:summary=Coordinate application shutdown before exiting the session
-# omarchy:hidden=true
+# omarchy:summary=Log out, reboot, or shut down after closing applications
+# omarchy:args=<logout|reboot|shutdown>
+# omarchy:examples=omarchy system logout | omarchy system reboot | omarchy system shutdown
+# omarchy:aliases=omarchy logout | omarchy reboot | omarchy shutdown
 
-action=$1
+usage="Usage: omarchy-system <logout|reboot|shutdown>"
+for arg in "$@"; do
+  case $arg in
+    -h | --help) echo "$usage"; exit 0 ;;
+  esac
+done
+if (( $# > 2 )); then
+  echo "$usage" >&2
+  exit 2
+fi
+
+action=${1:-}
 case $action in
   logout) message="Logging out"; command=(uwsm stop) ;;
   reboot) message="Rebooting"; command=(systemctl reboot --no-wall) ;;
   shutdown) message="Shutting down"; command=(systemctl poweroff --no-wall) ;;
-  *) exit 2 ;;
+  *) echo "$usage" >&2; exit 2 ;;
 esac
 
 exit_session() {
@@ -38,9 +51,12 @@ elif [[ ${2:-} == "--execute" ]]; then
     omarchy-notification-send -u critical "${action^} failed" "Could not complete $action. Please try again."
     exit "$status"
   fi
-else
+elif [[ -z ${2:-} ]]; then
   # Survive closing the terminal that requested the session exit.
   systemd-run --user --collect --quiet --property=Type=exec --property=RuntimeMaxSec=30s \
     --setenv=PATH --setenv=HYPRLAND_INSTANCE_SIGNATURE --setenv=OMARCHY_PATH \
     "$0" "$action" --execute
+else
+  echo "$usage" >&2
+  exit 2
 fi
