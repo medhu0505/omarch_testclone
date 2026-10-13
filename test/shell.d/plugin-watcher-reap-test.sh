@@ -24,7 +24,7 @@ command -v inotifywait >/dev/null 2>&1 || { skip "inotifywait not installed; ski
 command -v node >/dev/null 2>&1 || { skip "node not installed; skipping watcher reap check"; exit 0; }
 
 TMPDIR=$(mktemp -d)
-trap 'pkill -f "inotifywait.*$TMPDIR" 2>/dev/null; rm -rf "$TMPDIR"' EXIT
+trap 'pkill -f "inotifywait.*$TMPDIR" 2>/dev/null || true; rm -rf "$TMPDIR"' EXIT
 mkdir -p "$TMPDIR/plugins" "$TMPDIR/plugins-backup" "$TMPDIR/other"
 
 # The reap command exactly as PluginRegistry builds it, extracted rather
@@ -69,7 +69,9 @@ import ctypes, subprocess, sys, time
 ctypes.CDLL(None).prctl(15, b"quickshell", 0, 0, 0)
 child = subprocess.Popen(["inotifywait", "-m", "-r", "-q", "-e", "close_write,create,delete,move", "--format", "%w%f", sys.argv[1]])
 open(sys.argv[2], "w").write(str(child.pid))
-time.sleep(30)
+deadline = time.time() + 30
+while child.poll() is None and time.time() < deadline:
+    time.sleep(0.1)
 ' "$TMPDIR/plugins" "$TMPDIR/live.pid" </dev/null >"$TMPDIR/live.log" 2>&1
 for _ in {1..30}; do [[ -s $TMPDIR/live.pid ]] && break; sleep 0.1; done
 live=$(cat "$TMPDIR/live.pid" 2>/dev/null || true)
@@ -93,4 +95,5 @@ kill "$backup" 2>/dev/null || true
 pass "watcher reaper leaves a similarly named directory's watcher alone"
 
 kill -0 "$live" 2>/dev/null || fail "watcher reaper spares a live shell's watcher"
+[[ $(ps -o stat= -p "$live" 2>/dev/null) != Z* ]] || fail "watcher reaper spares a live shell's watcher"
 pass "watcher reaper spares a live shell's watcher"
