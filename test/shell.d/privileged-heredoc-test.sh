@@ -547,12 +547,28 @@ continued_heredoc_command() {
   printf '%s' "$command"
 }
 
+# Join continued lines into one. Only an odd run of trailing backslashes is a
+# continuation: with an even run the backslashes are literal, the next line
+# starts fresh, and its expansions must stay visible to strip_escapes.
 normalize_heredoc_body() {
-  local text="$1"
+  local text="$1" line trailing joined="" index
+  local -a lines=()
 
-  text=${text//$'\\\n'/}
-  text=${text//$'\n'/ }
-  printf '%s' "$text"
+  mapfile -t lines < <(printf '%s' "$text")
+  for ((index = 0; index < ${#lines[@]}; index++)); do
+    line=${lines[index]}
+    if ((index < ${#lines[@]} - 1)); then
+      trailing=${line##*[!\\]}
+      if ((${#trailing} % 2 == 1)); then
+        joined+=${line%\\}
+      else
+        joined+="$line "
+      fi
+    else
+      joined+=$line
+    fi
+  done
+  printf '%s' "$joined"
 }
 
 # Count the \001 placeholders in a masked token.
@@ -920,6 +936,9 @@ fixture_flags annotated-multiline-backtick-still-fails.sh \
   "command substitution"
 fixture_flags annotated-multiline-continuation-still-fails.sh \
   "an annotation cannot silence a multiline command continuation" \
+  "command substitution"
+fixture_flags annotated-escaped-backslash-continuation-still-fails.sh \
+  "an escaped backslash at a line end cannot hide the next line's command substitution" \
   "command substitution"
 
 # A path can hide one or more hops away from the heredoc. In each of these the
