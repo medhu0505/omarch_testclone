@@ -86,6 +86,10 @@ assert(
   'bar reads the platform package\'s cutout description from the platform root'
 )
 assert(
+  /property var displayCutouts: BarModel\.parseCutouts\(displayCutoutsFile\.text\(\)\)/.test(barSource),
+  'bar reads the cutout description synchronously at startup, before its surfaces map'
+)
+assert(
   /id: displayCutoutsFile[\s\S]{0,400}blockLoading: true[\s\S]{0,300}onLoadFailed: \{\s*missing = true\s*root\.displayCutouts = \[\]/.test(barSource),
   'bar reads the description as the shell starts, before its surfaces map, and a removed file describes nothing'
 )
