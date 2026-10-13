@@ -15,6 +15,7 @@ USERNAME=""
 ADD_ARG=""
 REMOVE_ARG=""
 SET_ARG=""
+SET_GIVEN=0
 
 fail() {
   echo "$PROG: $*" >&2
@@ -98,7 +99,7 @@ while (($# > 0)); do
     if [[ -z ${2:-} || $2 == -* ]]; then
       fail "--add needs a comma-separated list"
     fi
-    if [[ -n $ADD_ARG || -n $SET_ARG ]]; then
+    if [[ -n $ADD_ARG ]] || ((SET_GIVEN)); then
       fail "combine --add/--remove, or use --set alone"
     fi
     SET_ARG=""
@@ -109,7 +110,7 @@ while (($# > 0)); do
     if [[ -z ${2:-} || $2 == -* ]]; then
       fail "--remove needs a comma-separated list"
     fi
-    if [[ -n $REMOVE_ARG || -n $SET_ARG ]]; then
+    if [[ -n $REMOVE_ARG ]] || ((SET_GIVEN)); then
       fail "combine --add/--remove, or use --set alone"
     fi
     SET_ARG=""
@@ -117,13 +118,14 @@ while (($# > 0)); do
     shift 2
     ;;
   --set)
-    if [[ -z ${2:-} || $2 == -* ]]; then
+    if (($# < 2)) || [[ $2 == -* ]]; then
       fail "--set needs a comma-separated list"
     fi
-    if [[ -n $ADD_ARG || -n $REMOVE_ARG || -n $SET_ARG ]]; then
+    if [[ -n $ADD_ARG || -n $REMOVE_ARG ]] || ((SET_GIVEN)); then
       fail "combine --add/--remove, or use --set alone"
     fi
     SET_ARG="$2"
+    SET_GIVEN=1
     ADD_ARG=""
     REMOVE_ARG=""
     shift 2
@@ -137,6 +139,7 @@ while (($# > 0)); do
     echo
     echo "Changes a user's supplementary groups. The primary group is never"
     echo "touched. --add/--remove adjust the current set, --set replaces it."
+    echo "Use --set '' to clear all supplementary groups. wheel grants admin access."
     echo
     echo "With no group flags it shows a gum checklist preselected with the"
     echo "user's current groups; the checked set becomes the new set."
@@ -163,13 +166,15 @@ if [[ -z $USERNAME ]]; then
   USERNAME=$(login_users | gum choose --header="Change groups for which user?") || fail "cancelled"
   [[ -n $USERNAME ]] || fail "nothing selected"
 fi
-id "$USERNAME" &>/dev/null || fail "no such user: $USERNAME"
+require_login_user "$USERNAME"
 
 current=$(supplementary_groups "$USERNAME")
 final=""
 
-if [[ -n $SET_ARG ]]; then
-  check_groups_exist "$SET_ARG"
+if ((SET_GIVEN)); then
+  if [[ -n $SET_ARG ]]; then
+    check_groups_exist "$SET_ARG"
+  fi
   final="$SET_ARG"
 elif [[ -n $ADD_ARG || -n $REMOVE_ARG ]]; then
   if [[ -n $ADD_ARG ]]; then
@@ -210,7 +215,7 @@ else
   final=$(printf '%s' "$selected" | tr '\n' ',' | sed 's/,$//')
 fi
 
-if in_group "$USERNAME" wheel && [[ ,$final, != *,wheel,* ]]; then
+if [[ " $current " == *" wheel "* && ,$final, != *,wheel,* ]]; then
   guard_wheel_removal "$USERNAME"
 fi
 
@@ -218,6 +223,9 @@ echo
 echo "Group change for $USERNAME (primary: $(primary_group "$USERNAME") untouched):"
 echo "  before: ${current:-<none>}"
 echo "  after:  ${final:-<none>}"
+if [[ ,$final, == *,wheel,* ]]; then
+  warn_wheel_admin
+fi
 current_csv=$(printf '%s' "$current" | tr ' ' '\n' | awk NF | sort | tr '\n' ',')
 final_csv=$(printf '%s' "$final" | tr ',' '\n' | awk NF | sort | tr '\n' ',')
 if [[ $current_csv == "$final_csv" ]]; then

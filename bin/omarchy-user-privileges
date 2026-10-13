@@ -70,6 +70,7 @@ while (($# > 0)); do
     echo
     echo "Sets a user's sudo level via the wheel group: password sudo (add to wheel) or no sudo (remove from wheel)."
     echo "'none' removes the user from the wheel group only when they are a member; anything else is left alone with a warning."
+    echo "wheel also grants polkit administrator access. Other sudo rules are left in place and checked afterward."
     echo
     echo "With no arguments it walks you through each step with gum."
     exit 0
@@ -99,7 +100,7 @@ if [[ -z $USERNAME ]]; then
   USERNAME=$(login_users | gum choose --header="Set privileges for which user?") || fail "cancelled"
   [[ -n $USERNAME ]] || fail "nothing selected"
 fi
-id "$USERNAME" &>/dev/null || fail "no such user: $USERNAME"
+require_login_user "$USERNAME"
 
 if [[ -z $LEVEL ]]; then
   interactive || fail "--level is required (password, none)"
@@ -113,6 +114,7 @@ if [[ -z $LEVEL ]]; then
 fi
 
 if [[ $LEVEL == "none" ]] && in_group "$USERNAME" wheel; then
+  [[ $(id -gn "$USERNAME") != "wheel" ]] || fail "wheel is the primary group for $USERNAME; change the primary group before removing administrator access"
   guard_wheel_removal "$USERNAME"
 fi
 
@@ -120,6 +122,9 @@ echo
 echo "About to set:"
 echo "  user:  $USERNAME"
 echo "  level: $LEVEL"
+if [[ $LEVEL == "password" ]]; then
+  warn_wheel_admin
+fi
 confirm "Grant $LEVEL sudo to $USERNAME?" || fail "aborted"
 
 if [[ $LEVEL == "password" ]]; then
@@ -129,9 +134,13 @@ if [[ $LEVEL == "password" ]]; then
 elif in_group "$USERNAME" wheel; then
   # Remove user from wheel group
   sudo gpasswd -d "$USERNAME" wheel
-  echo "Sudo removed for $USERNAME (removed from wheel group)."
+  echo "Removed $USERNAME from wheel."
 else
-  echo "$USERNAME is not in wheel; no sudo to remove."
+  echo "$USERNAME is not in wheel; no wheel membership to remove."
+fi
+
+if [[ $LEVEL == "none" ]]; then
+  report_sudo_access "$USERNAME"
 fi
 
 echo "Change takes effect on next login."

@@ -116,6 +116,8 @@ fi
 if ((uid == $(caller_uid))); then
   fail "refusing to remove your own account (UID $uid)"
 fi
+require_login_user "$USERNAME"
+guard_last_admin "$USERNAME"
 
 if [[ -z $HOME_MODE ]]; then
   if interactive; then

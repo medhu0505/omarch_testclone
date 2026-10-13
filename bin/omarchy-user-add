@@ -1,17 +1,20 @@
 #!/bin/bash
 
 # omarchy:summary=Create a login user with groups and password (sudo managed via 'omarchy user privileges')
-# omarchy:args=[username] [--groups g1,g2] [--yes]
+# omarchy:args=[username] [--groups g1,g2] [--skip-password] [--yes]
 # omarchy:examples=omarchy user add | omarchy user add alice --groups wheel --yes
 # omarchy:requires-sudo=true
 
 set -euo pipefail
+
+source "${BASH_SOURCE[0]%/*}/omarchy-user-functions" || exit 1
 
 PROG="omarchy user add"
 ASSUME_YES=0
 SKIP_PASSWORD=0
 USERNAME=""
 GROUPS_ARG=""
+GROUPS_SET=0
 
 fail() {
   echo "$PROG: $*" >&2
@@ -66,10 +69,11 @@ existing_groups() {
 while (($# > 0)); do
   case "$1" in
   --groups)
-    if [[ -z ${2:-} || $2 == -* ]]; then
+    if (($# < 2)) || [[ $2 == -* ]]; then
       fail "--groups needs a comma-separated list"
     fi
     GROUPS_ARG="$2"
+    GROUPS_SET=1
     shift 2
     ;;
   --skip-password)
@@ -86,6 +90,7 @@ while (($# > 0)); do
     echo "Creates a login user, puts it in the given groups (default: none),"
     echo "sets its password via passwd (or skip it with --skip-password). Sudo is"
     echo "managed separately via 'omarchy user privileges'."
+    echo "Use --groups '' to explicitly select no supplementary groups."
     echo
     echo "With no arguments it walks you through each step with gum."
     exit 0
@@ -122,7 +127,14 @@ is_reserved() {
 is_reserved "$USERNAME" && fail "username '$USERNAME' is reserved for the system"
 id "$USERNAME" &>/dev/null && fail "user '$USERNAME' already exists (see omarchy user groups)"
 
-if [[ -z $GROUPS_ARG ]]; then
+# Older standalone versions used this path for per-user grants. Do not let a
+# leftover rule silently give a newly created account sudo, even without wheel.
+sudoers_file="/etc/sudoers.d/$USERNAME"
+if sudo test -e "$sudoers_file" || sudo test -L "$sudoers_file"; then
+  fail "$sudoers_file already exists; inspect it with 'sudo visudo -f $sudoers_file' before reusing this login name"
+fi
+
+if ((GROUPS_SET == 0)); then
   if interactive; then
     need_gum
     GROUPS_ARG=$(existing_groups | gum choose --no-limit --header="Groups for $USERNAME? (x to toggle)") || fail "cancelled"
@@ -155,6 +167,9 @@ echo
 echo "About to create:"
 echo "  user:   $USERNAME (shell $USER_SHELL)"
 echo "  groups: ${GROUPS_CSV:-<none>}"
+if [[ ,$GROUPS_CSV, == *,wheel,* ]]; then
+  warn_wheel_admin
+fi
 confirm "Create user $USERNAME?" || fail "aborted"
 
 sudo useradd -m -s "$USER_SHELL" "$USERNAME"
