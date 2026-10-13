@@ -282,7 +282,7 @@ status() {
         client_count=$(printf '%s\n' "$client_list" | grep -c . || true)
         clients=$(printf '%s\n' "$client_list" |
           jq -R 'split("\t") as $f | { mac: $f[0], signal: ($f[1] | tonumber? // 0) }' 2>/dev/null |
-          jq -s . 2>/dev/null || echo "[]")
+          jq -sc . 2>/dev/null || echo "[]")
       fi
     fi
   fi
@@ -769,6 +769,7 @@ privileged_function() {
     firewall-rollback) printf 'firewall_rollback\n' ;;
     forwarding-enable) printf 'forwarding_enable\n' ;;
     forwarding-restore) printf 'forwarding_restore\n' ;;
+    release) printf 'hotspot_release\n' ;;
     *) return 1 ;;
   esac
 }
@@ -938,10 +939,31 @@ start() {
   fi
 }
 
-stop() {
+ap_down() {
   if profile_active; then
     nmcli connection down "$PROFILE" >/dev/null 2>&1 || return 1
   fi
+}
+
+hotspot_host_state_owned() {
+  [[ -e $FORWARDING_STATE_FILE || -L $FORWARDING_STATE_FILE || -s $FIREWALL_STATE_FILE ]]
+}
+
+# Undo what start() turned on for the hotspot: global IPv4 forwarding and the
+# hotspot's UFW rules, each only where state records the hotspot as the owner.
+hotspot_release() {
+  require_privileged
+  forwarding_restore
+  [[ $(firewall_backend) != ufw ]] || firewall_remove
+}
+
+# Turning the hotspot off releases what it turned on, in one privileged step.
+# Leaving forwarding on would keep the host routing for every interface long
+# after the AP is gone; the next start() turns both back on.
+stop() {
+  ap_down || return 1
+  hotspot_host_state_owned || return 0
+  privileged_run release
 }
 
 # Flip the current state. When nothing has been configured yet, hand over to
@@ -1096,7 +1118,7 @@ teardown() {
   require_root teardown
   local backend iface
   local -a failed=()
-  stop || failed+=("AP deactivation")
+  ap_down || failed+=("AP deactivation")
   forwarding_restore_if_owned || failed+=("IPv4 forwarding restore")
   backend=$(firewall_backend)
   iface=$(recorded_iface)
@@ -1237,6 +1259,13 @@ case "${1:-}" in
     fi
     require_root forwarding-restore
     forwarding_restore
+    ;;
+  release)
+    if (($# != 1)); then
+      fail "invalid internal release arguments"
+    fi
+    require_root release
+    hotspot_release
     ;;
   diagnose) diagnose ;;
   generate-password) generate_password ;;
