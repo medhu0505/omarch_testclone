@@ -230,6 +230,7 @@ case "${1:-}" in
   firewall-rollback) shift; firewall_rollback "$@" ;;
   forwarding-enable) shift; forwarding_enable "$@" ;;
   forwarding-restore) shift; forwarding_restore "$@" ;;
+  release) shift; hotspot_release "$@" ;;
   *) exit 97 ;;
 esac
 STUB
@@ -502,10 +503,21 @@ if (( EUID != 0 )); then
   printf '%s\n' savedpassword | NMCLI_UP_SUCCEED=1 KEEP_FORWARDING_ON_DOWN=1 OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" start Shared 2.4
   [[ $(<"$FORWARDING_STATE_VALUE") == 1 ]] || fail "hotspot start explicitly enables forwarding"
   [[ -e $FORWARDING_STATE ]] || fail "hotspot records forwarding ownership"
+  printf '%s\n' 'ufw allow 22/tcp comment unrelated' >>"$UFW_STATE"
+  : >"$PRIVILEGED_LOG"
   KEEP_FORWARDING_ON_DOWN=1 OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" stop
-  [[ $(<"$FORWARDING_STATE_VALUE") == 1 ]] || fail "hotspot stop leaves global IPv4 forwarding alone"
-  [[ -e $FORWARDING_STATE ]] || fail "hotspot stop keeps forwarding ownership for teardown"
-  pass "hotspot stop only deactivates the AP and leaves forwarding untouched"
+  [[ $(<"$FORWARDING_STATE_VALUE") == 0 ]] || fail "hotspot stop restores forwarding it enabled"
+  [[ ! -e $FORWARDING_STATE ]] || fail "hotspot stop releases forwarding ownership"
+  ! grep -q 'omarchy-hotspot:' "$UFW_STATE" || fail "hotspot stop removes the hotspot's firewall rules" "$(<"$UFW_STATE")"
+  grep -q 'unrelated' "$UFW_STATE" || fail "hotspot stop preserves unrelated firewall rules" "$(<"$UFW_STATE")"
+  [[ ! -s $FIREWALL_STATE ]] || fail "hotspot stop releases firewall ownership" "$(<"$FIREWALL_STATE")"
+  [[ $(grep -c . "$PRIVILEGED_LOG") == 1 ]] || fail "hotspot stop releases host state in one privileged step" "$(<"$PRIVILEGED_LOG")"
+  pass "hotspot stop releases the forwarding and firewall rules start turned on"
+
+  : >"$PRIVILEGED_LOG"
+  OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" stop
+  [[ ! -s $PRIVILEGED_LOG ]] || fail "stopping with nothing owned asks for no privilege" "$(<"$PRIVILEGED_LOG")"
+  pass "hotspot stop with nothing owned stays unprivileged"
 
   cat >"$TEST_TMP/teardown-forwarding-driver.sh" <<'DRIVER'
 require_root() { :; }
