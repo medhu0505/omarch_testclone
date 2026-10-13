@@ -9,15 +9,24 @@ mock_bin="$test_tmp/bin"
 call_log="$test_tmp/calls.log"
 mkdir -p "$mock_bin"
 export PATH="$mock_bin:$PATH" CALL_LOG="$call_log" OMARCHY_PATH="$ROOT"
+export HYPRLAND_INSTANCE_SIGNATURE="test-session"
+export EXPECTED_PATH="$PATH" EXPECTED_OMARCHY_PATH="$OMARCHY_PATH"
 
 cat >"$mock_bin/systemd-run" <<'SH'
 #!/bin/bash
 
 printf 'systemd-run %s\n' "$*" >>"$CALL_LOG"
 [[ ${FAIL_SYSTEMD_RUN:-false} == "true" ]] && exit 1
-while [[ $1 == --* ]]; do shift; done
+forwarded=()
+while [[ $1 == --* ]]; do
+  if [[ $1 == --setenv=* ]]; then
+    name=${1#--setenv=}
+    forwarded+=("$name=${!name}")
+  fi
+  shift
+done
 # Capture the service command so its exit status is tested separately.
-printf '%q ' "$@" >"$CALL_LOG.worker"
+printf '%q ' /usr/bin/env "${forwarded[@]}" "$@" >"$CALL_LOG.worker"
 SH
 
 cat >"$mock_bin/systemd-inhibit" <<'SH'
@@ -38,6 +47,10 @@ for command in uwsm omarchy-state omarchy-hyprland-window-close-all omarchy-osd 
 command=${0##*/}
 printf '%s %s\n' "$command" "$*" >>"$CALL_LOG"
 case $command in
+  omarchy-osd)
+    [[ $PATH == "$EXPECTED_PATH" && $OMARCHY_PATH == "$EXPECTED_OMARCHY_PATH" && $HYPRLAND_INSTANCE_SIGNATURE == "test-session" ]] || exit 38
+    touch "$CALL_LOG.environment"
+    ;;
   omarchy-hyprland-window-close-all)
     if [[ ${BLOCK_WINDOW_CLOSE:-false} == "true" ]]; then
       /usr/bin/sleep 10
@@ -71,7 +84,7 @@ run_power_command() {
   local action="$1"
 
   : >"$call_log"
-  rm -f "$CALL_LOG.grace" "$CALL_LOG.worker"
+  rm -f "$CALL_LOG.grace" "$CALL_LOG.worker" "$CALL_LOG.environment"
   "$ROOT/bin/omarchy-system-$action"
 }
 
@@ -80,7 +93,8 @@ for action in reboot logout; do
   (( $(wc -l <"$call_log") == 1 )) || fail "$action preparation runs outside the launching terminal"
   [[ -s $CALL_LOG.worker ]] || fail "$action schedules its worker"
   grep -q -- '--property=RuntimeMaxSec=30s' "$CALL_LOG" || fail "$action bounds the worker lifetime"
-  bash "$CALL_LOG.worker" || fail "$action worker succeeds"
+  PATH=/stale/bin OMARCHY_PATH=/stale/checkout HYPRLAND_INSTANCE_SIGNATURE=stale /bin/bash "$CALL_LOG.worker" || fail "$action worker succeeds"
+  [[ -f $CALL_LOG.environment ]] || fail "$action forwards the caller environment over stale manager values"
   grep -q '^timeout 2s omarchy-hyprland-window-close-all --wait$' "$CALL_LOG" || fail "$action waits for application exit with a deadline"
   ! grep -q '^sleep ' "$CALL_LOG" || fail "$action has no fixed sleep"
   rm -f "$CALL_LOG.grace"
@@ -96,7 +110,8 @@ done
 
 run_power_command shutdown || fail "shutdown service is scheduled"
 grep -q '^systemd-run --user --collect --quiet --property=Type=exec --property=RuntimeMaxSec=30s .* --inhibit$' "$CALL_LOG" || fail "shutdown uses a bounded service outside the launching terminal"
-bash "$CALL_LOG.worker" || fail "protected shutdown succeeds"
+PATH=/stale/bin OMARCHY_PATH=/stale/checkout HYPRLAND_INSTANCE_SIGNATURE=stale /bin/bash "$CALL_LOG.worker" || fail "protected shutdown succeeds"
+[[ -f $CALL_LOG.environment ]] || fail "shutdown forwards the caller environment over stale manager values"
 grep -q '^systemd-inhibit --what=sleep:idle:handle-lid-switch .* --mode=block .* --inhibited$' "$CALL_LOG" || fail "shutdown blocks sleep and lid handling"
 inhibit_line=$(grep -n '^systemd-inhibit ' "$CALL_LOG" | cut -d: -f1)
 osd_line=$(grep -n '^omarchy-osd ' "$CALL_LOG" | cut -d: -f1)
