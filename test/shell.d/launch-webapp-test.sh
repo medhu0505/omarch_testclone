@@ -40,3 +40,18 @@ expected=$(printf '%s\n' -- /usr/bin/env LIBVA_DRIVER_NAME=iHD brave "--profile-
 [[ $(<"$launch_log") == "$expected" ]] ||
   fail "webapp launcher runs the whole unquoted Exec line, then --app and the caller's arguments"
 pass "webapp launcher resolves env-wrapped desktop Exec lines"
+
+cat >"$test_home/.local/share/applications/brave-browser.desktop" <<'EOF'
+[Desktop Entry]
+Name=Brave
+Exec=brave --class=%c --desktop=%k -- %U
+EOF
+
+HOME="$test_home" PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_TEST_WEBAPP_LAUNCH="$launch_log" \
+  bash "$ROOT/bin/omarchy-launch-webapp" "https://example.test/app"
+
+expected=$(printf '%s\n' -- brave --class=Brave "--desktop=$test_home/.local/share/applications/brave-browser.desktop" \
+  --app=https://example.test/app)
+[[ $(<"$launch_log") == "$expected" ]] ||
+  fail "webapp launcher expands %c and %k and keeps --app ahead of the Exec line's closing --"
+pass "webapp launcher expands %c and %k and keeps --app an option"

@@ -143,3 +143,17 @@ expected=$(printf '%s\n' /usr/bin/env LIBVA_DRIVER_NAME=iHD chromium "--profile-
 [[ $(sed '1,/^--$/d' "$launch_log") == "$expected" ]] ||
   fail "a wrapped private launch passes the real browser's private flag"
 pass "a wrapped private launch passes the real browser's private flag"
+
+cat >"$test_home/.local/share/applications/chromium.desktop" <<'EOF'
+[Desktop Entry]
+Name=Work\sChromium
+Exec=/usr/bin/env -u BROWSER chromium --name %c -- https://start.example.test/ %U
+EOF
+
+rm -f "$help_log"
+launch --private
+[[ -s $help_log ]] || fail "a private launch probes the browser behind env -u, not the name it unsets"
+expected=$(printf '%s\n' /usr/bin/env -u BROWSER chromium --name "Work Chromium" https://start.example.test/ --incognito)
+[[ $(sed '1,/^--$/d' "$launch_log") == "$expected" ]] ||
+  fail "a private launch expands %c and keeps its flag an option despite the Exec line's --"
+pass "a private launch finds the browser behind env options and keeps its flag an option"
