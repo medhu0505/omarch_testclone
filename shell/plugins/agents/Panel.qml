@@ -29,8 +29,10 @@ Panel {
   // Every subscription on one page, limits first: the question this panel
   // answers is how much room is left, and where.
   readonly property var providers: usage.enabledProviders
+  readonly property bool allProvidersOff: providers.length === 0 && usage.collectedCount > 0
 
   property bool cursorActive: false
+  property bool settingsOpen: false
 
   // Countdowns and "last updated" ages read this instead of Date.now() so the
   // panel keeps telling the truth while it sits open.
@@ -59,9 +61,15 @@ Panel {
   // Hovering moves the same cursor, so only one thing is lit.
   readonly property var keyRows: {
     var rows = []
+    if (settingsOpen) {
+      var switches = usage.providerIds || []
+      for (var s = 0; s < switches.length; s++) rows.push([{ kind: "providerToggle", index: s }])
+      return rows
+    }
     var hero = []
     if (addButtonShown) hero.push({ kind: "add", index: 0 })
     if (addStage === "") hero.push({ kind: "launch", index: 0 })
+    if (addStage === "") hero.push({ kind: "providers", index: 0 })
     if (hero.length > 0) rows.push(hero)
     if (picking) {
       var choices = []
@@ -127,6 +135,20 @@ Panel {
   // The first arrow only shows where the cursor is, as in the other panels.
   function moveKey(dx, dy) {
     if (keyRows.length === 0) return
+    if (settingsOpen) {
+      if (dy === 0) return
+      if (!cursorActive) {
+        keyRow = 0
+        keyColumn = 0
+        cursorActive = true
+        revealSettingsRow()
+        return
+      }
+      keyRow = clamp(keyRow + dy, 0, keyRows.length - 1)
+      keyColumn = 0
+      revealSettingsRow()
+      return
+    }
     if (!cursorActive) {
       keyRow = clamp(keyRow, 0, keyRows.length - 1)
       keyColumn = 0
@@ -232,6 +254,83 @@ Panel {
     usage.refreshAll(true)
   }
 
+  // Merges one id into a copy of the providers map. Other entries stay as
+  // they were, and extra keys on the flipped entry stay too. A request that
+  // would not change whether that provider is on does not write or collect.
+  // The switch moves first. A missing writer, or one that refuses, puts the
+  // previous settings back and notifies. Turning a provider on asks for a
+  // normal collector run of that provider.
+  function setProviderEnabled(id, enabled) {
+    var target = String(id)
+    var current = settings && settings.providers ? settings.providers : {}
+    var want = enabled === true
+    var prior = current[target]
+    var currently = !prior || typeof prior !== "object" || prior.enabled !== false
+    if (currently === want) return
+
+    var next = ({})
+    for (var key in current) next[key] = current[key]
+    var flipped = ({})
+    if (prior && typeof prior === "object") {
+      for (var extra in prior) flipped[extra] = prior[extra]
+    }
+    flipped.enabled = want
+    next[target] = flipped
+
+    var previous = root.settings
+    var entry = { id: root.moduleName }
+    var base = settings || {}
+    for (var existing in base) if (existing !== "id") entry[existing] = base[existing]
+    entry.providers = next
+    root.settings = entry
+
+    var saved = false
+    if (root.bar && root.bar.shell && typeof root.bar.shell.updateEntryInline === "function")
+      saved = root.bar.shell.updateEntryInline(root.moduleName, entry) === true
+    if (!saved) {
+      root.settings = previous
+      if (root.bar && typeof root.bar.run === "function")
+        root.bar.run(["omarchy-notification-send", "Couldn't save provider settings", "The switch was put back."].map(function(part) {
+          return Util.shellQuote(part)
+        }).join(" "))
+      return
+    }
+    if (want) usage.runUpdate("normal", [target])
+  }
+
+  function revealSettingsRow() {
+    if (!settingsRepeater) return
+    revealItem(settingsRepeater.itemAt(keyRow))
+  }
+
+  function openSettingsView() {
+    settingsOpen = true
+    cursorActive = true
+    keyRow = 0
+    keyColumn = 0
+    if (panelFlick) panelFlick.contentY = 0
+    Qt.callLater(root.revealSettingsRow)
+  }
+
+  function closeSettings() {
+    settingsOpen = false
+    if (panelFlick) panelFlick.contentY = 0
+    resetKeys()
+  }
+
+  function toggleSettings() {
+    if (settingsOpen) closeSettings()
+    else openSettingsView()
+  }
+
+  // Esc leaves the switches when the dashboard is there, cancels an add in
+  // progress, and closes the panel when every provider is off.
+  function requestClose() {
+    if (settingsOpen && providers.length > 0) closeSettings()
+    else if (addStage !== "") cancelAdd()
+    else root.close()
+  }
+
   // ------------------------------------------------------------ adding
   //
   // Adding a subscription happens right here: pick a provider, name it if
@@ -265,6 +364,10 @@ Panel {
 
   function addAccount() {
     if (addStage === "running") return
+    // Close the switches before the stage changes. The stage handler selects
+    // the first account only once settings are already gone; doing it after
+    // would leave the cursor on a switch the picker has replaced.
+    if (settingsOpen) closeSettings()
     addStage = "pick"
     addChecks = ({})
     if (!checkProcess.running) checkProcess.running = true
@@ -389,11 +492,18 @@ Panel {
   }
 
   function activateSelection() {
+    if (settingsOpen) {
+      var ids = usage.providerIds || []
+      if (cursorActive && keyRow >= 0 && keyRow < ids.length)
+        setProviderEnabled(ids[keyRow], !usage.providerEnabled(ids[keyRow]))
+      return
+    }
     var target = keyTarget
     if (!target) refreshNow()
     else if (target.kind === "add") addStage !== "" ? cancelAdd() : addAccount()
     else if (target.kind === "choice") chooseAddProvider(addProviders[target.index].providerId)
     else if (target.kind === "launch") launchAgent()
+    else if (target.kind === "providers") toggleSettings()
     else if (target.kind === "starter") startPrompt(starterPrompts[target.index].prompt)
     else if (target.kind === "providerSignin") signInAgain(providers[target.index], null)
     else if (target.kind === "signin") signInAgain(pickedEntry.provider, pickedEntry.account)
@@ -767,6 +877,13 @@ Panel {
   // Picking an agent to add starts on the first one, ready for Enter. The
   // rows follow the same stage change, so the cursor waits a tick for them.
   function resetKeys() {
+    if (settingsOpen) {
+      cursorActive = true
+      keyRow = 0
+      keyColumn = 0
+      Qt.callLater(root.revealSettingsRow)
+      return
+    }
     cursorActive = false
     keyRow = 0
     keyColumn = 0
@@ -777,10 +894,14 @@ Panel {
 
   onOpenedChanged: if (opened) {
     if (addStage !== "running") addStage = ""
-    resetKeys()
     if (providers.length === 0 && !checkProcess.running) checkProcess.running = true
     nowMs = Date.now()
     if (panelFlick) panelFlick.contentY = 0
+    if (allProvidersOff) openSettingsView()
+    else {
+      settingsOpen = false
+      resetKeys()
+    }
     usage.refreshLimits()
     Qt.callLater(function() { if (panel.loadedContent) panel.loadedContent.forceActiveFocus() })
   }
@@ -788,6 +909,14 @@ Panel {
   Main {
     id: usage
     settings: root.settings
+    // injectProps assigns bar, moduleName, and settings together: synchronously
+    // when the loader finishes, and again from Qt.callLater. A bar is that assignment.
+    settingsReady: !!root.bar
+    onProviderIdsChanged: {
+      if (!root.settingsOpen) return
+      var count = usage.providerIds ? usage.providerIds.length : 0
+      if (count > 0 && root.keyRow >= count) root.keyRow = count - 1
+    }
   }
 
   Process {
@@ -910,15 +1039,13 @@ Panel {
                                            Math.max(0, panelFlick.contentHeight - panelFlick.height))
       }
       onActivateRequested: root.activateSelection()
-      onCloseRequested: {
-        if (root.addStage !== "") root.cancelAdd()
-        else root.close()
-      }
+      onCloseRequested: root.requestClose()
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onTextKey: function(t) {
         if (t === "r" || t === "R") root.refreshNow()
-        else if (t === "m" || t === "M") root.toggleSwitchMode()
-        else if (root.addStage === "" && t >= "1" && t <= "9" && Number(t) <= root.accountEntries.length) root.pointAt("account", Number(t) - 1)
+        else if ((t === "s" || t === "S") && root.addStage === "") root.toggleSettings()
+        else if (!root.settingsOpen && (t === "m" || t === "M")) root.toggleSwitchMode()
+        else if (!root.settingsOpen && root.addStage === "" && t >= "1" && t <= "9" && Number(t) <= root.accountEntries.length) root.pointAt("account", Number(t) - 1)
       }
 
       Flickable {
@@ -990,18 +1117,77 @@ Panel {
                   tooltip: "Start the default agent"
                   onClicked: root.launchAgent()
                 }
+
+                HeroButton {
+                  visible: root.addStage === "" || root.settingsOpen
+                  hasCursor: root.settingsOpen || root.hasKey("providers")
+                  onHovered: {
+                    if (!root.settingsOpen) root.pointAt("providers")
+                  }
+                  glyph: "󰒓"
+                  tooltip: "Providers"
+                  onClicked: root.toggleSettings()
+                }
               }
             }
           }
 
+          Column {
+            id: settingsColumn
+            visible: root.settingsOpen
+            width: parent.width
+            spacing: Style.space(12)
+
+            PanelSectionHeader {
+              width: parent.width
+              text: "PROVIDERS"
+              foreground: root.foreground
+              fontFamily: root.fontFamily
+            }
+
+            Repeater {
+              id: settingsRepeater
+              model: root.settingsOpen ? usage.providerIds : []
+
+              Toggle {
+                required property var modelData
+                required property int index
+
+                width: parent.width
+                label: usage.providerName(modelData)
+                description: usage.providerCollected(modelData) ? "" : "Nothing collected on this machine"
+                checked: usage.providerEnabled(modelData)
+                hasCursor: root.hasKey("providerToggle", index)
+                foreground: root.foreground
+                fontFamily: root.fontFamily
+                onClicked: root.setProviderEnabled(modelData, !usage.providerEnabled(modelData))
+                onHovered: function(isHovered) {
+                  if (!isHovered) return
+                  root.pointAt("providerToggle", index)
+                  root.revealSettingsRow()
+                }
+              }
+            }
+
+            Text {
+              textFormat: Text.PlainText
+              width: parent.width
+              text: "A disabled provider is hidden here and left out of collector refreshes. Providers stay on until you switch them off."
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              wrapMode: Text.WordWrap
+            }
+          }
+
           AddView {
-            visible: root.addStage !== "" || root.blankSlate
+            visible: (root.addStage !== "" || root.blankSlate) && !root.settingsOpen
             width: column.width
           }
 
           Repeater {
             id: providerSections
-            model: root.addStage === "" ? root.providers : []
+            model: root.addStage === "" && !root.settingsOpen ? root.providers : []
 
             ProviderSection {
               required property var modelData
@@ -1014,12 +1200,12 @@ Panel {
 
           // ---------- Make something ----------
           PanelSeparator {
-            visible: root.addStage === "" && !root.blankSlate
+            visible: root.addStage === "" && !root.blankSlate && !root.settingsOpen
             foreground: root.foreground
           }
 
           Column {
-            visible: root.addStage === "" && !root.blankSlate
+            visible: root.addStage === "" && !root.blankSlate && !root.settingsOpen
             width: parent.width
             spacing: Style.space(12)
 
@@ -1053,7 +1239,7 @@ Panel {
 
           Text {
             textFormat: Text.PlainText
-            visible: text !== ""
+            visible: text !== "" && !root.settingsOpen
             width: parent.width
             topPadding: Style.space(2)
             text: root.footerText()
