@@ -37,6 +37,13 @@ grep -Fxq 'timeout: 5' "$conf" || fail "a timeout the user set was replaced"
 grep -Fxq 'quiet: yes' "$conf" || fail "quiet boot was not added beside a user timeout"
 pass "a timeout the user set stays, and quiet is added"
 
+printf 'default_entry: 2\n' >"$conf"
+run_migration
+grep -Fxq 'timeout: 1' "$conf" || fail "a boot menu with no timeout line did not get one"
+grep -Fxq 'quiet: yes' "$conf" || fail "a boot menu with no timeout line did not get quiet"
+grep -Fxq 'default_entry: 2' "$conf" || fail "a boot menu with no timeout line lost its contents"
+pass "a boot menu with no timeout line gets one and keeps its contents"
+
 printf 'TIMEOUT: no\nQUIET: no\n' >"$conf"
 before=$(cat "$conf")
 run_migration

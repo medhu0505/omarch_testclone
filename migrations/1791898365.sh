@@ -30,7 +30,7 @@ if ! sudo grep -Eqi '^[[:space:]]*timeout:' "$limine_conf"; then
   if sudo grep -Eqi '^[[:space:]]*#timeout:' "$limine_conf"; then
     sudo sed -i -E 's/^[[:space:]]*#timeout:.*/timeout: 1/I' "$limine_conf"
   else
-    printf 'timeout: 1\n%s\n' "$(sudo cat "$limine_conf")" | sudo tee "$limine_conf" >/dev/null
+    sudo sed -i '1i timeout: 1' "$limine_conf"
   fi
   changed=1
 fi
