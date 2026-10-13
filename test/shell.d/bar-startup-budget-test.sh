@@ -80,11 +80,21 @@ BUDGET_MS=$(( ${OMARCHY_BAR_STARTUP_BUDGET_MS:-750} * SPEED_PERCENT / 100 ))
 TMPDIR=$(mktemp -d)
 test_root="$TMPDIR/omarchy"
 test_home="$TMPDIR/home"
+stub_bin="$TMPDIR/bin"
 log="$TMPDIR/quickshell.log"
-mkdir -p "$test_root" "$test_home"
+mkdir -p "$test_root" "$test_home" "$stub_bin"
 cp -a "$ROOT/shell" "$test_root/shell"
 ln -s "$ROOT/config" "$test_root/config"
 ln -s "$ROOT/bin" "$test_root/bin"
+
+# The scratch shell must not reach the real session: the clipboard plugin
+# cleans up stale watchers at startup with a pkill whose pattern also
+# matches the session shell's watchers (the idle-spawn test stubs the
+# same commands for the same reason).
+for name in pkill killall; do
+  printf '#!/bin/bash\nexit 1\n' >"$stub_bin/$name"
+  chmod +x "$stub_bin/$name"
+done
 
 # One cold start: launch, then poll the compositor until this shell's
 # bar surface is mapped at a real size — the bar drawn, in the
