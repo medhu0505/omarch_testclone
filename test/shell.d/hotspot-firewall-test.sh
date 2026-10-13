@@ -28,6 +28,7 @@ export FORWARDING_STATE_VALUE="$TEST_TMP/forwarding-value"
 export SYSCTL_LOG="$TEST_TMP/sysctl-log"
 export PRIVILEGED_LOG="$TEST_TMP/privileged-log"
 export UFW_SHOW_ALLOWED=0
+export OMARCHY_HOTSPOT_LOCK_FILE="$TEST_TMP/hotspot.lock" OMARCHY_HOTSPOT_LOCK_WAIT=2
 export OMARCHY_HOTSPOT_UFW_RULES="$UFW_RULES_FILE"
 : >"$UFW_STATE"
 : >"$UFW_LOG"
@@ -101,6 +102,13 @@ case "$*" in
     ;;
   '-t -f DEVICE,TYPE device status')
     printf '%s\n' 'wlan2:wifi'
+    ;;
+  '-e no -g NAME connection show --active')
+    [[ -e $NMCLI_ACTIVE ]] && printf '%s\n' 'omarchy-hotspot'
+    [[ -z ${OTHER_SHARED_CONNECTION:-} ]] || printf '%s\n' "$OTHER_SHARED_CONNECTION"
+    ;;
+  "-e no -g ipv4.method connection show ${OTHER_SHARED_CONNECTION:-<none>}")
+    printf '%s\n' shared
     ;;
   '-e no -g GENERAL.DEVICE connection show omarchy-hotspot')
     [[ -n ${GENERAL_DEVICE:-} ]] && printf '%s\n' "$GENERAL_DEVICE"
@@ -213,6 +221,16 @@ if [[ ${1:-} == "delete" ]]; then
   exit 0
 fi
 exit 0
+STUB
+
+cat >"$STUB_BIN/ip" <<'STUB'
+#!/bin/bash
+if [[ $* == '-o link show' ]]; then
+  printf '%s\n' '1: lo: <LOOPBACK,UP> mtu 65536' '2: wlan2: <BROADCAST,MULTICAST,UP> mtu 1500'
+  [[ -z ${ROUTING_LINK:-} ]] || printf '3: %s@if4: <BROADCAST,MULTICAST,UP> mtu 1500\n' "$ROUTING_LINK"
+  exit 0
+fi
+exit 1
 STUB
 
 cat >"$STUB_BIN/sudo" <<'STUB'
@@ -893,3 +911,90 @@ DRIVER
 else
   skip "no subordinate-id user namespace; skipping the production path pin probe"
 fi
+
+reset_firewall_fixture
+cat >"$TEST_TMP/fresh-state-driver.sh" <<'DRIVER'
+require_privileged() { :; }
+HOTSPOT_STATE_DIR="$TEST_TMP/fresh/var/lib/omarchy/hotspot"
+FORWARDING_STATE_FILE="$HOTSPOT_STATE_DIR/forwarding.state"
+forwarding_state_write
+[[ -f $FORWARDING_STATE_FILE && -d $HOTSPOT_STATE_DIR && ! -L $HOTSPOT_STATE_DIR ]]
+DRIVER
+run_isolated "$TEST_TMP/fresh-state-driver.sh" || fail "the first privileged step creates a missing state directory"
+mkdir -p "$TEST_TMP/elsewhere" "$TEST_TMP/linked"
+ln -s "$TEST_TMP/elsewhere" "$TEST_TMP/linked/hotspot"
+cat >"$TEST_TMP/linked-state-driver.sh" <<'DRIVER'
+require_privileged() { :; }
+HOTSPOT_STATE_DIR="$TEST_TMP/linked/hotspot"
+FORWARDING_STATE_FILE="$HOTSPOT_STATE_DIR/forwarding.state"
+forwarding_state_write
+DRIVER
+! run_isolated "$TEST_TMP/linked-state-driver.sh" 2>/dev/null || fail "a symlinked state directory is still refused"
+[[ ! -e $TEST_TMP/elsewhere/forwarding.state ]] || fail "nothing is written through a symlinked state directory"
+pass "a missing state directory is created on first use; a symlinked one is refused"
+
+cat >"$TEST_TMP/forwarding-shared-driver.sh" <<'DRIVER'
+require_privileged() { :; }
+HOTSPOT_STATE_DIR="$TEST_STATE_DIR"
+FIREWALL_STATE_FILE="$TEST_STATE_DIR/firewall.state"
+FORWARDING_STATE_FILE="$TEST_STATE_DIR/forwarding.state"
+forwarding_restore
+DRIVER
+for router in container vm-bridge shared-connection; do
+  reset_firewall_fixture
+  printf '%s\n' 1 >"$FORWARDING_STATE_VALUE"
+  printf '%s\n' enabled >"$FORWARDING_STATE"
+  case $router in
+    container) export ROUTING_LINK=docker0 ;;
+    vm-bridge) export ROUTING_LINK=virbr0 ;;
+    shared-connection) export OTHER_SHARED_CONNECTION="Ethernet share" ;;
+  esac
+  output=$(run_isolated "$TEST_TMP/forwarding-shared-driver.sh" 2>&1) || fail "forwarding restore succeeds while another router needs forwarding ($router)" "$output"
+  unset ROUTING_LINK OTHER_SHARED_CONNECTION
+  [[ $(<"$FORWARDING_STATE_VALUE") == 1 ]] || fail "forwarding stays on for another router ($router)"
+  [[ ! -e $FORWARDING_STATE ]] || fail "the hotspot still gives up its forwarding claim ($router)"
+  [[ $output == *"leaving IPv4 forwarding on"* ]] || fail "keeping forwarding on is explained ($router)" "$output"
+done
+reset_firewall_fixture
+printf '%s\n' 1 >"$FORWARDING_STATE_VALUE"
+printf '%s\n' enabled >"$FORWARDING_STATE"
+run_isolated "$TEST_TMP/forwarding-shared-driver.sh"
+[[ $(<"$FORWARDING_STATE_VALUE") == 0 ]] || fail "forwarding is restored when nothing else routes"
+pass "releasing forwarding leaves it on while a container, VM bridge or other shared connection routes"
+
+reset_firewall_fixture
+run_isolated "$TEST_TMP/seed-complete-driver.sh"
+cat >"$TEST_TMP/teardown-continues-driver.sh" <<'DRIVER'
+require_root() { :; }
+require_privileged() { :; }
+HOTSPOT_STATE_DIR="$TEST_STATE_DIR"
+FIREWALL_STATE_FILE="$TEST_STATE_DIR/firewall.state"
+FORWARDING_STATE_FILE="$TEST_STATE_DIR/forwarding.state"
+export UFW_SHOW_ALLOWED=1
+# As root a helper runs in-process, where fail() exits.
+forwarding_restore_if_owned() { fail "simulated forwarding restore failure"; }
+teardown
+DRIVER
+set +e
+teardown_output=$(run_isolated "$TEST_TMP/teardown-continues-driver.sh" 2>&1)
+teardown_status=$?
+set -e
+(( teardown_status != 0 )) || fail "a failed in-process teardown step still fails teardown"
+[[ $teardown_output == *"IPv4 forwarding restore"* ]] || fail "teardown reports the in-process failure with the others" "$teardown_output"
+! grep -q 'omarchy-hotspot:' "$UFW_STATE" || fail "an in-process failure does not skip firewall removal" "$(<"$UFW_STATE")"
+pass "an in-process teardown failure does not skip the remaining cleanup"
+
+reset_firewall_fixture
+: >"$OMARCHY_HOTSPOT_LOCK_FILE"
+exec {held_lock}<"$OMARCHY_HOTSPOT_LOCK_FILE"
+flock "$held_lock"
+set +e
+lock_output=$(OMARCHY_HOTSPOT_LOCK_WAIT=1 OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" stop 2>&1)
+lock_status=$?
+set -e
+exec {held_lock}<&-
+(( lock_status != 0 )) || fail "a hotspot action waits for one already running"
+[[ $lock_output == *"another hotspot action is still running"* ]] || fail "a blocked action says why" "$lock_output"
+[[ ! -s $NMCLI_LOG ]] || fail "a blocked action changes nothing" "$(<"$NMCLI_LOG")"
+OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" stop
+pass "hotspot actions are serialized"

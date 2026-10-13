@@ -6,6 +6,7 @@ source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
 TEST_TMP=$(mktemp -d)
 trap 'rm -rf "$TEST_TMP"' EXIT
+export OMARCHY_HOTSPOT_LOCK_FILE="$TEST_TMP/hotspot.lock"
 STUB_BIN="$TEST_TMP/bin"
 mkdir -p "$STUB_BIN"
 
