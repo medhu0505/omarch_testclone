@@ -216,33 +216,41 @@ done <"$TEST_TMP/radio-status.out"
 [[ ${radio_status[ap_bands]} != *"6"* ]] || fail "status does not aggregate bands from another PHY" "${radio_status[ap_bands]}"
 pass "status derives capability and bands from one selected PHY"
 
-set +e
-printf '%s\n' savedpassword | PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" apply Shared 6 >"$TEST_TMP/band6.out" 2>"$TEST_TMP/band6.err"
-band6_status=$?
-set -e
-(( band6_status != 0 )) || fail "band validation rejects another radio's 6 GHz band"
-[[ $(<"$TEST_TMP/band6.err") == *"band '6' is not available"* ]] || fail "band validation identifies the unsupported selected-radio band" "$(<"$TEST_TMP/band6.err")"
-[[ ! -e $PROFILE_STATE ]] || fail "rejected band does not create a profile"
-pass "band validation uses the selected radio"
+# apply takes the hotspot lock, and a root process ignores the test lock
+# override, so these would contend with the host lock under sudo.
+if (( EUID != 0 )); then
+  set +e
+  printf '%s\n' savedpassword | PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" apply Shared 6 >"$TEST_TMP/band6.out" 2>"$TEST_TMP/band6.err"
+  band6_status=$?
+  set -e
+  (( band6_status != 0 )) || fail "band validation rejects another radio's 6 GHz band"
+  [[ $(<"$TEST_TMP/band6.err") == *"band '6' is not available"* ]] || fail "band validation identifies the unsupported selected-radio band" "$(<"$TEST_TMP/band6.err")"
+  [[ ! -e $PROFILE_STATE ]] || fail "rejected band does not create a profile"
+  pass "band validation uses the selected radio"
 
-printf '%s\n' savedpassword | PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" apply Shared 5 >"$TEST_TMP/band5.out" 2>"$TEST_TMP/band5.err"
-printf '%s\n' savedpassword | PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" apply Shared 2.4 >"$TEST_TMP/reuse.out" 2>"$TEST_TMP/reuse.err"
+  printf '%s\n' savedpassword | PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" apply Shared 5 >"$TEST_TMP/band5.out" 2>"$TEST_TMP/band5.err"
+  printf '%s\n' savedpassword | PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" apply Shared 2.4 >"$TEST_TMP/reuse.out" 2>"$TEST_TMP/reuse.err"
 
-add_bound=0
-modify_bound=0
-while IFS= read -r call; do
-  if [[ $call == 'connection add type wifi ifname wlan0 '* ]]; then
-    add_bound=1
-  fi
-  if [[ $call == 'connection modify omarchy-hotspot ssid Shared '* && $call == *' connection.interface-name wlan0' ]]; then
-    modify_bound=1
-  fi
-done <"$NMCLI_LOG"
-(( add_bound == 1 )) || fail "new profile binds to the selected Wi-Fi interface"
-(( modify_bound == 1 )) || fail "existing profile is rebound to the selected Wi-Fi interface"
-nmcli_log=$(<"$NMCLI_LOG")
-[[ $nmcli_log != *"ifname p2p-dev-wlan9"* && $nmcli_log != *"connection.interface-name p2p-dev-wlan9"* ]] || fail "Wi-Fi selection never falls back to a P2P device"
-pass "NM profile create and reuse follow the selected Wi-Fi interface"
+  add_bound=0
+  modify_bound=0
+  while IFS= read -r call; do
+    if [[ $call == 'connection add type wifi ifname wlan0 '* ]]; then
+      add_bound=1
+    fi
+    if [[ $call == 'connection modify omarchy-hotspot ssid Shared '* && $call == *' connection.interface-name wlan0' ]]; then
+      modify_bound=1
+    fi
+  done <"$NMCLI_LOG"
+  (( add_bound == 1 )) || fail "new profile binds to the selected Wi-Fi interface"
+  (( modify_bound == 1 )) || fail "existing profile is rebound to the selected Wi-Fi interface"
+  nmcli_log=$(<"$NMCLI_LOG")
+  [[ $nmcli_log != *"ifname p2p-dev-wlan9"* && $nmcli_log != *"connection.interface-name p2p-dev-wlan9"* ]] || fail "Wi-Fi selection never falls back to a P2P device"
+  pass "NM profile create and reuse follow the selected Wi-Fi interface"
+else
+  skip "running as root; apply would take the host hotspot lock"
+  # Stand in for the profile apply would have saved; later tests read it.
+  touch "$PROFILE_STATE"
+fi
 
 SAVED_INTERFACE=wlan9 GENERAL_DEVICE= PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" status >"$TEST_TMP/healed-status.out" 2>"$TEST_TMP/healed-status.err"
 declare -A healed_status=()
