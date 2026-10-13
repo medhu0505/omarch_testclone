@@ -28,7 +28,7 @@ fi
 is_exclusive() {
   local name
   name=$(basename "$1")
-  [[ $name == *budget* || $name == "sleep-lock-test.sh" ]] && return 0
+  [[ $name == *budget* || $name == "sleep-lock-test.sh" || $name == "sleep-monitor-test.sh" || $name == "hyprland-window-close-all-test.sh" ]] && return 0
   grep -q 'require_compositor\|# omarchy:exclusive' "$1"
 }
 
