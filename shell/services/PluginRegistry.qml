@@ -692,7 +692,7 @@ QtObject {
   function reapOrphanedPluginWatchers() {
     watcherReaper.command = ["bash", "-c",
       "for p in $(pgrep -f '[i]notifywait -m -r -q -e close_write,create,delete,move' || true); do "
-        + "tr '\\0' ' ' < \"/proc/$p/cmdline\" 2>/dev/null | grep -qF \"$1\" || continue; "
+        + "tr '\\0' '\\n' < \"/proc/$p/cmdline\" 2>/dev/null | grep -Fxq \"$1\" || continue; "
         + "parent=$(ps -o ppid= -p \"$p\" 2>/dev/null | tr -d ' '); "
         + "[[ $parent =~ ^[0-9]+$ ]] || continue; "
         + "case \"$(ps -o comm= -p \"$parent\" 2>/dev/null)\" in quickshell|qs) ;; *) kill \"$p\" 2>/dev/null || true ;; esac; "
