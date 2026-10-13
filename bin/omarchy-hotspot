@@ -641,16 +641,18 @@ firewall_remove_installed_tags() {
 }
 
 firewall_apply() {
-  local iface=$1 subnet=$2 rules tag
+  local iface=$1 subnet=$2 rules state tag
   local -a installed=() owned=()
   require_privileged
   firewall_scope_valid "$iface" "$subnet" || fail "invalid firewall scope"
   rules=$(ufw show added 2>/dev/null) || fail "could not read active UFW rules"
-  firewall_state_records >/dev/null || fail "could not read hotspot firewall state"
+  state=$(firewall_state_records) || fail "could not read hotspot firewall state"
 
   for tag in "${FIREWALL_TAGS[@]}"; do
     if firewall_tag_present "$rules" "$iface" "$subnet" "$tag"; then
-      owned+=("$tag")
+      # Only a rule this hotspot recorded installing is its to remove later;
+      # a matching rule that was already there stays the user's.
+      ! firewall_state_text_has "$state" "$iface" "$subnet" "$tag" || owned+=("$tag")
       continue
     fi
     if ! firewall_add_tag "$iface" "$subnet" "$tag"; then
@@ -695,27 +697,21 @@ firewall_remove_record() {
   firewall_state_remove_tags "$iface" "$subnet" "$tag"
 }
 
+# Removes only the rules recorded as installed by this hotspot; with no
+# records there is nothing of ours to remove, whatever UFW currently holds.
 firewall_remove() {
   local rules="" state="" iface subnet tag record
   local -a records=() failed=()
   require_privileged
   state=$(firewall_state_records) || fail "could not read hotspot firewall state"
-  [[ -z $state ]] || mapfile -t records <<<"$state"
+  [[ -n $state ]] || return 0
+  mapfile -t records <<<"$state"
   rules=$(ufw show added 2>/dev/null) || fail "could not read active UFW rules"
-  if ((${#records[@]} == 0)); then
-    iface=$(recorded_iface)
-    [[ -n $iface ]] || return 0
-    subnet=$(shared_subnet)
-    for tag in "${FIREWALL_TAGS[@]}"; do
-      firewall_remove_record "$rules" "$iface" "$subnet" "$tag" || failed+=("$tag")
-    done
-  else
-    # Keep going past a failed rule so one bad delete doesn't strand the rest.
-    for record in "${records[@]}"; do
-      IFS=$'\t' read -r iface subnet tag <<<"$record"
-      firewall_remove_record "$rules" "$iface" "$subnet" "$tag" || failed+=("$tag")
-    done
-  fi
+  # Keep going past a failed rule so one bad delete doesn't strand the rest.
+  for record in "${records[@]}"; do
+    IFS=$'\t' read -r iface subnet tag <<<"$record"
+    firewall_remove_record "$rules" "$iface" "$subnet" "$tag" || failed+=("$tag")
+  done
   ((${#failed[@]} == 0)) || fail "could not remove hotspot firewall rule ${failed[*]}"
 }
 

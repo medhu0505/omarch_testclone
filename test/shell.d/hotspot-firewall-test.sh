@@ -381,7 +381,9 @@ PROFILE_ADDRESS='10.55.0.1/24,10.66.0.1/24'
 firewall_apply wlan2 10.42.0.0/24 >/dev/null
 PROFILE_ADDRESS='10.55.0.1/24'
 firewall_apply wlan2 10.55.0.0/24 >/dev/null
-[[ $(wc -l <"$FIREWALL_STATE_FILE") == 8 ]]
+# The DHCP rule is per interface, so the second subnet finds the first one's
+# rule already recorded and does not claim it again.
+[[ $(wc -l <"$FIREWALL_STATE_FILE") == 7 ]]
 firewall_remove
 [[ ! -s $UFW_STATE ]]
 [[ ! -s $FIREWALL_STATE_FILE ]]
@@ -1029,6 +1031,27 @@ set -e
 [[ $(grep -c 'omarchy-hotspot:' "$UFW_STATE") == 1 ]] || fail "a failed rule delete does not strand the other rules" "$(<"$UFW_STATE")"
 grep -q 'omarchy-hotspot:forward' "$UFW_STATE" || fail "only the failed rule is left behind" "$(<"$UFW_STATE")"
 pass "a failed rule delete does not stop the remaining rules being removed"
+
+reset_firewall_fixture
+cat >"$UFW_STATE" <<'RULES'
+allow in on wlan2 proto udp to any port 67 comment omarchy-hotspot:dhcp
+route allow in on wlan2 from 10.55.0.0/24 comment omarchy-hotspot:forward
+RULES
+cp "$UFW_STATE" "$TEST_TMP/preexisting-rules"
+cat >"$TEST_TMP/preexisting-driver.sh" <<'DRIVER'
+require_privileged() { :; }
+export UFW_SHOW_ALLOWED=1
+firewall_remove
+cmp -s "$UFW_STATE" "$TEST_TMP/preexisting-rules" || { echo "removal with no records deleted a rule" >&2; exit 1; }
+installed=$(firewall_apply wlan2 10.55.0.0/24)
+[[ $installed == $'dns-udp\ndns-tcp' ]] || { echo "apply reported installing: $installed" >&2; exit 1; }
+records=$(cut -f3 "$FIREWALL_STATE_FILE" | paste -sd,)
+[[ $records == "dns-udp,dns-tcp" ]] || { echo "apply recorded pre-existing rules: $records" >&2; exit 1; }
+firewall_remove
+cmp -s "$UFW_STATE" "$TEST_TMP/preexisting-rules" || { echo "stop removed rules it did not add: $(<"$UFW_STATE")" >&2; exit 1; }
+DRIVER
+run_isolated "$TEST_TMP/preexisting-driver.sh"
+pass "rules that existed before start are never claimed or removed"
 
 reset_firewall_fixture
 : >"$OMARCHY_HOTSPOT_LOCK_FILE"
