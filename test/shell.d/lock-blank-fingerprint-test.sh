@@ -30,4 +30,68 @@ assert(
   !/onAuthenticatingChanged:/.test(serviceQml),
   'the combined authenticating state no longer drives the blank timer'
 )
+
+function bodyOf(name) {
+  const m = serviceQml.match(new RegExp(`\\n  function ${name}\\([^)]*\\) \\{([\\s\\S]*?)\\n  \\}`))
+  return m ? m[1] : ''
+}
+
+// Nobody can touch the sensor once the panel is dark, so the reader is not
+// polled through the blank: the PAM conversation is dropped, an attempt in
+// flight included, and the retry timer stopped until the display comes back.
+assert(
+  /suspendFingerprint\(\)/.test(bodyOf('runBlank')),
+  'blanking the display suspends the fingerprint'
+)
+
+const suspend = bodyOf('suspendFingerprint')
+assert(
+  /fingerprintRetryTimer\.stop\(\)/.test(suspend) &&
+    /fingerprintReachTimer\.stop\(\)/.test(suspend) &&
+    /if \(fingerprintPam\.active\) fingerprintPam\.abort\(\)/.test(suspend) &&
+    /fingerprintAuthenticating = false/.test(suspend),
+  'suspending stops both timers and drops the attempt in flight'
+)
+
+assert(
+  !/settleFingerprintAttempt/.test(suspend),
+  'a suspended attempt is not settled into the miss streak'
+)
+
+assert(
+  /^\s*if \(fingerprintSuspended\) return/.test(bodyOf('startFingerprint')),
+  'the fingerprint prompt does not start while suspended'
+)
+
+assert(
+  /if \(!lockRequested \|\| !fingerprintConfigured \|\| fingerprintSuspended\) return/.test(bodyOf('settleFingerprintAttempt')),
+  'a late completion does not re-arm the retry timer while suspended'
+)
+
+// Every route the panel can come back by re-arms the reader.
+assert(
+  /if \(lockRequested && fingerprintConfigured\) startFingerprint\(\)/.test(bodyOf('resumeFingerprint')),
+  'resuming only re-arms a lock that still wants a fingerprint'
+)
+
+assert(
+  /resumeFingerprint\(\)/.test(bodyOf('runWake')),
+  'waking the display resumes the fingerprint'
+)
+
+const screens = serviceQml.match(/function onScreensChanged\(\) \{([\s\S]*?)\n    \}/)
+assert(
+  screens && /root\.resumeFingerprint\(\)/.test(screens[1]),
+  'a panel coming back on its own resumes the fingerprint'
+)
+
+assert(
+  /if \(fingerprintSuspended\) \{\s*resumeFingerprint\(\)\s*if \(lockRequested\) armBlankTimer\(\)\s*return\s*\}/.test(bodyOf('restartFingerprintAfterSleep')),
+  'a resume that skips runWake re-arms the reader and the blank timer'
+)
+
+assert(
+  /fingerprintSuspended = false/.test(bodyOf('resetAuthenticationState')),
+  'a new lock starts with the fingerprint not suspended'
+)
 JS
