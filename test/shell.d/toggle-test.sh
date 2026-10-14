@@ -52,6 +52,15 @@ HOME="$test_home" omarchy-toggle-bar on
 [[ ! -f $bar_flag ]] || fail "bar on disables bar-off toggle"
 pass "bar on disables bar-off toggle"
 
+# An unrecognised argument is a typo, not a request to toggle. omarchy-toggle
+# rejects one with a usage error, so the bar wrapper must not quietly turn
+# `omarchy toggle bar offf` into a flip of whatever the bar is doing now.
+if HOME="$test_home" omarchy-toggle-bar offf 2>/dev/null; then
+  fail "bar rejects an unrecognised argument instead of toggling"
+fi
+[[ ! -f $bar_flag ]] || fail "bar leaves the flag untouched when it rejects an argument"
+pass "bar rejects an unrecognised argument instead of toggling"
+
 # The gaps half of full screen copies a flag file in and reloads Hyprland, so
 # give it this checkout to copy from and a hyprctl that answers without a
 # compositor.
