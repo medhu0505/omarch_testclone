@@ -45,6 +45,18 @@ class TypingSetupTest(unittest.TestCase):
     self.assertEqual(typing.input_items([["keyboard-us", ""], ["mozc", "us"]], ["mozc"], {"mozc": "jp"}),
                      [["keyboard-us", ""], ["mozc", "us"]])
 
+  def test_positional_engines_added_under_dvorak_keep_qwerty_positions(self):
+    self.assertEqual(typing.input_items([["keyboard-us-dvorak", ""]], ["hangul", "pinyin"], {}, "us-dvorak"),
+                     [["keyboard-us-dvorak", ""], ["hangul", "us"], ["pinyin", ""]])
+
+  def test_a_new_leading_layout_redecides_only_omarchys_engine_overrides(self):
+    with tempfile.TemporaryDirectory() as temporary:
+      before = ("Default", "us", [["keyboard-us", ""], ["hangul", ""], ["chewing", "de"]])
+      after = ("Default", "us-dvorak", [["keyboard-us-dvorak", ""], ["hangul", "us"], ["chewing", "de"]])
+      with patch.dict(os.environ, {"XDG_CONFIG_HOME": temporary}), patch.object(typing.setup, "live_group", side_effect=[before, after]), patch.object(typing.setup, "run", return_value=""), patch.object(typing, "keyboard_selection", return_value=["us:dvorak"]), patch.object(typing.setup, "live_set") as setter:
+        typing.save_keyboard(["us:dvorak"])
+      setter.assert_called_once_with(*after)
+
   def test_input_deselection_keeps_keyboard_and_selected_overrides(self):
     items = [["keyboard-us", ""], ["mozc", "jp"], ["hangul", ""], ["custom", "de"]]
     self.assertEqual(typing.input_items(items, ["custom", "mozc"]), [["keyboard-us", ""], ["mozc", "jp"], ["custom", "de"]])

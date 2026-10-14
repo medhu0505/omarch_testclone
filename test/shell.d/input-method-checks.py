@@ -68,6 +68,19 @@ class InputMethodTest(unittest.TestCase):
         self.assertEqual(set(keys["Hotkey/TriggerKeys"].values()), {"Zenkaku_Hankaku", "Hangul"})
         self.assertEqual(keys["Hotkey/AltTriggerKeys"], {"0": "Shift_L"})
 
+  def test_positional_engines_stay_on_qwerty_under_other_latin_layouts(self):
+    self.assertEqual(setup.engine_layout("hangul", "us-dvorak"), "us")
+    self.assertEqual(setup.engine_layout("chewing", "fr"), "us")
+    self.assertEqual(setup.engine_layout("hangul", "us"), "")
+    self.assertEqual(setup.engine_layout("hangul", "kr"), "")
+    self.assertEqual(setup.engine_layout("chewing", "jp"), "")
+    self.assertEqual(setup.engine_layout("pinyin", "us-dvorak"), "")
+    self.assertEqual(setup.engine_layout("mozc", "de"), "")
+    self.vconsole.write_text("XKBLAYOUT=de\n")
+    self.seed("hangul")
+    data = setup.sections((self.config / "fcitx5/profile").read_text())
+    self.assertEqual(data["Groups/0/Items/1"], {"Name": "hangul", "Layout": "us"})
+
   def test_vconsole_variants_quotes_and_japanese_without_preference(self):
     self.preference.unlink()
     self.vconsole.write_text('XKBLAYOUT="jp" # JIS\n')

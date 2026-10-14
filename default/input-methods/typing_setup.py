@@ -76,13 +76,14 @@ def input_catalog(items):
   return catalog, available
 
 
-def input_items(items, selected, overrides=None):
+def input_items(items, selected, overrides=None, layout="us"):
   if not any(item[0].startswith("keyboard-") for item in items):
     raise RuntimeError("The current input group has no keyboard input")
   # Retained entries keep their switching order; new engines follow them.
   kept = [item for item in items if item[0].startswith("keyboard-") or item[0] in selected]
   current = dict(items)
-  return kept + [[name, (overrides or {}).get(name, "")] for name in selected if name not in current]
+  return kept + [[name, (overrides or {}).get(name) or setup.engine_layout(name, layout)]
+                 for name in selected if name not in current]
 
 
 def set_inputs(group, layout, before, after):
@@ -127,7 +128,7 @@ def save_inputs(selected, overrides=None):
   if missing:
     load_engines(missing, catalog)
     group, layout, items = setup.live_group()
-  set_inputs(group, layout, items, input_items(items, selected, overrides))
+  set_inputs(group, layout, items, input_items(items, selected, overrides, layout))
   # Only a saved engine claims the CJK font fallback, and a failed font write
   # returns the group so the menu's restored checks stay true.
   config_home = Path(os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config"))
@@ -184,7 +185,11 @@ def save_keyboard(selected):
     if primary is None:
       raise RuntimeError("The current input group has no keyboard input")
     keyboard = "keyboard-" + group_layout
-    after = [[keyboard, ""]] + [item for item in before if item[0] not in (primary, keyboard)]
+    # An engine kept on QWERTY for the old layout is re-decided for the new
+    # one; an override the user chose stays.
+    after = [[keyboard, ""]] + [
+      [name, setup.engine_layout(name, group_layout) if override == setup.engine_layout(name, old_layout) else override]
+      for name, override in before if name not in (primary, keyboard)]
     group_changed = True
     setup.live_set(group, group_layout, after)
     if setup.live_group() != (group, group_layout, after):

@@ -194,11 +194,21 @@ def stock_profile(text):
     and not groups.get("Groups/0/Items/0", {}).get("Layout"))
 
 
+def engine_layout(method, group_layout):
+  # Hangul and Zhuyin keys sit where QWERTY puts them whatever the Latin layout,
+  # so Dvorak or AZERTY must not move them. Korean and JIS layouts already put
+  # them there, and keep their own input keys (Right Alt as 한/영, 半角/全角).
+  layout = PRESETS.get(method, {}).get("layout", "")
+  if not layout or group_layout == layout or group_layout.split("-")[0] in ("kr", "jp"):
+    return ""
+  return layout
+
+
 def profile_text(layout, method):
   default_im = method if method != "none" else f"keyboard-{layout}"
   text = f"[Groups/0]\nName=Default\nDefault Layout={layout}\nDefaultIM={default_im}\n\n[Groups/0/Items/0]\nName=keyboard-{layout}\nLayout=\n"
   if method != "none":
-    text += f"\n[Groups/0/Items/1]\nName={method}\nLayout=\n"
+    text += f"\n[Groups/0/Items/1]\nName={method}\nLayout={engine_layout(method, layout)}\n"
   return text + "\n[GroupOrder]\n0=Default\n"
 
 
@@ -291,7 +301,7 @@ def configure_inner(args, config_home, running):
           new_items = [[f"keyboard-{layout}", ""]]
           if method != "none":
             if any(item[0] == method for item in available_methods()):
-              new_items.append([method, ""])
+              new_items.append([method, engine_layout(method, layout)])
             else:
               print(f"Finish input setup after login: omarchy setup input {method}", file=sys.stderr)
           live_set(group, layout, new_items)
