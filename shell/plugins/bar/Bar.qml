@@ -1501,14 +1501,12 @@ Item {
 
         LeftModules {
           anchors.left: parent.left
-          anchors.leftMargin: Style.space(8)
           anchors.verticalCenter: parent.verticalCenter
         }
 
         RightModules {
           id: rightModules
           anchors.right: parent.right
-          anchors.rightMargin: Style.space(8)
           anchors.verticalCenter: parent.verticalCenter
         }
 
@@ -1535,13 +1533,11 @@ Item {
 
         LeftModules {
           anchors.top: parent.top
-          anchors.topMargin: Style.space(8)
           anchors.horizontalCenter: parent.horizontalCenter
         }
 
         RightModules {
           anchors.bottom: parent.bottom
-          anchors.bottomMargin: Style.space(8)
           anchors.horizontalCenter: parent.horizontalCenter
         }
       }
