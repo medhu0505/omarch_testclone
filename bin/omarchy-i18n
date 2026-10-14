@@ -62,7 +62,9 @@ registry=$i18n/locales.json
 [[ -f $registry ]] || registry=/dev/null
 
 # One jq run picks the string and localizes the arguments; the results come
-# back NUL-separated so a string may itself span lines.
+# back NUL-separated so a string may itself span lines. The -- after --args
+# keeps an argument that starts with a dash (a label like "-work") from being
+# read as a jq option.
 parts=()
 mapfile -d '' parts < <(jq -j -n -L "$i18n" \
   --arg key "$key" --arg language "$language" --argjson count "$count" \
@@ -77,7 +79,7 @@ mapfile -d '' parts < <(jq -j -n -L "$i18n" \
      else ($entry | plural_pick($from; $count)) end) as $string
   | [$string // $key] + ($ARGS.positional | map(localize_number($r.decimal // "."; $r.zeroDigit // "0")))
   | map(tostring + "\u0000") | add
-' --args "$@" 2>/dev/null) || true
+' --args -- "$@" 2>/dev/null) || true
 
 if (( ${#parts[@]} == 0 )); then
   parts=("$key" "$@")
