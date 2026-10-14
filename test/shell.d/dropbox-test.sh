@@ -32,3 +32,11 @@ assertEqual(
   'dropbox file metadata includes relative time and folder'
 )
 JS
+
+# dropbox-cli start forks dropboxd into its caller's cgroup, so the panel must
+# give it a scope of its own, and a scope keeps the stdout login() reads.
+service="$ROOT/shell/plugins/panels/dropbox/Service.qml"
+starts=$(grep -c '"dropbox-cli", "start"' "$service" || true)
+scoped=$(grep -c '"uwsm-app", "-t", "scope", "--", "dropbox-cli", "start"' "$service" || true)
+[[ $starts == 2 && $scoped == 2 ]] || fail "dropbox panel starts dropboxd in a scope of its own" "$starts starts, $scoped scoped"
+pass "dropbox panel starts dropboxd in a scope of its own"
