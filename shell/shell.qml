@@ -1818,6 +1818,38 @@ ShellRoot {
       }
     }
 
+    // Provenance for a clone of a built-in, recorded by `omarchy plugin clone`.
+    // It lives in shell.json rather than in the plugin's manifest because the
+    // manifest travels with the plugin: a claim inside one cannot be evidence,
+    // and PluginRegistry only honours a claim this record backs.
+    //
+    // Trust boundary: this is a same-session IPC call. Anything in the user
+    // session that can reach the shell can write a forged record here — no more
+    // than it could edit shell.json by hand — so this record is not a defence
+    // against a compromised user session, and it is not meant to be one. Its
+    // purpose is to stop a *shipped* plugin from stamping itself with host
+    // capabilities (omarchy.lock / omarchy.polkit) by asserting
+    // `omarchy.clonedFrom` inside its own manifest. If shell IPC exposure ever
+    // widens beyond the user session, this method needs authentication.
+    function recordCloneProvenance(id: string, sourceId: string): string {
+      if (!id || !sourceId) return "missing id"
+      shell.mutateShellConfig(function(config) {
+        if (!Util.isPlainObject(config.clonedPlugins)) config.clonedPlugins = {}
+        config.clonedPlugins[String(id)] = String(sourceId)
+      })
+      return "ok"
+    }
+
+    function forgetCloneProvenance(id: string): string {
+      if (!id) return "missing id"
+      shell.mutateShellConfig(function(config) {
+        if (!Util.isPlainObject(config.clonedPlugins)) return
+        delete config.clonedPlugins[String(id)]
+        if (Object.keys(config.clonedPlugins).length === 0) delete config.clonedPlugins
+      })
+      return "ok"
+    }
+
     // Enable, but only where the widget is not on the bar already, so a caller
     // that cannot know whether it ran before leaves a placed widget alone.
     function putBarWidget(id: string, placementJson: string): string {
