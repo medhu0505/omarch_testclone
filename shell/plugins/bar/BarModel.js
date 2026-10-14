@@ -55,6 +55,56 @@ function entryIndex(entries, name) {
   return -1
 }
 
+// Widgets that allow several instances share one id, so an entry is named by
+// its id and how many entries before it carry the same one.
+function entryOrdinal(entries, index) {
+  if (!Array.isArray(entries) || index < 0 || index >= entries.length) return 0
+  var name = entryId(entries[index])
+  var ordinal = 0
+  for (var i = 0; i < index; i++) {
+    if (entryId(entries[i]) === name) ordinal++
+  }
+  return ordinal
+}
+
+function nthEntryIndex(entries, name, ordinal) {
+  if (!Array.isArray(entries)) return -1
+  var seen = 0
+  for (var i = 0; i < entries.length; i++) {
+    if (entryId(entries[i]) !== name) continue
+    if (seen === (ordinal || 0)) return i
+    seen++
+  }
+  return -1
+}
+
+// Moves the named entry in place to just before the named target, or to the
+// end of toEntries when there is none. Returns whether anything moved.
+function moveEntry(fromEntries, fromName, fromOrdinal, toEntries, beforeName, beforeOrdinal) {
+  var sameSection = fromEntries === toEntries
+  var fromIndex = nthEntryIndex(fromEntries, fromName, fromOrdinal)
+  if (fromIndex < 0) return false
+
+  var toIndex = beforeName ? nthEntryIndex(toEntries, beforeName, beforeOrdinal) : toEntries.length
+  if (toIndex < 0) toIndex = toEntries.length
+
+  if (sameSection && fromIndex === toIndex) return false
+
+  var movedEntry = fromEntries[fromIndex]
+  fromEntries.splice(fromIndex, 1)
+
+  if (sameSection && fromIndex < toIndex) toIndex -= 1
+  if (toIndex < 0) toIndex = 0
+  if (toIndex > toEntries.length) toIndex = toEntries.length
+  if (sameSection && fromIndex === toIndex) {
+    fromEntries.splice(fromIndex, 0, movedEntry)
+    return false
+  }
+
+  toEntries.splice(toIndex, 0, movedEntry)
+  return true
+}
+
 function entriesBefore(entries, name) {
   var index = entryIndex(entries, name)
   return index <= 0 ? [] : entries.slice(0, index)
@@ -333,6 +383,9 @@ if (typeof module !== "undefined") {
     pinTrayToInner: pinTrayToInner,
     moduleString: moduleString,
     entryIndex: entryIndex,
+    entryOrdinal: entryOrdinal,
+    nthEntryIndex: nthEntryIndex,
+    moveEntry: moveEntry,
     entriesBefore: entriesBefore,
     entriesAfter: entriesAfter,
     inlineSettingsDelta: inlineSettingsDelta,

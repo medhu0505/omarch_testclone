@@ -286,6 +286,45 @@ assert(
   'bar draws the insertion marker above the bar in the drag overlay'
 )
 
+// A widget that allows several instances shares its id with the others, so a
+// drag names the instance by how many of its id come before it.
+const spacerA = { id: 'spacer', gid: 'a' }
+const spacerB = { id: 'spacer', gid: 'b' }
+const spacers = () => ['omarchy.clock', spacerA, 'omarchy.cpu', spacerB]
+let section = spacers()
+assertEqual(bar.moveEntry(section, 'spacer', 1, section, 'omarchy.clock', 0), true, 'bar moves the dragged instance of a shared id')
+assertDeepEqual(section, [spacerB, 'omarchy.clock', spacerA, 'omarchy.cpu'], 'bar moves the second spacer, not the first, when the second is dragged')
+section = spacers()
+assertEqual(bar.moveEntry(section, 'spacer', 0, section, 'spacer', 1), true, 'bar drops before the targeted instance of a shared id')
+assertDeepEqual(section, ['omarchy.clock', 'omarchy.cpu', spacerA, spacerB], 'bar drops before the second spacer, not the first, when the second is the target')
+const left = spacers()
+const right = ['omarchy.battery']
+assertEqual(bar.moveEntry(left, 'spacer', 1, right, '', 0), true, 'bar moves the dragged instance across sections')
+assertDeepEqual(left, ['omarchy.clock', spacerA, 'omarchy.cpu'], 'bar leaves the other instance behind on a cross-section drag')
+assertDeepEqual(right, ['omarchy.battery', spacerB], 'bar appends the dragged instance to the other section')
+section = spacers()
+assertEqual(bar.moveEntry(section, 'spacer', 1, section, '', 0), false, 'bar reports no move when a section\'s last entry is dropped at the end')
+assertDeepEqual(section, spacers(), 'bar leaves a section alone when its last entry is dropped at the end')
+assertEqual(bar.entryOrdinal(spacers(), 3), 1, 'bar counts earlier entries sharing an id')
+assertEqual(bar.entryOrdinal(spacers(), -1), 0, 'bar falls back to the first instance for a missing index')
+assert(
+  /moveModuleInConfig\(config, source\.region, source\.moduleName, source\.layoutOrdinal,/.test(barSource),
+  'bar moves the instance the dragged slot holds'
+)
+assert(
+  /dropBarModule\(sourceSlot, targetSlot\.region, beforeName, BarModel\.entryOrdinal\(entries, beforeIndex\)\)/.test(barSource),
+  'bar drops beside the instance the target slot holds'
+)
+assert(
+  (barSource.match(/layoutIndex: moduleListRoot\.firstIndex \+ index/g) || []).length === 2,
+  'bar tells every listed slot where its entry sits in the layout'
+)
+assert(
+  (barSource.match(/layoutIndex: centerRoot\.anchorIndex\n/g) || []).length === 2 &&
+    (barSource.match(/firstIndex: centerRoot\.anchorIndex \+ 1\n/g) || []).length === 2,
+  'bar counts the anchored center section from the anchor'
+)
+
 // The open-panel mark sits on the module's desktop-facing edge at every
 // position: under a top bar, over a bottom one, inward from left and right.
 const indicator = barSource.slice(barSource.indexOf('id: openPanelIndicator'), barSource.indexOf('id: openPanelIndicator') + 1600)
