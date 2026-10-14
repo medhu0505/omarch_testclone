@@ -115,6 +115,11 @@ assert(
   'menu search skips disabled rows, which belong to the submenu they sit in rather than a list of what you can do'
 )
 
+assert(
+  /if \(drilldownRows\[f\]\.kind === "app"\) appRows\.push\(drilldownRows\[f\]\)[\s\S]*?rows = appRows\.concat\(currentRows\)\.concat\(deeperRows\)/.test(menuQml),
+  'menu pins matching app rows above the direct children in search'
+)
+
 const entry = merged.items['style.theme']
 assert(menu.matchesQuery(entry, 'theme', true), 'menu matches labels and aliases')
 assert(menu.matchesQuery(entry, 'colors', true), 'menu matches aliases')
@@ -170,8 +175,60 @@ assert(
   'menu ranks an app matching the query as a whole word above exact-labeled menu entries'
 )
 assert(
-  rankScore('style.font', 'font') < rankScore('apps.fontforge', 'font'),
-  'menu keeps a better-matching menu entry above a weaker app match'
+  rankScore('apps.fontforge', 'font') < rankScore('style.font', 'font'),
+  'menu ranks an installed app above a menu entry even when the menu entry matches better'
+)
+
+// Exact-label policy, stated explicitly: typing "Font" (exact label of
+// style.font) still ranks FontForge first. Typing in the menu is an intent
+// to launch, so even an exact menu-label match does not beat a matching app.
+assert(
+  rankScore('apps.fontforge', 'Font') < rankScore('style.font', 'Font'),
+  'menu ranks a matching app above an exact-labeled menu entry'
+)
+
+// The bias constant must exceed every match tier (max 80 today) or the
+// cross-tier apps-first guarantee silently inverts when a tier is added.
+assert(
+  menu.APP_RANK_BIAS > 80,
+  'menu app-rank bias exceeds every match tier'
+)
+
+// Divider meaning: when apps match alongside menu entries, the single
+// hairline separates apps from menu entries. A query producing apps +
+// current-menu rows + deeper rows must render exactly one divider.
+assert(
+  /root\.searchDivider = rows\.some/.test(menuQml),
+  'menu computes a single search divider from the row sections'
+)
+{
+  const sectioned = [
+    { itemId: 'apps.btop', kind: 'app', section: '' },
+    { itemId: 'system', kind: 'menu', section: 'drilldown' },
+    { itemId: 'setup.foo', kind: 'action', section: 'drilldown' }
+  ]
+  const dividerCount = (() => {
+    let boundaries = 0
+    for (let i = 1; i < sectioned.length; i++) {
+      if (sectioned[i].section !== sectioned[i - 1].section) boundaries++
+    }
+    return boundaries
+  })()
+  assertEqual(dividerCount, 1, 'menu renders exactly one divider between apps and menu entries')
+}
+
+// "vsc" matches the VSCode menu entries by label prefix but the installed
+// app only by keyword substring, so without an apps-first bias the app
+// sorts second. The menu must still put the app on top.
+const vscRanked = menu.mergeAppRows(rankBase.items, rankBase.itemOrder, [
+  { id: 'apps.code', parent: 'apps', kind: 'app', label: 'Visual Studio Code', description: 'Text Editor', aliases: ['Text Editor', 'vscode'] }
+])
+const vscScore = (id, query) => menu.searchScore(vscRanked.items, vscRanked.items[id], query)
+assert(
+  ['setup.default.editor.vscode', 'install.editor.vscode'].every(
+    id => vscScore('apps.code', 'vsc') < vscScore(id, 'vsc')
+  ),
+  'menu ranks the installed VS Code app above its VSCode menu entries for vsc'
 )
 
 // Routing: htop ships `Keywords=system;...`, which app rows carry as aliases.
