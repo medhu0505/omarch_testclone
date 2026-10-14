@@ -3,7 +3,7 @@ echo "Add themed mpv controls for users without an existing mpv setup"
 # Existing configurations are an explicit opt-in. This also avoids writing
 # through Stow links or installing a second controller alongside uosc/ModernZ.
 if [[ -L $HOME/.config || -e $HOME/.config/mpv || -L $HOME/.config/mpv ]]; then
-  echo "Keeping existing mpv configuration; see the mpv manual for opt-in setup"
+  echo "Keeping existing mpv configuration; themed controls require explicit opt-in"
 else
   mpv_theme="$HOME/.local/state/omarchy/current/theme"
   if [[ -f $mpv_theme/colors.toml ]]; then

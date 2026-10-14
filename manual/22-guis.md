@@ -93,22 +93,6 @@ You start Signal with `Super + Shift + G`. It's not part of the base install, so
 
 You start mpv via the application launcher (`Super + Space`) or just double-click on a video in the file manager.
 
-Omarchy's controls follow your active theme while the player stays open. Move the pointer near the bottom for playback, seeking and volume, or use the menu beside the file name for audio tracks, subtitles, chapters, devices, history and keybindings. Controls hide after inactivity, including while paused.
-
-Buttons and tooltips follow the desktop's corner rounding while the player stays open. Set `corner_radius=-1` in `omarchy-controls.conf` to follow the desktop, `0` for square corners, or a positive value for a fixed radius.
-
-Hover near the bottom to reveal playback controls, or near the top to reveal the title, Appearance, and player menu. Audio, subtitles, and queue use icons with tooltips. The toolbars reveal separately by default; choose Appearance → Toolbar reveal → Together to show both at either edge. Set `reveal_mode=together` in `omarchy-controls.conf` to make it the startup default. Keyboard focus and always-visible mode show both. The fullscreen button is at the bottom-right of the controls.
-
-Press `Tab` to focus the controls, `Enter` to activate a button and `Escape` to return to normal playback keys. `a` opens the audio picker; `#` cycles audio tracks and `j` cycles subtitles. Your own mpv keybindings take precedence.
-
-The three-dot button opens mpv's native player menu directly. The palette button beside it opens Appearance. Choose Theme to follow the desktop automatically or use an installed palette for this player only. Choosing Automatic again picks up the current desktop theme. These choices last for the current player process. Choose Toolbar background from Appearance, or use `Ctrl + F9` to cycle Opaque, Translucent and Gradient controls. The choice applies to the current player. To persist a choice, edit `~/.config/mpv/script-opts/omarchy-controls.conf` and set `surface_mode` to `solid`, `translucent` or `gradient`. This file also contains opacity, font and corner settings. Light themes use a stronger backing for readable dark text. Native selection menus remain solid.
-
-`Delete` cycles automatic, always-visible and hidden controls. Hidden controls stay hidden during seeks and file changes, and also hide the idle drop hint. `F10` pins or unpins them. Bottom-positioned subtitles move above visible controls and return to your configured margin when the controls hide.
-
-Existing mpv configurations are preserved during upgrades. To opt in, first back up `~/.config/mpv`, then copy the Omarchy scripts and script-option files from `/usr/share/omarchy/config/mpv/` into your config after checking for conflicting controllers. Set `osc=no`, `border=no` and `osd-bar=no` in the global part of your `mpv.conf`; preserve your other preferences. Refresh the current Omarchy theme once to generate the palette, then reopen mpv. Disable any alternative controller yourself before activating these controls. Later theme changes apply live without reopening the player.
-
-To return to stock controls, back up your config, move `omarchy-controls.lua` and `omarchy-theme.lua` out of `~/.config/mpv/scripts/`, and set `osc=yes`, `border=yes` and `osd-bar=yes` in the global part of `mpv.conf`. Remove any conflicting later overrides and reopen mpv. Keep your other scripts, input bindings and preferences. Restore your backup to opt in again.
-
 ## Omacut
 
 [Omacut](https://github.com/omacom-io/omacut) is Omarchy's own dead-simple video trimmer. When all you need is to cut the start and end off a clip, it beats firing up a full video editor.
