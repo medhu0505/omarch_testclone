@@ -257,9 +257,12 @@ def refresh_lock():
       lock.rmdir()
 
 
-def refresh_credentials() -> dict[str, Any]:
+def refresh_credentials(auth: dict[str, str] | None = None) -> dict[str, Any]:
   with refresh_lock() as check:
     credentials = read_credentials()
+    previous_key = str(credentials.get("access_token") or "")
+    if auth is not None:
+      auth["key"] = previous_key
     if token_fresh(credentials):
       return credentials
     refresh_token = str(credentials.get("refresh_token") or "")
@@ -278,18 +281,24 @@ def refresh_credentials() -> dict[str, Any]:
       }
     )
     write_credentials(credentials)
+    if auth is not None:
+      auth.update(previous_key=previous_key, key=str(credentials["access_token"]))
     return credentials
 
 
-def api_key() -> str:
+def api_key(auth: dict[str, str] | None = None) -> str:
   key = os.environ.get("KIMI_API_KEY", "").strip()
   if key:
+    if auth is not None:
+      auth["key"] = key
     return key
   credentials = read_credentials()
+  if auth is not None:
+    auth["key"] = str(credentials.get("access_token") or "")
   if not credentials.get("access_token"):
     raise KimiError(AUTH_HELP)
   if not token_fresh(credentials):
-    credentials = refresh_credentials()
+    credentials = refresh_credentials(auth)
   return str(credentials.get("access_token") or "")
 
 
@@ -407,7 +416,10 @@ def to_limits(data: dict[str, Any]) -> list[dict[str, Any]]:
       except (TypeError, ValueError):
         continue
       if math.isfinite(ratio):
-        limits.append({"label": label, "percent": min(1.0, max(0.0, ratio)), "resetsAt": reset_at(detail)})
+        row = {"label": label, "percent": min(1.0, max(0.0, ratio)), "resetsAt": reset_at(detail)}
+        if key == "limit_month_code":
+          row["title"] = "Code Monthly"
+        limits.append(row)
     return limits
   usage = data.get("usage")
   if isinstance(usage, dict):
@@ -427,8 +439,7 @@ def to_limits(data: dict[str, Any]) -> list[dict[str, Any]]:
   return limits
 
 
-def probe_cache() -> Path:
-  key = os.environ.get("KIMI_API_KEY", "").strip() or str(read_credentials().get("access_token") or "")
+def probe_cache(key: str) -> Path:
   identity = str(CREDENTIALS_PATH) + "\0" + USAGE_URL + "\0" + key
   digest = hashlib.sha256(identity.encode()).hexdigest()
   root = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "omarchy" / "agent-usage"
@@ -454,14 +465,22 @@ def main() -> int:
   parser.add_argument("--limits-only", action="store_true")
   args = parser.parse_args()
 
-  cached = read_probe(probe_cache())
+  cached = {}
+  auth = {}
   try:
-    key = api_key()
+    key = api_key(auth)
     if not key:
       record = base_record(usageStatusText="Kimi unavailable", authHelpText=AUTH_HELP)
     else:
-      path = probe_cache()
+      path = probe_cache(key)
       cached = read_probe(path)
+      if not cached and auth.get("previous_key"):
+        cached = read_probe(probe_cache(auth["previous_key"]))
+        if cached:
+          try:
+            write_json(path, cached)
+          except OSError:
+            pass
       age = time.time() * 1000 - float(cached.get("fetchedAt") or 0)
       if not args.force and 0 <= age < PROBE_REUSE_SECONDS * 1000:
         limits, fetched_at = cached["limits"], cached["fetchedAt"]
@@ -477,10 +496,14 @@ def main() -> int:
         limitsFetchedAt=fetched_at,
       )
   except KimiError as error:
+    if not cached:
+      cached = read_probe(probe_cache(auth.get("key", "")))
     record = base_record(usageStatusText="Kimi unavailable", authHelpText=str(error),
                          limits=cached.get("limits", []), limitsStale=bool(cached.get("limits")),
                          limitsFetchedAt=cached.get("fetchedAt", 0), retryAdvised=error.retry)
   except Exception:
+    if not cached:
+      cached = read_probe(probe_cache(auth.get("key", "")))
     record = base_record(usageStatusText="Kimi unavailable", authHelpText="Kimi usage scan failed",
                          limits=cached.get("limits", []), limitsStale=bool(cached.get("limits")),
                          limitsFetchedAt=cached.get("fetchedAt", 0))

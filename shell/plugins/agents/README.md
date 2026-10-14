@@ -75,7 +75,7 @@ light surfaces — and the bar glyph stands in when there is none.
 | `codex` | The Codex app-server RPC | native Codex CLI session files on the built-in `openai` provider (plus pi and opencode sessions) |
 | `grok` | The credits endpoint behind Grok's `/usage` view (the billing period's included usage) | Each session's `usage.json` (the ledger `grok usage` prints: tokens by model per finished turn), plus `summary.json` for sessions |
 | `fireworks` | Estimated prepaid balance: configured funding minus rated account costs | Fireworks billing API, grouped by day and model for the last 30 days |
-| `kimi` | api.kimi.com's usage monitor (weekly quota + per-window limits such as the 5-hour session) | none; quota only |
+| `kimi` | Kimi Code quotas (5-hour session, weekly, and monthly allowances) | none; quota only |
 
 When `~/.local/state/omarchy/agents/accounts/<claude|codex|grok>.json`
 registers more than one account, the `claude`, `codex`, and `grok` records
@@ -106,14 +106,11 @@ pi stores in `~/.pi/agent/auth.json` when Fireworks is signed in there
 (honoring `PI_CODING_AGENT_DIR`, and pi's literal and `$ENV_VAR` key forms),
 and finally the key opencode stores in `~/.local/share/opencode/auth.json`.
 
-Kimi reads `KIMI_API_KEY` first, then the kimi-code sign-in at
-`$KIMI_CODE_HOME/credentials/kimi-code.json` (default
-`~/.kimi-code/credentials/kimi-code.json`), then the legacy kimi-cli store at
-`~/.kimi/credentials/kimi-code.json`. Expired access tokens are refreshed the
-way the CLI does, under a `flock` on the sibling `kimi-code.lock`; the rotated
-single-use refresh token is always persisted back, so the CLI keeps working
-from the same file. When the refresh token itself expires, sign in again with
-`kimi login`.
+Kimi reads `KIMI_API_KEY` first, then `credentials/kimi-code.json` under an explicit `KIMI_CODE_HOME`. Without that override it prefers `~/.kimi-code/credentials/kimi-code.json`, with the legacy `~/.kimi/credentials/kimi-code.json` as a compatibility fallback. An explicit home never borrows another home's sign-in. Its record reports account quotas, without local token or prompt statistics.
+
+Expired tokens are refreshed under the current CLI's renewable directory lock at `<home>/oauth/kimi-code.lock`; legacy credentials use their sibling file lock. The rotated token pair is flushed and published atomically with private permissions. A failed lock prevents refresh, and credentials are sent only to trusted Kimi HTTPS hosts without following redirects. When sign-in expires, run `kimi login`; an invalid overriding `KIMI_API_KEY` must instead be updated or unset.
+
+Limits probes reuse a result for one minute unless `--force` is requested. A failed probe retains the last-known limits with stale metadata. Cache identity follows the token used by the request, and a refresh this collector performs carries the same account's previous limits forward. Different credentials or endpoints never share cached quota.
 
 ### Fireworks balance
 

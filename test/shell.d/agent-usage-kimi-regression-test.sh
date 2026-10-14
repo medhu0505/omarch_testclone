@@ -194,6 +194,7 @@ def modern_quota(root):
   data = record()
   assert [row["percent"] for row in data["limits"]] == [0.25, 0.8, 1, 0], "current CLI quota windows were dropped"
   assert data["limits"][0]["resetsAt"] == "2026-10-15T12:00:00Z"
+  assert data["limits"][-1].get("title") == "Code Monthly", "monthly code allowance lost its scope"
   assert not data["hasLocalStats"] and not data["hasPromptStats"], "quota was advertised as local history"
   scanner.USAGE_URL = "https://api.kimi.ai/coding/v1/usages"
   record()
@@ -208,6 +209,29 @@ def stale_limits(root):
   assert stale["limitsStale"] and stale["limitsFetchedAt"] == good["limitsFetchedAt"]
   os.environ["KIMI_API_KEY"] = "AT_other_account"
   assert record()["limits"] == [], "cached quota crossed credential identities"
+
+def rotated_cache(root):
+  credentials("AT_old", time.time() + 3600)
+  good = record()
+  credentials()
+  state["usage_status"] = 503
+  first = record()
+  second = record()
+  assert first["limits"] == good["limits"] and second["limits"] == good["limits"], "rotation discarded last-good limits"
+  assert first["limitsStale"] and first["limitsFetchedAt"] == good["limitsFetchedAt"]
+
+def cache_identity(root):
+  credentials("AT_account_a", time.time() + 3600)
+  capture = scanner.api_key
+  def switched(*args, **kwargs):
+    key = capture(*args, **kwargs)
+    credentials("AT_account_b", time.time() + 3600)
+    return key
+  scanner.api_key = switched
+  assert record()["limits"]
+  scanner.api_key = capture
+  state["usage_status"] = 503
+  assert record()["limits"] == [], "request quota was cached under a different token"
 
 def key_help(root):
   os.environ["KIMI_API_KEY"] = "AT_invalid"
@@ -228,6 +252,7 @@ def redirects(root):
 cases = {"destination": destination, "home": home_isolation, "static": static_token,
          "cli_lock": cli_lock, "lock_failure": lock_failure, "heartbeat": heartbeat,
          "private_write": private_write, "quota": modern_quota, "stale": stale_limits,
+         "rotation_cache": rotated_cache, "cache_identity": cache_identity,
          "key_help": key_help, "redaction": error_redaction, "redirects": redirects}
 failed = False
 for name, check in cases.items():
