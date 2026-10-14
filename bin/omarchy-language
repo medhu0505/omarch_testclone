@@ -131,7 +131,7 @@ set_language() {
   mkdir -p "$(dirname "$language_file")"
   echo "$code" >"$language_file"
 
-  omarchy-notification-send "$(omarchy-i18n language.changed "$name")" "$(omarchy-i18n language.newApps)"
+  omarchy-notification-send -g  "$(omarchy-i18n language.changed "$name")" "$(omarchy-i18n language.newApps)"
 }
 
 case "${1:-}" in
