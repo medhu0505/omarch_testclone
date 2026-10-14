@@ -30,6 +30,7 @@ class TypingSetupTest(unittest.TestCase):
     self.assertEqual(catalog["us:colemak"], "English (US, Colemak)")
     self.assertEqual(catalog["ch"], "German (Switzerland)")
     self.assertEqual(catalog["la"], "Lao")
+    self.assertEqual(catalog["np"], "Nepali")
     # Converted as the installer does.
     self.assertEqual(catalog["fr"], "French")
     self.assertEqual(catalog["bg:phonetic"], "Bulgarian")
@@ -42,6 +43,11 @@ class TypingSetupTest(unittest.TestCase):
   def test_readding_input_keeps_its_original_override(self):
     self.assertEqual(typing.input_items([["keyboard-us", ""]], ["mozc"], {"mozc": "jp"}),
                      [["keyboard-us", ""], ["mozc", "jp"]])
+    self.assertEqual(typing.input_items([["keyboard-us", ""]], ["nepali"]),
+                     [["keyboard-us", ""], ["m17n_ne_phonetic", ""]])
+    kept = [["keyboard-us", ""], ["m17n_ne_phonetic", "us"]]
+    self.assertEqual(typing.input_items(kept, ["nepali"]), kept)
+    self.assertEqual(typing.input_items(kept, []), [["keyboard-us", ""]])
     self.assertEqual(typing.input_items([["keyboard-us", ""], ["mozc", "us"]], ["mozc"], {"mozc": "jp"}),
                      [["keyboard-us", ""], ["mozc", "us"]])
 
@@ -72,6 +78,16 @@ class TypingSetupTest(unittest.TestCase):
     ready.assert_called_once_with("mozc")
     self.assertEqual(save.call_args.args[3], [["keyboard-us", ""], ["mozc", ""]])
 
+  def test_nepali_map_is_copied_before_fcitx_restarts(self):
+    group = ("Default", "us", [["keyboard-us", ""]])
+    present = subprocess.CompletedProcess([], 0)
+    order = []
+    with patch.object(typing.setup, "live_group", return_value=group), patch.object(typing.setup, "available_methods", return_value=[]), patch.object(typing.subprocess, "run", return_value=present), patch.object(typing.setup, "install_input_maps", side_effect=lambda names: order.append(("map", names))), patch.object(typing.setup, "run", side_effect=lambda args: order.append(("run", args))), patch.object(typing.setup, "wait_ready") as ready, patch.object(typing, "set_inputs") as save, patch.object(typing.setup, "font_default"):
+      typing.save_inputs(["nepali"])
+    self.assertEqual(order, [("map", ["nepali"]), ("run", ["omarchy-restart-xcompose"])])
+    ready.assert_called_once_with("m17n_ne_phonetic")
+    self.assertEqual(save.call_args.args[3], [["keyboard-us", ""], ["m17n_ne_phonetic", ""]])
+
   def test_an_uninstalled_engine_names_its_package_without_restarting(self):
     absent = subprocess.CompletedProcess([], 1)
     with patch.object(typing.setup, "live_group", return_value=("Default", "us", [["keyboard-us", ""]])), patch.object(typing.setup, "available_methods", return_value=[]), patch.object(typing.subprocess, "run", return_value=absent), patch.object(typing.setup, "run") as run, patch.object(typing, "set_inputs") as save:
@@ -87,6 +103,11 @@ class TypingSetupTest(unittest.TestCase):
       save.assert_called_once_with(["hangul", "mozc"])
       typing.add_input("hangul")
       save.assert_called_once()
+
+    present = ("Default", "us", [["keyboard-us", ""], ["m17n_ne_phonetic", ""]])
+    with patch.object(typing.setup, "live_group", return_value=present), patch.object(typing, "save_inputs") as save:
+      typing.add_input("nepali")
+      save.assert_not_called()
 
   def test_failed_font_write_restores_the_input_group(self):
     before = [["keyboard-us", ""]]

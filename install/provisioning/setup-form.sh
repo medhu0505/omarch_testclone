@@ -66,6 +66,7 @@ Lao|us||la
 Latvian|lv
 Lithuanian|lt
 Macedonian|mk-utf
+Nepali|us||np
 Norwegian|no-latin1
 Polish|pl
 Portuguese|pt-latin1
@@ -114,7 +115,7 @@ omarchy_prompt_keyboard() {
 omarchy_persist_input_selection() {
   local target_root=${1:-} method=${keyboard_input_method:-none} layout=${keyboard_xkb_layout:-}
   case "$method" in none | mozc | hangul | pinyin | chewing) ;; *) return 1 ;; esac
-  case "$layout" in "" | kr | la) ;; *) return 1 ;; esac
+  case "$layout" in "" | kr | la | np) ;; *) return 1 ;; esac
   mkdir -p "$target_root/etc/omarchy"
   printf 'INPUT_METHOD=%s\nXKB_LAYOUT=%s\n' "$method" "$layout" > "$target_root/etc/omarchy/input-method"
 }

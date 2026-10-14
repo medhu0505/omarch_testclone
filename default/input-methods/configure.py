@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 import sys
@@ -15,6 +16,57 @@ import time
 ROOT = Path(os.environ["OMARCHY_PATH"])
 PRESETS = json.loads((ROOT / "default/input-methods/presets.json").read_text())
 NON_LATIN = set("af am ara bd bg by et ge gr il in iq ir kg kh kz la lk mk mm mn mv np rs ru sy th tj ua".split())
+
+
+def engine_name(method):
+  # The catalog key is what setup commands take. Fcitx may know the engine
+  # by a different id, as with Nepali's m17n map.
+  preset = PRESETS.get(method)
+  if not preset:
+    return method
+  return preset.get("im") or method
+
+
+def preset_key(engine):
+  for key, preset in PRESETS.items():
+    if preset.get("im") == engine:
+      return key
+  return engine
+
+
+def install_input_maps(names):
+  # A map the user already has is theirs. Publish a new one only after the
+  # copy finishes, so a full disk cannot leave a partial file that later
+  # retries keep. The copy happens before Fcitx starts.
+  home = Path.home()
+  for name in names:
+    source_name = PRESETS.get(name, {}).get("map")
+    if not source_name:
+      continue
+    source = ROOT / source_name
+    if not source.is_file():
+      raise RuntimeError(f"Input method map is missing from {source}")
+    destination = home / ".m17n.d" / source.name
+    if destination.is_file():
+      continue
+    if destination.exists():
+      raise RuntimeError(f"{destination} is not a file")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=".omarchy-input-", dir=destination.parent)
+    os.close(fd)
+    try:
+      shutil.copyfile(source, temporary)
+      os.chmod(temporary, 0o644)
+      try:
+        os.link(temporary, destination)
+      except FileExistsError:
+        if not destination.is_file():
+          raise RuntimeError(f"{destination} is not a file")
+    finally:
+      if os.path.exists(temporary):
+        os.unlink(temporary)
+
+
 CONTROLLER = ["busctl", "--user", "call", "org.fcitx.Fcitx5", "/controller", "org.fcitx.Fcitx.Controller1"]
 
 
@@ -168,7 +220,7 @@ def selection():
   preference = values(read(Path(os.environ.get("OMARCHY_INPUT_SELECTION", "/etc/omarchy/input-method"))))
   layout = vconsole.get("XKBLAYOUT", "us").split(",")[0] or "us"
   variant = vconsole.get("XKBVARIANT", "").split(",")[0]
-  if preference.get("XKB_LAYOUT") in ("kr", "la") and vconsole.get("XKBLAYOUT", "us") == "us" and not variant:
+  if preference.get("XKB_LAYOUT") in ("kr", "la", "np") and vconsole.get("XKBLAYOUT", "us") == "us" and not variant:
     layout, variant = preference["XKB_LAYOUT"], ""
   method = preference.get("INPUT_METHOD", "mozc" if layout == "jp" else "none")
   if method not in PRESETS:
@@ -195,10 +247,11 @@ def stock_profile(text):
 
 
 def profile_text(layout, method):
-  default_im = method if method != "none" else f"keyboard-{layout}"
+  engine = engine_name(method)
+  default_im = engine if method != "none" else f"keyboard-{layout}"
   text = f"[Groups/0]\nName=Default\nDefault Layout={layout}\nDefaultIM={default_im}\n\n[Groups/0/Items/0]\nName=keyboard-{layout}\nLayout=\n"
   if method != "none":
-    text += f"\n[Groups/0/Items/1]\nName={method}\nLayout=\n"
+    text += f"\n[Groups/0/Items/1]\nName={engine}\nLayout=\n"
   return text + "\n[GroupOrder]\n0=Default\n"
 
 
@@ -269,6 +322,8 @@ def configure_inner(args, config_home, running):
   profile = config_home / "fcitx5/profile"
   original = read(profile)
   if args.seed:
+    if method != "none":
+      install_input_maps([method])
     if not stock_profile(original):
       return
     atomic_write(profile, profile_text(layout, method))
@@ -290,8 +345,9 @@ def configure_inner(args, config_home, running):
         if old_layout == "us" and items == [["keyboard-us", ""]]:
           new_items = [[f"keyboard-{layout}", ""]]
           if method != "none":
-            if any(item[0] == method for item in available_methods()):
-              new_items.append([method, ""])
+            engine = engine_name(method)
+            if any(item[0] == engine for item in available_methods()):
+              new_items.append([engine, ""])
             else:
               print(f"Finish input setup after login: omarchy setup input {method}", file=sys.stderr)
           live_set(group, layout, new_items)
@@ -301,6 +357,8 @@ def configure_inner(args, config_home, running):
       except (OSError, ValueError, KeyError, IndexError, RuntimeError, subprocess.CalledProcessError) as error:
         print(f"Input profile alignment deferred until login: {error}", file=sys.stderr)
     else:
+      if method != "none":
+        install_input_maps([method])
       atomic_write(profile, profile_text(layout, method))
   if running and changed:
     try:

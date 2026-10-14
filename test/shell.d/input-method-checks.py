@@ -133,6 +133,42 @@ class InputMethodTest(unittest.TestCase):
     self.preference.write_text("INPUT_METHOD=none\nXKB_LAYOUT=la\n")
     self.assertEqual(setup.selection(), ("none", "us"))
 
+  def test_nepali_preference_keeps_a_latin_fcitx_keyboard(self):
+    self.preference.write_text("INPUT_METHOD=none\nXKB_LAYOUT=np\n")
+    self.assertEqual(setup.selection(), ("none", "us"))
+
+  def test_nepali_seed_names_the_m17n_engine_and_keeps_an_existing_map(self):
+    mim = self.home / ".m17n.d" / "ne-phonetic.mim"
+    with patch.object(setup.Path, "home", return_value=self.home):
+      self.preference.write_text("INPUT_METHOD=nepali\n")
+      self.seed()
+      data = setup.sections((self.config / "fcitx5/profile").read_text())
+      self.assertEqual(data["Groups/0"]["DefaultIM"], "m17n_ne_phonetic")
+      self.assertEqual(data["Groups/0/Items/1"]["Name"], "m17n_ne_phonetic")
+      self.assertTrue(mim.is_file())
+      self.assertIn("(input-method ne phonetic)", mim.read_text())
+      mim.write_text("kept\n")
+      (self.config / "fcitx5/profile").unlink()
+      self.seed()
+      self.assertEqual(mim.read_text(), "kept\n")
+
+  def test_a_failed_map_copy_does_not_block_the_retry(self):
+    mim = self.home / ".m17n.d" / "ne-phonetic.mim"
+
+    def fail_partial(source, destination):
+      Path(destination).write_text("partial\n")
+      raise OSError("No space left on device")
+
+    with patch.object(setup.Path, "home", return_value=self.home):
+      with patch.object(setup.shutil, "copyfile", side_effect=fail_partial):
+        with self.assertRaises(OSError):
+          setup.install_input_maps(["nepali"])
+      self.assertFalse(mim.exists())
+      self.assertEqual(list((self.home / ".m17n.d").iterdir()), [])
+      setup.install_input_maps(["nepali"])
+    self.assertIn("(input-method ne phonetic)", mim.read_text())
+    self.assertNotIn("partial", mim.read_text())
+
   def test_korean_preference_yields_to_a_later_keyboard_change(self):
     self.preference.write_text("INPUT_METHOD=hangul\nXKB_LAYOUT=kr\n")
     self.assertEqual(setup.selection(), ("hangul", "kr"))

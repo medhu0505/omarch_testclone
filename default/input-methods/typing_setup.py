@@ -71,8 +71,10 @@ def input_catalog(items):
   available = {item[0]: item[1] for item in setup.available_methods()}
   catalog = {key: preset["label"] for key, preset in setup.PRESETS.items() if key != "none"}
   for name, layout in items:
-    if not name.startswith("keyboard-"):
-      catalog.setdefault(name, available.get(name, name))
+    if name.startswith("keyboard-"):
+      continue
+    key = setup.preset_key(name)
+    catalog.setdefault(key, available.get(name, name))
   return catalog, available
 
 
@@ -80,9 +82,28 @@ def input_items(items, selected, overrides=None):
   if not any(item[0].startswith("keyboard-") for item in items):
     raise RuntimeError("The current input group has no keyboard input")
   # Retained entries keep their switching order; new engines follow them.
-  kept = [item for item in items if item[0].startswith("keyboard-") or item[0] in selected]
-  current = dict(items)
-  return kept + [[name, (overrides or {}).get(name, "")] for name in selected if name not in current]
+  # Selected names are catalog keys. Fcitx stores the engine id.
+  overrides = overrides or {}
+  wanted = []
+  for name in selected:
+    engine = setup.engine_name(name)
+    if engine not in wanted:
+      wanted.append(engine)
+  wanted_set = set(wanted)
+  kept = [item for item in items if item[0].startswith("keyboard-") or item[0] in wanted_set]
+  present = {item[0] for item in kept}
+  added = []
+  for engine in wanted:
+    if engine in present:
+      continue
+    layout = overrides.get(engine, "")
+    if not layout:
+      for name in selected:
+        if setup.engine_name(name) == engine and overrides.get(name):
+          layout = overrides[name]
+          break
+    added.append([engine, layout])
+  return kept + added
 
 
 def set_inputs(group, layout, before, after):
@@ -99,11 +120,15 @@ def set_inputs(group, layout, before, after):
     raise
 
 
+def active_inputs(items):
+  # The group stores Fcitx's engine id. The menu and setup commands use the catalog key.
+  return list(dict.fromkeys(setup.preset_key(name) for name, override in items if not name.startswith("keyboard-")))
+
+
 def configure_inputs():
   group, layout, items = setup.live_group()
   catalog, available = input_catalog(items)
-  current = [name for name, override in items if not name.startswith("keyboard-")]
-  choose("Input Methods", catalog, current, "input", dict(items))
+  choose("Input Methods", catalog, active_inputs(items), "input", dict(items))
 
 
 def load_engines(names, catalog):
@@ -115,15 +140,17 @@ def load_engines(names, catalog):
     raise RuntimeError(f"Install {' '.join(absent) or 'its engine'} to use {labels}")
   # Fcitx discovers engines only at startup, so one installed while it was
   # running (by an update, say) needs a restart before it can be selected.
+  # The map has to be in place first, or that start never sees the engine.
+  setup.install_input_maps(names)
   setup.run(["omarchy-restart-xcompose"])
   for name in names:
-    setup.wait_ready(name)
+    setup.wait_ready(setup.engine_name(name))
 
 
 def save_inputs(selected, overrides=None):
   group, layout, items = setup.live_group()
   catalog, available = input_catalog(items)
-  missing = [name for name in selected if name not in available]
+  missing = [name for name in selected if setup.engine_name(name) not in available]
   if missing:
     load_engines(missing, catalog)
     group, layout, items = setup.live_group()
@@ -142,7 +169,7 @@ def save_inputs(selected, overrides=None):
 
 def add_input(method):
   group, layout, items = setup.live_group()
-  current = [name for name, override in items if not name.startswith("keyboard-")]
+  current = active_inputs(items)
   if method not in current:
     save_inputs(current + [method])
 
