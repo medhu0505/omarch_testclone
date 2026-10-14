@@ -126,7 +126,7 @@ pass "VS Code theme sync succeeds when the last editor is skipped by its toggle"
 # preferred themes, so those follow the generated labels too.
 WHITEBOARD_BIN="$TEST_HOME/whiteboard-bin"
 WHITEBOARD_SETTINGS="$TEST_HOME/.config/Whiteboard/User/settings.json"
-mkdir -p "$WHITEBOARD_BIN" "$(dirname "$WHITEBOARD_SETTINGS")"
+mkdir -p "$WHITEBOARD_BIN"
 
 cat >"$WHITEBOARD_BIN/omarchy-cmd-present" <<'EOF2'
 #!/bin/bash
@@ -141,6 +141,14 @@ EOF2
 chmod +x "$WHITEBOARD_BIN"/*
 printf '{"name":"Hackerman","extension":"Bjarne.hackerman-omarchy"}\n' >"$CURRENT_THEME/vscode.json"
 printf '{"type":"light","colors":{}}\n' >"$CURRENT_THEME/vscode-theme.json"
+
+# Whiteboard imports the VS Code settings on its first start only when it has
+# no settings.json, so the sync leaves a Whiteboard that never ran alone.
+PATH="$WHITEBOARD_BIN:$ROOT/bin:$PATH" HOME="$TEST_HOME" "$ROOT/bin/omarchy-theme-set-vscode" || fail "VS Code theme sync succeeds before Whiteboard first runs"
+[[ ! -e $(dirname "$WHITEBOARD_SETTINGS") ]] || fail "VS Code theme sync leaves a Whiteboard that never ran untouched"
+pass "VS Code theme sync leaves a Whiteboard that never ran untouched"
+
+mkdir -p "$(dirname "$WHITEBOARD_SETTINGS")"
 printf '{\n  "window.autoDetectColorScheme": true,\n  "workbench.preferredDarkColorTheme": "Review Dark",\n  "workbench.preferredLightColorTheme": "Review Light"\n}\n' >"$WHITEBOARD_SETTINGS"
 
 PATH="$WHITEBOARD_BIN:$ROOT/bin:$PATH" HOME="$TEST_HOME" "$ROOT/bin/omarchy-theme-set-vscode" || fail "VS Code theme sync themes Whiteboard"
