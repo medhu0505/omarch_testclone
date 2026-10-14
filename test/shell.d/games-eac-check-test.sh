@@ -152,7 +152,7 @@ printf '\007\000\000\000\000' >"$fixture/sys/firmware/efi/efivars/SecureBoot-8be
 printf '0\n' >"$fixture/proc/sys/kernel/kexec_load_disabled"
 printf 'none [none] integrity confidentiality\n' >"$fixture/sys/kernel/security/lockdown"
 printf 'lockdown,yama\n' >"$fixture/sys/kernel/security/lsm"
-printf 'iommu.passthrough=1\n' >"$fixture/proc/cmdline"
+printf 'iommu=off\n' >"$fixture/proc/cmdline"
 status=0
 if OMARCHY_EAC_CHECK_TEST_ROOT="$fixture" \
   PATH="$stub_bin:$PATH" \
@@ -171,7 +171,27 @@ jq -e '
   .checks[6].status == "FAIL" and
   .checks[7].status == "FAIL"
 ' <<<"$output" >/dev/null || fail "disabled security requirements are identified" "$output"
-pass "disabled Secure Boot, IOMMU passthrough, lockdown, kexec, and BPF LSM are identified"
+pass "disabled Secure Boot, IOMMU, lockdown, kexec, and BPF LSM are identified"
+
+printf '\007\000\000\000\001' >"$fixture/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+printf 'none [integrity] confidentiality\n' >"$fixture/sys/kernel/security/lockdown"
+printf 'lockdown,yama,bpf\n' >"$fixture/sys/kernel/security/lsm"
+printf 'iommu.passthrough=1 sysctl.kernel.kexec_load_disabled=1\n' >"$fixture/proc/cmdline"
+printf '1\n' >"$fixture/proc/sys/kernel/kexec_load_disabled"
+printf 'signed_module 0 0 - Live 0x0\n' >"$fixture/proc/modules"
+status=0
+if OMARCHY_EAC_CHECK_TEST_ROOT="$fixture" \
+  PATH="$stub_bin:$PATH" \
+  "$check_command" --json >"$test_tmp/output" 2>"$test_tmp/stderr"; then
+  status=0
+else
+  status=$?
+fi
+output=$(<"$test_tmp/output")
+[[ $status == 2 ]] || fail "passthrough stays unknown without handheld classification" "$status"
+jq -e '.checks[4].status == "UNKNOWN" and (.checks[4].detail | contains("handheld exception"))' <<<"$output" >/dev/null ||
+  fail "the IOMMU result explains the handheld exception" "$output"
+pass "IOMMU passthrough stays unknown when the handheld exception cannot be classified"
 
 rm -rf "$fixture/sys/kernel/iommu_groups"
 printf 'iommu.passthrough=0 sysctl.kernel.kexec_load_disabled=1\n' >"$fixture/proc/cmdline"

@@ -263,9 +263,9 @@ check_iommu() {
       "The kernel command line disables IOMMU with $disabled_parameter." \
       "Enable IOMMU in firmware and use a translated DMA domain. Re-check the exact parameters supported by the installed kernel."
   elif [[ -n $passthrough_parameter ]]; then
-    add_check 5 "IOMMU with passthrough disabled" FAIL \
-      "The kernel command line requests passthrough mode with $passthrough_parameter." \
-      "Enable IOMMU in firmware and use a translated DMA domain. Re-check the exact parameters supported by the installed kernel."
+    add_check 5 "IOMMU with passthrough disabled" UNKNOWN \
+      "The kernel command line requests passthrough mode with $passthrough_parameter. Epic's passthrough restriction has a handheld exception, and this check cannot identify the device category or confirm the runtime IOMMU domain." \
+      "On non-handheld devices, confirm that DMA uses a translated IOMMU domain. This check cannot determine whether the handheld exception applies."
   elif [[ $iommu_groups_available == "false" ]]; then
     add_check 5 "IOMMU with passthrough disabled" UNKNOWN \
       "The IOMMU groups sysfs interface is unavailable, so this check cannot determine whether IOMMU is active." \
