@@ -272,6 +272,7 @@ export OMARCHY_PATH=$ROOT
 export PATH="$ROOT/bin:$PATH"
 export OMARCHY_LANGUAGE_FILE=$work/language
 export OMARCHY_LOCALE_GEN=$work/locale.gen
+export OMARCHY_LOCALE_REGISTRY=$ROOT/default/i18n/locales.json
 export XDG_CONFIG_HOME=$work/config
 session_env=$XDG_CONFIG_HOME/uwsm/env.d/50-omarchy-language
 printf '#da_DK.UTF-8 UTF-8\n' >"$OMARCHY_LOCALE_GEN"
@@ -295,14 +296,26 @@ cat >"$work/stubs/locale" <<'STUB'
 #!/bin/bash
 if [[ $1 == "-a" ]]; then echo "en_US.utf8"; else echo "LANG=en_US.UTF-8"; fi
 STUB
-# sudo and pkexec record which one elevated, then run the command as-is.
-for elevator in sudo pkexec; do
-  cat >"$work/stubs/$elevator" <<STUB
+# sudo and pkexec record which one elevated and what it ran, then run it
+# as-is. sudo answers the long listing (`sudo -n -l -l`) with the
+# passwordless grant only when TEST_SUDO_GRANT is set, the way a machine with
+# etc/sudoers.d/omarchy-locale-generate installed does.
+cat >"$work/stubs/sudo" <<'STUB'
 #!/bin/bash
-echo "$elevator \$1" >>"\$ELEVATE_LOG"
-exec "\$@"
+if [[ $1 == "-n" && $2 == "-l" ]]; then
+  [[ -n ${TEST_SUDO_GRANT:-} ]] && echo "    Options: !authenticate"
+  exit 0
+fi
+flag=""
+if [[ $1 == "-n" ]]; then flag=" -n"; shift; fi
+echo "sudo$flag $(basename "$1") $2" >>"$ELEVATE_LOG"
+exec "$@"
 STUB
-done
+cat >"$work/stubs/pkexec" <<'STUB'
+#!/bin/bash
+echo "pkexec $(basename "$1") $2" >>"$ELEVATE_LOG"
+exec "$@"
+STUB
 chmod +x "$work/stubs/"*
 export PATH="$work/stubs:$PATH"
 export LOCALE_GEN_LOG=$work/locale-gen.log NOTIFY_LOG=$work/notify.log ELEVATE_LOG=$work/elevate.log SESSION_ENV_LOG=$work/session-env.log
@@ -325,10 +338,10 @@ assert_bash_equal "$(printf '%s\n' "$list" | wc -l)" "50" "omarchy-language list
 assert_bash_equal "$(printf '%s\n' "$list" | head -n 1 | cut -f2)" "en" "omarchy-language list puts English first"
 assert_bash_equal "$(omarchy-language locale da)" "da_DK.UTF-8" "omarchy-language locale maps da to its glibc locale"
 
-# stdin is not a tty here, as when picked from the menu, so the privileged
-# half goes through polkit rather than a terminal sudo prompt.
+# stdin is not a tty here, as when picked from the menu, and this machine has
+# no passwordless grant, so generating the locale asks through polkit.
 omarchy-language da </dev/null
-assert_bash_equal "$(cat "$ELEVATE_LOG")" "pkexec /bin/bash" "omarchy-language elevates through pkexec without a terminal"
+assert_bash_equal "$(cat "$ELEVATE_LOG")" "pkexec omarchy-locale-generate da" "without the grant, the menu generates the locale through pkexec"
 assert_bash_equal "$(cat "$OMARCHY_LANGUAGE_FILE")" "da" "omarchy-language persists the choice"
 assert_bash_equal "$(omarchy-language)" "da" "omarchy-language reads the persisted choice"
 assert_bash_equal "$(grep '^export LANG=' "$session_env")" "export LANG=da_DK.UTF-8" "omarchy-language sets the session LANG through uwsm for the next login"
@@ -395,6 +408,19 @@ assert_bash_equal "$(cat "$SESSION_ENV_LOG")" "--systemd LANG=da_DK.UTF-8" "an a
 # Switching back writes the new LANG over the old one rather than adding to it.
 omarchy-language en </dev/null
 assert_bash_equal "$(grep -c '^export LANG=' "$session_env") $(grep '^export LANG=' "$session_env")" "1 export LANG=en_US.UTF-8" "switching language replaces the session LANG"
+
+# With etc/sudoers.d/omarchy-locale-generate installed, a language whose locale
+# isn't generated yet still switches from the menu without any password
+# prompt: the helper runs through sudo -n, never polkit.
+cat >"$work/stubs/locale" <<'STUB'
+#!/bin/bash
+if [[ $1 == "-a" ]]; then echo "en_US.utf8"; else echo "LANG=en_US.UTF-8"; fi
+STUB
+: >"$LOCALE_GEN_LOG"; : >"$ELEVATE_LOG"
+TEST_SUDO_GRANT=1 omarchy-language sv </dev/null
+assert_bash_equal "$(cat "$ELEVATE_LOG")" "sudo -n omarchy-locale-generate sv" "with the grant, a new language generates its locale without a password prompt"
+assert_bash_equal "$(cat "$LOCALE_GEN_LOG")" "sv_SE.UTF-8" "the passwordless helper generates the language's locale"
+assert_bash_equal "$(cat "$OMARCHY_LANGUAGE_FILE")" "sv" "the passwordless switch persists the choice"
 
 # A cancelled polkit prompt must not persist the choice, or the interface
 # would switch with LANG left behind.
