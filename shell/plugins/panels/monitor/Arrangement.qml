@@ -66,6 +66,7 @@ Column {
 
   signal cursorRequested(int index, var item)
   signal applied()
+  signal coordinateEditingFinished()
 
   spacing: Style.space(10)
   visible: displayCount > 1
@@ -90,6 +91,8 @@ Column {
     alignmentPicker.close()
     xField.field.focus = false
     yField.field.focus = false
+    xField.field.contentItem.focus = false
+    yField.field.contentItem.focus = false
     identifying = false
     identifyTimer.stop()
     keyboardEditing = false
@@ -171,6 +174,12 @@ Column {
     chooseSide(side)
   }
 
+  function finishCoordinateEditing() {
+    xField.field.contentItem.focus = false
+    yField.field.contentItem.focus = false
+    coordinateEditingFinished()
+  }
+
   function chooseCoordinate(axis, value) {
     if (!ready || !selectedMonitor) return
     var draft = Model.place(shownMonitors, moving, axis === "x" ? value : selectedMonitor.x,
@@ -232,7 +241,8 @@ Column {
 
   function finishKeyboardEditing() {
     keyboardEditing = false
-    message = "Drag screens to match your desk. Apply saves the layout."
+    message = connected ? "Drag screens to match your desk. Apply saves the layout."
+      : "Some screens are disconnected. Move them against the layout before applying."
   }
 
   function activate(index) {
@@ -631,8 +641,16 @@ Column {
           onModified: function(value) {
             root.chooseCoordinate("x", value)
             xField.field.value = Qt.binding(function() { return xField.value })
+            Qt.callLater(root.finishCoordinateEditing)
           }
           onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(xField), xField) }
+          Keys.onReleased: function(event) {
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Escape) {
+              xField.field.contentItem.text = Qt.binding(function() { return xField.field.displayText })
+              Qt.callLater(root.finishCoordinateEditing)
+              event.accepted = true
+            }
+          }
         }
         NumberField {
           id: yField
@@ -650,8 +668,16 @@ Column {
           onModified: function(value) {
             root.chooseCoordinate("y", value)
             yField.field.value = Qt.binding(function() { return yField.value })
+            Qt.callLater(root.finishCoordinateEditing)
           }
           onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(yField), yField) }
+          Keys.onReleased: function(event) {
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Escape) {
+              yField.field.contentItem.text = Qt.binding(function() { return yField.field.displayText })
+              Qt.callLater(root.finishCoordinateEditing)
+              event.accepted = true
+            }
+          }
         }
       }
 

@@ -243,6 +243,20 @@ class TransactionTests(unittest.TestCase):
     self.assertEqual(len(retained), 1)
     self.assertIn('Position saved', retained[0].read_text())
 
+  def test_interrupted_exchange_retains_the_displaced_file(self):
+    exchange = position.exchange_config
+    edited = self.original + '-- editor saved at interrupted publication\n'
+    def interrupted_exchange(replacement, path):
+      self.config.write_text(edited)
+      exchange(replacement, path)
+      raise subprocess.TimeoutExpired(['mv'], 12)
+    with patch.object(position, 'displays', return_value=self.screens), patch.object(position, 'hypr', return_value=''), patch.object(position, 'exchange_config', side_effect=interrupted_exchange):
+      with self.assertRaisesRegex(RuntimeError, 'Versions were retained'):
+        self.run_apply()
+    retained = list(self.config.parent.glob('.monitor-position-conflict-*'))
+    self.assertEqual(len(retained), 1)
+    self.assertEqual(retained[0].read_text(), edited)
+
   def test_external_edit_at_rollback_is_retained(self):
     exchange = position.exchange_config
     calls = 0

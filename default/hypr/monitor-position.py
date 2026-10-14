@@ -311,17 +311,23 @@ def publish_config(path, contents, expected):
     atomic_write(replacement, contents)
     replacement.chmod(path.stat().st_mode & 0o777)
     candidate = replacement.stat()
-    exchange_config(replacement, path)
     retain = True
+    try:
+      exchange_config(replacement, path)
+    except (OSError, RuntimeError, subprocess.SubprocessError) as error:
+      raise RuntimeError(f'{error}\nFile exchange could not be verified. Versions were retained at {path} and {replacement}.') from error
     try:
       changed = replacement.is_symlink() or not replacement.is_file() or replacement.read_text() != expected
     except (OSError, UnicodeError):
       changed = True
     if changed:
       # A later external writer may already own path. Do not replace that file.
-      current = path.lstat()
-      if (current.st_dev, current.st_ino) == (candidate.st_dev, candidate.st_ino) and path.read_text() == contents:
-        exchange_config(replacement, path)
+      try:
+        current = path.lstat()
+        if (current.st_dev, current.st_ino) == (candidate.st_dev, candidate.st_ino) and path.read_text() == contents:
+          exchange_config(replacement, path)
+      except (OSError, UnicodeError, RuntimeError, subprocess.SubprocessError) as error:
+        raise RuntimeError(f'{error}\nConcurrent edit recovery could not be verified. Versions were retained at {path} and {replacement}.') from error
       raise RuntimeError(f'Concurrent monitors.lua edit. File versions were retained at {path} and {replacement}.')
     retain = False
   finally:

@@ -68,6 +68,7 @@ ShellRoot {
     }
     Connections {
       target: root.ui
+      function onCoordinateEditingFinished() { keyboard.forceActiveFocus() }
       function onCursorRequested(index, item) {
         if (root.keyboardFixtureActive) root.ui.cursorIndex = index
       }
@@ -582,14 +583,27 @@ ShellRoot {
       case 67:
         if (ui.busy) return
         root.check(!ui.connected && !ui.canApply && ui.message.indexOf("disconnected") >= 0, "An isolated screen keeps a draft but disables Apply")
-        ui.chooseCoordinate("x", 0)
+        ui.chooseCoordinate("x", 123)
         root.phase++
         break
       case 68:
         if (ui.busy) return
-        root.check(ui.connected && ui.canApply && ui.preview[1].x === 0 && ui.preview[1].y === 1080, "A subsequent move repairs the disconnected layout")
+        root.check(ui.connected && ui.canApply && ui.preview[1].x === 123 && ui.preview[1].y === 1080, "A subsequent move repairs the disconnected layout")
         root.done("disconnected drafts and whole-layout repair")
         ui.discard()
+        root.child("arrangementX").field.contentItem.forceActiveFocus()
+        pointer.keyClick(Qt.Key_Return)
+        root.phase++
+        break
+      case 69:
+        root.check(!ui.coordinateEditing && keyboard.activeFocus, "Unchanged coordinate Enter restores panel keyboard navigation")
+        root.child("arrangementX").field.contentItem.forceActiveFocus()
+        pointer.keyClick(Qt.Key_Escape)
+        root.phase++
+        break
+      case 70:
+        root.check(!ui.coordinateEditing && keyboard.activeFocus, "Coordinate Escape restores panel keyboard navigation")
+        root.done("coordinate keyboard focus return")
         root.finish()
         break
       }

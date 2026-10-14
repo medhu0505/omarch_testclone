@@ -876,6 +876,7 @@ Panel {
             }
             onPopupOpenChanged: if (!popupOpen && root.opened) keyCatcher.forceActiveFocus()
             onApplied: root.refresh()
+            onCoordinateEditingFinished: keyCatcher.forceActiveFocus()
             onNavigationCountChanged: root.clampCursor()
             onExpandedChanged: {
               root.clampCursor()

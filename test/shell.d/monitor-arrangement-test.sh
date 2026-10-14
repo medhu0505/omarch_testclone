@@ -46,7 +46,7 @@ for (( attempt = 0; attempt < 650; attempt++ )); do
   fi
   sleep 0.1
 done
-if [[ ! -s $scratch/result.json ]] || ! jq -e '.ok and (.checks | length == 21)' "$scratch/result.json" >/dev/null; then
+if [[ ! -s $scratch/result.json ]] || ! jq -e '.ok and (.checks | length == 22)' "$scratch/result.json" >/dev/null; then
   cat "$scratch/log" >&2
   [[ ! -f $scratch/result.json ]] || cat "$scratch/result.json" >&2
   fail "Display arrangement controls pass with the real backend"
