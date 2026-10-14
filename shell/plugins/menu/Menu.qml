@@ -25,7 +25,7 @@ Item {
 
     if (payload.fontFamily) root.fontFamily = payload.fontFamily
 
-    if (payload.mode === "select" || payload.mode === "input") {
+    if (payload.mode === "select" || payload.mode === "input" || payload.mode === "secret") {
       root.openDmenu(payload)
     } else {
       root.openRoute(payload.initialMenu || payload.menu || "root")
@@ -59,7 +59,11 @@ Item {
   property bool userMenuSettled: false
   property bool opened: false
   property string mode: "menu"
-  readonly property bool dmenuActive: mode === "select" || mode === "input"
+  readonly property bool dmenuActive: mode === "select" || mode === "input" || mode === "secret"
+  // "secret" is a masked input: the value must never be painted, so the header
+  // renders dots instead of the text and Tab toggles a deliberate reveal.
+  readonly property bool secretActive: mode === "secret"
+  property bool secretRevealed: false
   property string dmenuPrompt: ""
   property var dmenuOptions: []
   property bool dmenuMultiple: false
@@ -123,7 +127,7 @@ Item {
   property int cardWidth: Math.min(root.dmenuActive ? Style.space(root.dmenuWidth) : ((root.activeMenu === "trigger.capture.screenrecord" || root.activeMenu === "style.font") ? Style.space(520) : Style.space(300)), panel.width - Style.gapsOut * 2)
   property int visibleRowsHeight: root.dmenuActive ? dmenuRowListHeight(layoutSerial, displayModel.count, filterText) : rowListHeight(layoutSerial, displayModel.count, filterText, searchDivider)
   property int cardHeight: root.dmenuActive
-    ? Math.min(contentMargin * 2 + headerHeight + (mode === "input" ? 0 : contentSpacing + visibleRowsHeight), panel.height - Style.gapsOut * 2)
+    ? Math.min(contentMargin * 2 + headerHeight + (mode === "input" || mode === "secret" ? 0 : contentSpacing + visibleRowsHeight), panel.height - Style.gapsOut * 2)
     : Math.min(contentMargin * 2 + headerHeight + contentSpacing + visibleRowsHeight, panel.height - Style.gapsOut * 2)
 
   function finishRequest(selection) {
@@ -213,7 +217,7 @@ Item {
   }
 
   function dmenuRowListHeight(_serial, _count, _filter) {
-    if (root.mode === "input") return 0
+    if (root.mode === "input" || root.mode === "secret") return 0
     if (displayModel.count === 0) return root.baseRowHeight
 
     var available = availableRowsHeight()
@@ -569,7 +573,7 @@ Item {
     displayModel.clear()
     root.searchDivider = false
 
-    if (root.mode === "input") {
+    if (root.mode === "input" || root.mode === "secret") {
       layoutSerial += 1
       return
     }
@@ -794,7 +798,7 @@ Item {
   function activateIndex(index, fromPointer) {
     if (root.deleteConfirmOpen) return
     if (root.dmenuActive) {
-      if (root.mode === "input") {
+      if (root.mode === "input" || root.mode === "secret") {
         root.applyDmenuSelection(root.filterText)
         return
       }
@@ -910,8 +914,9 @@ Item {
 
   function openDmenu(payload) {
     requestSerial += 1
-    mode = payload.mode === "input" ? "input" : "select"
-    dmenuPrompt = String(payload.prompt || (mode === "input" ? "Input" : "Select"))
+    mode = payload.mode === "input" ? "input" : (payload.mode === "secret" ? "secret" : "select")
+    secretRevealed = false
+    dmenuPrompt = String(payload.prompt || (mode === "input" ? "Input" : (mode === "secret" ? "Secret" : "Select")))
     dmenuOptions = Array.isArray(payload.options) ? payload.options : []
     dmenuMultiple = mode === "select" && payload.multiple === true
     dmenuOnChange = dmenuMultiple && Array.isArray(payload.onChange)
@@ -1249,6 +1254,11 @@ Item {
             if (root.filterText) root.setFilter("")
             else root.cancel()
             event.accepted = true
+          } else if (root.secretActive && event.key === Qt.Key_Tab) {
+            // Tab deliberately reveals the secret so the user can check what
+            // they pasted. It is off by default and resets on every summon.
+            root.secretRevealed = !root.secretRevealed
+            event.accepted = true
           } else if (Util.editsFilter(event, root.filterText)) {
             root.setFilter(Util.editedFilter(event, root.filterText))
             event.accepted = true
@@ -1269,7 +1279,7 @@ Item {
             event.accepted = true
           } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Right) {
             if (root.dmenuActive) {
-              if (root.mode === "input") root.applyDmenuSelection(root.filterText)
+              if (root.mode === "input" || root.mode === "secret") root.applyDmenuSelection(root.filterText)
               else if (displayModel.count > 0) root.activateIndex(root.cursorActive ? root.selectedIndex : 0)
             } else if (root.cursorActive) root.activateIndex(root.selectedIndex)
             else root.settleCursor()
@@ -1319,7 +1329,16 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            text: root.filterText || (root.dmenuActive ? (root.dmenuPrompt + "…") : ((root.item(root.activeMenu) ? (root.item(root.activeMenu).title || root.item(root.activeMenu).label) : "Go") + "…"))
+            // In secret mode the typed value must never be painted: show dots
+            // (or the value only after an explicit Tab reveal).
+            text: {
+              if (root.secretActive) {
+                if (!root.filterText) return root.dmenuPrompt + "…"
+                if (root.secretRevealed) return root.filterText
+                return "•".repeat(root.filterText.length)
+              }
+              return root.filterText || (root.dmenuActive ? (root.dmenuPrompt + "…") : ((root.item(root.activeMenu) ? (root.item(root.activeMenu).title || root.item(root.activeMenu).label) : "Go") + "…"))
+            }
             color: root.foreground
             opacity: root.filterText ? 1 : 0.58
             font.family: root.fontFamily
