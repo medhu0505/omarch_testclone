@@ -313,5 +313,6 @@
   "monitorPosition.twoScreens": "Connect and enable at least two screens.",
   "monitorPosition.moveScreen": "Screen to move",
   "monitorPosition.reference": "Position %1 relative to",
-  "monitorPosition.side": "Place %1 relative to %2"
+  "monitorPosition.side": "Place %1 relative to %2",
+  "monitorPosition.saved": "Layout saved for next time."
 }

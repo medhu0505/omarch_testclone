@@ -3,6 +3,7 @@ import QtTest
 import Quickshell
 import Quickshell.Io
 import qs.Ui
+import qs.Commons as Commons
 
 // Real controls + real Python backend; only the compositor is simulated.
 ShellRoot {
@@ -125,6 +126,19 @@ ShellRoot {
       case 4:
         if (ui.busy) return
         root.check(ui.canApply && ui.preview[2].x === -1280 && root.screen("DP-3").x === 3840, "Left previews without changing the displays")
+        var englishMessage = ui.message
+        var originalStrings = Commons.I18n.strings
+        var originalDigit = Commons.I18n.zeroDigit
+        var translatedStrings = Object.assign({}, originalStrings)
+        translatedStrings["monitor.arrangementPreviewLeft"] = "%3 / %2 / %1"
+        translatedStrings["monitor.arrangeTop"] = "HAUT"
+        Commons.I18n.strings = translatedStrings
+        Commons.I18n.zeroDigit = "٠"
+        root.check(ui.displayMessage() === "HAUT / eDP-1 / DP-3", "Preset status supports translated placeholder order")
+        root.check(root.child("arrangementMoving").options[0].label.indexOf("١") === 0, "Displayed screen numbers follow locale digits")
+        root.check(ui.message === englishMessage, "Translation preserves the English IPC message")
+        Commons.I18n.strings = originalStrings
+        Commons.I18n.zeroDigit = originalDigit
         root.child("arrangementMoving").changed("DP-2")
         root.check(ui.moving === "DP-2" && ui.canApply && ui.preview.length === 3, "Changing selection retains other unsaved screen moves")
         root.done("preview and selection")

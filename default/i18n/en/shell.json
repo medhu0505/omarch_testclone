@@ -537,5 +537,9 @@
   "monitor.arrangementExistingGaps": "Some screens are disconnected. Arrange them against a shared edge.",
   "monitor.arrangementSaved": "Layout saved for next time.",
   "monitor.arrangementBuiltin": "Built-in display",
-  "monitor.identifyDisplay": "DISPLAY"
+  "monitor.identifyDisplay": "DISPLAY",
+  "monitor.arrangementPreviewLeft": "%1 left of %2, aligned %3. Preview only.",
+  "monitor.arrangementPreviewRight": "%1 right of %2, aligned %3. Preview only.",
+  "monitor.arrangementPreviewAbove": "%1 above %2, aligned %3. Preview only.",
+  "monitor.arrangementPreviewBelow": "%1 below %2, aligned %3. Preview only."
 }

@@ -51,7 +51,7 @@ Item {
           Text {
             width: parent.width
             textFormat: Text.PlainText
-            text: displayInfo ? String(displayInfo.number) : modelData.name
+            text: displayInfo ? Commons.I18n.formatNumber(displayInfo.number) : modelData.name
             color: Commons.Color.popups.text
             font.family: Style.font.family
             font.pixelSize: Style.font.displayLarge

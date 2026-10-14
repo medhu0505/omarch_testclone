@@ -30,7 +30,7 @@ else
   reference=$(omarchy-menu-select "$(omarchy-i18n monitorPosition.reference "$output")" "${references[@]}") || exit 0
   side=$(omarchy-menu-select "$(omarchy-i18n monitorPosition.side "$output" "$reference")" left right above below) || exit 0
   if message=$(python3 "$helper" "$output" "$reference" "$side" 2>&1); then
-    omarchy-notification-send "$(omarchy-i18n monitorPosition.title)" "$message"
+    omarchy-notification-send "$(omarchy-i18n monitorPosition.title)" "$(omarchy-i18n monitorPosition.saved)"
   else
     omarchy-notification-send "$(omarchy-i18n monitorPosition.title)" "$message"
     exit 1

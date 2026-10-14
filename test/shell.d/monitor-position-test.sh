@@ -43,3 +43,36 @@ bash "$ROOT/bin/omarchy-hyprland-monitor-position"
 [[ $(< "$POSITION_MENU_LOG") == "Screen to move" ]] || fail "interactive command opens the screen selector"
 cmp "$scratch/config/hypr/monitors.lua" "$scratch/original.lua" || fail "cancelling does not modify the configuration"
 pass "cancelling the menu leaves the layout untouched"
+
+# Exercise the menu's notification without touching the real compositor.
+export POSITION_REAL_PYTHON="$(command -v python3)" POSITION_NOTIFICATION_LOG="$scratch/notification.log"
+cat >"$scratch/bin/python3" <<'EOF'
+#!/bin/bash
+if [[ $1 == */monitor-position.py ]]; then
+  if [[ ${2:-} == "--list" ]]; then
+    printf '%s\n' '[{"name":"DP-1"},{"name":"DP-2"}]'
+  else
+    printf '%s\n' 'DP-2 is left of DP-1. Saved for next time.'
+  fi
+else
+  exec "$POSITION_REAL_PYTHON" "$@"
+fi
+EOF
+cat >"$scratch/bin/omarchy-menu-select" <<'EOF'
+#!/bin/bash
+case $1 in
+  "Screen to move") printf '%s\n' DP-2 ;;
+  "Position DP-2 relative to") printf '%s\n' DP-1 ;;
+  "Place DP-2 relative to DP-1") printf '%s\n' left ;;
+  *) exit 1 ;;
+esac
+EOF
+cat >"$scratch/bin/omarchy-notification-send" <<'EOF'
+#!/bin/bash
+printf '%s\n' "$@" >"$POSITION_NOTIFICATION_LOG"
+EOF
+chmod +x "$scratch/bin/"*
+bash "$ROOT/bin/omarchy-hyprland-monitor-position"
+[[ $(tail -n1 "$POSITION_NOTIFICATION_LOG") == "$(omarchy-i18n monitorPosition.saved)" ]] || fail "successful menu saves use the notification catalog"
+cmp "$scratch/config/hypr/monitors.lua" "$scratch/original.lua" || fail "notification fixture does not modify configuration"
+pass "successful menu saves use a translated notification"
