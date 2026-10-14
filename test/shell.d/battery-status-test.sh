@@ -165,6 +165,13 @@ rm "$hold_dir/power/BAT0/current_now"
 no_sysfs_output=$(OMARCHY_POWER_SUPPLY_PATH="$hold_dir/power" PATH="$hold_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell)
 grep -Fx $'rate\t0.1W' <<<"$no_sysfs_output" >/dev/null ||
   fail "battery status keeps UPower's rate when no sysfs reading works" "$no_sysfs_output"
+
+# Put the fixture back the way it was found: the assertions below read the same
+# directory, and a directory left where power_now was makes them read a stale
+# rate.
+rmdir "$hold_dir/power/BAT0/power_now"
+rm -f "$hold_dir/power/BAT0/voltage_now"
+printf '27800000\n' >"$hold_dir/power/BAT0/power_now"
 # The status line and its durations follow the Omarchy language.
 echo "da" >"$tmp_dir/language"
 danish_output=$(OMARCHY_LANGUAGE_FILE="$tmp_dir/language" OMARCHY_POWER_SUPPLY_PATH="$hold_dir/power" PATH="$hold_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status")
