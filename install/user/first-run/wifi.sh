@@ -23,7 +23,10 @@ announce_network() {
     nm-online -q -t 3600 || return
   fi
 
-  notify_update
+  # Only an administrator can install updates, so only they are asked to.
+  if omarchy-sudo-allowed; then
+    notify_update
+  fi
 }
 
 # Detached, so a slow or absent connection never holds up the rest of first run.

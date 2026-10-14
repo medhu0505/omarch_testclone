@@ -34,6 +34,13 @@ unset OMARCHY_SUDO_NO_UPDATE
 # Helpers that manage their own sudo boundary leave this authorization to us.
 export PATH OMARCHY_UPDATE_SUDO_SESSION=1
 
+# An update changes the whole machine, so it takes an administrator. Say so
+# before the log and the password prompt, rather than letting sudo refuse.
+if ! omarchy-sudo-allowed; then
+  echo "Omarchy updates are installed by an administrator." >&2
+  exit 1
+fi
+
 update_stay_awake_stopped=0
 sudo_keepalive_pid=""
 
