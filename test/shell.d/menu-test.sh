@@ -233,42 +233,12 @@ assertEqual(
   'setup.reset',
   'menu lists Reset Computer last under Setup'
 )
-const expectedAgents = {
-  agy: { icon: '󰫢', label: 'Antigravity' },
-  pi: { icon: '\ue901', iconFont: 'omarchy', label: 'Pi' },
-  omp: { icon: '\ue903', iconFont: 'omarchy', label: 'omp' },
-  opencode: { icon: '\ue902', iconFont: 'omarchy', label: 'OpenCode' },
-  ori: { icon: '\ue909', iconFont: 'omarchy', label: 'Ori' },
-  claude: { icon: '󰛄', label: 'Claude' },
-  codex: { icon: '\ue905', iconFont: 'omarchy', label: 'Codex' },
-  grok: { icon: '\ue904', iconFont: 'omarchy', label: 'Grok' },
-  hermes: { icon: '\ue90a', iconFont: 'omarchy', label: 'Hermes' },
-  openclaw: { icon: '\ue90c', iconFont: 'omarchy', label: 'OpenClaw' },
-  copilot: { icon: '', label: 'Copilot' },
-  crush: { icon: '󰋑', label: 'Crush' },
-  muse: { icon: '󰛤', label: 'Muse Code' },
-  'cursor-agent': { icon: '\ue90d', iconFont: 'omarchy', label: 'Cursor CLI' },
-
-}
+const agentMenu = defaultById['setup.default.agent']
 assert(
-  Object.entries(expectedAgents).every(([agent, expected]) => {
-    const entry = defaultById[`setup.default.agent.${agent}`]
-    return entry
-      && entry.icon === expected.icon
-      && entry.iconFont === (expected.iconFont || '')
-      && entry.label === expected.label
-      && entry.action === `omarchy-default-agent ${agent}`
-      && !entry.when
-      && entry.checked.includes(`== \"${agent}\"`)
-  }),
-  'menu exposes every supported coding agent with its own glyph under Defaults > Agent'
-)
-assertDeepEqual(
-  defaultItems
-    .filter(item => item.parent === 'setup.default.agent')
-    .map(item => item.label),
-  ['Antigravity', 'Claude', 'Codex', 'Copilot', 'Crush', 'Cursor CLI', 'Grok', 'Hermes', 'Muse Code', 'omp', 'OpenClaw', 'OpenCode', 'Ori', 'Pi'],
-  'menu sorts coding agents alphabetically'
+  agentMenu && agentMenu.provider === 'agent-harnesses'
+    && !defaultItems.some(item => item.parent === 'setup.default.agent')
+    && menuQml.includes('$OMARCHY_PATH/bin/omarchy-agent-list'),
+  'menu sources selectable coding agents from the built-in harness registry'
 )
 const expectedDefaults = {
   browser: ['Chromium', 'Chrome', 'Brave', 'Brave Origin', 'Edge', 'Firefox', 'Zen'],
@@ -823,8 +793,18 @@ assert(
   'menu row hover routes through pointer movement gate'
 )
 assert(
-  /dmenuSaved = dmenuSelected\s*\n\s*if \(dmenuOnChange\.length > 0\)/.test(menuQml)
-    && /root\.dmenuSaved = root\.dmenuSelected\s*\n\s*\} else \{\s*root\.dmenuSelected = root\.dmenuSaved/.test(menuQml),
+  /function requestedSelection\(changeKey\)[\s\S]*queue\[i\]\.key === changeKey[\s\S]*running && this\.changeKey === changeKey/.test(menuQml)
+    && /selectionProc\.requestedSelection\(dmenuChangeKey\)/.test(menuQml)
+    && /function startNext\(\) \{\s*if \(queue\.length === 0\) return/.test(menuQml)
+    && /confirmed\[changeKey\] = applied/.test(menuQml)
+    && /function hasPending\(changeKey\)/.test(menuQml)
+    && /var pending = selectionProc\.hasPending\(dmenuChangeKey\)[\s\S]*dmenuSaved = pending && Array\.isArray\(confirmed\)/.test(menuQml)
+    && !/function cancelRequest\(/.test(menuQml),
+  'multi-select saves survive menu requests and refresh from new values once settled'
+)
+assert(
+  /confirmed\[changeKey\] = applied[\s\S]*root\.dmenuConfirmedSelections = confirmed/.test(menuQml)
+    && /\} else \{\s*root\.dmenuSelected = root\.dmenuSaved/.test(menuQml),
   'a failed immediate change restores the confirmed checks, even after reopening onto queued ones'
 )
 assert(
