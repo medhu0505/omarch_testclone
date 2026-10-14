@@ -106,6 +106,7 @@ Rectangle {
           selectedTextColor: root.textColor
           text: root.currentUser
           KeyNavigation.tab: password
+          KeyNavigation.backtab: password
           KeyNavigation.down: password
 
           // Complete as the name is typed, leaving the completion selected so
@@ -192,6 +193,7 @@ Rectangle {
           focus: true
 
           onTextChanged: root.loginFailed = false
+          KeyNavigation.tab: username
           KeyNavigation.backtab: username
           KeyNavigation.up: username
 
