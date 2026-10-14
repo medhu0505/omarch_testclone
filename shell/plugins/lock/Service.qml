@@ -40,6 +40,9 @@ Item {
   property bool fingerprintSleptWhilePaused: false
   // When the armed retry is due, so time spent blank counts toward it.
   property double fingerprintRetryDueMs: 0
+  // The backoff the armed retry was set to; a wake shortens the timer to the
+  // remaining wait, so the input guard reads the tier from here instead.
+  property int fingerprintRetryBackoffMs: 0
   // Outputs the lock last saw, so only a display arriving counts as a wake.
   property int knownScreenCount: 0
   property bool previewVisible: false
@@ -285,6 +288,7 @@ Item {
     if (fingerprintSleptWhilePaused) {
       fingerprintSleptWhilePaused = false
       noteFingerprintResumed()
+      fingerprintRetryBackoffMs = FingerprintModel.MATCH_RETRY_MS
       fingerprintRetryTimer.interval = FingerprintModel.MATCH_RETRY_MS
     } else {
       fingerprintRetryTimer.interval = Math.max(FingerprintModel.MATCH_RETRY_MS, fingerprintRetryDueMs - Date.now())
@@ -320,7 +324,7 @@ Item {
     if (fingerprintPam.active || fingerprintAuthenticating) return
     if (!fingerprintRetryTimer.running) return
     var now = Date.now()
-    if (!FingerprintModel.shouldNudge(now, fingerprintLastNudgeMs, fingerprintLastSettleMs, fingerprintRetryTimer.interval)) return
+    if (!FingerprintModel.shouldNudge(now, fingerprintLastNudgeMs, fingerprintLastSettleMs, fingerprintRetryBackoffMs)) return
     fingerprintLastNudgeMs = now
     armFingerprintRetry(FingerprintModel.MATCH_RETRY_MS)
   }
@@ -328,6 +332,7 @@ Item {
 
   function armFingerprintRetry(delayMs) {
     fingerprintRetryTimer.interval = delayMs
+    fingerprintRetryBackoffMs = delayMs
     fingerprintRetryDueMs = Date.now() + delayMs
     if (!fingerprintPaused) fingerprintRetryTimer.restart()
   }

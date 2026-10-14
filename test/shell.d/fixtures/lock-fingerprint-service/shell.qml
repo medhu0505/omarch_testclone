@@ -190,6 +190,12 @@ ShellRoot {
       check(retry.running && retry.interval > 39000, "a wake keeps the capped wait so fprintd still gets its idle window")
       check(service.fingerprintUnreachedStreak === streak && streak > 0, "pause and wake keep the miss history")
       service.pauseFingerprint()
+      service.fingerprintRetryDueMs = Date.now() + 5000
+      service.resumeFingerprint()
+      service.fingerprintLastNudgeMs = 0
+      service.nudgeFingerprint()
+      check(retry.running && retry.interval > 4000, "input after a wake keeps the capped retry's idle window")
+      service.pauseFingerprint()
       service.fingerprintRetryDueMs = Date.now() - 1000
       service.resumeFingerprint()
       check(retry.running && retry.interval === 250, "a wait that ran out while blank retries at once on wake")
