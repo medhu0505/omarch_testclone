@@ -112,6 +112,11 @@ done
 chmod +x "$mock_bin"/*
 
 export HOME="$test_home"
+# The XDG vars win over HOME in the launchers, so pin them to the sandbox too
+# — a caller with XDG_DATA_HOME/XDG_CONFIG_HOME exported must not leak their
+# real phantombot state into the expectations below.
+export XDG_DATA_HOME="$test_home/.local/share"
+export XDG_CONFIG_HOME="$test_home/.config"
 export PATH="$mock_bin:$ROOT/bin:$PATH"
 export OMARCHY_TEST_NOTIFICATION_HISTORY="$notification_history"
 export OMARCHY_TEST_AGENT_OPEN_LOG="$agent_open_log"
@@ -939,3 +944,178 @@ mapfile -d '' -t launch_args <"$launch_log"
   ${launch_args[4]} == "Review this project" ]] ||
   fail "OpenClaw receives prompts through --message" "argv: ${launch_args[*]}"
 pass "OpenClaw receives prompts through --message"
+
+# Phantombot installs through its own checksum-verified installer rather than
+# mise, so it reaches the same --check/--now contract the OpenClaw package
+# gets from omarchy-install-openclaw-cli.
+cat >"$mock_bin/omarchy-agent" <<'SH'
+#!/bin/bash
+printf '%s\0' omarchy-agent "$@" >"$OMARCHY_TEST_AGENT_OPEN_LOG"
+SH
+chmod +x "$mock_bin/omarchy-agent"
+hash -r
+
+cat >"$mock_bin/omarchy-install-phantombot" <<'SH'
+#!/bin/bash
+printf '%s\0' "$@" >>"$OMARCHY_TEST_STUB_LOG"
+if [[ $1 == "--check" ]]; then
+  [[ ${OMARCHY_TEST_AGENT_INSTALLED:-false} == "true" ]]
+else
+  OMARCHY_TEST_AGENT_INSTALLED=true
+fi
+SH
+chmod +x "$mock_bin/omarchy-install-phantombot"
+
+: >"$agent_open_log"
+OMARCHY_TEST_AGENT_INSTALLED=true omarchy-default-agent phantombot
+[[ $(omarchy-default-agent) == "phantombot" ]] || fail "choosing Phantombot records it as the default agent"
+mapfile -d '' -t agent_open_args <"$agent_open_log"
+[[ ${agent_open_args[*]} == "omarchy-agent" ]] || fail "choosing Phantombot opens the agent"
+[[ ! -s $mise_history ]] || fail "Phantombot never installs through mise"
+pass "choosing Phantombot routes through its own installer and opens the agent"
+
+: >"$terminal_log"
+OMARCHY_TEST_AGENT_INSTALLED=false omarchy-default-agent phantombot >/dev/null
+mapfile -d '' -t terminal_args <"$terminal_log"
+[[ ${terminal_args[*]} == "omarchy-default-agent --install phantombot" ]] ||
+  fail "a missing Phantombot routes through the install terminal" "argv: ${terminal_args[*]}"
+[[ $(omarchy-default-agent) == "phantombot" ]] ||
+  fail "a missing Phantombot still records the selection"
+pass "a missing Phantombot routes through the install terminal"
+
+: >"$stub_log"
+: >"$terminal_log"
+: >"$agent_open_log"
+omarchy-default-agent --install phantombot >/dev/null
+tr '\0' '\n' <"$stub_log" | grep -Fx -- '--now' >/dev/null ||
+  fail "installing Phantombot runs its installer"
+mapfile -d '' -t agent_open_args <"$agent_open_log"
+[[ ${agent_open_args[*]} == "omarchy-agent --inline" ]] || fail "installing Phantombot opens the agent after install"
+[[ ! -s $terminal_log ]] || fail "installing Phantombot skips the floating terminal"
+pass "installing Phantombot runs its --now installer and opens the agent"
+
+# Back to the real launcher: the omarchy-agent mock above exists only for the
+# selection flow.
+rm "$mock_bin/omarchy-agent"
+hash -r
+printf '%s\n' "phantombot" >"$agent_file"
+: >"$launch_log"
+omarchy-agent
+mapfile -d '' -t launch_args <"$launch_log"
+[[ ${launch_args[*]} == "--app-id=org.omarchy.agent phantombot" ]] ||
+  fail "Phantombot launches its chat TUI" "argv: ${launch_args[*]}"
+omarchy-agent-prompt "Review this project"
+mapfile -d '' -t launch_args <"$launch_log"
+[[ ${launch_args[*]} == "--app-id=org.omarchy.agent phantombot --prompt Review this project" ]] ||
+  fail "Phantombot hands prompts to its TUI" "argv: ${launch_args[*]}"
+pass "Phantombot launches bare for chat and seeds prompts through --prompt"
+
+# Contract probe against the real binary, when it happens to be installed:
+# the argv the launcher builds must match what Phantombot actually ships.
+# Bare `phantombot` is the chat TUI under a TTY and hits the usage gate when
+# unwatched, while `phantombot persona` renders persona management either
+# way. `--prompt` seeds the TUI's first turn (phantomyard/phantombot#575);
+# without a terminal it is refused with a dedicated message, which is the
+# observable proof the flag is recognized rather than an unknown option.
+if command -v phantombot >/dev/null; then
+  bare_out=$(timeout 15 phantombot </dev/null 2>&1 || true)
+  [[ $bare_out == *"No command specified"* ]] ||
+    fail "bare phantombot reaches the chat-TUI gate, not a subcommand dispatch"
+  persona_out=$(timeout 15 phantombot persona </dev/null 2>&1 || true)
+  [[ $persona_out == *"Persona"* && $persona_out == *"Status"* ]] ||
+    fail "phantombot persona renders persona management, not the chat TUI"
+  prompt_out=$(timeout 15 phantombot --prompt "contract probe" </dev/null 2>&1 || true)
+  [[ $prompt_out == *"need a terminal on stdin and stdout"* ]] ||
+    fail "the shipping binary accepts --prompt as its TUI seed flag" "output: $prompt_out"
+  pass "Phantombot entrypoint contract holds on the real binary"
+fi
+
+# The install script is pinned the way Omarchy's packaged seeds are in
+# effect: one upstream release, fetched by tag and held to a recorded sha256,
+# so a fresh install never runs whatever the upstream main branch holds.
+grep -Eq 'phantombot/v[0-9][^/]*/install\.sh' "$ROOT/bin/omarchy-install-phantombot" ||
+  fail "the Phantombot install script is pinned to a release tag"
+grep -q 'install_script_sha256=' "$ROOT/bin/omarchy-install-phantombot" ||
+  fail "the Phantombot install script is held to a recorded sha256"
+! grep -q 'phantombot/main/install\.sh' "$ROOT/bin/omarchy-install-phantombot" ||
+  fail "the Phantombot installer never runs an unpinned main script"
+pass "the Phantombot installer runs a pinned, hash-verified script"
+
+# The sha256 gate is the security boundary, so run the real wrapper against
+# fake downloads and prove it only ever executes bytes that match the
+# recorded hash — grepping the script's text cannot show that ordering.
+# The recorded hash's value is upstream release bytes, verified when the pin
+# moves; the match case points the pin at the fixture so the suite is offline.
+install_bin="$test_tmp/install-bin"
+install_src="$test_tmp/install-src.sh"
+install_ran="$test_tmp/install-ran"
+install_env="$test_tmp/install-env"
+install_tmpfile="$test_tmp/install-tmp"
+mkdir -p "$install_bin"
+
+cat >"$install_bin/omarchy-cmd-present" <<'SH'
+#!/bin/bash
+exit 1
+SH
+
+cat >"$install_bin/curl" <<'SH'
+#!/bin/bash
+out=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -o)
+      out=$2
+      shift 2
+      ;;
+    *) shift ;;
+  esac
+done
+[[ ${OMARCHY_TEST_CURL_FAIL:-false} != "true" ]] || exit 22
+cp "$OMARCHY_TEST_CURL_SRC" "$out"
+SH
+
+cat >"$install_bin/mktemp" <<'SH'
+#!/bin/bash
+printf '%s\n' "$OMARCHY_TEST_INSTALL_TMPFILE"
+SH
+
+chmod +x "$install_bin"/*
+
+cat >"$install_src" <<'SH'
+#!/bin/sh
+: >"$OMARCHY_TEST_INSTALL_RAN"
+printf '%s' "${PHANTOMBOT_SKIP_TUI:-}" >"$OMARCHY_TEST_INSTALL_ENV"
+SH
+
+export OMARCHY_TEST_CURL_SRC="$install_src"
+export OMARCHY_TEST_INSTALL_TMPFILE="$install_tmpfile"
+export OMARCHY_TEST_INSTALL_RAN="$install_ran"
+export OMARCHY_TEST_INSTALL_ENV="$install_env"
+
+sed "s/^install_script_sha256=.*/install_script_sha256=\"$(sha256sum "$install_src" | awk '{print $1}')\"/" \
+  "$ROOT/bin/omarchy-install-phantombot" >"$install_bin/wrapper"
+
+rm -f "$install_ran" "$install_env" "$install_tmpfile"
+PATH="$install_bin:$PATH" bash "$install_bin/wrapper" --now >/dev/null
+[[ -f $install_ran ]] || fail "installer bytes matching the recorded sha256 run"
+[[ $(cat "$install_env") == "1" ]] ||
+  fail "the installer runs with PHANTOMBOT_SKIP_TUI=1" "env: $(cat "$install_env")"
+[[ ! -e $install_tmpfile ]] || fail "the downloaded script is removed after it runs"
+pass "installer bytes matching the recorded sha256 run, wizard suppressed"
+
+rm -f "$install_ran" "$install_env" "$install_tmpfile"
+if mismatch_out=$(PATH="$install_bin:$PATH" bash "$ROOT/bin/omarchy-install-phantombot" --now 2>&1); then
+  fail "installer bytes that do not match the recorded sha256 are refused"
+fi
+[[ $mismatch_out == *"refusing to run"* ]] ||
+  fail "a hash mismatch reports why it stopped" "output: $mismatch_out"
+[[ ! -f $install_ran ]] || fail "mismatched installer bytes never execute"
+[[ ! -e $install_tmpfile ]] || fail "a refused download is cleaned up"
+pass "mismatched installer bytes are refused before anything runs"
+
+rm -f "$install_ran" "$install_env" "$install_tmpfile"
+if PATH="$install_bin:$PATH" OMARCHY_TEST_CURL_FAIL=true bash "$ROOT/bin/omarchy-install-phantombot" --now >/dev/null 2>&1; then
+  fail "a failed download stops the installation"
+fi
+[[ ! -f $install_ran ]] || fail "a failed download never runs an installer"
+pass "a failed download stops the installation"
