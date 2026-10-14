@@ -32,6 +32,10 @@ Item {
   property double fingerprintLastSettleMs: 0
   property double fingerprintResumedAtMs: 0
   property int fingerprintProbeStreak: 0
+  // Nobody can touch the sensor while the display is blanked, so the
+  // fingerprint PAM is dropped for that stretch instead of being retried
+  // until the display comes back.
+  property bool fingerprintSuspended: false
   property bool previewVisible: false
   property string enteredPassword: ""
   property string pendingPassword: ""
@@ -200,6 +204,7 @@ Item {
     fingerprintLastSettleMs = 0
     fingerprintResumedAtMs = 0
     fingerprintProbeStreak = 0
+    fingerprintSuspended = false
     fingerprintRecheckTimer.stop()
     fingerprintRetryTimer.stop()
     fingerprintReachTimer.stop()
@@ -251,6 +256,7 @@ Item {
     root.monitorDpmsKnown = false
     if (!wakeProcess.running) wakeProcess.running = true
     if (lockRequested) armBlankTimer()
+    resumeFingerprint()
     nudgeFingerprint()
   }
 
@@ -293,6 +299,15 @@ Item {
   // A suspended PAM conversation may be orphaned by the daemon restart.
   function restartFingerprintAfterSleep() {
     noteFingerprintResumed()
+    // A resume that keeps the same outputs never reaches runWake(), so the
+    // reader would stay off until a keypress. Count the resume as activity:
+    // re-arm the reader and the blank timer without forcing the panel on, so
+    // a lid opened to a lit panel takes a finger and a dark wake blanks again.
+    if (fingerprintSuspended) {
+      resumeFingerprint()
+      if (lockRequested) armBlankTimer()
+      return
+    }
     if (fingerprintAuthenticating || fingerprintPam.active) {
       if (fingerprintPam.active) fingerprintPam.abort()
       settleFingerprintAttempt()
@@ -306,6 +321,28 @@ Item {
     root.displaysBlank = true
     root.monitorDpmsKnown = false
     if (!blankProcess.running) blankProcess.running = true
+    suspendFingerprint()
+  }
+
+  // Also drops an attempt already in flight: a verify left waiting on a dark
+  // panel holds the reader for pam_fprintd's whole timeout and then re-arms.
+  function suspendFingerprint() {
+    if (fingerprintSuspended) return
+
+    fingerprintSuspended = true
+    fingerprintRetryTimer.stop()
+    fingerprintReachTimer.stop()
+    // abort() gives no completion signal, and an aborted attempt is not a
+    // miss, so clear it here rather than settling it into the streak.
+    if (fingerprintPam.active) fingerprintPam.abort()
+    fingerprintAuthenticating = false
+  }
+
+  function resumeFingerprint() {
+    if (!fingerprintSuspended) return
+
+    fingerprintSuspended = false
+    if (lockRequested && fingerprintConfigured) startFingerprint()
   }
 
   function screenBlank(screenName) {
@@ -366,6 +403,7 @@ Item {
   }
 
   function startFingerprint() {
+    if (fingerprintSuspended) return
     if (!lockRequested || !sessionLock.secure || !fingerprintConfigured) return
     if (fingerprintPam.active || fingerprintAuthenticating) return
 
@@ -405,7 +443,7 @@ Item {
     if (!fingerprintAuthenticating) return
     fingerprintAuthenticating = false
     fingerprintReachTimer.stop()
-    if (!lockRequested || !fingerprintConfigured) return
+    if (!lockRequested || !fingerprintConfigured || fingerprintSuspended) return
 
     // An error can arrive before the sleep watcher notices the wall-clock gap.
     var now = Date.now()
@@ -753,8 +791,8 @@ Item {
         return
       }
       // Only a password check in flight should hold the display up. The
-      // fingerprint PAM stays armed for the whole lock, so gating on
-      // `authenticating` here would keep the panel lit until unlock.
+      // fingerprint PAM stays armed for the whole time the display is up, so
+      // gating on `authenticating` here would keep the panel lit until unlock.
       if (root.lockRequested && !root.authenticatingPassword) root.runBlank()
     }
   }
@@ -799,6 +837,7 @@ Item {
       // for, so the blank state has to be given up here or a visible lock
       // wallpaper stays frozen until the next keypress.
       root.displaysBlank = false
+      root.resumeFingerprint()
       root.requestSessionLock()
 
       // A monitor still coming up has no workspace, so cannot answer yet.
