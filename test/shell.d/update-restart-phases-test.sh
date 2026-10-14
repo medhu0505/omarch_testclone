@@ -9,12 +9,12 @@ copy_boundary_file bin/omarchy-update-restart
 for step in omarchy-state omarchy-restart-sshd omarchy-restart-shell omarchy-system; do
   ln -s test-step "$SUDO_TEST_ROOT/bin/$step"
 done
-cat >"$SUDO_TEST_ROOT/bin/gum" <<'STUB'
+cat >"$SUDO_TEST_ROOT/bin/omarchy-confirm" <<'STUB'
 #!/bin/bash
 printf 'prompt:%s\n' "$*" >>"$SUDO_TEST_LOG"
 exit 1
 STUB
-chmod +x "$SUDO_TEST_ROOT/bin/gum"
+chmod +x "$SUDO_TEST_ROOT/bin/omarchy-confirm"
 mkdir -p "$SUDO_TEST_HOME/.local/state/omarchy"
 touch "$SUDO_TEST_HOME/.local/state/omarchy/reboot-required" "$SUDO_TEST_HOME/.local/state/omarchy/restart-sshd-required"
 
@@ -37,3 +37,13 @@ if grep -Eq "^(prompt:|step:omarchy-restart-|step:omarchy-system)" "$SUDO_TEST_L
   fail "unattended reboot phase prompted or performed service work"
 fi
 pass "unattended reboot phase reports a required reboot without prompting"
+
+cat >"$SUDO_TEST_ROOT/bin/omarchy-confirm" <<'STUB'
+#!/bin/bash
+printf 'prompt:%s\n' "$*" >>"$SUDO_TEST_LOG"
+exit 0
+STUB
+reset_boundary
+PATH="$SUDO_TEST_ROOT/bin:$PATH" "$SUDO_TEST_ROOT/bin/omarchy-update-restart" --reboot-only >"$boundary_tmp/output" 2>&1
+grep -q '^step:omarchy-system reboot$' "$SUDO_TEST_LOG" || fail "accepted reboot prompt uses the consolidated system command"
+pass "accepted reboot prompt uses the consolidated system command"
