@@ -23,11 +23,7 @@ while (($#)); do
       prompt=${2:?--prompt needs a value}
       shift 2
       ;;
-    dsh)
-  # The web profile uses the upstream no-approval permission preset.
-  command=(env DSH_PERMISSION_MODE=danger-full-access dsh web)
-  ;;
-*)
+    *)
       echo "Unexpected argument: $1" >&2
       echo "To pass a prompt: omarchy agent prompt \"$*\"" >&2
       exit 1
@@ -130,10 +126,6 @@ ori)
   command=(ori code)
   [[ -n ${prompt:-} ]] && command+=(--interactive --prompt "$prompt")
   ;;
-dsh)
-  # The web profile uses the upstream no-approval permission preset.
-  command=(env DSH_PERMISSION_MODE=danger-full-access dsh web)
-  ;;
 pi)
   command=(pi)
   [[ -n ${prompt:-} ]] && command+=("$prompt")
@@ -145,6 +137,10 @@ kimi)
   else
     command=(kimi --yolo)
   fi
+  ;;
+dsh)
+  # The web profile uses the upstream no-approval permission preset.
+  command=(env DSH_PERMISSION_MODE=danger-full-access dsh web)
   ;;
 *)
   echo "Unsupported default agent: $agent" >&2
