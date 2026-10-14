@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="muse" x1="12" y1="16" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00a1f1"/>
+      <stop offset="1" stop-color="#0064e0"/>
+    </linearGradient>
+  </defs>
+  <path fill="none" stroke="url(#muse)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"
+        d="M12 52V16l20 22 20-22v36"/>
+</svg>
