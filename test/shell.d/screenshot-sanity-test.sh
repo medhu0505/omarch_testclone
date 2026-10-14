@@ -59,6 +59,13 @@ screenshot_dir="$TMPDIR/screenshots"
 log="$TMPDIR/quickshell.log"
 screenshot_err="$TMPDIR/screenshot.err"
 mkdir -p "$test_root" "$test_home" "$stub_bin" "$screenshot_dir"
+
+# A home with no record of this session reads as a new login, and the shell
+# then covers the bar and wallpaper with its startup intro until the wallpaper
+# is ready, so the screenshot catches the black cover instead of the bar.
+# Record the session as already introduced, as a shell restart finds it.
+mkdir -p "$test_home/.local/state/omarchy"
+printf '%s\n' "${OMARCHY_SESSION_ID:-${HYPRLAND_INSTANCE_SIGNATURE:-}}" >"$test_home/.local/state/omarchy/background-intro.session-id"
 cp -a "$ROOT/shell" "$test_root/shell"
 ln -s "$ROOT/config" "$test_root/config"
 ln -s "$ROOT/bin" "$test_root/bin"
