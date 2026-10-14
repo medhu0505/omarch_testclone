@@ -6,7 +6,7 @@ If you've spent years on macOS or Windows, your fingers know a hundred things yo
 
 All the muscle memory you've built around Cmd or the Windows key transfers to one key: Super. That's the Windows key on a PC keyboard, and it's the anchor for nearly every hotkey in Omarchy.
 
-Your Spotlight or Raycast or Start-menu reflex becomes `Super + Space`. That opens the Omarchy menu, which launches apps, changes settings, installs software, captures the screen — just about everything. Start typing to filter. There's also a dedicated apps-only menu on `Super + Alt + Space`. See [navigation](04-navigation.md).
+Your Spotlight or Raycast or Start-menu reflex becomes `Super + Space`. That opens the Omarchy menu, which launches apps, changes settings, installs software, captures the screen — just about everything. Start typing to filter. `Super + Alt + Space` shows every app on one grid, the way Launchpad does. See [navigation](04-navigation.md).
 
 ### There's no dock and no desktop icons
 
@@ -46,7 +46,7 @@ Updates come through one command — _Update > Omarchy_ — that updates Omarchy
 
 Software comes from a package manager, not from downloaded installers.
 
-And when you close a window, the app actually quits. There's no macOS limbo where the program keeps running with no windows. `Super + W` means gone.
+And when you close a window, the app actually quits. There's no macOS limbo where the program keeps running with no windows. `Super + W` — or `Super + Q`, if that's the finger memory you arrived with — means gone.
 
 ### On Mac hardware
 
