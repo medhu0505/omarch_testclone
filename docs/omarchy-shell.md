@@ -85,7 +85,7 @@ loaded by default when it is built in, so `shell.json` records only the
 deviation: a third-party plugin you added under `plugins[]`, a built-in you
 switched off under `disabledPlugins[]`. A full bar has no off state: enabling
 one replaces the active bar, and it is therefore never offered under Disable.
-Bar widgets may set `barWidget.defaultSection` to `left`, `center`, or `right`;
+Bar widgets may set `barWidget.defaultSection` to `left`, `center`, `tray`, or `right`;
 widgets that omit it default to `center`.
 
 Plugins run as **unsandboxed code** inside `omarchy-shell`. Adding warns you before cloning, plugins land disabled so you can review the code before `omarchy plugin enable`, and updates show a diff before touching anything. Commands confirm in a terminal even when given arguments; without one they refuse rather than guess. Add `--yes` to skip every prompt (the path for scripts and agents). The scoped interfaces remove direct access to authentication services and avoid handing generic cross-plugin service factories to replacement bars, but visual plugins can still traverse ordinary objects in their shared QML scene. Plugin code also has the same user-level file and process access as the shell.
@@ -94,8 +94,8 @@ You can still install by hand: drop a plugin into
 `~/.config/omarchy/plugins/<id>/`, run `omarchy-shell shell rescanPlugins`, then
 `omarchy plugin enable <id>`. A bar widget starts in its declared default
 section; enabling a full bar replaces the one in use. `omarchy bar` drives the
-bar from the CLI — `use | reset | defaults | position | transparent | put |
-move | set`, with placement flags such as `--section` and `--index`.
+bar from the CLI — `use | reset | defaults | position | background | put |
+move | set | get`, with placement flags such as `--section` and `--index`.
 The lower-level IPC methods remain available through `omarchy-shell shell ...`.
 
 ## Elsewhen
@@ -121,7 +121,7 @@ or `omarchy.power`. There is no `bar` target.
 | `rescanPlugins`                       | re-walk plugin dirs and hot-reload plugin code |
 | `reloadConfig`                        | reload shell.json               |
 | `applyTheme <colorsB64> <shellB64>`   | push theme colors + shell.toml  |
-| `toggleBarTransparency`               | flip the bar background between solid and transparent |
+| `toggleBarTransparency`               | cycle the bar background from clear to glassy to opaque |
 | `cycleInput <next\|back>`             | switch to the next or previous input method or layout (Super+I, Super+Shift+I); `not running` without the input reader |
 | `setPluginEnabled <id> <"true"\|…>`   | flip enabled bit (`ok` / `unknown`) |
 | `enablePlugin <id> <placementJson>`   | enable and place in one mutation |
@@ -148,7 +148,7 @@ string on a miss.
   "bar": {
     "id": "omarchy.bar",
     "position": "top",
-    "transparent": false,
+    "background": "opaque",
     "centerAnchor": "omarchy.clock",
     "layout": {
       "left":   [ { "id": "omarchy.menu" } ],
@@ -169,6 +169,9 @@ Rules:
    to replace the full bar.
 2. Every plugin instance is one entry — `bar.layout.<section>` for
    bar widgets, `plugins[]` for everything else.
+   The sections are `left`, `center`, `tray` and `right`. `tray` is
+   drawn inside the tray's drawer, after the app icons, and shows only while
+   `omarchy.tray` is on the bar; it cannot hold the tray itself.
 3. Settings are inline on the entry. No `config:` sub-object, no
    merge layers.
 4. Built-in bar widget ids are namespaced (`omarchy.clock`, `omarchy.audio`, …).
