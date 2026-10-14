@@ -67,13 +67,14 @@ def test():
       environment = {**os.environ, 'OMARCHY_PATH': str(ROOT),
           'MPV_THEME_REQUEST': str(request), 'MPV_THEME_RELEASE': str(release),
           'PATH': str(helpers) + os.pathsep + str(ROOT / 'bin') + os.pathsep + os.environ['PATH']}
-      player = subprocess.Popen(args, stdout=log, stderr=subprocess.STDOUT, env=environment)
-      second_ipc = home / 'second.sock'
-      override = home / 'input.conf'
-      override.write_text('a set volume 51\n')
-      second_log = (home / 'second.log').open('w')
-      second = subprocess.Popen([args[0], f'--input-conf={override}'] + [f'--input-ipc-server={second_ipc}' if a.startswith('--input-ipc-server=') else a for a in args[1:]], stdout=second_log, stderr=subprocess.STDOUT, env=environment)
+      player = second = second_log = None
       try:
+        player = subprocess.Popen(args, stdout=log, stderr=subprocess.STDOUT, env=environment)
+        second_ipc = home / 'second.sock'
+        override = home / 'input.conf'
+        override.write_text('a set volume 51\n')
+        second_log = (home / 'second.log').open('w')
+        second = subprocess.Popen([args[0], f'--input-conf={override}'] + [f'--input-ipc-server={second_ipc}' if a.startswith('--input-ipc-server=') else a for a in args[1:]], stdout=second_log, stderr=subprocess.STDOUT, env=environment)
         deadline = time.monotonic() + 10
         while not ipc.exists() and time.monotonic() < deadline:
           if player.poll() is not None:
@@ -219,13 +220,16 @@ def test():
         assert 'stack traceback' not in log_path.read_text(), log_path.read_text()
         print('PASS: dark/light palettes reload in paused mpv; invalid/missing files retain colors; unrelated options survive.')
       finally:
-        if second.poll() is None:
-          second.terminate()
-          second.wait(timeout=5)
-        second_log.close()
-        if player.poll() is None:
-          player.terminate()
-          player.wait(timeout=5)
+        for process in (second, player):
+          if process is not None and process.poll() is None:
+            process.terminate()
+            try:
+              process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+              process.kill()
+              process.wait(timeout=5)
+        if second_log is not None:
+          second_log.close()
 
 
 if __name__ == '__main__':
