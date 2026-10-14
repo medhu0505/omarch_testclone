@@ -85,3 +85,21 @@ if OMARCHY_LOCALE_REGISTRY=$work/registry.json run da 2>/dev/null; then
 fi
 [[ ! -s $LOCALE_GEN_LOG ]] || fail "a malformed registry locale generates nothing"
 pass "omarchy-locale-generate only generates well-formed locales"
+
+# A checkout's copy runs as root behind a password prompt on a machine whose
+# installed package predates the registry, so it must find the registry beside
+# it rather than only in /usr/share. Run it as namespaced root: it can't write
+# /etc/locale.gen there, but it must get past the code lookup first.
+if (( EUID == 0 )) || unshare --user --map-root-user true 2>/dev/null; then
+  root_runner=()
+  (( EUID == 0 )) || root_runner=(unshare --user --map-root-user)
+  errors=$("${root_runner[@]}" env -u OMARCHY_LOCALE_REGISTRY -u OMARCHY_LOCALE_GEN bash "$generator" ja 2>&1 >/dev/null || true)
+  [[ $errors != *"Unknown language code"* ]] ||
+    fail "a checkout's omarchy-locale-generate finds its registry as root" "$errors"
+  pass "a checkout's omarchy-locale-generate finds its registry as root"
+else
+  skip "user namespaces unavailable; skipping the root registry lookup"
+fi
+grep -Fq 'registry=/usr/share/omarchy/default/i18n/locales.json' "$generator" && grep -Fq 'if [[ $here == /usr/bin ]]; then' "$generator" ||
+  fail "the packaged omarchy-locale-generate reads only the packaged registry"
+pass "the packaged omarchy-locale-generate reads only the packaged registry"

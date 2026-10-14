@@ -15,9 +15,19 @@ if (( EUID == 0 )); then
   export PATH=/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin
 fi
 
-# Root reads only the packaged registry and the real locale.gen; the
-# overrides are for unprivileged tests (same convention as omarchy-language).
-registry=/usr/share/omarchy/default/i18n/locales.json
+# The packaged helper, the only one the passwordless sudoers rule names, reads
+# the packaged registry. A checkout's copy runs only behind a password prompt
+# (pkexec or sudo, where no packaged helper is installed yet) and reads the
+# registry beside it, since the installed package may predate languages. The
+# registry only selects a locale, which must still pass the strict pattern
+# below before it reaches locale.gen. The overrides are for unprivileged tests
+# (same convention as omarchy-language).
+here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+if [[ $here == /usr/bin ]]; then
+  registry=/usr/share/omarchy/default/i18n/locales.json
+else
+  registry=$here/../default/i18n/locales.json
+fi
 locale_gen=/etc/locale.gen
 if (( EUID != 0 )); then
   registry=${OMARCHY_LOCALE_REGISTRY:-$registry}
