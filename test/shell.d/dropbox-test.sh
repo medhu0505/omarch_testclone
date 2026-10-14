@@ -62,10 +62,16 @@ service = service.replace('  id: root', `  id: root
 service = service.replace(/Qt\.openUrlExternally\(/g, 'root.testOpenUrl(')
 fs.writeFileSync(`${stage}/dropbox/Service.qml`, service)
 let panel = fs.readFileSync(`${root}/shell/plugins/panels/dropbox/Panel.qml`, 'utf8')
+// The panel's content is built lazily, so its private IDs are exposed from
+// the content root and mirrored on the panel once the test builds it.
+panel = panel.replace('      id: keyCatcher\n', `      id: keyCatcher
+      property alias testMessage: testStatusMessage
+`)
 panel = panel.replace('  id: root', `  id: root
   property alias testService: dropbox
-  property alias testMessage: testStatusMessage
-  property alias testKeys: keyCatcher`)
+  function testEnsureContent() { return panel.ensureContent() }
+  readonly property Item testKeys: panel.loadedContent
+  readonly property Item testMessage: panel.loadedContent ? panel.loadedContent.testMessage : null`)
 panel = panel.replace('          Text {\n            textFormat: Text.PlainText',
   '          Text {\n            id: testStatusMessage\n            textFormat: Text.PlainText')
 fs.writeFileSync(`${stage}/dropbox/Panel.qml`, panel)

@@ -73,6 +73,7 @@ ShellRoot {
         service.testRefreshTimer.stop()
         service.testStartupRamp.stop()
         service.testLinkWait.interval = 50
+        test.check(panel.testEnsureContent() !== null && panel.testMessage !== null, "panel content builds on demand")
         service.applyStatus(test.status(false))
         test.statusExits = 0
         service.login()
@@ -196,7 +197,8 @@ ShellRoot {
     id: previewCapture
     interval: 250
     onTriggered: {
-      var card = panel.testKeys.parent.parent
+      // Content root -> Loader -> content holder -> card.
+      var card = panel.testKeys.parent.parent.parent
       card.grabToImage(function(result) {
         test.check(result.saveToFile(Quickshell.env("DROPBOX_TEST_SCREENSHOT")), "save panel preview")
         Qt.quit()
