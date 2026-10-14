@@ -762,6 +762,17 @@ Panel {
       implicitHeight: scrollContent.implicitHeight
       anchors.fill: parent
       blocked: root.adding
+      onHandleCustomKeys: function(event) {
+        if (event.key === Qt.Key_T) {
+          if (event.modifiers & Qt.AltModifier) {
+            root.toggleUnits()
+            event.accepted = true
+          } else {
+            root.toggleHour24()
+            event.accepted = true
+          }
+        }
+      }
       // Escape unwinds one layer: search (its own field), a shifted time, globe, then panel.
       onCloseRequested: {
         if (root.scrubMinutes !== 0) { scrubHold.stop(); root.scrubMinutes = 0 }
@@ -791,8 +802,6 @@ Panel {
       onTextKey: function(text, modifiers) {
         var key = text.toLowerCase()
         if (key === "r") root.refresh()
-        else if (key === "t" && (modifiers & Qt.AltModifier)) root.toggleUnits()
-        else if (key === "t") root.toggleHour24()
         else if (root.globeMode && (key === "+" || key === "j")) {
           if (globeLoader.item) globeLoader.item.startJump()
         } else if (!root.globeMode && (key === "+" || key === "a")) {
