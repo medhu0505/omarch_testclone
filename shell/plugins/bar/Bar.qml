@@ -50,6 +50,11 @@ Item {
     layout: { left: [], center: [], right: [] }
   })
   property var layoutConfig: fallbackBarConfig.layout
+  // Normalized layouts for the monitors that override layoutConfig, by screen
+  // name. Empty unless `bar.perMonitor` is true, so with the toggle off every
+  // screen reads layoutConfig exactly as before. See BarModel.monitorLayouts.
+  property var monitorLayouts: ({})
+  readonly property bool hasMonitorLayouts: Object.keys(monitorLayouts).length > 0
   property string centerAnchor: ""
   property bool requestedTransparent: false
   property bool useTransparentForeground: false
@@ -401,6 +406,7 @@ Item {
       out.push({
         id: slot.moduleName,
         section: slot.region,
+        screen: slotScreenName(slot),
         x: Math.round(point.x),
         y: Math.round(point.y),
         width: Math.round(slot.width),
@@ -704,23 +710,45 @@ Item {
     // every monitor. When a shell.json write only changed inline widget
     // settings, patch the live layout and running widgets in place instead.
     var next = normalizeLayout(config.layout)
+    var nextMonitors = normalizeMonitorLayouts(config)
     var delta = BarModel.inlineSettingsDelta(layoutConfig, next)
-    if (delta) {
-      applySettingsDelta(delta)
+    var monitorDeltas = delta ? BarModel.monitorSettingsDeltas(monitorLayouts, nextMonitors) : null
+    if (delta && monitorDeltas) {
+      applySettingsDelta(layoutConfig, delta, "")
+      for (var name in monitorDeltas) applySettingsDelta(monitorLayouts[name], monitorDeltas[name], name)
       return
     }
     layoutConfig = next
+    monitorLayouts = nextMonitors
     barConfigSerial++
   }
 
-  function applySettingsDelta(delta) {
+  function normalizeMonitorLayouts(config) {
+    var raw = BarModel.monitorLayouts(config)
+    var out = {}
+    for (var name in raw) out[name] = normalizeLayout(raw[name])
+    return out
+  }
+
+  // The screen whose own layout a bar on this screen reads, or "" for the
+  // shared layoutConfig.
+  function layoutOwner(screenName) {
+    var name = String(screenName || "")
+    return name && Object.prototype.hasOwnProperty.call(monitorLayouts, name) ? name : ""
+  }
+
+  // Patches one layout (layoutConfig when owner is "", else that monitor's)
+  // and the running widgets built from it, leaving other monitors' copies of
+  // the same widget alone.
+  function applySettingsDelta(layout, delta, owner) {
     for (var i = 0; i < delta.length; i++) {
       var change = delta[i]
-      layoutConfig[change.region][change.index] = change.entry
+      layout[change.region][change.index] = change.entry
       var settings = entrySettings(change.entry)
       for (var s = 0; s < moduleSlots.length; s++) {
         var slot = moduleSlots[s]
         if (!slot || slot.region !== change.region || slot.moduleName !== entryId(change.entry)) continue
+        if (hasMonitorLayouts && layoutOwner(slotScreenName(slot)) !== owner) continue
         var item = slot.activeItem
         if (item && "settings" in item) item.settings = settings
       }
@@ -729,17 +757,29 @@ Item {
 
   onBarConfigChanged: applyBarConfig()
 
-  function layoutEntries(region) {
+  // The entries a bar region shows on one screen. Without a screen name it
+  // reads the shared layout. A module list that has not found its window yet
+  // passes "", and gets nothing while any monitor has a layout of its own, so
+  // it never builds the shared widgets only to swap them for its screen's.
+  function layoutEntries(region, screenName) {
     var serial = barConfigSerial
-    var entries = layoutConfig ? layoutConfig[region] : null
+    if (screenName === "" && hasMonitorLayouts) return []
+    var owner = layoutOwner(screenName)
+    var layout = owner ? monitorLayouts[owner] : layoutConfig
+    var entries = layout ? layout[region] : null
     return Array.isArray(entries) ? entries : []
+  }
+
+  function windowScreenName(window) {
+    return window && window.screen ? String(window.screen.name || "") : ""
   }
 
   // Tab order for the panels in one bar region. Scoped to a single bar surface
   // so tabbing walks the bar the open panel belongs to instead of hopping the
   // panel to another monitor's copy of the same widget.
-  function panelNavigationSlots(region, window) {
-    var entries = layoutEntries(region)
+  function panelNavigationSlots(region, window, screenName) {
+    var name = window ? windowScreenName(window) : String(screenName || "")
+    var entries = layoutEntries(region, name || undefined)
     var slots = []
     for (var i = 0; i < entries.length; i++) {
       var id = entryId(entries[i])
@@ -747,6 +787,7 @@ Item {
         var slot = moduleSlots[j]
         if (!slot || slot.region !== region || slot.moduleName !== id) continue
         if (window && !sameWindow(slotWindow(slot), window)) continue
+        if (!window && name && slotScreenName(slot) !== name) continue
         var item = slot.activeItem
         if (!item || item.visible !== true || slot.visible !== true || slot.width <= 0 || slot.height <= 0) continue
         if (typeof item.open !== "function" || typeof item.close !== "function" || item.opened === undefined) continue
@@ -763,11 +804,12 @@ Item {
   // Nth panel icon the user can see rather than the Nth layout entry.
   // One-based, because it exists for hotkeys; anything else lands on no slot.
   //
-  // Counting any bar surface is enough: every monitor lays its bar out from the
-  // one layout, and summoning the id routes through pickPanelSlot, which opens
-  // the focused monitor's copy whichever surface was counted.
+  // With one shared layout, counting any bar surface is enough, and summoning
+  // the id routes through pickPanelSlot, which opens the focused monitor's
+  // copy whichever surface was counted. When monitors have layouts of their
+  // own, count the focused monitor's bar, since the Nth panel differs.
   function panelWidgetIdAt(region, index) {
-    var slots = panelNavigationSlots(String(region || ""), null)
+    var slots = panelNavigationSlots(String(region || ""), null, hasMonitorLayouts ? focusedScreenName() : "")
     var slot = slots[Math.round(Number(index)) - 1]
     return slot ? String(slot.moduleName || "") : ""
   }
@@ -820,8 +862,7 @@ Item {
   }
 
   function slotScreenName(slot) {
-    var window = slotWindow(slot)
-    return window && window.screen ? String(window.screen.name || "") : ""
+    return windowScreenName(slotWindow(slot))
   }
 
   // The output Hyprland has focused, which is where a keyboard-summoned panel
@@ -964,12 +1005,22 @@ Item {
     Util.execDetached("omarchy-bar background cycle")
   }
 
-  function rawLayoutSection(config, region) {
+  // The shell.json array a drag on a screen edits: that monitor's own layout
+  // when it has one, else the shared layout. A region the monitor takes from
+  // the shared layout is copied into its own first, so the drag reorders this
+  // monitor alone.
+  function rawLayoutSection(config, region, screenName) {
     if (!Util.isPlainObject(config.bar)) config.bar = {}
     if (!Util.isPlainObject(config.bar.layout)) config.bar.layout = {}
     if (!Array.isArray(config.bar.layout[region])) config.bar.layout[region] = []
 
-    return config.bar.layout[region]
+    var owner = layoutOwner(screenName)
+    var monitors = config.bar.monitors
+    var monitor = owner && Util.isPlainObject(monitors) ? monitors[owner] : null
+    if (!Util.isPlainObject(monitor) || !Util.isPlainObject(monitor.layout)) return config.bar.layout[region]
+    if (!Array.isArray(monitor.layout[region]))
+      monitor.layout[region] = JSON.parse(JSON.stringify(config.bar.layout[region]))
+    return monitor.layout[region]
   }
 
   function rawEntryIndex(entries, name) {
@@ -980,9 +1031,9 @@ Item {
     return -1
   }
 
-  function moveModuleInConfig(config, fromRegion, fromName, toRegion, beforeName) {
-    var fromEntries = rawLayoutSection(config, fromRegion)
-    var toEntries = rawLayoutSection(config, toRegion)
+  function moveModuleInConfig(config, fromRegion, fromName, toRegion, beforeName, screenName) {
+    var fromEntries = rawLayoutSection(config, fromRegion, screenName)
+    var toEntries = rawLayoutSection(config, toRegion, screenName)
     var fromIndex = rawEntryIndex(fromEntries, fromName)
     if (fromIndex < 0) return false
 
@@ -1012,8 +1063,9 @@ Item {
     if (!root.shell || typeof root.shell.mutateShellConfig !== "function") return false
 
     var changed = false
+    var screenName = root.slotScreenName(source) || root.windowScreenName(root.barDragWindow)
     root.shell.mutateShellConfig(function(config) {
-      changed = moveModuleInConfig(config, source.region, source.moduleName, toRegion, beforeName)
+      changed = moveModuleInConfig(config, source.region, source.moduleName, toRegion, beforeName, screenName)
     })
     return changed
   }
@@ -1081,7 +1133,7 @@ Item {
   }
 
   function nextVisibleModuleName(region, afterName, sourceSlot) {
-    var entries = layoutEntries(region)
+    var entries = layoutEntries(region, root.slotScreenName(sourceSlot) || root.windowScreenName(root.barDragWindow) || undefined)
     var found = false
     for (var i = 0; i < entries.length; i++) {
       var name = entryId(entries[i])
@@ -1504,10 +1556,12 @@ Item {
 
         CenterModules {
           anchors.fill: parent
-          entries: barWindow.centerBesideRight ? [] : root.layoutEntries("center")
+          screenName: root.windowScreenName(barWindow)
+          entries: barWindow.centerBesideRight ? [] : root.layoutEntries("center", screenName)
         }
 
         LeftModules {
+          screenName: root.windowScreenName(barWindow)
           anchors.left: parent.left
           anchors.leftMargin: Style.space(8)
           anchors.verticalCenter: parent.verticalCenter
@@ -1515,6 +1569,7 @@ Item {
 
         RightModules {
           id: rightModules
+          screenName: root.windowScreenName(barWindow)
           anchors.right: parent.right
           anchors.rightMargin: Style.space(8)
           anchors.verticalCenter: parent.verticalCenter
@@ -1524,7 +1579,8 @@ Item {
         // routing still address it. The gap lets a drop at the seam land in
         // the section the pointer is nearer to.
         ModuleList {
-          entries: barWindow.centerBesideRight ? root.layoutEntries("center") : []
+          screenName: root.windowScreenName(barWindow)
+          entries: barWindow.centerBesideRight ? root.layoutEntries("center", screenName) : []
           region: "center"
           anchors.right: rightModules.left
           anchors.rightMargin: Style.space(4)
@@ -1539,15 +1595,20 @@ Item {
       Item {
         anchors.fill: parent
 
-        CenterModules { anchors.fill: parent }
+        CenterModules {
+          anchors.fill: parent
+          screenName: root.windowScreenName(barWindow)
+        }
 
         LeftModules {
+          screenName: root.windowScreenName(barWindow)
           anchors.top: parent.top
           anchors.topMargin: Style.space(8)
           anchors.horizontalCenter: parent.horizontalCenter
         }
 
         RightModules {
+          screenName: root.windowScreenName(barWindow)
           anchors.bottom: parent.bottom
           anchors.bottomMargin: Style.space(8)
           anchors.horizontalCenter: parent.horizontalCenter
@@ -1685,19 +1746,21 @@ Item {
   }
 
   component LeftModules: ModuleList {
-    entries: root.layoutEntries("left")
+    entries: root.layoutEntries("left", screenName)
     region: "left"
   }
 
   component RightModules: ModuleList {
-    entries: root.layoutEntries("right")
+    entries: root.layoutEntries("right", screenName)
     region: "right"
   }
 
   component CenterModules: Item {
     id: centerRoot
 
-    property var entries: root.layoutEntries("center")
+    // See ModuleList.screenName.
+    property string screenName: root.windowScreenName(QsWindow.window)
+    property var entries: root.layoutEntries("center", screenName)
     readonly property bool hasAnchor: root.entryIndex(entries, root.centerAnchor) !== -1
     readonly property var anchorEntry: root.findCenterAnchorEntry(entries)
 
@@ -1898,6 +1961,9 @@ Item {
 
     property var entries: []
     property string region: ""
+    // The screen whose layout this list shows. The bar surface passes its own;
+    // the tray section, built through a Component, finds it from its window.
+    property string screenName: root.windowScreenName(QsWindow.window)
 
     visible: entries.length > 0
     // A hidden list must not build its modules. The center section declares
@@ -1951,7 +2017,7 @@ Item {
     id: traySectionComponent
 
     ModuleList {
-      entries: root.layoutEntries("tray")
+      entries: root.layoutEntries("tray", screenName)
       region: "tray"
     }
   }

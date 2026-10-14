@@ -227,7 +227,7 @@ assert(
 // count honest: a widget with no panel and a hidden one are already passed over
 // there, and reading the layout config a second time would count both.
 assert(
-  /function panelWidgetIdAt\(region, index\) \{[\s\S]*?panelNavigationSlots\(String\(region \|\| ""\), null\)/.test(barSource),
+  /function panelWidgetIdAt\(region, index\) \{[\s\S]*?panelNavigationSlots\(String\(region \|\| ""\), null, hasMonitorLayouts \? focusedScreenName\(\) : ""\)/.test(barSource),
   'bar counts positional panels off the drawn tab order'
 )
 assert(
@@ -376,6 +376,60 @@ assert(
   /BarModel\.inlineSettingsDelta\(layoutConfig, next\)/.test(barSource),
   'bar consults the inline settings delta before rebuilding the layout'
 )
+
+// bar.perMonitor gates every per-monitor layout: with it off or absent, every
+// screen keeps reading the shared layout whatever bar.monitors holds.
+const sharedLayout = { left: [{ id: 'omarchy.menu' }], center: [{ id: 'omarchy.clock' }], right: [{ id: 'omarchy.audio' }], tray: [] }
+const monitors = { 'DP-2': { layout: { right: [{ id: 'omarchy.power' }] } }, 'eDP-2': { enabled: true }, 'HDMI-A-1': { layout: 'nope' } }
+assertDeepEqual(bar.monitorLayouts({ layout: sharedLayout, monitors }), {}, 'bar ignores monitor layouts while perMonitor is absent')
+assertDeepEqual(bar.monitorLayouts({ perMonitor: false, layout: sharedLayout, monitors }), {}, 'bar ignores monitor layouts while perMonitor is false')
+assertDeepEqual(bar.monitorLayouts({ perMonitor: 'true', layout: sharedLayout, monitors }), {}, 'bar only takes a boolean true as the perMonitor toggle')
+assertDeepEqual(bar.monitorLayouts({ perMonitor: true, layout: sharedLayout }), {}, 'bar has no monitor layouts without a monitors block')
+assertDeepEqual(
+  bar.monitorLayouts({ perMonitor: true, layout: sharedLayout, monitors }),
+  { 'DP-2': { left: sharedLayout.left, center: sharedLayout.center, right: [{ id: 'omarchy.power' }], tray: sharedLayout.tray } },
+  'bar fills the sections a monitor leaves out from the shared layout and skips monitors without a layout'
+)
+
+assertDeepEqual(bar.monitorSettingsDeltas({}, {}), {}, 'bar reports no monitor deltas when no monitor has a layout')
+assertEqual(
+  bar.monitorSettingsDeltas({}, { 'DP-2': sharedLayout }),
+  null,
+  'bar rebuilds when a monitor gains its own layout'
+)
+assertEqual(
+  bar.monitorSettingsDeltas({ 'DP-2': sharedLayout }, {}),
+  null,
+  'bar rebuilds when perMonitor turns off'
+)
+assertEqual(
+  bar.monitorSettingsDeltas({ 'DP-2': sharedLayout }, { 'eDP-2': sharedLayout }),
+  null,
+  'bar rebuilds when a different monitor holds the layout'
+)
+assertDeepEqual(
+  bar.monitorSettingsDeltas(
+    { 'DP-2': { left: [], center: [{ id: 'omarchy.clock', format: 'HH:mm' }], right: [] } },
+    { 'DP-2': { left: [], center: [{ id: 'omarchy.clock', format: 'h:mm' }], right: [] } }
+  ),
+  { 'DP-2': [{ region: 'center', index: 0, entry: { id: 'omarchy.clock', format: 'h:mm' } }] },
+  'bar patches settings inside a monitor layout in place'
+)
+assertEqual(
+  bar.monitorSettingsDeltas(
+    { 'DP-2': { left: [{ id: 'a' }], center: [], right: [] } },
+    { 'DP-2': { left: [], center: [], right: [{ id: 'a' }] } }
+  ),
+  null,
+  'bar rebuilds when a monitor layout changes structurally'
+)
+assert(
+  /layoutEntries\("left", screenName\)/.test(barSource) && /layoutEntries\("tray", screenName\)/.test(barSource),
+  'bar module lists read the layout of their own screen'
+)
+
+const defaultShellConfig = JSON.parse(fs.readFileSync(root + '/config/omarchy/shell.json', 'utf8'))
+assertEqual(defaultShellConfig.bar.perMonitor, false, 'the default shell.json ships per-monitor layouts off')
 
 assertEqual(bar.moduleString({ id: 'custom', label: 42 }, 'label', 'fallback'), '42', 'bar stringifies module settings')
 assertEqual(bar.entryIndex(entries, 'b'), 2, 'bar finds entry indexes')

@@ -160,7 +160,29 @@ QtObject {
       if (isDisabled(config, key)) return false
       if (manifest.__isFirstParty) return true
     }
-    return findEntryLocation(config, key).found
+    return findEntryLocation(config, key).found || inMonitorLayout(config, key)
+  }
+
+  // A widget placed only in a monitor's own layout (bar.perMonitor) still has
+  // to load. Placement edits keep addressing the shared bar.layout, so this
+  // only answers whether the widget is on some monitor's bar.
+  function inMonitorLayout(config, id) {
+    if (!Util.isPlainObject(config) || !Util.isPlainObject(config.bar)
+        || config.bar.perMonitor !== true || !Util.isPlainObject(config.bar.monitors)) return false
+    var key = Util.canonicalWidgetId(String(id))
+    var sections = ["left", "center", "right", "tray"]
+    for (var name in config.bar.monitors) {
+      var monitor = config.bar.monitors[name]
+      if (!Util.isPlainObject(monitor) || !Util.isPlainObject(monitor.layout)) continue
+      for (var s = 0; s < sections.length; s++) {
+        var entries = monitor.layout[sections[s]]
+        if (!Array.isArray(entries)) continue
+        for (var i = 0; i < entries.length; i++) {
+          if (barEntryId(entries[i]) === key) return true
+        }
+      }
+    }
+    return false
   }
 
   function isDisabled(config, id) {

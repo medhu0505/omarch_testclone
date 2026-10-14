@@ -137,11 +137,11 @@ assert(
   'each bar surface decides the move from its own screen'
 )
 assert(
-  /CenterModules \{\s*anchors\.fill: parent\s*entries: barWindow\.centerBesideRight \? \[\] : root\.layoutEntries\("center"\)\s*\}/.test(barSource),
+  /CenterModules \{\s*anchors\.fill: parent\s*screenName: root\.windowScreenName\(barWindow\)\s*entries: barWindow\.centerBesideRight \? \[\] : root\.layoutEntries\("center", screenName\)\s*\}/.test(barSource),
   'a moved center section draws nothing in the middle of the bar'
 )
 assert(
-  /ModuleList \{\s*entries: barWindow\.centerBesideRight \? root\.layoutEntries\("center"\) : \[\]\s*region: "center"\s*anchors\.right: rightModules\.left\s*anchors\.rightMargin: Style\.space\(\d+\)/.test(barSource),
+  /ModuleList \{\s*screenName: root\.windowScreenName\(barWindow\)\s*entries: barWindow\.centerBesideRight \? root\.layoutEntries\("center", screenName\) : \[\]\s*region: "center"\s*anchors\.right: rightModules\.left\s*anchors\.rightMargin: Style\.space\(\d+\)/.test(barSource),
   'the center entries sit just left of the right section in their own region'
 )
 

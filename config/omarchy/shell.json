@@ -8,6 +8,7 @@
     "position": "top",
     "background": "opaque",
     "centerAnchor": "omarchy.clock",
+    "perMonitor": false,
     "layout": {
       "left": [
         {

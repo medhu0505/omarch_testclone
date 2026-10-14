@@ -101,6 +101,49 @@ function inlineSettingsDelta(current, next) {
   return changes
 }
 
+// The layouts that replace the shared `bar.layout` on particular monitors, by
+// screen name. Only read when `bar.perMonitor` is true, so a config with
+// `monitors` but the toggle off keeps every screen on the shared layout. A
+// monitor's layout takes any region it leaves out from the shared layout, and
+// a monitor without a layout object is not overridden at all.
+function monitorLayouts(config) {
+  var out = {}
+  if (!isPlainObject(config) || config.perMonitor !== true || !isPlainObject(config.monitors)) return out
+  var shared = isPlainObject(config.layout) ? config.layout : {}
+  var regions = ["left", "center", "right", "tray"]
+  for (var name in config.monitors) {
+    if (!Object.prototype.hasOwnProperty.call(config.monitors, name) || name === "") continue
+    var monitor = config.monitors[name]
+    if (!isPlainObject(monitor) || !isPlainObject(monitor.layout)) continue
+    var layout = {}
+    for (var r = 0; r < regions.length; r++) {
+      var region = regions[r]
+      layout[region] = Array.isArray(monitor.layout[region]) ? monitor.layout[region] : shared[region]
+    }
+    out[name] = layout
+  }
+  return out
+}
+
+// inlineSettingsDelta for every per-monitor layout at once, by screen name.
+// Null when any of them changed structurally or the set of overridden
+// monitors changed (the perMonitor toggle flipping, say), which rebuilds.
+function monitorSettingsDeltas(current, next) {
+  var a = isPlainObject(current) ? current : {}
+  var b = isPlainObject(next) ? next : {}
+  var names = Object.keys(b)
+  if (Object.keys(a).length !== names.length) return null
+  var out = {}
+  for (var i = 0; i < names.length; i++) {
+    var name = names[i]
+    if (!Object.prototype.hasOwnProperty.call(a, name)) return null
+    var delta = inlineSettingsDelta(a[name], b[name])
+    if (!delta) return null
+    out[name] = delta
+  }
+  return out
+}
+
 function expandPath(value, home) {
   var path = String(value || "")
   if (path === "") return ""
@@ -336,6 +379,8 @@ if (typeof module !== "undefined") {
     entriesBefore: entriesBefore,
     entriesAfter: entriesAfter,
     inlineSettingsDelta: inlineSettingsDelta,
+    monitorLayouts: monitorLayouts,
+    monitorSettingsDeltas: monitorSettingsDeltas,
     expandPath: expandPath,
     customModuleSafeName: customModuleSafeName,
     customModuleType: customModuleType,

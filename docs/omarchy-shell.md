@@ -179,7 +179,12 @@ Rules:
    First-party non-bar plugins are enabled unless listed in `disabledPlugins[]`.
 6. `barWidget.allowMultiple: true` in the manifest permits multiple instances.
 7. `idle.screensaver` and `idle.lock` are seconds since user idle began.
-8. `version: 1` is required.
+8. `bar.perMonitor` (default `false`) turns on `bar.monitors.<output>.layout`,
+   a layout for one monitor keyed by its Hyprland output name. A section the
+   monitor's layout omits falls back to `bar.layout`, and an unlisted monitor
+   uses `bar.layout` as is. With the toggle off, `bar.monitors` is ignored. See
+   [the bar README](../shell/plugins/bar/README.md#per-monitor-layouts).
+9. `version: 1` is required.
 
 `config/omarchy/shell.json` describes the fresh-install state. When no
 user `shell.json` exists, defaults are used verbatim. Once the user

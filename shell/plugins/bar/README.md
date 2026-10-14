@@ -48,6 +48,37 @@ Example `shell.json` (bar subtree only shown):
 
 `centerAnchor` pins one center module to the exact horizontal/vertical center and flanks others around it. Set to an empty string to disable anchoring (the center list is centered as a group).
 
+### Per-monitor layouts
+
+By default every monitor shows the same bar, built from `bar.layout`. Set `bar.perMonitor` to `true` to give individual monitors their own layout under `bar.monitors`, keyed by the output name Hyprland reports (`hyprctl monitors`):
+
+```json
+{
+  "bar": {
+    "perMonitor": true,
+    "layout": {
+      "left": [{ "id": "omarchy.menu" }, { "id": "omarchy.workspaces" }],
+      "center": [{ "id": "omarchy.clock" }],
+      "right": [{ "id": "omarchy.tray" }, { "id": "omarchy.audio" }, { "id": "omarchy.power" }]
+    },
+    "monitors": {
+      "DP-2": {
+        "layout": {
+          "right": [{ "id": "omarchy.audio" }]
+        }
+      }
+    }
+  }
+}
+```
+
+- `perMonitor` defaults to `false`. While it is `false` (or absent), `bar.monitors` is ignored and every monitor mirrors `bar.layout`, exactly as before.
+- With `perMonitor: true`, a monitor listed in `bar.monitors` with a `layout` object uses that layout. Any section (`left`, `center`, `right`, `tray`) the monitor's layout leaves out comes from `bar.layout`. A monitor that isn't listed uses `bar.layout` entirely.
+- Toggling `perMonitor` or editing `monitors` hot-reloads like any other `shell.json` change.
+- Dragging a widget on a monitor that has its own layout reorders that monitor's layout only; a section it was taking from `bar.layout` is copied into its own layout first. `omarchy bar`, `omarchy plugin enable/disable` and settings edits still place widgets in the shared `bar.layout`.
+- A widget's inline settings are shared by every entry with its id, so the clock's `format` is the same on every monitor.
+- Panel hotkeys open the focused monitor's copy of a widget, and fall back to another monitor's bar when the focused monitor's layout doesn't include it.
+
 ## Module catalogue
 
 ### First-party interactive widgets

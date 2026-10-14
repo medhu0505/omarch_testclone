@@ -1104,10 +1104,24 @@ ShellRoot {
     if (!Array.isArray(copy.plugins)) copy.plugins = []
 
     var sections = ["left", "center", "right", "tray"]
+    // With bar.perMonitor on, a widget's entries in monitor layouts share its
+    // settings, and one that sits only in a monitor's layout is still a bar
+    // entry rather than a plugins[] one.
+    var layouts = [copy.bar.layout]
+    if (copy.bar.perMonitor === true && Util.isPlainObject(copy.bar.monitors)) {
+      for (var monitor in copy.bar.monitors) {
+        var monitorConfig = copy.bar.monitors[monitor]
+        if (Util.isPlainObject(monitorConfig) && Util.isPlainObject(monitorConfig.layout)) layouts.push(monitorConfig.layout)
+      }
+    }
+    var lists = []
+    for (var l = 0; l < layouts.length; l++) {
+      for (var ls = 0; ls < sections.length; ls++) lists.push(layouts[l][sections[ls]] || [])
+    }
     var foundInLayout = false
     var dirty = false
-    for (var s = 0; s < sections.length; s++) {
-      var arr = copy.bar.layout[sections[s]] || []
+    for (var s = 0; s < lists.length; s++) {
+      var arr = lists[s]
       for (var i = 0; i < arr.length; i++) {
         if (arr[i] && Util.canonicalWidgetId(arr[i].id) === stripped) {
           var next = { id: stripped }

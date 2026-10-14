@@ -133,6 +133,26 @@ Every widget is one entry in one of the three layout arrays, and its settings si
 
 `centerAnchor` names the one center widget that gets pinned to the exact center of the screen, with the others flanking it. That's how the clock stays dead center even as the weather and update badge come and go. Set it to an empty string and the center list is just centered as a group instead.
 
+### A different bar on each monitor
+
+Out of the box every monitor shows the same bar. To give a monitor its own, set `"perMonitor": true` under `bar` and add a `monitors` block keyed by the monitor's name (`hyprctl monitors` lists them, e.g. `eDP-1` for a laptop panel, `DP-2` for an external display):
+
+```json
+"bar": {
+  "perMonitor": true,
+  "layout": { ... },
+  "monitors": {
+    "DP-2": {
+      "layout": {
+        "right": [{ "id": "omarchy.audio" }, { "id": "omarchy.power" }]
+      }
+    }
+  }
+}
+```
+
+Any section a monitor leaves out (`DP-2` above only changes `right`) comes from the main `layout`, and monitors you don't list keep the main layout. Dragging a widget on a monitor with its own layout only rearranges that monitor. Set `perMonitor` back to `false` and every monitor mirrors the main layout again — your `monitors` block is kept, just ignored.
+
 One rule worth internalizing: **once you have your own `shell.json`, it's canonical**. Until you customize anything, the shell reads Omarchy's default file. The moment you drag a widget, run `omarchy bar`, or edit the file yourself, you own it — there's no deep merge, so new default widgets in future Omarchy releases won't appear on your bar automatically. `omarchy bar defaults` puts the shipped layout back whenever you want a clean slate.
 
 The same file also holds your idle timings at the top level, outside the `bar` key: `idle.screensaver` and `idle.lock`, both in seconds since you went idle. So the default screensaver kicks in at 150 seconds and the lock at 300.
