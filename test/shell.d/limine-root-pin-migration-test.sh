@@ -50,11 +50,21 @@ echo "limine-mkinitcpio" >>"$TEST_LOG"
 [[ ${MKINITCPIO_SKIP:-} == 1 ]] && exit 0   # upstream maps a failed kernel build to success
 cmdline=$(limine-entry-tool --get-cmdline default)
 printf '/+Omarchy\n  cmdline: %s\n' "$cmdline" >"$TEST_ESP/limine.conf"
-printf '%s\0' "$cmdline" >"$TEST_UKI_DIR/omarchy_linux.efi"
+if [[ ${NO_CMDLINE:-} == 1 ]]; then
+  : >"$TEST_UKI_DIR/omarchy_linux.efi"   # Secure Boot with Snapper: no .cmdline section
+else
+  printf '%s\0' "$cmdline" >"$TEST_UKI_DIR/omarchy_linux.efi"
+fi
 SH
 cat >"$stub_bin/objcopy" <<'SH'
 #!/bin/bash
 for arg; do [[ $arg == *.efi ]] && cat "$arg"; done
+exit 0
+SH
+cat >"$stub_bin/objdump" <<'SH'
+#!/bin/bash
+echo "  0 .linux        00000010  0000000000000000  0000000000000000  00000000  2**2"
+for arg; do [[ $arg == *.efi && -s $arg ]] && echo "  1 .cmdline      00000010  0000000000000000  0000000000000000  00000000  2**2"; done
 exit 0
 SH
 cat >"$stub_bin/findmnt" <<'SH'
@@ -168,6 +178,13 @@ if ROOT_UUID="" run_migration; then
   fail "an unknown root UUID keeps the migration pending"
 fi
 pass "an unknown root UUID stays pending"
+
+reset_machine
+NO_CMDLINE=1 run_migration || fail "a UKI without an embedded cmdline boots limine.conf's root=" "$(cat "$test_dir/err")"
+: >"$TEST_LOG"
+NO_CMDLINE=1 run_migration || fail "a pinned machine whose UKIs carry no cmdline is healthy" "$(cat "$test_dir/err")"
+[[ $(pins) == 1 && $(rebuilds) == 0 ]] || fail "a UKI without an embedded cmdline is not rebuilt again" "pins=$(pins) rebuilds=$(rebuilds)"
+pass "UKIs built without an embedded cmdline (Secure Boot with Snapper) are checked through limine.conf"
 
 reset_machine
 chmod 700 "$TEST_ESP"; rm -f "$TEST_ESP/limine.conf"; chmod 000 "$TEST_ESP"

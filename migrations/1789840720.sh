@@ -31,7 +31,7 @@ has_root_param() {
 # a successful limine-mkinitcpio exit alone does not prove the repair landed
 # (it maps per-kernel build failures to success).
 built_entries_missing_root() {
-  local uki uki_cmdline
+  local uki uki_cmdline uki_sections
   local missing=()
 
   as_root grep -qE '(^|[[:space:]])root=' "$limine_conf" || missing+=("$limine_conf")
@@ -39,6 +39,11 @@ built_entries_missing_root() {
   if command -v objcopy >/dev/null 2>&1; then
     while read -r uki; do
       [[ -n $uki ]] || continue
+      # Secure Boot with Snapper builds UKIs without .cmdline, so they boot the
+      # limine.conf cmdline checked above.
+      if uki_sections=$(as_root objdump -h "$uki" 2>/dev/null) && [[ $uki_sections != *" .cmdline "* ]]; then
+        continue
+      fi
       # Capture first: under pipefail, grep -q closing the pipe early could
       # SIGPIPE objcopy and read as a missing root=.
       uki_cmdline=$(as_root objcopy -O binary --only-section=.cmdline "$uki" /dev/stdout 2>/dev/null | tr -d '\0') || uki_cmdline=""
