@@ -15,7 +15,19 @@ if gum confirm "Are you sure you want to remove all preinstalled web apps, TUI w
   # Remove mise stubs
   rm -f ~/.local/bin/codex ~/.local/bin/claude ~/.local/bin/agy ~/.local/bin/copilot \
        ~/.local/bin/gh ~/.local/bin/opencode ~/.local/bin/playwright ~/.local/bin/playwright-cli ~/.local/bin/pi \
-       ~/.local/bin/omp ~/.local/bin/ori ~/.local/bin/grok ~/.local/bin/crush ~/.local/bin/dsh ~/.local/bin/ghui ~/.local/bin/hunk
+       ~/.local/bin/omp ~/.local/bin/ori ~/.local/bin/grok ~/.local/bin/crush ~/.local/bin/ghui ~/.local/bin/hunk
+
+  # Preserve a user-managed dsh launcher at the same path.
+  if [[ -f ~/.local/bin/dsh && ! -L ~/.local/bin/dsh ]] &&
+    grep -Eq '^mise use -g .*"npm:@deepseek\-ai/dsh@0\.2\.0\-rc\.2"' ~/.local/bin/dsh; then
+    rm -f ~/.local/bin/dsh
+  fi
+
+  # Preserve a user-managed Kimi launcher at the same path.
+  if [[ -f ~/.local/bin/kimi && ! -L ~/.local/bin/kimi ]] &&
+    grep -Eq '^mise use -g .*"npm:@moonshot-ai/kimi-code"' ~/.local/bin/kimi; then
+    rm -f ~/.local/bin/kimi
+  fi
 
   # Cursor's own installer links ~/.local/bin/cursor-agent as well, so only
   # the mise wrapper omarchy-mise-install wrote is a preinstall.
@@ -34,15 +46,13 @@ if gum confirm "Are you sure you want to remove all preinstalled web apps, TUI w
     aether \
     cliamp \
     libreoffice-fresh \
-    xournalpp \
     pinta \
     obsidian \
-    obs-studio \
-    kdenlive \
     moonlight-qt \
     omacut \
     monologue \
     omacalc \
     omawrite \
-    hype
+    hype \
+    signed
 fi

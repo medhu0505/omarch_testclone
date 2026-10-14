@@ -23,7 +23,11 @@ while (($#)); do
       prompt=${2:?--prompt needs a value}
       shift 2
       ;;
-    *)
+    dsh)
+  # The web profile uses the upstream no-approval permission preset.
+  command=(env DSH_PERMISSION_MODE=danger-full-access dsh web)
+  ;;
+*)
       echo "Unexpected argument: $1" >&2
       echo "To pass a prompt: omarchy agent prompt \"$*\"" >&2
       exit 1
@@ -127,14 +131,20 @@ ori)
   [[ -n ${prompt:-} ]] && command+=(--interactive --prompt "$prompt")
   ;;
 dsh)
-  # DSH's installer ships the web profile, which serves the harness's own UI on
-  # a local port rather than running a terminal UI: there are no permission
-  # prompts to skip and no prompt to seed.
-  command=(dsh web)
+  # The web profile uses the upstream no-approval permission preset.
+  command=(env DSH_PERMISSION_MODE=danger-full-access dsh web)
   ;;
 pi)
   command=(pi)
   [[ -n ${prompt:-} ]] && command+=("$prompt")
+  ;;
+kimi)
+  # --prompt is non-interactive print mode only; it cannot combine with --yolo.
+  if [[ -n ${prompt:-} ]]; then
+    command=(kimi --prompt "$prompt")
+  else
+    command=(kimi --yolo)
+  fi
   ;;
 *)
   echo "Unsupported default agent: $agent" >&2
