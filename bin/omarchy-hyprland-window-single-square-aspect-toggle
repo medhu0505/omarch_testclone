@@ -2,7 +2,17 @@
 
 # omarchy:summary=Toggle single-window square aspect ratio.
 
-case $(omarchy-hyprland-toggle single-window-aspect-ratio) in
-  on) omarchy-notification-send -g  "Enable single-window square aspect ratio" ;;
-  off) omarchy-notification-send -g  "Disable single-window square aspect ratio" ;;
+STATE=$(omarchy-hyprland-toggle single-window-aspect-ratio)
+
+# The ratio is global but the layout is set per workspace, and scrolling and
+# floating ignore it, so pressing this there changes nothing on screen.
+LAYOUT=$(omarchy-hyprland-workspace-layout-current)
+NOTE=()
+if [[ $LAYOUT == "scrolling" || $LAYOUT == "floating" ]]; then
+  NOTE=("Has no effect on $LAYOUT workspaces like this one.")
+fi
+
+case $STATE in
+  on) omarchy-notification-send -g  "Enable single-window square aspect ratio" "${NOTE[@]}" ;;
+  off) omarchy-notification-send -g  "Disable single-window square aspect ratio" "${NOTE[@]}" ;;
 esac
