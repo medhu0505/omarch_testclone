@@ -110,6 +110,7 @@ compose() {
     hangul) wtype "gksrmf" ;;
     pinyin) wtype "nihao"; wtype -k space ;;
     chewing) wtype "su3cl3" ;;
+    cangjie5) wtype "a"; wtype -k space ;;
   esac
   sleep 1
 }
@@ -124,7 +125,7 @@ verify_text() {
 }
 
 installed=()
-for method in mozc hangul pinyin chewing; do
+for method in mozc hangul pinyin chewing cangjie5; do
   omarchy-setup-input "$method" > "$ARTIFACTS/setup-input-$method.log" 2>&1 ||
     fail "$method setup completes" "$(cat "$ARTIFACTS/setup-input-$method.log")"
   group=$(fcitx5-remote -q)

@@ -195,9 +195,9 @@ def stock_profile(text):
 
 
 def engine_layout(method, group_layout):
-  # Hangul and Zhuyin keys sit where QWERTY puts them whatever the Latin layout,
-  # so Dvorak or AZERTY must not move them. Korean and JIS layouts already put
-  # them there, and keep their own input keys (Right Alt as 한/영, 半角/全角).
+  # Hangul, Zhuyin and Cangjie keys sit where QWERTY puts them whatever the
+  # Latin layout, so Dvorak or AZERTY must not move them. Korean and JIS layouts
+  # already put them there, and keep their own input keys (한/영, 半角/全角).
   layout = PRESETS.get(method, {}).get("layout", "")
   if not layout or group_layout == layout or group_layout.split("-")[0] in ("kr", "jp"):
     return ""

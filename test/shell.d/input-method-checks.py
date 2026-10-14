@@ -228,6 +228,12 @@ class InputMethodTest(unittest.TestCase):
     setup.font_default(self.config, "hangul")
     self.assertEqual(font.read_bytes(), original)
 
+  def test_hong_kong_cangjie_reaches_the_hong_kong_glyphs(self):
+    setup.font_default(self.config, "cangjie5")
+    font = (self.config / "fontconfig/conf.d/50-omarchy-input-method.conf").read_text()
+    self.assertIn("Noto Sans CJK HK", font)
+    self.assertIn("Noto Sans Mono CJK HK", font)
+
 
 if __name__ == "__main__":
   unittest.main()
