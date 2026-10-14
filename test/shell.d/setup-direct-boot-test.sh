@@ -33,6 +33,11 @@ cat > "$test_dir/bin/sudo" <<'STUB'
 #!/bin/bash
 exec "$@"
 STUB
+# The fake firmware is an HP laptop, whatever the host running the test is.
+cat > "$test_dir/bin/omarchy-hw-aarch64-apple" <<'STUB'
+#!/bin/bash
+exit 1
+STUB
 cat > "$test_dir/bin/uname" <<'STUB'
 #!/bin/bash
 echo test-kernel
