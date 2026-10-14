@@ -32,7 +32,7 @@ cleanup() {
     wait "$notification_monitor" 2>/dev/null || true
   fi
   close_windows '^org\.omarchy\.ime-test$'
-  close_windows '^org\.omarchy\.ime-test-gtk$|^org\.qt-project\.qml$|^chrome-.*_omarchy-ime-entry\.html-Default$'
+  close_windows '^org\.omarchy\.ime-test-gtk$|^org\.qt-project\.qml6?$|^chrome-.*_omarchy-ime-entry\.html-Default$'
   systemctl --user stop omarchy-fcitx5.service || status=1
   python "$ROOT/test/acceptance.d/input-method-state.py" restore "$work/state" || status=1
   busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig >/dev/null || status=1
@@ -154,7 +154,7 @@ for method in mozc hangul pinyin chewing; do
   for toolkit in gtk qt browser; do
     case "$toolkit" in
       gtk) command="python $work/entry.py"; class='^org\.omarchy\.ime-test-gtk$' ;;
-      qt) command="qml6 $work/entry.qml"; class='^org\.qt-project\.qml$' ;;
+      qt) command="qml6 $work/entry.qml"; class='^org\.qt-project\.qml6?$' ;;
       browser) command="chromium --user-data-dir=$work/chromium --no-first-run --app=file://$work/omarchy-ime-entry.html"; class='^chrome-.*_omarchy-ime-entry\.html-Default$' ;;
     esac
     launch_app "uwsm app -- $command"
