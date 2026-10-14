@@ -190,11 +190,16 @@ def cmd_manifest(args):
         present = translated_units(root, code)
         if done:
             units = done.get(code, [])
-            # A completion record only counts when the unit is real and its
-            # translation actually landed in the tree.
+            # A completion record only counts when it matches the tree: a
+            # unit English still has must have its translation present, and
+            # one English dropped (a prune) must have been recorded before
+            # and be gone from the tree now.
             for unit in units:
-                if unit not in english or unit not in present:
-                    raise SyncError(f"completion record for {code} lists {unit}, which is not a translated unit in the tree")
+                if unit in english:
+                    if unit not in present:
+                        raise SyncError(f"completion record for {code} lists {unit}, which is not a translated unit in the tree")
+                elif unit not in section or unit in present:
+                    raise SyncError(f"completion record for {code} lists {unit}, which is not a pruned unit")
         else:
             # Full regeneration trusts the tree: every present translation is
             # recorded against the current English source.
@@ -202,6 +207,8 @@ def cmd_manifest(args):
         for unit in units:
             if unit in english:
                 section[unit] = source_hash(english[unit])
+            else:
+                section.pop(unit, None)
         manifest[code] = dict(sorted(section.items()))
     write_json(manifest_path(root), dict(sorted(manifest.items())))
     print(f"manifest updated for {len(codes)} locales")

@@ -61,7 +61,7 @@ jobs:
           directory = Path(os.environ['RUNNER_TEMP'])
           pending = json.loads((directory / 'pending.json').read_text())
           scan = json.loads((directory / 'scan.json').read_text())
-          extract = bool(scan['candidates'] or scan['menuCatalogStale'])
+          extract = bool(scan['candidates'] or scan['menuCatalogStale'] or scan.get('keybindingsCatalogStale'))
           if extract:
               # New English keys make every language pending.
               registry = json.loads(Path('default/i18n/locales.json').read_text())
@@ -140,9 +140,43 @@ jobs:
           retention-days: 3
           if-no-files-found: error
 
-  publish-extract:
+  # Applies the extraction patch and runs every check that loads its code, with
+  # no credentials: an extraction may change bin/ or shell/, and the i18n test
+  # require()s shell JavaScript, so nothing that runs here may hold a token.
+  validate-extract:
     needs: [prepare, extract]
-    if: ${{ always() && !cancelled() && needs.prepare.result == 'success' && needs.prepare.outputs.has_work == 'true' && (needs.extract.result == 'success' || needs.extract.result == 'skipped') }}
+    if: needs.prepare.outputs.extract == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: quattro
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: extraction
+          path: ${{ runner.temp }}/extraction
+      - name: Apply the extraction and check it
+        run: |
+          if [ -s "$RUNNER_TEMP/extraction/extract.patch" ]; then
+            git apply --index "$RUNNER_TEMP/extraction/extract.patch"
+          fi
+          python3 scripts/i18n-sync.py extract-scan --check
+          I18N_STRUCTURAL=1 bash test/shell.d/i18n-test.sh
+          for f in $(git diff --cached --name-only -- bin/); do bash -n "$f"; done
+
+  # Publishes the vetted extraction to the i18n-sync branch. This job holds the
+  # write token, so it runs no repository code: only git, and the path check
+  # written inline here, on the same patch validate-extract checked.
+  publish-extract:
+    needs: [prepare, extract, validate-extract]
+    if: ${{ always() && !cancelled() && needs.prepare.result == 'success' && needs.prepare.outputs.has_work == 'true' && (needs.extract.result == 'success' || needs.extract.result == 'skipped') && (needs.validate-extract.result == 'success' || needs.validate-extract.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -154,42 +188,42 @@ jobs:
         with:
           ref: quattro
           token: ${{ secrets.I18N_SYNC_TOKEN || github.token }}
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
       - name: Download extraction patch
         if: needs.prepare.outputs.extract == 'true'
         uses: actions/download-artifact@v4
         with:
           name: extraction
           path: ${{ runner.temp }}/extraction
-      - name: Vet and publish extraction to the sync branch
+      - name: Publish the extraction to the sync branch
         id: publish
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          echo "code_touched=false" >> "$GITHUB_OUTPUT"
+          code_touched=false
           if [ -s "$RUNNER_TEMP/extraction/extract.patch" ]; then
-            python3 - <<'PY'
+            # Decide from the patch itself, not from anything the
+            # credential-less extraction job reported about it.
+            code_touched=$(python3 - <<'PY'
           import os, subprocess, sys
           from pathlib import Path
           patch = Path(os.environ['RUNNER_TEMP']) / 'extraction/extract.patch'
           out = subprocess.run(['git', 'apply', '--numstat', '-z', str(patch)], check=True, capture_output=True).stdout
           allowed = ('bin/', 'shell/', 'default/i18n/en/', 'default/i18n/extract-allowlist.json')
+          code = False
           for record in out.split(b'\0'):
               if not record:
                   continue
               path = record.decode().split('\t', 2)[2]
               if not path.startswith(allowed) or '..' in Path(path).parts:
                   sys.exit(f'extraction patch contains a disallowed path: {path}')
+              code = code or path.startswith(('bin/', 'shell/'))
+          print('true' if code else 'false')
           PY
+            )
             git apply --index "$RUNNER_TEMP/extraction/extract.patch"
-            python3 scripts/i18n-sync.py extract-scan --check
-            I18N_STRUCTURAL=1 bash test/shell.d/i18n-test.sh
-            for f in $(git diff --cached --name-only -- bin/); do bash -n "$f"; done
             git commit -m 'Extract embedded English into catalogs'
-            echo "code_touched=$(cat "$RUNNER_TEMP/extraction/code-touched.txt")" >> "$GITHUB_OUTPUT"
           fi
+          echo "code_touched=$code_touched" >> "$GITHUB_OUTPUT"
           git checkout -B i18n-sync
           git push --force origin i18n-sync
 
@@ -254,6 +288,9 @@ jobs:
         if: always()
         run: rm -f "$HOME/.config/muse/auth.json"
 
+  # Collects every language's patch and validates the result, with no
+  # credentials: the sync branch can carry an unreviewed extraction, and the
+  # i18n test loads its code. The outcome leaves as a patch for land.
   collect:
     needs: [prepare, publish-extract, translate]
     # Keep valid results even if a different language runner failed.
@@ -261,14 +298,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
       actions: read
     steps:
       - uses: actions/checkout@v7
         with:
           ref: i18n-sync
-          token: ${{ secrets.I18N_SYNC_TOKEN || github.token }}
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -288,6 +324,51 @@ jobs:
           python3 scripts/i18n-sync.py collect "$RUNNER_TEMP/translations" --expected "$expected"
       - name: Validate combined translations
         run: I18N_STRUCTURAL=1 bash test/shell.d/i18n-test.sh
+      - name: Package the collected translations
+        run: |
+          mkdir -p "$RUNNER_TEMP/collected"
+          git diff --cached --binary --no-renames > "$RUNNER_TEMP/collected/translations.patch"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: collected
+          path: ${{ runner.temp }}/collected/translations.patch
+          retention-days: 3
+          if-no-files-found: error
+      - name: Report translations still pending
+        if: always()
+        run: |
+          python3 scripts/i18n-sync.py pending > "$RUNNER_TEMP/pending.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          pending = json.loads((Path(os.environ['RUNNER_TEMP']) / 'pending.json').read_text())
+          total = sum(job['count'] for job in pending['jobs'].values())
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as out:
+              out.write(f"Pending translation units: **{total}** across {len(pending['locales'])} languages.\n\n")
+              out.write('English remains the fallback while translations catch up. Unfinished work is retried on the next run.\n')
+          PY
+
+  # Lands the collected translations as one pull request. This job holds the
+  # write token, so it runs no repository code: only git, gh, and the path
+  # check written inline here.
+  land:
+    needs: [prepare, publish-extract, collect]
+    if: ${{ always() && !cancelled() && needs.collect.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: i18n-sync
+          fetch-depth: 0
+          token: ${{ secrets.I18N_SYNC_TOKEN || github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: collected
+          path: ${{ runner.temp }}/collected
       - name: Commit and open the auto-merging pull request
         env:
           GH_TOKEN: ${{ secrets.I18N_SYNC_TOKEN || github.token }}
@@ -295,6 +376,23 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if [ -s "$RUNNER_TEMP/collected/translations.patch" ]; then
+            # Translations, the manifest, and translated manual chapters only.
+            python3 - <<'PY'
+          import os, re, subprocess, sys
+          from pathlib import Path
+          patch = Path(os.environ['RUNNER_TEMP']) / 'collected/translations.patch'
+          out = subprocess.run(['git', 'apply', '--numstat', '-z', str(patch)], check=True, capture_output=True).stdout
+          allowed = re.compile(r'^(default/i18n/(?!en/)[a-zA-Z-]+/(menu|shell|cli|keybindings)\.json|default/i18n/translation-manifest\.json|manual/(?!en/)[a-zA-Z-]+/[^/]+\.md)$')
+          for record in out.split(b'\0'):
+              if not record:
+                  continue
+              path = record.decode().split('\t', 2)[2]
+              if not allowed.match(path):
+                  sys.exit(f'collected translations contain a disallowed path: {path}')
+          PY
+            git apply --index "$RUNNER_TEMP/collected/translations.patch"
+          fi
           git fetch origin quattro
           changed=false
           if ! git diff --cached --quiet; then
@@ -311,22 +409,12 @@ jobs:
           fi
           if [ -n "$pr" ]; then
             if [ "$CODE_TOUCHED" = true ]; then
-              gh pr comment "$pr" --body 'This sync includes an automated extraction that changed executable code under `bin/` or `shell/`, so auto-merge is deliberately not enabled: please review those hunks before merging.'
+              # An earlier run may have enabled auto-merge on this pull
+              # request; executable changes must wait for a person.
+              gh pr merge --disable-auto "$pr" 2>/dev/null || true
+              gh pr comment "$pr" --body 'This sync includes an automated extraction that changed executable code under `bin/` or `shell/`, so auto-merge is off: please review those hunks before merging.'
               echo "Extraction touched code; PR #$pr waits for human review."
             else
               gh pr merge --auto --squash "$pr" || echo "Auto-merge could not be enabled for #$pr (enable 'Allow auto-merge' in repository settings); the PR is left open for a human."
             fi
           fi
-      - name: Report translations still pending
-        if: always()
-        run: |
-          python3 scripts/i18n-sync.py pending > "$RUNNER_TEMP/pending.json"
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          pending = json.loads((Path(os.environ['RUNNER_TEMP']) / 'pending.json').read_text())
-          total = sum(job['count'] for job in pending['jobs'].values())
-          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as out:
-              out.write(f"Pending translation units: **{total}** across {len(pending['locales'])} languages.\n\n")
-              out.write('English remains the fallback while translations catch up. Unfinished work is retried on the next run.\n')
-          PY

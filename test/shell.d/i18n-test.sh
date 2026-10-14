@@ -381,6 +381,7 @@ assert_bash_equal "$(plural ru power.rate 13.1)" "13,1 Вт" "a number argument 
 assert_bash_equal "$(plural fa --count 2 files.count 13.5)" "۱۳٫۵ files" "a number argument takes the language's digits, with the English entry as fallback"
 assert_bash_equal "$(plural ru power.rate 10.0.0.1)" "10.0.0.1 Вт" "an argument that is not a plain number passes through"
 assert_bash_equal "$(plural ru --number 13.1) $(plural fa --number 13.5)" "13,1 ۱۳٫۵" "omarchy-i18n --number writes one number in the language"
+assert_bash_equal "$(plural en power.rate --foo) | $(plural en power.rate -n)" "--foo W | -n W" "an argument that starts with a dash is text, not a jq option"
 if plural en --count many files.count 2>/dev/null; then
   fail "omarchy-i18n rejects a non-numeric count"
 else
@@ -556,6 +557,27 @@ if python3 "$ROOT/scripts/i18n-sync.py" --root "$fix" collect "$work/artifacts" 
 else
   pass "collect rejects completion for units not in the tree"
 fi
+
+# Deleting an English unit prunes its translations; the prune's completion
+# record must collect, and drop the unit from the manifest, rather than
+# block every language's results.
+python3 "$ROOT/scripts/i18n-sync.py" --root "$fix" manifest >/dev/null
+python3 - "$fix" <<'PY'
+import json, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+for code in ("en", "da"):
+    path = root / "default/i18n" / code / "shell.json"
+    data = json.loads(path.read_text()); data.pop("a.two", None); path.write_text(json.dumps(data))
+PY
+git -C "$fix" add -A && git -C "$fix" commit -qm 'drop a.two'
+printf '{"da": ["shell:a.two"]}\n' >"$work/artifacts/da.done.json"
+if python3 "$ROOT/scripts/i18n-sync.py" --root "$fix" collect "$work/artifacts" --expected da >/dev/null 2>&1; then
+  pass "collect accepts the completion record of a pruned unit"
+else
+  fail "collect accepts the completion record of a pruned unit"
+fi
+assert_bash_equal "$(jq -r '.da | has("shell:a.two")' "$fix/default/i18n/translation-manifest.json")" "false" "a pruned unit leaves the manifest"
 
 # Every registry locale must be one glibc can actually generate.
 if [[ -f /usr/share/i18n/SUPPORTED ]]; then
