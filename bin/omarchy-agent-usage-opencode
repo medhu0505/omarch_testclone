@@ -1,0 +1,379 @@
+#!/usr/bin/python3
+# omarchy:summary=Print the Opencode usage record as JSON
+# omarchy:args=[--force] [--limits-only]
+# omarchy:hidden=true
+"""Collect Opencode usage into one display-ready JSON record.
+
+Local stats come from ~/.local/share/opencode/opencode.db (message +
+session tables) and active configuration from ~/.config/opencode/opencode.json.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import os
+import shutil
+import sqlite3
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+AGENT_ID = "opencode"
+AGENT_NAME = "Opencode"
+DEFAULT_MODEL = "opencode"
+LIMITS_ONLY_REUSE_SECONDS = 900
+
+
+def get_opencode_bin() -> str | None:
+  if "OPENCODE_BIN" in os.environ:
+    custom = os.environ["OPENCODE_BIN"]
+    return custom if (custom and (os.path.isfile(custom) or shutil.which(custom))) else None
+  return shutil.which("opencode")
+
+
+def opencode_db() -> Path:
+  custom = os.environ.get("OPENCODE_DB")
+  if custom:
+    return Path(custom).expanduser().resolve()
+  return Path(os.environ.get("XDG_DATA_HOME") or (Path.home() / ".local" / "share")) / "opencode" / "opencode.db"
+
+
+def opencode_config() -> Path:
+  custom = os.environ.get("OPENCODE_CONFIG")
+  if custom:
+    return Path(custom).expanduser().resolve()
+  return Path(os.environ.get("XDG_CONFIG_HOME") or (Path.home() / ".config")) / "opencode" / "opencode.json"
+
+
+def local_date_string(value: Any = None) -> str:
+  if value is None:
+    return dt.datetime.now().strftime("%Y-%m-%d")
+  if isinstance(value, (int, float)):
+    if value > 10_000_000_000:
+      value = value / 1000.0
+    return dt.datetime.fromtimestamp(value).strftime("%Y-%m-%d")
+  text = str(value).strip()
+  try:
+    parsed = dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
+    if parsed.tzinfo is not None:
+      parsed = parsed.astimezone()
+    return parsed.strftime("%Y-%m-%d")
+  except Exception:
+    return dt.datetime.now().strftime("%Y-%m-%d")
+
+
+def num(value: Any) -> int:
+  try:
+    n = int(value or 0)
+    return n if n > 0 else 0
+  except Exception:
+    return 0
+
+
+def empty_stats(recent_dates: list[str]) -> dict[str, Any]:
+  return {
+    "hasLocalStats": False,
+    "hasPromptStats": True,
+    "todayPrompts": 0,
+    "todaySessions": 0,
+    "todayTotalTokens": 0,
+    "todayTokensByModel": {},
+    "recentDays": [{"date": d, "messageCount": 0} for d in recent_dates],
+    "totalPrompts": 0,
+    "totalSessions": 0,
+    "activeDays": 0,
+    "activeDates": [],
+    "modelUsage": {},
+  }
+
+
+def write_atomic(target_path: Path, text: str) -> None:
+  target_path.parent.mkdir(parents=True, exist_ok=True)
+  tmp = target_path.with_name(f"{target_path.name}.tmp.{os.getpid()}_{time.time_ns()}")
+  try:
+    with open(tmp, "w", encoding="utf-8") as f:
+      f.write(text)
+    os.replace(tmp, target_path)
+  except Exception:
+    if tmp.exists():
+      try:
+        tmp.unlink()
+      except OSError:
+        pass
+    raise
+
+
+def scan_local_stats(db_path: Path, today_str: str, recent_dates: list[str]) -> dict[str, Any]:
+  tokens_by_date: dict[str, int] = {d: 0 for d in recent_dates}
+  prompts_by_date: dict[str, int] = {d: 0 for d in recent_dates}
+  today_tokens_by_model: dict[str, int] = {}
+  model_usage: dict[str, dict[str, int]] = {}
+  sessions: set[str] = set()
+  today_sessions: set[str] = set()
+  active_dates: set[str] = set()
+  total_prompts = 0
+  today_prompts = 0
+  total_tokens = 0
+  today_tokens = 0
+
+  if db_path.is_file():
+    conn = None
+    try:
+      conn = sqlite3.connect(db_path.resolve().as_uri() + "?mode=ro", uri=True, timeout=2)
+    except sqlite3.Error:
+      conn = None
+
+    if conn is not None:
+      try:
+        conn.execute("PRAGMA query_only = ON")
+        tables = {name for (name,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        queries = []
+        if "message" in tables:
+          queries.append((
+            "opencode:",
+            "SELECT session_id, data, NULL, time_created FROM message"
+            " WHERE data LIKE '%\"role\"%:%\"assistant\"%'"
+            " AND CASE WHEN json_valid(data) THEN json_extract(data, '$.role') END = 'assistant'",
+          ))
+        if "session_message" in tables:
+          queries.append((
+            "opencode-v2:",
+            "SELECT session_id, data, type, time_created FROM session_message"
+            " WHERE type = 'assistant'",
+          ))
+
+        rows = ((prefix, row) for prefix, query in queries for row in conn.execute(query))
+        for session_prefix, (session_id, raw, row_type, time_created) in rows:
+          try:
+            entry = json.loads(raw)
+            if not isinstance(entry, dict):
+              continue
+
+            if row_type is None:
+              role = entry.get("role")
+              provider = entry.get("providerID")
+              model_id = entry.get("modelID")
+              if not model_id and isinstance(entry.get("model"), dict):
+                model_info = entry.get("model") or {}
+                provider = provider or model_info.get("providerID")
+                model_id = model_info.get("id")
+              elif not model_id:
+                model_id = entry.get("model")
+            else:
+              role = row_type
+              model_info = entry.get("model") or {}
+              if isinstance(model_info, dict):
+                provider = model_info.get("providerID")
+                model_id = model_info.get("id")
+              else:
+                provider = entry.get("providerID")
+                model_id = model_info or entry.get("modelID")
+
+            if role != "assistant":
+              continue
+
+            # Skip providers that have dedicated Omarchy collectors:
+            # - Claude collects both v1 (message) and v2 (session_message) Anthropic rows.
+            # - Codex currently only collects v1 (message) OpenAI rows. Keep v2 OpenAI rows
+            #   here so they aren't lost until Codex adds a v2 reader.
+            provider_str = str(provider or "").strip().lower()
+            if provider_str == "anthropic" or (row_type is None and provider_str == "openai"):
+              continue
+
+            tokens = entry.get("tokens") or {}
+            cache = tokens.get("cache") or {}
+            inp = num(tokens.get("input"))
+            out = num(tokens.get("output")) + num(tokens.get("reasoning"))
+            cache_read = num(cache.get("read"))
+            cache_write = num(cache.get("write"))
+            if not (inp or out or cache_read or cache_write):
+              continue
+            total = inp + out + cache_read + cache_write
+            created = (entry.get("time") or {}).get("created") or time_created
+            day = local_date_string(created)
+            model = str(model_id or DEFAULT_MODEL).strip() or DEFAULT_MODEL
+          except Exception:
+            continue
+
+          session_key = session_prefix + str(session_id)
+          total_prompts += 1
+          total_tokens += total
+          sessions.add(session_key)
+          active_dates.add(day)
+
+          bucket = model_usage.setdefault(
+            model,
+            {
+              "inputTokens": 0,
+              "outputTokens": 0,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+            },
+          )
+          bucket["inputTokens"] += inp
+          bucket["outputTokens"] += out
+          bucket["cacheReadInputTokens"] += cache_read
+          bucket["cacheCreationInputTokens"] += cache_write
+
+          if day in tokens_by_date:
+            tokens_by_date[day] += total
+            prompts_by_date[day] += 1
+
+          if day == today_str:
+            today_prompts += 1
+            today_tokens += total
+            today_sessions.add(session_key)
+            today_tokens_by_model[model] = today_tokens_by_model.get(model, 0) + total
+      except sqlite3.Error:
+        pass
+      finally:
+        conn.close()
+
+  recent_days = [
+    {"date": d, "messageCount": tokens_by_date.get(d, 0)}
+    for d in recent_dates
+  ]
+  has_local_stats = bool(total_prompts > 0 or len(sessions) > 0 or total_tokens > 0)
+
+  return {
+    "hasLocalStats": has_local_stats,
+    "hasPromptStats": True,
+    "todayPrompts": today_prompts,
+    "todaySessions": len(today_sessions),
+    "todayTotalTokens": today_tokens,
+    "todayTokensByModel": today_tokens_by_model,
+    "recentDays": recent_days,
+    "totalPrompts": total_prompts,
+    "totalSessions": len(sessions),
+    "activeDays": len(active_dates),
+    "activeDates": sorted(list(active_dates)),
+    "modelUsage": model_usage,
+  }
+
+
+def cached_local_stats(db_path: Path, today_str: str, recent_dates: list[str], max_age: float) -> dict[str, Any]:
+  cache_dir = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "omarchy" / "agent-usage"
+  cache_file = cache_dir / "opencode-stats.json"
+
+  if max_age > 0 and cache_file.exists():
+    try:
+      with open(cache_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+      if (
+        data.get("db_path") == str(db_path)
+        and data.get("day") == today_str
+        and (time.time() - float(data.get("at", 0)) < max_age)
+      ):
+        return data.get("stats", {})
+    except Exception:
+      pass
+
+  stats = scan_local_stats(db_path, today_str, recent_dates)
+  try:
+    write_atomic(
+      cache_file,
+      json.dumps({
+        "db_path": str(db_path),
+        "day": today_str,
+        "at": time.time(),
+        "stats": stats,
+      }),
+    )
+  except Exception:
+    pass
+
+  return stats
+
+
+def resolve_tier_label(cfg_path: Path, model_usage: dict[str, Any]) -> str:
+  if cfg_path.is_file():
+    try:
+      with open(cfg_path, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+      model = cfg.get("model")
+      if model:
+        return str(model).split("/")[-1]
+    except Exception:
+      pass
+
+  best_model, best_tokens = "", 0
+  for model, bucket in model_usage.items():
+    t = num(bucket.get("inputTokens")) + num(bucket.get("outputTokens"))
+    if t > best_tokens:
+      best_model, best_tokens = model, t
+  return best_model or DEFAULT_MODEL
+
+
+def main() -> int:
+  parser = argparse.ArgumentParser(description="Print Opencode usage record")
+  parser.add_argument("--force", action="store_true", help="Force refresh cache")
+  parser.add_argument("--limits-only", action="store_true", help="Only refresh rate limits")
+  parser.add_argument("--write", action="store_true", help="Atomically write usage JSON to state directory")
+  args = parser.parse_args()
+
+  db_path = opencode_db()
+  cfg_path = opencode_config()
+  now = dt.datetime.now().astimezone()
+  today_str = now.strftime("%Y-%m-%d")
+  recent_dates = [(now - dt.timedelta(days=offset)).strftime("%Y-%m-%d") for offset in range(6, -1, -1)]
+
+  has_binary = get_opencode_bin() is not None
+  has_db = db_path.is_file() and db_path.stat().st_size > 0
+  has_config = cfg_path.is_file() and cfg_path.stat().st_size > 0
+
+  if not has_binary and not has_db and not has_config:
+    record: dict[str, Any] = {
+      "schemaVersion": 1,
+      "id": AGENT_ID,
+      "name": AGENT_NAME,
+      "updatedAt": now.isoformat(),
+      "ready": False,
+      "tierLabel": "",
+      "usageStatusText": "",
+      "authHelpText": "",
+      "limits": [],
+      "limitsStale": False,
+      "limitsFetchedAt": 0,
+    }
+    record.update(empty_stats(recent_dates))
+  else:
+    max_age = LIMITS_ONLY_REUSE_SECONDS if (args.limits_only and not args.force) else 0
+    stats = cached_local_stats(db_path, today_str, recent_dates, max_age)
+
+    ready = stats["hasLocalStats"] or has_binary
+    tier_label = resolve_tier_label(cfg_path, stats["modelUsage"]) if ready else ""
+
+    record = {
+      "schemaVersion": 1,
+      "id": AGENT_ID,
+      "name": AGENT_NAME,
+      "updatedAt": now.isoformat(),
+      "ready": ready,
+      "tierLabel": tier_label,
+      "usageStatusText": "",
+      "authHelpText": "",
+      "limits": [],
+      "limitsStale": False,
+      "limitsFetchedAt": 0,
+    }
+    record.update(stats)
+
+  rendered = json.dumps(record, indent=2) + "\n"
+  if args.write:
+    state_dir = Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
+    usage_file = state_dir / "omarchy" / "agents" / "usage" / "opencode.json"
+    try:
+      write_atomic(usage_file, rendered)
+    except Exception as error:
+      sys.stderr.write(f"omarchy-agent-usage-opencode: write failed: {error}\n")
+      return 1
+
+  sys.stdout.write(rendered)
+  return 0
+
+
+if __name__ == "__main__":
+  sys.exit(main())
