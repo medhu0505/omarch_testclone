@@ -29,30 +29,22 @@ done
 
 apply_kimi() {
   case $1 in
-    setup) source "$ROOT/install/user/mise.sh" >/dev/null ;;
     migration) source "$ROOT/migrations/1786967403.sh" >/dev/null ;;
     removal) omarchy-remove-preinstalls >/dev/null ;;
   esac
 }
 
-for operation in setup migration; do
-  rm -f "$kimi"
-  : >"$OMARCHY_TEST_MISE_LOG"
-  apply_kimi "$operation"
-  [[ -x $kimi && ! -L $kimi ]] || fail "Kimi $operation creates a missing wrapper"
-  if tr '\0' '\n' <"$OMARCHY_TEST_MISE_LOG" | grep -Fx "$package" >/dev/null; then
-    fail "Kimi $operation installs the package before first launch"
-  fi
-  cp "$kimi" "$test_tmp/wrapper"
-  apply_kimi "$operation"
-  cmp -s "$kimi" "$test_tmp/wrapper" || fail "Kimi $operation is idempotent"
-  : >"$OMARCHY_TEST_MISE_LOG"
-  "$kimi" --prompt 'Review this project'
-  mapfile -d '' -t args <"$OMARCHY_TEST_MISE_LOG"
-  [[ ${args[*]} == "use -g --quiet $package x $package -- kimi --prompt Review this project" ]] ||
-    fail "Kimi $operation wrapper installs the official package and forwards arguments"
-  pass "Kimi $operation creates a lazy, repeatable wrapper"
-done
+apply_kimi migration
+[[ -x $kimi && ! -L $kimi ]] || fail "Kimi migration creates a missing wrapper"
+[[ ! -s $OMARCHY_TEST_MISE_LOG ]] || fail "Kimi migration installs the package before first launch"
+cp "$kimi" "$test_tmp/wrapper"
+apply_kimi migration
+cmp -s "$kimi" "$test_tmp/wrapper" || fail "Kimi migration is idempotent"
+"$kimi" --prompt 'Review this project'
+mapfile -d '' -t args <"$OMARCHY_TEST_MISE_LOG"
+[[ ${args[*]} == "use -g --quiet $package x $package -- kimi --prompt Review this project" ]] ||
+  fail "Kimi migration wrapper installs the official package and forwards arguments"
+pass "Kimi migration creates a lazy, repeatable wrapper"
 
 rm -f "$kimi"
 mkdir -p "$HOME/.local/state/omarchy"
@@ -62,7 +54,7 @@ apply_kimi migration
 rm "$HOME/.local/state/omarchy/preinstalls-removed"
 pass "Kimi migration respects the preinstall opt-out"
 
-for operation in setup migration removal; do
+for operation in migration removal; do
   for kind in script binary symlink; do
     rm -f "$kimi"
     case $kind in
