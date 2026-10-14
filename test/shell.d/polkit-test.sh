@@ -41,6 +41,11 @@ assertEqual(
   "julianduque's password",
   'polkit passes a qualified password prompt through'
 )
+assertEqual(
+  polkit.promptLabel('Password: ', (key, english) => key === 'polkit.enterPassword' ? 'Indtast adgangskode' : english),
+  'Indtast adgangskode',
+  'polkit labels the stock password prompt in the Omarchy language'
+)
 
 assertEqual(
   polkit.authorizationLabel("Authentication is needed to run `/usr/bin/true' as the super user"),
