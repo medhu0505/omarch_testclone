@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -242,6 +243,32 @@ class InputMethodTest(unittest.TestCase):
     font = (self.config / "fontconfig/conf.d/50-omarchy-input-method.conf").read_text()
     self.assertIn("Noto Sans CJK HK", font)
     self.assertIn("Noto Sans Mono CJK HK", font)
+
+  def test_a_chosen_cjk_variant_replaces_the_seeded_one(self):
+    setup.font_default(self.config, "mozc")
+    setup.font_set(self.config, "HK")
+    font = (self.config / "fontconfig/conf.d/50-omarchy-input-method.conf").read_text()
+    self.assertNotIn("CJK JP", font)
+    for family, face in [("Liberation Sans", "Sans"), ("Liberation Serif", "Serif"), ("JetBrainsMono Nerd Font", "Sans Mono")]:
+      self.assertIn(f"<alias><family>{family}</family><accept><family>Noto {face} CJK HK</family></accept></alias>", font)
+    with self.assertRaises(ValueError):
+      setup.font_set(self.config, "XX")
+
+  def test_font_command_sets_seeds_and_clears_the_variant(self):
+    font = self.config / "fontconfig/conf.d/50-omarchy-input-method.conf"
+    def command(*args):
+      with patch.object(sys, "argv", ["configure.py", "font", *args]):
+        setup.main()
+    command("--seed", "kr")
+    self.assertIn("Noto Sans CJK KR", font.read_text())
+    command("--seed", "jp")
+    self.assertIn("Noto Sans CJK KR", font.read_text())
+    command("sc")
+    self.assertIn("Noto Sans CJK SC", font.read_text())
+    command("default")
+    self.assertFalse(font.exists())
+    with self.assertRaises(SystemExit), patch("sys.stderr"):
+      command("cn")
 
 
 if __name__ == "__main__":

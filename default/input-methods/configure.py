@@ -150,7 +150,7 @@ def activation_default():
 def transaction(config_home):
   data_home = Path(os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local/share"))
   paths = [config_home / "fcitx5" / name for name in ["profile", "config", "conf/quickphrase.conf", "conf/wayland.conf", "conf/xcb.conf", "conf/pinyin.conf"]]
-  paths += [config_home / "fontconfig/conf.d/50-omarchy-input-method.conf", data_home / "dbus-1/services/org.fcitx.Fcitx5.service"]
+  paths += [font_path(config_home), data_home / "dbus-1/services/org.fcitx.Fcitx5.service"]
   before = {path.resolve(): path.read_text() if path.exists() else None for path in paths}
   try:
     yield
@@ -212,17 +212,30 @@ def profile_text(layout, method):
   return text + "\n[GroupOrder]\n0=Default\n"
 
 
-def font_default(config_home, method):
-  variant = PRESETS[method]["font"]
-  path = config_home / "fontconfig/conf.d/50-omarchy-input-method.conf"
-  if not variant or path.exists() or path.is_symlink():
-    return
+FONT_VARIANTS = ("JP", "KR", "SC", "TC", "HK")
+
+
+def font_path(config_home):
+  return config_home / "fontconfig/conf.d/50-omarchy-input-method.conf"
+
+
+def font_set(config_home, variant):
+  if variant not in FONT_VARIANTS:
+    raise ValueError(f"Unknown CJK variant: {variant}")
   # Only CJK fallback changes; retain the interface and terminal's Latin font.
   rules = []
   for families, face in [("sans-serif|Liberation Sans", "Sans"), ("serif|Liberation Serif", "Serif"), ("monospace|JetBrainsMono Nerd Font", "Sans Mono")]:
     for family in families.split("|"):
       rules.append(f'<alias><family>{family}</family><accept><family>Noto {face} CJK {variant}</family></accept></alias>')
-  atomic_write(path, '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig>\n' + "\n".join(rules) + "\n</fontconfig>\n")
+  atomic_write(font_path(config_home), '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig>\n' + "\n".join(rules) + "\n</fontconfig>\n")
+
+
+def font_default(config_home, method, variant=None):
+  variant = variant or PRESETS[method]["font"]
+  path = font_path(config_home)
+  if not variant or path.exists() or path.is_symlink():
+    return
+  font_set(config_home, variant)
 
 
 def live_group():
@@ -327,10 +340,20 @@ def main():
   mode = configure_parser.add_mutually_exclusive_group(required=True)
   mode.add_argument("--seed", action="store_true")
   mode.add_argument("--defaults", action="store_true")
+  font_parser = commands.add_parser("font")
+  font_parser.add_argument("--seed", action="store_true")
+  font_parser.add_argument("variant", choices=[variant.lower() for variant in FONT_VARIANTS] + ["default"])
   args = parser.parse_args()
+  config_home = Path(os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config"))
   if args.command == "status":
     method, layout = selection()
     print(json.dumps({"installed_method": method, "layout": layout}))
+  elif args.command == "font" and args.variant == "default":
+    font_path(config_home).unlink(missing_ok=True)
+  elif args.command == "font" and args.seed:
+    font_default(config_home, None, args.variant.upper())
+  elif args.command == "font":
+    font_set(config_home, args.variant.upper())
   else:
     configure(args)
 

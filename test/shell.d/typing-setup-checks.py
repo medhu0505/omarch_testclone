@@ -101,6 +101,24 @@ class TypingSetupTest(unittest.TestCase):
       typing.add_input("hangul")
       save.assert_called_once()
 
+  def test_a_cjk_language_adds_its_engine_only_to_a_keyboard_only_group(self):
+    with tempfile.TemporaryDirectory() as temporary, patch.dict(os.environ, {"XDG_CONFIG_HOME": temporary}):
+      with patch.object(typing.setup, "live_group", return_value=("Default", "us", [["keyboard-us", ""]])), patch.object(typing, "save_inputs") as save:
+        typing.seed_language("mozc")
+      save.assert_called_once_with(["mozc"])
+      self.assertIn("Noto Sans CJK JP", (Path(temporary) / "fontconfig/conf.d/50-omarchy-input-method.conf").read_text())
+    with tempfile.TemporaryDirectory() as temporary, patch.dict(os.environ, {"XDG_CONFIG_HOME": temporary}):
+      with patch.object(typing.setup, "live_group", return_value=("Default", "us", [["keyboard-us", ""], ["hangul", ""]])), patch.object(typing, "save_inputs") as save:
+        typing.seed_language("mozc")
+      save.assert_not_called()
+
+  def test_a_cjk_language_without_fcitx_still_seeds_its_glyph_forms(self):
+    with tempfile.TemporaryDirectory() as temporary, patch.dict(os.environ, {"XDG_CONFIG_HOME": temporary}):
+      with patch.object(typing.setup, "live_group", side_effect=subprocess.CalledProcessError(1, "busctl")), patch("sys.stderr") as error:
+        typing.seed_language("pinyin")
+      self.assertIn("Setup > Typing > Input Methods", "".join(call.args[0] for call in error.write.call_args_list))
+      self.assertIn("Noto Sans CJK SC", (Path(temporary) / "fontconfig/conf.d/50-omarchy-input-method.conf").read_text())
+
   def test_failed_font_write_restores_the_input_group(self):
     before = [["keyboard-us", ""]]
     with patch.object(typing.setup, "live_group", return_value=("Default", "us", before)), patch.object(typing.setup, "available_methods", return_value=[["mozc", "Mozc"]]), patch.object(typing, "set_inputs"), patch.object(typing.setup, "font_default", side_effect=OSError("read-only")), patch.object(typing.setup, "live_set") as setter:

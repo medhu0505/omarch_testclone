@@ -148,6 +148,19 @@ def add_input(method):
     save_inputs(current + [method])
 
 
+def seed_language(method):
+  # A new CJK language brings its input method only to a group without one,
+  # so a Korean typist switching the interface to Japanese keeps Hangul.
+  try:
+    group, layout, items = setup.live_group()
+    if all(name.startswith("keyboard-") for name, override in items):
+      save_inputs([method])
+  except (OSError, ValueError, KeyError, IndexError, RuntimeError, subprocess.CalledProcessError) as error:
+    print(f"Add {setup.PRESETS[method]['label']} under Setup > Typing > Input Methods: {error}", file=sys.stderr)
+  config_home = Path(os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config"))
+  setup.font_default(config_home, method)
+
+
 def keyboard_values(selected):
   if not selected:
     raise ValueError("Select at least one keyboard layout")
@@ -229,6 +242,9 @@ def apply_selection(kind, context, values):
 
 
 def main():
+  if sys.argv[1:2] == ["seed-language"] and len(sys.argv) == 3:
+    seed_language(sys.argv[2])
+    return
   if sys.argv[1:2] == ["add"] and len(sys.argv) == 3:
     try:
       add_input(sys.argv[2])
