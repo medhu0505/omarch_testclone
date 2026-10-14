@@ -50,7 +50,23 @@ def test():
         f'--script={SCRIPTS}/omarchy-theme.lua',
         f'--script-opts=omarchy-theme-theme_file={theme},unrelated-value=kept',
         'av://lavfi:testsrc2=size=640x360:rate=24']
-      environment = {**os.environ, 'OMARCHY_PATH': str(ROOT), 'PATH': str(ROOT / 'bin') + os.pathsep + os.environ['PATH']}
+      # Hold the first native theme load until the invalid message arrives.
+      helpers = home / 'bin'
+      helpers.mkdir()
+      helper = helpers / 'omarchy-theme-color'
+      helper.write_text('#!/bin/bash\n'
+          'touch "$MPV_THEME_REQUEST"\n'
+          'for ((i=0; i<100; i++)); do\n'
+          '  [[ -e $MPV_THEME_RELEASE ]] && break\n'
+          '  sleep .05\n'
+          'done\n'
+          '[[ -e $MPV_THEME_RELEASE ]] || exit 1\n'
+          'exec "$OMARCHY_PATH/bin/omarchy-theme-color" "$@"\n')
+      helper.chmod(0o755)
+      request, release = home / 'request', home / 'release'
+      environment = {**os.environ, 'OMARCHY_PATH': str(ROOT),
+          'MPV_THEME_REQUEST': str(request), 'MPV_THEME_RELEASE': str(release),
+          'PATH': str(helpers) + os.pathsep + str(ROOT / 'bin') + os.pathsep + os.environ['PATH']}
       player = subprocess.Popen(args, stdout=log, stderr=subprocess.STDOUT, env=environment)
       second_ipc = home / 'second.sock'
       override = home / 'input.conf'
@@ -112,6 +128,12 @@ def test():
               if line and not line.startswith('#')) if '-' not in k}
 
         wait_palette(parsed(dark))
+        def assert_stats(data):
+          colors = dict(line.split('=', 1) for line in data.splitlines()
+              if line.startswith('stats-'))
+          for key, rgb in colors.items():
+            assert property('script-opts')[key].lower() == (rgb[5:7]+rgb[3:5]+rgb[1:3]).lower(), key
+        assert_stats(dark)
         # Theme publication can precede the first decoded paused frame.
         deadline=time.monotonic()+10
         while property('time-pos') is None and time.monotonic()<deadline:
@@ -129,10 +151,15 @@ def test():
         before_position = property('time-pos')
         pid = player.pid
         command('script-message', 'set-omarchy-theme', 'nord')
+        deadline=time.monotonic()+5
+        while not request.exists() and time.monotonic()<deadline: time.sleep(.05)
+        assert request.exists(), 'Native theme load did not start'
+        command('script-message', 'set-omarchy-theme', '../invalid')
+        release.touch()
         wait_palette(parsed(dark))
         deadline=time.monotonic()+5
         while property('user-data/omarchy/theme-selection') != 'nord' and time.monotonic()<deadline:time.sleep(.05)
-        assert property('user-data/omarchy/theme-selection') == 'nord'
+        assert property('user-data/omarchy/theme-selection') == 'nord', 'Invalid slug cancelled a valid theme load'
         # Replace the file atomically, as Omarchy replaces the theme directory.
         replacement = home / 'replacement'
         replacement.write_text(light)
@@ -147,6 +174,7 @@ def test():
           assert not (home / 'sentinel').exists()
         command('script-message', 'set-omarchy-theme', 'flexoki-light')
         wait_palette(parsed(light))
+        assert_stats(light)
         command('script-message', 'set-omarchy-theme', 'nord')
         command('script-message', 'set-omarchy-theme', 'automatic')
         wait_palette(parsed(light))

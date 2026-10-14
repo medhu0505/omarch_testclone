@@ -178,6 +178,7 @@ local function render_palette(template, colors)
 end
 
 local function select_theme(slug)
+  if not slug or not slug:match('^[%w][%w_%-]*$') then return end
   selection_generation = selection_generation + 1
   local generation = selection_generation
   if slug == 'automatic' then
@@ -186,7 +187,6 @@ local function select_theme(slug)
     reload_theme()
     return
   end
-  if not slug or not slug:match('^[%w][%w_%-]*$') then return end
   local function apply(contents, source)
     if generation ~= selection_generation then return end
     if contents and apply_palette(contents, source) then
