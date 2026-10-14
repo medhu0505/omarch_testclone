@@ -142,6 +142,15 @@ class InputMethodTest(unittest.TestCase):
     self.assertEqual(path.read_text(), "[Behavior]\nActiveByDefault=True\n\n[Hotkey/TriggerKeys]\n0=Zenkaku_Hankaku\n1=Hangul\n")
     self.assertFalse(setup.defaults(self.config, fresh=False))
 
+  def test_korean_right_alt_preference_reaches_fcitx_with_its_variant(self):
+    self.preference.write_text("INPUT_METHOD=hangul\nXKB_LAYOUT=kr:kr104\n")
+    self.assertEqual(setup.selection(), ("hangul", "kr-kr104"))
+    self.seed()
+    data = setup.sections((self.config / "fcitx5/profile").read_text())
+    self.assertEqual(data["Groups/0/Items/0"]["Name"], "keyboard-kr-kr104")
+    # Hangul must keep Right Alt as 한/영 to switch back, so no US override.
+    self.assertEqual(data["Groups/0/Items/1"], {"Name": "hangul", "Layout": ""})
+
   def test_lao_preference_keeps_a_latin_fcitx_keyboard(self):
     self.preference.write_text("INPUT_METHOD=none\nXKB_LAYOUT=la\n")
     self.assertEqual(setup.selection(), ("none", "us"))
