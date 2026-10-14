@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# omarchy:summary=Install Battle.net standalone via umu-launcher + GE-Proton (no Steam, no Lutris, no Heroic).
+# omarchy:summary=Install Battle.net standalone via umu-launcher + GE-Proton (no Steam, no Lutris, no Epic Games Launcher).
 # omarchy:requires-sudo=true
 
 set -e

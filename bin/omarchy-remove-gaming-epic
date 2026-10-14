@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# omarchy:summary=Remove Epic Games Launcher and its game libraries, configs, and caches.
+# omarchy:requires-sudo=true
+
+set -e
+
+omarchy-pkg-drop epic-games-launcher-bin
+
+rm -rf \
+  "$HOME/.config/com.epicgames.eglv2" \
+  "$HOME/.local/share/com.epicgames.eglv2" \
+  "$HOME/.local/share/com.epicgames.eglv2.install_api" \
+  "$HOME/.cache/com.epicgames.eglv2" \
+  "$HOME/Games/Epic Games"
+
+echo ""
+echo "Epic Games Launcher and its data have been removed."

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# omarchy:summary=Install Epic Games Launcher with graphics drivers.
+# omarchy:requires-sudo=true
+
+set -e
+
+echo "Installing Epic Games Launcher..."
+omarchy-pkg-add epic-games-launcher-bin
+omarchy-install-gaming-gpu-lib32
+
+setsid uwsm-app -- gtk-launch epic-games-launcher >/dev/null 2>&1 &
