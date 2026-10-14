@@ -12,27 +12,27 @@ if (( $# > 0 )); then
   python3 "$helper" "$@"
 else
   if ! monitors=$(python3 "$helper" --list 2>&1); then
-    omarchy-notification-send "Monitor Position" "$monitors"
+    omarchy-notification-send "$(omarchy-i18n monitorPosition.title)" "$monitors"
     exit 1
   fi
   mapfile -t outputs < <(jq -r '.[].name' <<<"$monitors")
   if (( ${#outputs[@]} < 2 )); then
-    omarchy-notification-send "Monitor Position" "Connect and enable at least two screens."
+    omarchy-notification-send "$(omarchy-i18n monitorPosition.title)" "$(omarchy-i18n monitorPosition.twoScreens)"
     exit 1
   fi
-  output=$(omarchy-menu-select "Screen to move" "${outputs[@]}") || exit 0
+  output=$(omarchy-menu-select "$(omarchy-i18n monitorPosition.moveScreen)" "${outputs[@]}") || exit 0
   references=()
   for name in "${outputs[@]}"; do
     if [[ $name != "$output" ]]; then
       references+=("$name")
     fi
   done
-  reference=$(omarchy-menu-select "Position $output relative to" "${references[@]}") || exit 0
-  side=$(omarchy-menu-select "Place $output relative to $reference" left right above below) || exit 0
+  reference=$(omarchy-menu-select "$(omarchy-i18n monitorPosition.reference "$output")" "${references[@]}") || exit 0
+  side=$(omarchy-menu-select "$(omarchy-i18n monitorPosition.side "$output" "$reference")" left right above below) || exit 0
   if message=$(python3 "$helper" "$output" "$reference" "$side" 2>&1); then
-    omarchy-notification-send "Monitor Position" "$message"
+    omarchy-notification-send "$(omarchy-i18n monitorPosition.title)" "$message"
   else
-    omarchy-notification-send "Monitor Position" "$message"
+    omarchy-notification-send "$(omarchy-i18n monitorPosition.title)" "$message"
     exit 1
   fi
 fi

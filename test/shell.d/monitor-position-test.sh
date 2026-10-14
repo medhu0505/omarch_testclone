@@ -29,7 +29,7 @@ exit 1
 EOF
 chmod +x "$scratch/bin/"*
 export OMARCHY_PATH="$ROOT" XDG_CONFIG_HOME="$scratch/config" POSITION_MENU_LOG="$scratch/menu.log"
-export PATH="$scratch/bin:$PATH"
+export PATH="$scratch/bin:$ROOT/bin:$PATH"
 
 bash "$ROOT/bin/omarchy-hyprland-monitor-position" DP-2 DP-1 left --dry-run >"$scratch/layout.json"
 jq -e '.["DP-2"] == [-1920,0] and .["DP-1"] == [0,0]' "$scratch/layout.json" >/dev/null

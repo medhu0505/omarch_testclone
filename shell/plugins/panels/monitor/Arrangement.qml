@@ -34,7 +34,7 @@ Column {
   property string reference: ""
   property string side: ""
   property string alignment: "top"
-  property string message: "Connect and enable at least two screens to arrange them."
+  property string message: "Connect and enable at least two screens to arrange them." // i18n: ignore; IPC stores English state
   property bool error: false
   property bool busy: false
   property bool refreshQueued: false
@@ -54,6 +54,8 @@ Column {
   readonly property var layoutBounds: dragging ? dragBounds : Model.bounds(shownMonitors)
   readonly property var screenOptions: monitors.map(function(m) { return m.name })
   readonly property var referenceOptions: screenOptions.filter(function(name) { return name !== root.moving })
+  readonly property var placementLabels: ({left: Commons.I18n.t("monitor.arrangeLeft", "Left"), right: Commons.I18n.t("monitor.arrangeRight", "Right"), above: Commons.I18n.t("monitor.arrangeAbove", "Above"), below: Commons.I18n.t("monitor.arrangeBelow", "Below"), top: Commons.I18n.t("monitor.arrangeTop", "Top"), center: Commons.I18n.t("monitor.arrangeCenter", "Center"), bottom: Commons.I18n.t("monitor.arrangeBottom", "Bottom")})
+  readonly property var statusTranslations: ({"Connect and enable at least two screens to arrange them.": Commons.I18n.t("monitor.arrangementTwoScreens", "Connect and enable at least two screens to arrange them."), "Reading screens…": Commons.I18n.t("monitor.arrangementReading", "Reading screens…"), "Applying layout…": Commons.I18n.t("monitor.arrangementSaving", "Applying layout…"), "Choose a position to preview. Apply saves the layout.": Commons.I18n.t("monitor.arrangementChoosePosition", "Choose a position to preview. Apply saves the layout."), "Changes discarded. Drag screens to match your desk.": Commons.I18n.t("monitor.arrangementDiscarded", "Changes discarded. Drag screens to match your desk."), "Place the screen against another edge without overlapping.": Commons.I18n.t("monitor.arrangementTouchEdge", "Place the screen against another edge without overlapping."), "Screens cannot overlap.": Commons.I18n.t("monitor.arrangementOverlap", "Screens cannot overlap."), "Unsaved arrangement. Apply layout to save it.": Commons.I18n.t("monitor.arrangementUnsaved", "Unsaved arrangement. Apply layout to save it."), "Drag screens to match your desk. Apply saves the layout.": Commons.I18n.t("monitor.arrangementDragHint", "Drag screens to match your desk. Apply saves the layout."), "Some screens are disconnected. Move them against the layout before applying.": Commons.I18n.t("monitor.arrangementDisconnected", "Some screens are disconnected. Move them against the layout before applying."), "Some screens are disconnected. Arrange them against a shared edge.": Commons.I18n.t("monitor.arrangementExistingGaps", "Some screens are disconnected. Arrange them against a shared edge."), "Layout saved for next time.": Commons.I18n.t("monitor.arrangementSaved", "Layout saved for next time.")})
   readonly property var sides: ["left", "right", "above", "below"]
   readonly property var alignmentOptions: side === "above" || side === "below"
     ? ["left", "center", "right"] : ["top", "center", "bottom"]
@@ -61,6 +63,10 @@ Column {
   readonly property var navigationItems: !expanded ? [sectionButton] : [sectionButton, identifyButton, diagram, applyButton, discardButton, refreshButton, presetsButton].concat(
     showPresets ? [movingPicker, referencePicker, xField, yField, directionButtons.itemAt(0), directionButtons.itemAt(1), directionButtons.itemAt(2), directionButtons.itemAt(3), alignmentPicker] : [])
   readonly property int navigationCount: navigationItems.length
+
+  function displayLabel(monitor) {
+    return /^(eDP|LVDS|DSI)/.test(monitor.name) ? Commons.I18n.t("monitor.arrangementBuiltin", "Built-in display") : monitor.label
+  }
 
   function indexOf(item) { return navigationItems.indexOf(item) }
 
@@ -381,7 +387,7 @@ Column {
     id: sectionButton
     objectName: "arrangementToggle"
     width: parent.width
-    text: "ARRANGEMENT"
+    text: Commons.I18n.t("monitor.arrangementHeading", "ARRANGEMENT")
     leftAlign: true
     foreground: root.foreground
     fontFamily: root.fontFamily
@@ -411,7 +417,7 @@ Column {
       id: identifyButton
       objectName: "arrangementIdentify"
       width: parent.width
-      text: "Identify screens"
+      text: Commons.I18n.t("monitor.identifyScreens", "Identify screens")
       foreground: root.foreground
       fontFamily: root.fontFamily
       fontSize: Style.font.caption
@@ -492,7 +498,7 @@ Column {
       textFormat: Text.PlainText
       text: {
         var m = root.shownMonitors.filter(function(s) { return s.name === root.moving })[0]
-        return m ? m.number + " · " + m.label + " (" + m.name + ")" : ""
+        return m ? m.number + " · " + root.displayLabel(m) + " (" + m.name + ")" : ""
       }
       color: root.foreground
       font.family: root.fontFamily
@@ -503,7 +509,7 @@ Column {
     Text {
       width: parent.width
       textFormat: Text.PlainText
-      text: root.keyboardEditing ? "Arrow keys move the selected screen one pixel. Enter finishes editing." : root.message
+      text: root.keyboardEditing ? Commons.I18n.t("monitor.arrangementKeyboardHint", "Arrow keys move the selected screen one pixel. Enter finishes editing.") : (root.statusTranslations[root.message] || root.message)
       color: root.error ? Commons.Color.urgent : root.foreground
       opacity: root.error ? 1 : 0.7
       font.family: root.fontFamily
@@ -518,7 +524,7 @@ Column {
         id: applyButton
         objectName: "arrangementApply"
         width: (parent.width - parent.spacing) / 2
-        text: root.busy && root.requestAction === "apply" ? "Applying…" : "Apply layout"
+        text: root.busy && root.requestAction === "apply" ? Commons.I18n.t("monitor.arrangementApplying", "Applying…") : Commons.I18n.t("monitor.applyLayout", "Apply layout")
         foreground: root.foreground
         fontFamily: root.fontFamily
         bordered: true
@@ -532,7 +538,7 @@ Column {
         id: discardButton
         objectName: "arrangementDiscard"
         width: (parent.width - parent.spacing) / 2
-        text: "Discard changes"
+        text: Commons.I18n.t("monitor.discardLayout", "Discard changes")
         foreground: root.foreground
         fontFamily: root.fontFamily
         enabled: root.ready && root.preview.length > 0
@@ -546,7 +552,7 @@ Column {
       id: refreshButton
       objectName: "arrangementRefresh"
       width: parent.width
-      text: "Refresh"
+      text: Commons.I18n.t("monitor.refreshScreens", "Refresh")
       foreground: root.foreground
       fontFamily: root.fontFamily
       enabled: !root.busy
@@ -559,7 +565,7 @@ Column {
       id: presetsButton
       objectName: "arrangementPresets"
       width: parent.width
-      text: "Position controls"
+      text: Commons.I18n.t("monitor.positionControls", "Position controls")
       leftAlign: true
       foreground: root.foreground
       fontFamily: root.fontFamily
@@ -590,9 +596,9 @@ Column {
           id: movingPicker
           objectName: "arrangementMoving"
           width: (parent.width - parent.spacing) / 2
-          label: "Move screen"
+          label: Commons.I18n.t("monitor.moveScreen", "Move screen")
           value: root.moving
-          options: root.monitors.map(function(m) { return {value: m.name, label: m.number + " · " + m.label} })
+          options: root.monitors.map(function(m) { return {value: m.name, label: m.number + " · " + root.displayLabel(m)} })
           enabled: root.ready
           foreground: root.foreground
           fontFamily: root.fontFamily
@@ -607,9 +613,9 @@ Column {
           id: referencePicker
           objectName: "arrangementReference"
           width: (parent.width - parent.spacing) / 2
-          label: "Relative to"
+          label: Commons.I18n.t("monitor.relativeTo", "Relative to")
           value: root.reference
-          options: root.monitors.filter(function(m) { return m.name !== root.moving }).map(function(m) { return {value: m.name, label: m.number + " · " + m.label} })
+          options: root.monitors.filter(function(m) { return m.name !== root.moving }).map(function(m) { return {value: m.name, label: m.number + " · " + root.displayLabel(m)} })
           enabled: root.ready
           foreground: root.foreground
           fontFamily: root.fontFamily
@@ -686,14 +692,14 @@ Column {
         spacing: Style.space(4)
         Repeater {
           id: directionButtons
-          model: ["Left", "Right", "Above", "Below"]
+          model: root.sides
           Button {
             id: directionButton
             required property string modelData
             required property int index
-            objectName: "arrangement" + modelData
+            objectName: "arrangement" + ["Left", "Right", "Above", "Below"][index]
             width: (parent.width - parent.spacing * 3) / 4
-            text: modelData
+            text: root.placementLabels[modelData]
             bordered: true
             foreground: root.foreground
             fontFamily: root.fontFamily
@@ -711,10 +717,10 @@ Column {
         id: alignmentPicker
         objectName: "arrangementAlignment"
         width: parent.width
-        label: "Align screens"
+        label: Commons.I18n.t("monitor.alignScreens", "Align screens")
         value: root.alignment
         options: root.alignmentOptions.map(function(value) {
-          return {value: value, label: value.charAt(0).toUpperCase() + value.slice(1)}
+          return {value: value, label: root.placementLabels[value]}
         })
         enabled: root.ready && root.side !== ""
         foreground: root.foreground

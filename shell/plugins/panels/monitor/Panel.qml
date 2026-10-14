@@ -83,12 +83,14 @@ Panel {
     return list
   }
 
+  readonly property Item arrangement: panel.loadedContent ? panel.loadedContent.arrangement : null
+
   function sectionCount(section) {
     if (section === "brightness") return 0  // only the slider sentinel at -1
     if (section === "textsize") return 0    // slider sentinel at -1, like brightness
     if (section === "scale") return scaleValues.length
     if (section === "monitors") return displays.length
-    if (section === "arrangement") return arrangement.navigationCount
+    if (section === "arrangement") return arrangement ? arrangement.navigationCount : 0
     return 0
   }
 
@@ -155,7 +157,7 @@ Panel {
 
   function activateCursor() {
     if (focusSection === "arrangement") {
-      arrangement.activate(selectedIndex)
+      if (arrangement) arrangement.activate(selectedIndex)
       return
     }
     if (focusSection === "scale" && selectedIndex >= 0 && selectedIndex < scaleValues.length) {
@@ -198,6 +200,7 @@ Panel {
   // taller than its allotted height (lots of displays). Mirrors audio's
   // ensureCursorVisible helper.
   function ensureCursorVisible(item) {
+    var scrollArea = panel.loadedContent ? panel.loadedContent.scrollArea : null
     if (!item || !scrollArea) return
     var flick = scrollArea.contentItem
     if (!flick || flick.contentY === undefined) return
@@ -219,6 +222,7 @@ Panel {
   }
 
   function stateIpc() {
+    var arrangement = root.arrangement
     return JSON.stringify({
       brightness: root.brightnessPercent,
       brightnessAvailable: root.brightnessAvailable,
@@ -226,7 +230,7 @@ Panel {
       scale: root.monitorScale,
       cursor: {section: root.focusSection, index: root.selectedIndex, active: root.cursorActive},
       displays: root.displays,
-      arrangement: {
+      arrangement: arrangement ? {
         visible: arrangement.visible,
         expanded: arrangement.expanded,
         showPresets: arrangement.showPresets,
@@ -241,7 +245,7 @@ Panel {
         canApply: arrangement.canApply,
         message: arrangement.message,
         preview: arrangement.preview
-      }
+      } : {visible: root.enabledDisplayCount > 1, expanded: false, busy: false, canApply: false, monitors: [], preview: []}
     })
   }
 
@@ -315,7 +319,7 @@ Panel {
   // span ~10–20 points so casual tweaks change the label, while small
   // nudges within one band don't.
   function brightnessName(percent) {
-    return Model.brightnessName(percent)
+    return Model.brightnessName(percent, Commons.I18n.t)
   }
 
   function updateDisplays(displaysJson) {
@@ -325,7 +329,7 @@ Panel {
   }
 
   function toggleDisplay(name, enabled) {
-    if (!name || arrangement.busy) return
+    if (!name || (arrangement && arrangement.busy)) return
     if (enabled && root.enabledDisplayCount <= 1) return
 
     // hyprctl keyword is rejected under the Lua config ("non-legacy parsers"),
@@ -339,7 +343,7 @@ Panel {
   }
 
   function setScale(scale) {
-    if (arrangement.busy) return
+    if (arrangement && arrangement.busy) return
     actionProc.command = ["bash", "-c", "omarchy-hyprland-monitor-scaling " + scale]
     if (!actionProc.running) actionProc.running = true
   }
@@ -517,12 +521,15 @@ Panel {
     owner: root
     bar: root.bar
     open: root.opened
-    focusTarget: keyCatcher
+    focusTarget: panel.loadedContent
     contentWidth: panel.fittedContentWidth(Style.space(380))
-    contentHeight: panel.fittedContentHeight(panelColumn.implicitHeight, Style.space(560))
+    contentHeight: panel.fittedContentHeight(panel.loadedContentHeight, Style.space(560))
 
-    PanelKeyCatcher {
+    content: PanelKeyCatcher {
       id: keyCatcher
+      property alias scrollArea: scrollArea
+      property alias arrangement: arrangement
+      implicitHeight: panelColumn.implicitHeight
       anchors.fill: parent
       blocked: arrangement.popupOpen || arrangement.coordinateEditing
       onMoveRequested: function(dx, dy) {
@@ -581,7 +588,8 @@ Panel {
               spacing: Style.space(2)
 
               Text {
-                text: "Display"
+                text: Commons.I18n.t("monitor.display")
+                textFormat: Text.PlainText
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
@@ -597,7 +605,7 @@ Panel {
                   if (root.brightnessAvailable) {
                     return root.brightnessName(brightnessSlider.dragging ? brightnessSlider.liveValue : root.brightnessPercent).toUpperCase()
                   }
-                  return "FIXED BRIGHTNESS"
+                  return Commons.I18n.t("monitor.fixedBrightness")
                 }
                 color: Qt.darker(root.bar.foreground, 1.4)
                 font.family: root.bar.fontFamily
@@ -629,7 +637,7 @@ Panel {
 
               PanelSectionHeader {
                 id: brightnessHeader
-                text: "BRIGHTNESS"
+                text: Commons.I18n.t("monitor.brightness")
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
@@ -639,7 +647,7 @@ Panel {
               Text {
                 id: brightnessPercent
                 textFormat: Text.PlainText
-                text: Math.round(brightnessSlider.dragging ? brightnessSlider.liveValue : root.brightnessPercent) + "%"
+                text: Commons.I18n.formatNumber(Math.round(brightnessSlider.dragging ? brightnessSlider.liveValue : root.brightnessPercent)) + "%"
                 color: Qt.darker(root.bar.foreground, 1.4)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.caption
@@ -702,7 +710,7 @@ Panel {
 
               PanelSectionHeader {
                 id: textSizeHeader
-                text: "TEXT SIZE"
+                text: Commons.I18n.t("monitor.textSize")
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
@@ -712,7 +720,7 @@ Panel {
               Text {
                 id: textSizePx
                 textFormat: Text.PlainText
-                text: (textSizeSlider.dragging
+                text: Commons.I18n.formatNumber(textSizeSlider.dragging
                        ? root.textSizeStops[Math.round(textSizeSlider.liveValue)]
                        : root.displayedTextPx()) + "px"
                 color: Qt.darker(root.bar.foreground, 1.4)
@@ -774,7 +782,7 @@ Panel {
 
               PanelSectionHeader {
                 id: scaleHeader
-                text: "SCALE"
+                text: Commons.I18n.t("monitor.scale")
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
@@ -836,7 +844,7 @@ Panel {
             visible: root.displays.length > 1
 
             PanelSectionHeader {
-              text: "DISPLAYS"
+              text: Commons.I18n.t("monitor.displays")
               foreground: root.bar.foreground
               fontFamily: root.bar.fontFamily
             }
@@ -898,9 +906,8 @@ Panel {
     required property string scaleValue
     required property int scaleIndex
 
-    text: root.effectiveScale(scaleValue) + "x"
-    enabled: !arrangement.busy
-    opacity: enabled ? 1 : 0.45
+    text: Commons.I18n.formatNumber(root.effectiveScale(scaleValue)) + "x"
+    enabled: !root.arrangement || !root.arrangement.busy
     fontSize: Style.font.caption
     foreground: root.bar.foreground
     fontFamily: root.bar.fontFamily
@@ -926,7 +933,7 @@ Panel {
     required property int rowIndex
 
     readonly property bool isFocused: display && display.focused
-    readonly property bool canToggle: !arrangement.busy && display && (!display.enabled || root.enabledDisplayCount > 1)
+    readonly property bool canToggle: (!root.arrangement || !root.arrangement.busy) && display && (!display.enabled || root.enabledDisplayCount > 1)
 
     hasCursor: root.cursorActive && root.focusSection === "monitors" && root.selectedIndex === rowIndex
     onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(monitorRow)
@@ -958,7 +965,9 @@ Panel {
 
       Text {
         textFormat: Text.PlainText
-        text: monitorRow.display.name + (monitorRow.display.focused ? " · focused" : "")
+        text: monitorRow.display.focused
+          ? Commons.I18n.t("monitor.displayFocused").arg(monitorRow.display.name)
+          : monitorRow.display.name
         color: root.bar.foreground
         font.family: root.bar.fontFamily
         font.pixelSize: Style.font.body

@@ -41,7 +41,7 @@ Item {
           Text {
             width: parent.width
             textFormat: Text.PlainText
-            text: displayInfo ? displayInfo.label : "DISPLAY"
+            text: displayInfo ? (/^(eDP|LVDS|DSI)/.test(modelData.name) ? Commons.I18n.t("monitor.arrangementBuiltin", "Built-in display") : displayInfo.label) : Commons.I18n.t("monitor.identifyDisplay", "DISPLAY")
             color: Commons.Color.popups.text
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
