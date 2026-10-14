@@ -192,14 +192,15 @@ def cmd_manifest(args):
             units = done.get(code, [])
             # A completion record only counts when it matches the tree: a
             # unit English still has must have its translation present, and
-            # one English dropped (a prune) must have been recorded before
-            # and be gone from the tree now.
+            # one English dropped (a prune) must be gone from the tree, whether
+            # or not the manifest ever recorded it (a translation contributed
+            # by hand may never have been).
             for unit in units:
                 if unit in english:
                     if unit not in present:
                         raise SyncError(f"completion record for {code} lists {unit}, which is not a translated unit in the tree")
-                elif unit not in section or unit in present:
-                    raise SyncError(f"completion record for {code} lists {unit}, which is not a pruned unit")
+                elif unit in present:
+                    raise SyncError(f"completion record for {code} lists {unit} as pruned, but it is still in the tree")
         else:
             # Full regeneration trusts the tree: every present translation is
             # recorded against the current English source.

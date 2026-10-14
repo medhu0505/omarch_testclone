@@ -181,6 +181,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      pull-requests: write
     outputs:
       code_touched: ${{ steps.publish.outputs.code_touched }}
     steps:
@@ -196,6 +197,8 @@ jobs:
           path: ${{ runner.temp }}/extraction
       - name: Publish the extraction to the sync branch
         id: publish
+        env:
+          GH_TOKEN: ${{ secrets.I18N_SYNC_TOKEN || github.token }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -224,6 +227,21 @@ jobs:
             git commit -m 'Extract embedded English into catalogs'
           fi
           echo "code_touched=$code_touched" >> "$GITHUB_OUTPUT"
+          # Executable changes must never ride an auto-merge an earlier run
+          # enabled: turn it off, and make sure it is off, before they reach
+          # the branch. A failure here stops the run before the push.
+          if [ "$code_touched" = true ]; then
+            pr=$(gh pr list --head i18n-sync --base quattro --state open --json number --jq '.[0].number // empty')
+            if [ -n "$pr" ]; then
+              if [ "$(gh pr view "$pr" --json autoMergeRequest --jq '.autoMergeRequest != null')" = true ]; then
+                gh pr merge --disable-auto "$pr"
+              fi
+              if [ "$(gh pr view "$pr" --json autoMergeRequest --jq '.autoMergeRequest != null')" != false ]; then
+                echo "Could not turn off auto-merge on #$pr; not publishing executable changes." >&2
+                exit 1
+              fi
+            fi
+          fi
           git checkout -B i18n-sync
           git push --force origin i18n-sync
 
@@ -411,7 +429,9 @@ jobs:
             if [ "$CODE_TOUCHED" = true ]; then
               # An earlier run may have enabled auto-merge on this pull
               # request; executable changes must wait for a person.
-              gh pr merge --disable-auto "$pr" 2>/dev/null || true
+              if [ "$(gh pr view "$pr" --json autoMergeRequest --jq '.autoMergeRequest != null')" = true ]; then
+                gh pr merge --disable-auto "$pr"
+              fi
               gh pr comment "$pr" --body 'This sync includes an automated extraction that changed executable code under `bin/` or `shell/`, so auto-merge is off: please review those hunks before merging.'
               echo "Extraction touched code; PR #$pr waits for human review."
             else

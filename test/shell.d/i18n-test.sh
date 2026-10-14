@@ -551,7 +551,8 @@ if python3 "$ROOT/scripts/i18n-sync.py" --root "$fix" collect "$work/artifacts" 
 else
   fail "collect accepts an empty patch with a truthful sidecar"
 fi
-printf '{"da": ["shell:a.missing"]}\n' >"$work/artifacts/da.done.json"
+# a.one is English, but the Danish translation was deleted above.
+printf '{"da": ["shell:a.one"]}\n' >"$work/artifacts/da.done.json"
 if python3 "$ROOT/scripts/i18n-sync.py" --root "$fix" collect "$work/artifacts" --expected da >/dev/null 2>&1; then
   fail "collect rejects completion for units not in the tree"
 else
@@ -560,8 +561,8 @@ fi
 
 # Deleting an English unit prunes its translations; the prune's completion
 # record must collect, and drop the unit from the manifest, rather than
-# block every language's results.
-python3 "$ROOT/scripts/i18n-sync.py" --root "$fix" manifest >/dev/null
+# block every language's results, even for a translation the manifest
+# never recorded.
 python3 - "$fix" <<'PY'
 import json, sys
 from pathlib import Path
@@ -569,6 +570,9 @@ root = Path(sys.argv[1])
 for code in ("en", "da"):
     path = root / "default/i18n" / code / "shell.json"
     data = json.loads(path.read_text()); data.pop("a.two", None); path.write_text(json.dumps(data))
+# As if the Danish translation had been contributed by hand: never recorded.
+manifest = root / "default/i18n/translation-manifest.json"
+data = json.loads(manifest.read_text()); data.get("da", {}).pop("shell:a.two", None); manifest.write_text(json.dumps(data))
 PY
 git -C "$fix" add -A && git -C "$fix" commit -qm 'drop a.two'
 printf '{"da": ["shell:a.two"]}\n' >"$work/artifacts/da.done.json"
