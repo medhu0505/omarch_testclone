@@ -1,7 +1,7 @@
 {
   "agents.addFailed": "Kon het %1-account niet toevoegen",
   "agents.added": "%1 toegevoegd.",
-  "agents.allOver": "Alle %1-accounts liggen boven %2%",
+  "agents.allOver": "Alle %1-accounts zitten boven %2%",
   "agents.atLimit": "%1 zit op %2% van een %3-limiet",
   "agents.durationDaysHours": "%1d %2u",
   "agents.homeFailed": "Kon geen thuismap instellen voor het nieuwe account.",
