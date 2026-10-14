@@ -38,8 +38,18 @@ printf '%s %s\n' "${0##*/}" "$*" >>"$FAKE_CALLS"
 SH
 chmod +x "$TMPDIR/bin/"*
 
+# Stands in for a concurrent create that publishes the same id mid-run.
+mkdir -p "$TMPDIR/race-bin"
+cat >"$TMPDIR/race-bin/omarchy-plugin-validate" <<'SH'
+#!/bin/bash
+mkdir -p "$FAKE_RACE_TARGET"
+touch "$FAKE_RACE_TARGET/theirs"
+exit "${FAKE_VALIDATE_STATUS:-0}"
+SH
+chmod +x "$TMPDIR/race-bin/"*
+
 create_plugin() {
-  HOME="$TMPDIR/home" USER=tester OMARCHY_PATH="$ROOT" PATH="$TMPDIR/bin:$ROOT/bin:$PATH" \
+  HOME="$TMPDIR/home" USER=tester OMARCHY_PATH="$ROOT" PATH="${FAKE_PATH_PREFIX:-}$TMPDIR/bin:$ROOT/bin:$PATH" \
     FAKE_CALLS="$CALLS" OMARCHY_TEST_ROOT="$ROOT" \
     omarchy-plugin-create "$@"
 }
@@ -187,3 +197,20 @@ fi
 [[ -f $PLUGINS/tester.unreachable/manifest.json ]] ||
   fail "a failed enable removes the created plugin"
 pass "--enable still fails clearly without a running shell"
+
+if FAKE_PATH_PREFIX="$TMPDIR/race-bin:" FAKE_RACE_TARGET="$PLUGINS/tester.contested" FAKE_VALIDATE_STATUS=1 \
+  create_plugin Contested --kind bar-widget --yes >/dev/null 2>&1; then
+  fail "scaffold succeeds although validation failed"
+fi
+[[ -f $PLUGINS/tester.contested/theirs ]] || fail "a failed create deletes a plugin it did not publish"
+pass "a failed create leaves a concurrently published plugin alone"
+
+rm -rf "$PLUGINS/tester.contested"
+if FAKE_PATH_PREFIX="$TMPDIR/race-bin:" FAKE_RACE_TARGET="$PLUGINS/tester.contested" \
+  create_plugin Contested --kind bar-widget --yes >/dev/null 2>&1; then
+  fail "scaffold publishes over a plugin that appeared mid-create"
+fi
+[[ $(find "$PLUGINS/tester.contested" -mindepth 1 -printf '%f\n') == "theirs" ]] ||
+  fail "scaffold publishes into a plugin that appeared mid-create"
+[[ -z $(find "$PLUGINS" -maxdepth 1 -name '.create.*') ]] || fail "a refused publish leaves its stage behind"
+pass "scaffold refuses to publish over a plugin that appeared mid-create"

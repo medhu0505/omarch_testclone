@@ -203,10 +203,12 @@ done
 
 mkdir -p "$PLUGINS_DIR"
 stage=$(mktemp -d "$PLUGINS_DIR/.create.XXXXXX")
-create_complete=0
+# Until it is published, this run owns only its staging directory; the target
+# may belong to a concurrent create by then.
 cleanup() {
-  [[ -n ${stage:-} && -d ${stage:-} ]] && rm -rf "$stage"
-  (( create_complete )) || rm -rf "$target_dir"
+  if [[ -n ${stage:-} && -d ${stage:-} ]]; then
+    rm -rf "$stage"
+  fi
 }
 trap cleanup EXIT
 
@@ -362,9 +364,10 @@ README
 
 omarchy-plugin-validate "$stage" || fail "the scaffolded plugin did not validate"
 
-mv "$stage" "$target_dir"
+# -T publishes the stage as the target itself, never nested inside one that
+# appeared since the existence check.
+mv -T "$stage" "$target_dir" || fail "$target_dir appeared while the plugin was being created"
 stage=""
-create_complete=1
 echo "Created $plugin_name ($new_id) in $target_dir"
 
 # Best-effort: the plugin is in place either way, and enabling below still
