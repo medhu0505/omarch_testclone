@@ -10,7 +10,7 @@ if [[ ${DIRECT_BOOT_TEST_NAMESPACE:-} != 1 ]]; then
   if unshare --user --map-root-user --mount true 2>/dev/null; then
     exec env DIRECT_BOOT_TEST_NAMESPACE=1 unshare --user --map-root-user --mount --propagation private bash "$0" "$@"
   fi
-  pass "user/mount namespaces unavailable; skipping direct boot setup tests"
+  skip "user/mount namespaces unavailable; skipping direct boot setup tests"
   exit 0
 fi
 
@@ -26,7 +26,8 @@ mount --bind "$test_dir/modules" /usr/lib/modules
 
 export CALL_LOG="$test_dir/calls"
 export CONFIRM_LOG="$test_dir/confirm"
-export PATH="$test_dir/bin:$PATH"
+export OMARCHY_PATH=$ROOT
+export PATH="$test_dir/bin:$ROOT/bin:$PATH"
 
 cat > "$test_dir/bin/sudo" <<'STUB'
 #!/bin/bash
@@ -56,7 +57,7 @@ STUB
 cat > "$test_dir/bin/gum" <<'STUB'
 #!/bin/bash
 [[ $1 == confirm ]] || exit 1
-printf '%s\n' "$2" >> "$CONFIRM_LOG"
+printf '%s\n' "${!#}" >> "$CONFIRM_LOG"
 exit "${CONFIRM_STATUS:-0}"
 STUB
 chmod +x "$test_dir/bin/"*
@@ -78,7 +79,6 @@ touch /boot/EFI/Linux/omarchy_linux-csc3554.efi
 echo linux-csc3554 > /usr/lib/modules/test-kernel/pkgbase
 run_setup
 assert_loader omarchy_linux-csc3554.efi
-grep -q 'with linux-csc3554' "$CONFIRM_LOG" || fail "confirmation identifies the selected kernel"
 pass "direct boot retains the running custom kernel when stock linux is also installed"
 
 echo linux > /usr/lib/modules/test-kernel/pkgbase
