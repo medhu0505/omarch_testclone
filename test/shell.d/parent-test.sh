@@ -98,13 +98,13 @@ export CONSOLE_CALLS="$console_tmp/calls"
   done
   systemd_running() { [[ ${STUB_SYSTEMD:-running} == running ]]; }
   : >"$CONSOLE_CALLS"; mask_consoles
-  [[ $(<"$CONSOLE_CALLS") == 'systemctl mask --now getty@tty2.service getty@tty3.service getty@tty4.service getty@tty5.service getty@tty6.service' ]] ||
+  [[ $(<"$CONSOLE_CALLS") == 'systemctl mask --now getty@tty2.service autovt@tty2.service getty@tty3.service autovt@tty3.service getty@tty4.service autovt@tty4.service getty@tty5.service autovt@tty5.service getty@tty6.service autovt@tty6.service' ]] ||
     fail "closing the consoles masks tty2 to tty6 and stops them on a running system" "calls: $(<"$CONSOLE_CALLS")"
   : >"$CONSOLE_CALLS"; STUB_SYSTEMD=chroot mask_consoles
-  [[ $(<"$CONSOLE_CALLS") == 'systemctl mask getty@tty2.service getty@tty3.service getty@tty4.service getty@tty5.service getty@tty6.service' ]] ||
+  [[ $(<"$CONSOLE_CALLS") == 'systemctl mask getty@tty2.service autovt@tty2.service getty@tty3.service autovt@tty3.service getty@tty4.service autovt@tty4.service getty@tty5.service autovt@tty5.service getty@tty6.service autovt@tty6.service' ]] ||
     fail "in the install chroot the consoles are masked without --now" "calls: $(<"$CONSOLE_CALLS")"
   : >"$CONSOLE_CALLS"; unmask_consoles
-  [[ $(<"$CONSOLE_CALLS") == 'systemctl unmask getty@tty2.service getty@tty3.service getty@tty4.service getty@tty5.service getty@tty6.service' ]] ||
+  [[ $(<"$CONSOLE_CALLS") == 'systemctl unmask getty@tty2.service autovt@tty2.service getty@tty3.service autovt@tty3.service getty@tty4.service autovt@tty4.service getty@tty5.service autovt@tty5.service getty@tty6.service autovt@tty6.service' ]] ||
     fail "reopening the consoles unmasks the same units" "calls: $(<"$CONSOLE_CALLS")"
 )
 rm -rf "$console_tmp"

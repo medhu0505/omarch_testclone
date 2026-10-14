@@ -162,10 +162,11 @@ in_wheel() {
 # A kid with her own password can log in on a text console and work outside
 # the lock screen. Child installs close tty2..tty6 (tty1 carries the display
 # manager). --now only applies on a running system; in the install chroot the
-# mask is a file and takes effect at first boot.
+# mask is a file and takes effect at first boot. logind starts autovt@ttyN on a
+# switch, an alias a getty@ mask does not cover, so both are masked.
 console_units() {
   local n
-  for n in 2 3 4 5 6; do printf 'getty@tty%s.service ' "$n"; done
+  for n in 2 3 4 5 6; do printf 'getty@tty%s.service autovt@tty%s.service ' "$n" "$n"; done
 }
 
 # The install chroot sees the live system's /run, so the directory alone
