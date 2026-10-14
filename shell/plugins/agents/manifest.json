@@ -19,6 +19,7 @@
     "allowMultiple": false,
     "defaults": {
       "providers": {
+        "agy": { "enabled": true },
         "claude": { "enabled": true },
         "codex": { "enabled": true },
         "grok": { "enabled": true },
