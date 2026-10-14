@@ -684,6 +684,7 @@ Item {
     for (var i = 0; i < displayModel.count; i++) {
       var row = displayModel.get(i)
       if (row.itemId === "dmenu.apply") {
+        displayModel.setProperty(i, "label", Commons.I18n.t("common.apply"))
         displayModel.setProperty(i, "detail", Commons.I18n.tn("menu.selectedCount", root.dmenuSelected.length).arg(Commons.I18n.formatNumber(root.dmenuSelected.length)))
       } else if (row.kind === "dmenu") {
         var value = MenuModel.dmenuValue(root.dmenuOptions[Number(row.itemId.substring(6))])
@@ -1123,6 +1124,14 @@ Item {
   PointerMoveGate {
     id: pointerGate
     referenceItem: card
+  }
+
+  // An open dmenu skips the refresh rebuilds, so a language switch retitles
+  // its Apply row in place rather than clearing the list under the reader.
+  Connections {
+    target: Commons.I18n
+    function onStringsChanged() { if (root.opened && root.dmenuActive && root.dmenuMultiple) root.updateDmenuChecks() }
+    function onZeroDigitChanged() { if (root.opened && root.dmenuActive && root.dmenuMultiple) root.updateDmenuChecks() }
   }
 
   Connections {

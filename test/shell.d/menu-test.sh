@@ -830,6 +830,11 @@ assert(
   backgroundRebuilds.every(function(site) { return site.includes('!root.dmenuActive') }),
   'menu background refreshes leave an open dmenu untouched'
 )
+assert(
+  /target: Commons\.I18n\s*\n\s*function onStringsChanged\(\) \{ if \(root\.opened && root\.dmenuActive && root\.dmenuMultiple\) root\.updateDmenuChecks\(\)/.test(menuQml)
+    && /row\.itemId === "dmenu\.apply"\) \{\s*\n\s*displayModel\.setProperty\(i, "label", Commons\.I18n\.t\("common\.apply"\)\)/.test(menuQml),
+  'menu retitles an open dmenu in place when the language changes'
+)
 
 for (const functionName of ['openExistingMenu', 'openDmenu']) {
   const openMatch = menuQml.match(new RegExp(`function ${functionName}\\([^)]*\\) \\{([\\s\\S]*?)\\n  \\}`))
