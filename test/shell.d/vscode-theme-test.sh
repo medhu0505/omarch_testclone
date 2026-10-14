@@ -120,3 +120,30 @@ chmod +x "$SKIP_BIN/omarchy-toggle-enabled"
 EDITOR_PROBE_LOG="$TEST_HOME/editor-probes.log" PATH="$SKIP_BIN:$FAKE_BIN:$ROOT/bin:$PATH" HOME="$TEST_HOME" \
   "$ROOT/bin/omarchy-theme-set-vscode" || fail "VS Code theme sync succeeds when the last editor is skipped by its toggle"
 pass "VS Code theme sync succeeds when the last editor is skipped by its toggle"
+
+# Whiteboard has no extension marketplace, so it gets the generated theme even
+# when the theme names a marketplace extension. Its System appearance reads the
+# preferred themes, so those follow the generated labels too.
+WHITEBOARD_BIN="$TEST_HOME/whiteboard-bin"
+WHITEBOARD_SETTINGS="$TEST_HOME/.config/Whiteboard/User/settings.json"
+mkdir -p "$WHITEBOARD_BIN" "$(dirname "$WHITEBOARD_SETTINGS")"
+
+cat >"$WHITEBOARD_BIN/omarchy-cmd-present" <<'EOF2'
+#!/bin/bash
+[[ $1 == "whiteboard-desktop" ]]
+EOF2
+
+cat >"$WHITEBOARD_BIN/omarchy-toggle-enabled" <<'EOF2'
+#!/bin/bash
+exit 1
+EOF2
+
+chmod +x "$WHITEBOARD_BIN"/*
+printf '{"name":"Hackerman","extension":"Bjarne.hackerman-omarchy"}\n' >"$CURRENT_THEME/vscode.json"
+printf '{"type":"light","colors":{}}\n' >"$CURRENT_THEME/vscode-theme.json"
+printf '{\n  "window.autoDetectColorScheme": true,\n  "workbench.preferredDarkColorTheme": "Review Dark",\n  "workbench.preferredLightColorTheme": "Review Light"\n}\n' >"$WHITEBOARD_SETTINGS"
+
+PATH="$WHITEBOARD_BIN:$ROOT/bin:$PATH" HOME="$TEST_HOME" "$ROOT/bin/omarchy-theme-set-vscode" || fail "VS Code theme sync themes Whiteboard"
+jq -e '."workbench.colorTheme" == "Omarchy Light" and ."workbench.preferredDarkColorTheme" == "Omarchy Dark" and ."workbench.preferredLightColorTheme" == "Omarchy Light"' "$WHITEBOARD_SETTINGS" >/dev/null || fail "VS Code theme sync selects the generated labels in Whiteboard" "$(cat "$WHITEBOARD_SETTINGS")"
+jq -e '.[] | select(.identifier.id == "local.omarchy-theme")' "$TEST_HOME/.dev-fast-review/extensions/extensions.json" >/dev/null || fail "VS Code theme sync installs the generated theme for Whiteboard"
+pass "VS Code theme sync gives Whiteboard the generated theme"
