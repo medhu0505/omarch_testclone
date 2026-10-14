@@ -2,8 +2,12 @@
 #
 # The fingerprint setup installs libfprint-git in place of stock libfprint. The
 # two conflict, so the swap has to happen inside one --ask 4 transaction, and a
-# rerun with everything installed must not touch pacman at all. The real
-# omarchy-pkg-missing runs; pacman and the privileged calls are stubbed.
+# rerun with everything installed must not touch pacman at all. It only reaches
+# enrollment once fprintd has claimed the reader, and a driverless reader is
+# reported rather than sending the user into a doomed enroll. A Goodix 53xc
+# reader swaps to Dell's driver only on a yes, and a failed or interrupted build
+# puts the open driver back. The real omarchy-pkg-missing runs; pacman, the AUR
+# and the privileged calls are stubbed.
 
 set -euo pipefail
 
@@ -19,10 +23,15 @@ cat > "$scratch/bin/omarchy-hw-fingerprint" <<'STUB'
 #!/bin/bash
 exit "${HARDWARE_STATUS:-0}"
 STUB
+cat > "$scratch/bin/omarchy-hw-fingerprint-tod" <<'STUB'
+#!/bin/bash
+exit "${TOD_STATUS:-1}"
+STUB
 cat > "$scratch/bin/sudo" <<'STUB'
 #!/bin/bash
 case "$1" in
   pacman | fprintd-enroll) exec "$@" ;;
+  udevadm | systemctl) printf 'sudo %s\n' "$*" >> "$CALL_LOG" ;;
   sed) printf 'pam %s\n' "$*" >> "$CALL_LOG" ;;
   tee) printf 'pam %s\n' "$*" >> "$CALL_LOG"; cat >/dev/null ;;
   *) echo "Unexpected privileged call: $*" >> "$CALL_LOG"; exit 99 ;;
@@ -32,13 +41,19 @@ STUB
 cat > "$scratch/bin/pacman" <<'STUB'
 #!/bin/bash
 case "$1" in
-  -Q)
+  -Q | -Qq)
     if [[ $2 == "--" ]]; then
       shift 2
     else
       shift
     fi
-    grep -qx -- "$1" <<< "${INSTALLED:-}"
+    grep -x -- "$1" <<< "${INSTALLED:-}"
+    ;;
+  -Rdd)
+    printf 'pacman %s\n' "$*" >> "$CALL_LOG"
+    if [[ ${REMOVE_STATUS:-0} == interrupted ]]; then
+      kill -TERM "$PPID"
+    fi
     ;;
   -S)
     printf 'pacman %s\n' "$*" >> "$CALL_LOG"
@@ -52,6 +67,32 @@ cat > "$scratch/bin/fprintd-enroll" <<'STUB'
 # Stop before verification/PAM; no host authentication files may be changed.
 echo enroll >> "$CALL_LOG"
 exit "${ENROLL_STATUS:-1}"
+STUB
+# DRIVER_STATUS stands in for whether any installed driver claimed the reader;
+# DRIVER_OUTPUT is what fprintd said when it did not. Dell's driver claims it.
+cat > "$scratch/bin/fprintd-list" <<'STUB'
+#!/bin/bash
+if [[ ${AUR_STATUS:-0} == 0 ]] && grep -q '^aur-add ' "$CALL_LOG"; then
+  exit 0
+fi
+(( ${DRIVER_STATUS:-0} == 0 )) || echo "${DRIVER_OUTPUT:-No devices available}"
+exit "${DRIVER_STATUS:-0}"
+STUB
+cat > "$scratch/bin/gum" <<'STUB'
+#!/bin/bash
+echo "gum $1" >> "$CALL_LOG"
+exit "${GUM_STATUS:-0}"
+STUB
+# AUR_STATUS=interrupted and REMOVE_STATUS=interrupted signal setup mid-build and
+# mid-removal, as a Ctrl+C or a closed terminal would.
+cat > "$scratch/bin/omarchy-pkg-aur-add" <<'STUB'
+#!/bin/bash
+echo "aur-add $*" >> "$CALL_LOG"
+if [[ ${AUR_STATUS:-0} == interrupted ]]; then
+  kill -TERM "$PPID"
+  exit 1
+fi
+exit "${AUR_STATUS:-0}"
 STUB
 cat > "$scratch/bin/fprintd-verify" <<'STUB'
 #!/bin/bash
@@ -110,6 +151,74 @@ if grep -qx enroll "$CALL_LOG"; then
   fail "a failed package transaction prevents enrollment"
 fi
 pass "a failed installation stops before enrollment"
+
+# A connected reader that no driver claims must not fall through to a doomed
+# enroll; non-53xc hardware gets the actionable message instead.
+DRIVER_STATUS=1 TOD_STATUS=1 run_setup
+grep -q 'No installed driver supports' "$scratch/output" || fail "a driverless reader reports the problem"
+if grep -qx enroll "$CALL_LOG"; then
+  fail "a driverless reader does not attempt enrollment"
+fi
+pass "a driverless reader is reported instead of enrolling"
+
+# Any other fprintd-list failure says nothing about the driver, so it is left
+# for enrollment to report, as it was before the pre-flight.
+DRIVER_STATUS=1 DRIVER_OUTPUT='ListEnrolledFingers failed: Not Authorized' TOD_STATUS=0 run_setup
+grep -qx enroll "$CALL_LOG" || fail "a non-device fprintd failure still reaches enrollment"
+if grep -q 'no open-source driver\|No installed driver supports' "$scratch/output"; then
+  fail "a non-device fprintd failure is not blamed on the driver"
+fi
+pass "a non-device fprintd failure is not blamed on the driver"
+
+run_goodix_setup() {
+  DRIVER_STATUS=1 TOD_STATUS=0 INSTALLED=$'libfprint-git\nfprintd\nusbutils' run_setup
+}
+
+assert_restores() {
+  grep -qx 'pacman -S --noconfirm --ask 4 -- libfprint-git' "$CALL_LOG" || fail "$1 restores libfprint-git"
+  if grep -qx enroll "$CALL_LOG"; then
+    fail "$1 does not attempt enrollment"
+  fi
+}
+
+GUM_STATUS=1 run_goodix_setup
+grep -qx 'gum confirm' "$CALL_LOG" || fail "a Goodix 53xc reader asks before installing the Dell driver"
+if grep -q '^pacman \|^aur-add ' "$CALL_LOG"; then
+  fail "declining the Dell driver changes no packages"
+fi
+pass "declining the Dell driver changes no packages"
+
+run_goodix_setup
+grep -qx 'pacman -Rdd --noconfirm libfprint-git' "$CALL_LOG" || fail "accepting removes the open provider"
+grep -qx 'aur-add libfprint-tod libfprint-goodix-53xc' "$CALL_LOG" || fail "accepting installs the Dell driver"
+if grep -q '^pacman -S ' "$CALL_LOG"; then
+  fail "a successful driver install does not restore the open provider"
+fi
+grep -qx enroll "$CALL_LOG" || fail "a claimed Goodix reader reaches enrollment"
+pass "accepting the Dell driver replaces the open provider and reaches enrollment"
+
+AUR_STATUS=1 run_goodix_setup
+assert_restores "a failed driver build"
+pass "a failed driver build restores the open provider"
+
+AUR_STATUS=interrupted run_goodix_setup
+assert_restores "an interrupted driver build"
+pass "an interrupted driver build restores the open provider"
+
+REMOVE_STATUS=interrupted run_goodix_setup
+assert_restores "an interrupted removal"
+if grep -q '^aur-add ' "$CALL_LOG"; then
+  fail "an interrupted removal does not go on to build the driver"
+fi
+pass "an interrupted removal restores the open provider"
+
+INSTALLED=$'libfprint-tod\nlibfprint-goodix-53xc\nfprintd\nusbutils' run_setup
+if grep -q '^pacman \|^aur-add ' "$CALL_LOG"; then
+  fail "a rerun on the Dell driver does not pull the open provider back"
+fi
+grep -q 'This is a press sensor' "$scratch/output" || fail "a rerun on the Dell driver gives the press hint"
+grep -qx enroll "$CALL_LOG" || fail "a rerun on the Dell driver reaches enrollment"
+pass "a rerun on the Dell driver goes straight to enrollment"
 
 HARDWARE_STATUS=1 run_setup
 [[ ! -s $CALL_LOG ]] || fail "missing hardware stops before package operations"
