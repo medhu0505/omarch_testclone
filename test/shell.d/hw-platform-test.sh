@@ -21,8 +21,8 @@ if (( EUID != 0 )); then
 fi
 if (( EUID == 0 )) || unshare --user --map-root-user true 2>/dev/null; then
   live=$("${root_runner[@]}" "$detector") || fail "root detects the live platform"
-  [[ $live =~ ^(aarch64-apple|aarch64|x86)$ ]] || fail "root detects the live platform" "live: $live"
-  for platform in aarch64-apple aarch64 x86; do
+  [[ $live =~ ^(aarch64-apple|aarch64-surface|aarch64|x86)$ ]] || fail "root detects the live platform" "live: $live"
+  for platform in aarch64-apple aarch64-surface aarch64 x86; do
     fixture="$test_tmp/$platform"
     if [[ -f $fixture/proc/device-tree/compatible ]]; then
       mkdir -p "$fixture/sys/firmware/devicetree/base"
@@ -130,6 +130,13 @@ write_tree xps13-9345 proc dell,xps13-9345 qcom,x1e80100
 write_tree t14s proc lenovo,thinkpad-t14s qcom,x1e78100 qcom,x1e80100
 for board in m1-pro m2-max m1-mini; do
   expect "$board" aarch64 aarch64-apple "the $board device tree is Apple Silicon"
+done
+# The Surface Pro 11 runs Arch Linux Ports with its own kernel repository, so it
+# is a family of its own; both panel variants share the "microsoft,denali" root.
+write_tree sp11-lcd proc microsoft,denali-lcd microsoft,denali qcom,x1p64100 qcom,x1e80100
+write_tree sp11-oled proc microsoft,denali-oled microsoft,denali qcom,x1e80100
+for board in sp11-lcd sp11-oled; do
+  expect "$board" aarch64 aarch64-surface "the $board device tree is the Surface Pro 11 family"
 done
 for board in yoga-slim7x xps13-9345 t14s; do
   expect "$board" aarch64 aarch64 "the $board device tree is plain aarch64, never Apple Silicon"

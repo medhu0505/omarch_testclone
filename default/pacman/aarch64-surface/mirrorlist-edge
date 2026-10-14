@@ -1,0 +1,2 @@
+# Surface Pro 11 (aarch64-surface): Arch Linux Ports aarch64 repositories.
+Server = https://arch-linux-repo.drzee.net/arch/$repo/os/$arch

@@ -9,7 +9,7 @@ source "$OMARCHY_PATH/install/helpers/image-target.sh"
 platform=$(omarchy-hw-platform)
 templates=$(omarchy_pacman_templates "$platform")
 alarm_keyring=0
-if [[ $platform == aarch64* && $platform != "aarch64-apple" ]]; then
+if [[ $platform == aarch64* && $platform != "aarch64-apple" && $platform != "aarch64-surface" ]]; then
   alarm_keyring=1
 fi
 

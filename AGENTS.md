@@ -70,6 +70,7 @@ Omarchy runs on x86 and aarch64 (ARM). A platform name is the CPU architecture, 
 - `x86` - every x86_64 machine
 - `aarch64` - every ARM machine without a family of its own (Snapdragon laptops, Raspberry Pis and ARM VMs today)
 - `aarch64-apple` - Apple Silicon Macs
+- `aarch64-surface` - Surface Pro 11 (Snapdragon X) on Arch Linux Ports with the linux-sp11 kernel repository
 
 A new family is named `aarch64-<family>` (e.g. `aarch64-qualcomm`, `aarch64-n1x`) and is added only once it needs code of its own, so `aarch64*` always means ARM. `omarchy-hw-platform` prints the most specific name. Use these exact names wherever a platform is named: package lists, pacman template directories, image manifests, dispatch registration, tests and docs. Never introduce `generic`, `arm64`, `apple-silicon` or other spellings; the old `apple-silicon`, `generic-aarch64` and `generic` are read only for compatibility with older image builders.
 
