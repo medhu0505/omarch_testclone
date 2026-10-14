@@ -401,7 +401,10 @@ for name in elan-touchpad elan-mouse msft0001:00-093a:0255-touchpad msft0001:00-
 done
 HOME="$home_dir" XDG_STATE_HOME="$xdg_decoy" OMARCHY_PATH="$ROOT" lua - <<'LUA'
 local seen = {}
-hl = { device = function(opts) seen[opts.name] = opts.enabled end }
+hl = {
+  device = function(opts) seen[opts.name] = opts.enabled end,
+  get_windows = function() return {} end,
+}
 dofile(os.getenv("OMARCHY_PATH") .. "/default/hypr/bootstrap.lua")
 require("default.hypr.toggles")
 for _, name in ipairs({"elan-touchpad", "elan-mouse", "msft0001:00-093a:0255-touchpad", "msft0001:00-093a:0255-mouse"}) do
@@ -441,7 +444,10 @@ pass "touchpad enable restores saved names when the device query fails"
 printf '%s\n' 'msft0001:00-093a:0255-touchpad' 'msft0001:00-093a:0255-mouse' >"$name_file"
 HOME="$home_dir" XDG_STATE_HOME="$xdg_decoy" OMARCHY_PATH="$ROOT" lua - <<'LUA'
 local seen = {}
-hl = { device = function(opts) table.insert(seen, opts) end }
+hl = {
+  device = function(opts) table.insert(seen, opts) end,
+  get_windows = function() return {} end,
+}
 dofile(os.getenv("OMARCHY_PATH") .. "/default/hypr/bootstrap.lua")
 require("default.hypr.toggles")
 assert(#seen == 2, "reload disables every persisted sibling")
