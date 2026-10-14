@@ -12,6 +12,9 @@ Item {
   property int backgroundVersion: 0
   property bool fingerprintConfigured: false
   property bool fingerprintUnavailable: false
+  // The sensor stopped arming itself because a lock nobody was using spent its
+  // attempt budget; deliberate input starts it again.
+  property bool fingerprintPaused: false
   property bool authenticatingPassword: false
   property string failureMessage: ""
   property int failedAttempts: 0
@@ -53,6 +56,10 @@ Item {
   signal passwordTextEdited(string password)
   signal clearFailureRequested()
   signal wakeRequested()
+  // Deliberate input only: a click, a keystroke or typing. Pointer motion wakes
+  // the display but must not hand the sensor a fresh budget, or a nudged mouse
+  // would restart a paused reader every few seconds.
+  signal rearmRequested()
 
   function forcePasswordFocus() {
     passwordInput.forceActiveFocus()
@@ -148,7 +155,7 @@ Item {
     MouseArea {
       anchors.fill: parent
       hoverEnabled: true
-      onClicked: { root.wakeRequested(); root.forcePasswordFocus() }
+      onClicked: { root.wakeRequested(); root.rearmRequested(); root.forcePasswordFocus() }
       onPositionChanged: root.wakeRequested()
     }
 
@@ -197,6 +204,7 @@ Item {
           if (!root.syncingPasswordText) root.passwordTextEdited(text)
           if (text.length > 0) {
             root.wakeRequested()
+            root.rearmRequested()
           }
           if (text.length > 0 && root.failureMessage.length > 0) root.clearFailureRequested()
         }
@@ -207,8 +215,17 @@ Item {
           if (submitted.length > 0) root.submitPassword(submitted)
         }
 
+        // Tapping the field is deliberate input too, and the background MouseArea
+        // never sees it: the input handles the press first. The default tap
+        // policy rides a passive grab, so watching for the tap here does not take
+        // the press away from the input's own cursor placement.
+        TapHandler {
+          onTapped: root.rearmRequested()
+        }
+
         Keys.onPressed: function(event) {
           root.wakeRequested()
+          root.rearmRequested()
           if (event.isAutoRepeat && root.dropsAutoRepeat(event.key)) {
             event.accepted = true
             return
@@ -271,6 +288,23 @@ Item {
       font.family: Style.font.family
       font.pixelSize: Style.font.heading
       font.italic: true
+      horizontalAlignment: Text.AlignHCenter
+    }
+
+    // The pause says itself here rather than in the field: the field's single
+    // line elides a sentence this long, and its error styling would read as a
+    // failed login on a lock that is only waiting for someone to come back.
+    Text {
+      objectName: "fingerprintPausedNotice"
+      textFormat: Text.PlainText
+      anchors.top: inputField.bottom
+      anchors.topMargin: 18
+      anchors.horizontalCenter: inputField.horizontalCenter
+      visible: root.fingerprintPaused && !root.fingerprintUnavailable
+      text: "Fingerprint paused \u2014 press a key or click to scan again"
+      color: Commons.Color.lock.text
+      font.family: Style.font.family
+      font.pixelSize: Style.font.heading
       horizontalAlignment: Text.AlignHCenter
     }
   }

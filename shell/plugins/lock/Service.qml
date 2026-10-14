@@ -32,6 +32,12 @@ Item {
   property double fingerprintLastSettleMs: 0
   property double fingerprintResumedAtMs: 0
   property int fingerprintProbeStreak: 0
+  // Attempts that reached the reader and found no finger since the last
+  // deliberate input. A lock nobody is using spends this budget and then stops
+  // arming the sensor (FingerprintModel.UNATTENDED_BUDGET).
+  property int fingerprintUnattended: 0
+  property bool fingerprintPaused: false
+  property double fingerprintLastInteractionMs: 0
   property bool previewVisible: false
   property string enteredPassword: ""
   property string pendingPassword: ""
@@ -200,6 +206,9 @@ Item {
     fingerprintLastSettleMs = 0
     fingerprintResumedAtMs = 0
     fingerprintProbeStreak = 0
+    fingerprintUnattended = 0
+    fingerprintPaused = false
+    fingerprintLastInteractionMs = 0
     fingerprintRecheckTimer.stop()
     fingerprintRetryTimer.stop()
     fingerprintReachTimer.stop()
@@ -293,12 +302,28 @@ Item {
   // A suspended PAM conversation may be orphaned by the daemon restart.
   function restartFingerprintAfterSleep() {
     noteFingerprintResumed()
+
+    // A pause must not outlive the suspend: the machine comes back under someone
+    // who is about to touch the reader, and a sensor that stays quiet until a key
+    // press reads as broken hardware. Cleared once per resume, so a night of
+    // suspends spends one budget per wake rather than scanning freely.
+    if (fingerprintPaused) {
+      fingerprintPaused = false
+      fingerprintUnattended = 0
+      logEvent("fingerprint-rearmed: resume")
+    }
+
     if (fingerprintAuthenticating || fingerprintPam.active) {
       if (fingerprintPam.active) fingerprintPam.abort()
       settleFingerprintAttempt()
       return
     }
-    if (!fingerprintRetryTimer.running) return
+    if (!fingerprintRetryTimer.running) {
+      // Only a pause cleared here reaches this, and it owns arming the next
+      // attempt; leaving it unarmed would keep the reader quiet for the lock.
+      if (lockRequested && fingerprintConfigured && sessionLock.secure) armFingerprintRetry(FingerprintModel.MATCH_RETRY_MS)
+      return
+    }
     armFingerprintRetry(FingerprintModel.MATCH_RETRY_MS)
   }
 
@@ -367,6 +392,8 @@ Item {
 
   function startFingerprint() {
     if (!lockRequested || !sessionLock.secure || !fingerprintConfigured) return
+    // A paused sensor stays quiet until a deliberate input clears the pause.
+    if (fingerprintPaused) return
     if (fingerprintPam.active || fingerprintAuthenticating) return
 
     fingerprintAuthenticating = true
@@ -428,7 +455,57 @@ Item {
       logEvent("fingerprint-recovered: streak=" + previousStreak)
     }
     fingerprintLastSettleMs = now
+
+    // A paused sensor has spent its budget already, so there is nothing left to
+    // count or to arm; deliberate input and a resume are what start it again.
+    if (fingerprintPaused) return
+
+    // An attempt that reached the reader spends the unattended budget. Spent, the
+    // sensor pauses instead of arming again, so a lock nobody is using stops
+    // scanning; a deliberate input is what starts it again.
+    fingerprintUnattended = FingerprintModel.nextUnattendedCount(fingerprintUnattended, fingerprintAttemptReachedDevice)
+    if (FingerprintModel.budgetExhausted(fingerprintUnattended)) {
+      pauseFingerprint("budget exhausted after " + fingerprintUnattended + " attempts")
+      return
+    }
+
     armFingerprintRetry(FingerprintModel.retryDelayMs(fingerprintUnreachedStreak))
+  }
+
+  // Stop instead of slow: a lock nobody is using must stop arming the reader
+  // rather than keep poking it, and the user is told why the sensor went quiet,
+  // because a silently dead sensor reads as broken hardware.
+  function pauseFingerprint(reason) {
+    if (fingerprintPaused) return
+    fingerprintPaused = true
+    fingerprintRetryTimer.stop()
+    fingerprintReachTimer.stop()
+    logEvent("fingerprint-paused: " + reason)
+  }
+
+  // Deliberate input - a key press, a click, typing - means somebody is back at
+  // the machine, so hand the reader a fresh budget. Pointer motion is not intent
+  // and never reaches this; LockView keeps the two apart.
+  function rearmFingerprintFromInteraction() {
+    if (!lockRequested || !fingerprintConfigured || !sessionLock.secure) return
+
+    var now = Date.now()
+    if (!FingerprintModel.shouldRefreshBudget(now, fingerprintLastInteractionMs)) return
+    fingerprintLastInteractionMs = now
+
+    // A budget spent before the user arrived must not pause in front of them.
+    fingerprintUnattended = 0
+    if (!fingerprintPaused) return
+
+    fingerprintPaused = false
+    logEvent("fingerprint-rearmed: interaction")
+    // A session already in flight owns the next attempt; otherwise the timer
+    // owns it, and without one the reader would stay quiet for the whole lock.
+    if (fingerprintPam.active || fingerprintAuthenticating) {
+      if (!fingerprintRetryTimer.running) armFingerprintRetry(FingerprintModel.MATCH_RETRY_MS)
+      return
+    }
+    startFingerprint()
   }
 
   function handleFingerprintFinished(result) {
@@ -488,6 +565,7 @@ Item {
         backgroundVersion: root.backgroundVersion
         fingerprintConfigured: root.fingerprintConfigured || root.fingerprintUnavailable
         fingerprintUnavailable: root.fingerprintUnavailable
+        fingerprintPaused: root.fingerprintPaused
         authenticatingPassword: root.authenticatingPassword
         failureMessage: root.failureMessage
         failedAttempts: root.failedAttempts
@@ -500,6 +578,7 @@ Item {
         onSubmitPassword: function(password) { root.submitPassword(password) }
         onClearFailureRequested: root.failureMessage = ""
         onWakeRequested: root.runWake()
+        onRearmRequested: root.rearmFingerprintFromInteraction()
       }
 
     }
@@ -863,6 +942,8 @@ Item {
         passwordPam: root.passwordPamConfigured,
         fingerprint: root.fingerprintConfigured,
         fingerprintUnavailable: root.fingerprintUnavailable,
+        fingerprintPaused: root.fingerprintPaused,
+        fingerprintUnattended: root.fingerprintUnattended,
         authenticating: root.authenticating,
         lastEvent: root.lastEvent,
         lastEventAt: root.lastEventAt

@@ -179,4 +179,102 @@ assert(model.REACH_TIMEOUT_MS < 25000,
   "the reach bound lands before GDBus fails a stuck Claim at 25s and pam_fprintd's 30s verify timeout reports as a non-error message")
 assert(model.REACH_TIMEOUT_MS >= 10000,
   'the reach bound outlasts a slow device open, so a reader that takes seconds to claim is not killed mid-Claim on every attempt')
+
+// Unattended bound: a scan window that reaches the reader and finds no finger
+// spends the budget -- the press-reader loop this bounds -- while an attempt that
+// never reached the reader does not: it is paced by the backoff and reported
+// unavailable instead, and has to keep retrying so a reader that comes back is
+// found again.
+assertEqual(model.nextUnattendedCount(0, true), 1, 'a reached attempt spends the budget')
+assertEqual(model.nextUnattendedCount(3, true), 4, 'reached attempts accumulate')
+assertEqual(model.nextUnattendedCount(3, false), 3, 'an attempt that never reached the reader spends nothing')
+assert(!model.budgetExhausted(model.UNATTENDED_BUDGET - 1), 'the budget is not spent one attempt early')
+assert(model.budgetExhausted(model.UNATTENDED_BUDGET), 'the budget is spent at the bound')
+assert(model.UNATTENDED_BUDGET >= 2, 'more than one scan window is allowed before the sensor pauses')
+assert(model.UNATTENDED_BUDGET * model.FPRINTD_IDLE_EXIT_MS <= 5 * 60 * 1000,
+  'the budget spends itself within a few minutes, so the pause lands while a user who stepped away is likely to come back')
+assert(model.INTERACTION_COOLDOWN_MS > model.MATCH_RETRY_MS,
+  'one deliberate arrival is one decision, not one per keystroke at the retry interval')
+
+// End to end: an unattended press reader scans its window, retries at the fast
+// interval, and reaches the pause in a bounded number of sessions looking for a
+// finger nobody is offering. Without the bound this loop never ends -- the three
+// nights that produced 70, 1348 and 3680 sessions.
+let unattended = 0
+let sessions = 0
+let at = 0
+while (sessions < 100) {
+  sessions++
+  at += model.FPRINTD_IDLE_EXIT_MS
+  unattended = model.nextUnattendedCount(unattended, true)
+  if (model.budgetExhausted(unattended)) break
+  at += model.retryDelayMs(0)
+}
+assertEqual(sessions, model.UNATTENDED_BUDGET, 'an unattended reader scans exactly the budget and then stops, got ' + sessions)
+assertEqual(at, model.UNATTENDED_BUDGET * model.FPRINTD_IDLE_EXIT_MS + (model.UNATTENDED_BUDGET - 1) * model.MATCH_RETRY_MS,
+  'the sessions sit one scan window apart, not one retry interval apart: ' + at + 'ms')
+
+// A reader that never answers is not bounded here: it keeps its own pacing and
+// climbs toward the unavailable notice, because that is how it is found again.
+let missAt = 0
+let missStreak = 0
+let missSessions = 0
+while (missAt < 10 * 60 * 1000) {
+  missStreak = model.nextStreak(missStreak, false, false)
+  missAt += model.retryDelayMs(missStreak)
+  missSessions++
+}
+assert(missSessions > model.UNATTENDED_BUDGET,
+  'an unreached reader is not paused by the unattended budget, got ' + missSessions + ' attempts in ten minutes')
+
+// Deliberate input refreshes the budget, rate-limited so a typing run is one
+// decision; a clock stepped back must not refuse it.
+assert(model.shouldRefreshBudget(10000, 0), 'the first deliberate input refreshes the budget')
+assert(!model.shouldRefreshBudget(10000, 10000 - model.INTERACTION_COOLDOWN_MS + 1), 'input inside the cooldown is refused')
+assert(model.shouldRefreshBudget(10000, 10000 - model.INTERACTION_COOLDOWN_MS), 'input one cooldown later refreshes it')
+assert(model.shouldRefreshBudget(10000, 15000), 'a clock stepped back past the interaction does not refuse the refresh')
+
+// A returning user resets the count: typing at 20 keystrokes a second is one
+// refresh per cooldown, not one per key, and never zero.
+let lastInteraction = -model.INTERACTION_COOLDOWN_MS
+let refreshes = 0
+for (let t = 0; t <= 10000; t += 50) {
+  if (model.shouldRefreshBudget(t, lastInteraction)) { refreshes++; lastInteraction = t }
+}
+assertEqual(refreshes, 10000 / model.INTERACTION_COOLDOWN_MS + 1,
+  'a typing run refreshes once per cooldown, got ' + refreshes)
+
 JS
+
+# The bound only holds if the wake path cannot re-arm the reader: pointer motion
+# wakes the display and nothing else, while a click, a key press and typing are
+# deliberate input. Static, so it runs wherever the suite runs.
+lock_dir="$ROOT/shell/plugins/lock"
+
+if grep -q 'onPositionChanged:.*rearmRequested' "$lock_dir/LockView.qml"; then
+  fail 'pointer motion does not re-arm the fingerprint sensor' 'onPositionChanged emits rearmRequested'
+fi
+pass 'pointer motion does not re-arm the fingerprint sensor'
+
+check_marker() {
+  if ! grep -q "$2" "$lock_dir/$1"; then
+    fail "${3:-the deliberate-input re-arm is wired through}" "missing $2 in $1"
+  fi
+}
+
+# The view raises it and the service answers it, on the same plugin.
+check_marker LockView.qml 'signal rearmRequested()'
+check_marker LockView.qml 'root.rearmRequested()'
+check_marker Service.qml 'onRearmRequested: root.rearmFingerprintFromInteraction()'
+check_marker Service.qml 'function rearmFingerprintFromInteraction()'
+check_marker Service.qml 'function pauseFingerprint(reason)'
+check_marker Service.qml 'nextUnattendedCount(fingerprintUnattended, fingerprintAttemptReachedDevice)'
+pass 'the deliberate-input re-arm is wired through both files'
+
+if sed -n '/^  function pauseFingerprint/,/^  }/p' "$lock_dir/Service.qml" | grep -q 'failureMessage'; then
+  fail 'the pause notice stays out of the password field' 'pauseFingerprint writes into failureMessage, which elides and paints the error border'
+fi
+if ! grep -q 'fingerprintPausedNotice' "$lock_dir/LockView.qml"; then
+  fail 'the pause notice is shown outside the field' 'no fingerprintPausedNotice in LockView'
+fi
+pass 'the pause notice is shown outside the password field'

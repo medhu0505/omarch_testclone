@@ -15,6 +15,17 @@ var REACH_TIMEOUT_MS = 20000
 var SLEEP_GAP_MS = 2000
 // Ignore transient misses while the asynchronous resume restart lands.
 var RESUME_GRACE_MS = 5000
+// A lock nobody is using must stop arming the reader. A press-type reader is
+// re-armed every scan window (~30s), so a night left alone is a PAM session
+// every 30 seconds -- thousands of them, and on some readers a wedge that needs
+// a power cycle (omacom/omarchy#9905, standardagents/t1bridge#14). The bound
+// spends itself in about three minutes, while someone who locked the machine
+// and walked away is still likely to come back and see why it went quiet.
+var UNATTENDED_BUDGET = 6
+// Deliberate input means somebody is at the machine, but it arrives in runs
+// (typing, key repeat), so a cooldown keeps one arrival from reading as a fresh
+// decision on every keystroke.
+var INTERACTION_COOLDOWN_MS = 2000
 
 function retryDelayMs(streak) {
   if (streak <= 0) return MATCH_RETRY_MS
@@ -67,6 +78,29 @@ function isUnavailable(streak) {
   return streak >= UNAVAILABLE_AFTER
 }
 
+// Unattended scans: only an attempt that reached the reader spends the budget.
+// That is the scan window this bound exists for -- the loop that keeps a
+// press-type reader armed all night. An attempt that never reached the reader is
+// paced by the backoff and reported unavailable instead, and must keep retrying,
+// because that is how a reader that comes back is found again.
+function nextUnattendedCount(previous, reachedDevice) {
+  if (!reachedDevice) return previous
+  return previous + 1
+}
+
+function budgetExhausted(count) {
+  return count >= UNATTENDED_BUDGET
+}
+
+// A user who comes back refreshes the budget, so a pause cannot land in front of
+// someone who has just touched the machine. Input arrives in runs, so one
+// arrival is one decision per cooldown. A clock stepped backwards says nothing
+// about how long they have been away, so it must not refuse the refresh.
+function shouldRefreshBudget(nowMs, lastInteractionMs) {
+  var since = nowMs - lastInteractionMs
+  return since < 0 || since >= INTERACTION_COOLDOWN_MS
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     MATCH_RETRY_MS: MATCH_RETRY_MS,
@@ -81,11 +115,16 @@ if (typeof module !== "undefined") {
     REACH_TIMEOUT_MS: REACH_TIMEOUT_MS,
     SLEEP_GAP_MS: SLEEP_GAP_MS,
     RESUME_GRACE_MS: RESUME_GRACE_MS,
+    UNATTENDED_BUDGET: UNATTENDED_BUDGET,
+    INTERACTION_COOLDOWN_MS: INTERACTION_COOLDOWN_MS,
     spannedSleep: spannedSleep,
     classifyProbe: classifyProbe,
     inResumeGrace: inResumeGrace,
     retryDelayMs: retryDelayMs,
     nextStreak: nextStreak,
-    isUnavailable: isUnavailable
+    isUnavailable: isUnavailable,
+    nextUnattendedCount: nextUnattendedCount,
+    budgetExhausted: budgetExhausted,
+    shouldRefreshBudget: shouldRefreshBudget
   }
 }

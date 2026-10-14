@@ -127,12 +127,24 @@ ShellRoot {
       service.handleFingerprintFinished(PamResult.Error)
       check(service.fingerprintUnreachedStreak === 2, "a slow claim followed by a fast verification error still backs off")
 
+      // The attempts above reached the reader, so they spent the unattended
+      // budget and the sensor paused: it stops being armed until a deliberate
+      // input or a resume hands it a fresh budget. Clear it here to carry on
+      // exercising the unreached path below.
+      check(service.fingerprintUnattended === 6 && service.fingerprintPaused,
+        "a run of reached attempts spends the unattended budget and pauses the sensor")
+      check(!retry.running, "a paused sensor is not armed again")
+      service.fingerprintPaused = false
+      service.fingerprintUnattended = 0
+
       for (var i = 0; i < 8; i++) {
         service.fingerprintAuthenticating = true
         service.fingerprintAttemptReachedDevice = false
         service.settleFingerprintAttempt()
       }
       check(retry.interval === 40000 && service.fingerprintUnavailable, "persistent misses reach the capped wait")
+      check(service.fingerprintUnattended === 0,
+        "an attempt that never reached the reader spends nothing of the unattended budget")
       service.nudgeFingerprint()
       check(retry.interval === 40000, "input at the cap preserves the daemon's idle window")
 
