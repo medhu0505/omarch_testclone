@@ -129,6 +129,10 @@ class InputMethodTest(unittest.TestCase):
     self.assertEqual(path.read_text(), "[Behavior]\nActiveByDefault=True\n\n[Hotkey/TriggerKeys]\n0=Zenkaku_Hankaku\n1=Hangul\n")
     self.assertFalse(setup.defaults(self.config, fresh=False))
 
+  def test_azerbaijani_preference_keeps_its_own_latin_keyboard(self):
+    self.preference.write_text("INPUT_METHOD=none\nXKB_LAYOUT=az\n")
+    self.assertEqual(setup.selection(), ("none", "az"))
+
   def test_lao_preference_keeps_a_latin_fcitx_keyboard(self):
     self.preference.write_text("INPUT_METHOD=none\nXKB_LAYOUT=la\n")
     self.assertEqual(setup.selection(), ("none", "us"))
