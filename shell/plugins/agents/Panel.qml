@@ -421,7 +421,14 @@ Panel {
 
   // A lapsed or missing sign-in is something you can fix from here; any other
   // trouble is only reported.
+  function supportsSignIn(p) {
+    for (var i = 0; i < addProviders.length; i++)
+      if (p && addProviders[i].providerId === p.providerId) return true
+    return false
+  }
+
   function needsSignIn(item) {
+    if (item && item.providerId && !supportsSignIn(item)) return false
     var status = String(item && item.usageStatusText || "")
     return status === "Sign-in expired" || status === "Waiting for auth"
   }
@@ -438,7 +445,7 @@ Panel {
   // Sign an account that's already here in again, following along in the
   // add view just like adding one.
   function signInAgain(p, account) {
-    if (!p || addStage === "running") return
+    if (!supportsSignIn(p) || addStage === "running") return
     addProvider = p.providerId
     addPrivate = !!account && account.primary !== true
     addStatus = "Starting…"
@@ -511,13 +518,14 @@ Panel {
   // and that beats reading it back out of the label: a model-scoped limit is
   // titled after its model, and a name like "Opus 5 (1M context)" would parse
   // as a one-minute window.
-  function limitWindow(label, percent, resetAt, title) {
+  function limitWindow(label, percent, resetAt, title, unlimited) {
     var reset = new Date(String(resetAt || "")).getTime()
     var expired = isFinite(reset) && reset <= root.nowMs
     return {
       title: String(title || "") !== "" ? String(title) : windowTitle(label),
       percent: expired ? 0 : Number(percent),
-      resetAt: expired ? "" : String(resetAt || "")
+      resetAt: expired ? "" : String(resetAt || ""),
+      unlimited: unlimited === true
     }
   }
 
@@ -528,7 +536,7 @@ Panel {
     for (var i = 0; i < list.length; i++) {
       var entry = list[i] || {}
       var percent = Number(entry.percent)
-      if (percent >= 0) out.push(limitWindow(entry.label, percent, entry.resetsAt, entry.title))
+      if (percent >= 0) out.push(limitWindow(entry.label, percent, entry.resetsAt, entry.title, entry.unlimited))
     }
     return out
   }
@@ -1906,7 +1914,7 @@ Panel {
       text: {
         var lines = []
         if (compact.window) {
-          lines.push(compact.window.title + ": " + Math.round(compact.window.percent * 100) + "% used"
+          lines.push(compact.window.title + ": " + (compact.window.unlimited ? "Unlimited" : Math.round(compact.window.percent * 100) + "% used")
             + (compact.resetMs > 0 ? " · resets in " + root.formatDuration(compact.resetMs) : ""))
         }
         if (compact.stale)
@@ -1948,7 +1956,7 @@ Panel {
       id: compactValueMetrics
       font.family: root.fontFamily
       font.pixelSize: Style.font.bodySmall
-      text: "00h 00m"
+      text: compact.window && compact.window.unlimited ? "Unlimited" : "00h 00m"
     }
 
     // How long until the window resets. The meter says how full it is; the
@@ -1960,7 +1968,7 @@ Panel {
       anchors.verticalCenter: parent.verticalCenter
       textFormat: Text.PlainText
       horizontalAlignment: Text.AlignRight
-      text: compact.resetMs > 0 ? root.formatDuration(compact.resetMs) : ""
+      text: compact.window && compact.window.unlimited ? "Unlimited" : compact.resetMs > 0 ? root.formatDuration(compact.resetMs) : ""
       color: root.dim
       font.family: root.fontFamily
       font.pixelSize: Style.font.bodySmall

@@ -138,6 +138,11 @@ kimi)
     command=(kimi --yolo)
   fi
   ;;
+mcode)
+  # The TUI has no no-approval flag; permission options belong to exec mode.
+  command=(mcode)
+  [[ -n ${prompt:-} ]] && command+=(-- "$prompt")
+  ;;
 *)
   echo "Unsupported default agent: $agent" >&2
   exit 1

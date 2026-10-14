@@ -5,6 +5,8 @@ mise settings set upgrade.auto_prune false
 omarchy-mise-install codex
 omarchy-mise-install claude
 omarchy-mise-install crush
+# SQLite needs its native dependency build, scoped to this package.
+omarchy-mise-install "npm:@minimax-ai/code[allow_builds=better-sqlite3]" mcode
 omarchy-mise-install antigravity-cli agy
 omarchy-mise-install gh
 omarchy-mise-install copilot

@@ -71,6 +71,7 @@ Adding an agent needs no QML changes: ship a collector that prints the record co
 | `codex` | The Codex app-server RPC | native Codex CLI session files on the built-in `openai` provider (plus pi and opencode sessions) |
 | `grok` | The credits endpoint behind Grok's `/usage` view (the billing period's included usage) | Each session's `usage.json` (the ledger `grok usage` prints: tokens by model per finished turn), plus `summary.json` for sessions |
 | `fireworks` | Estimated prepaid balance: configured funding minus rated account costs | Fireworks billing API, grouped by day and model for the last 30 days |
+| `mcode` | MiniMax personal token-plan session and weekly quotas | `v2/sessions` JSONL transcripts in the active MiniMax data directory |
 | `kimi` | Kimi Code quotas (5-hour session, weekly, and monthly allowances) | none; quota only |
 
 When `~/.local/state/omarchy/agents/accounts/<claude|codex|grok>.json`
@@ -206,3 +207,9 @@ One caveat on "all-time": the Codex collector only reads native session files
 touched in the last 30 days, and Fireworks requests the last 30 days from its
 billing API, so their totals and day counts cover that window. Claude's cover
 every transcript still on disk.
+
+## MiniMax Code
+
+MiniMax Code reads `MINIMAX_DATA_DIR`, then `MAVIS_DATA_DIR`, otherwise `~/.minimax` (or an explicitly enabled legacy runtime profile’s directory). It follows MiniMax’s inherited region, saved China/global preference, or sole reusable sign-in, reads the exact active OAuth record, and resolves the personal billing workspace before fetching token-plan limits. Credentials are read only and requests never follow redirects. Start MiniMax Code or run `mcode login` when sign-in expires; the panel displays that guidance without offering the account manager’s unsupported login action.
+
+Local transcript statistics add across synced devices. Limits remain local account measurements, cached separately by data directory, region, and bearer. An ordinary refresh reuses recent measurements; `--force` and `--limits-only` request fresh limits. Failed requests retain the same credential’s previous limits with their original timestamp and stale marker.

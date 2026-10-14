@@ -1,0 +1,712 @@
+#!/usr/bin/python3
+# omarchy:summary=Print the MiniMax Code usage record as JSON
+# omarchy:args=[--force] [--limits-only]
+# omarchy:hidden=true
+"""Read MiniMax Code transcripts and personal token-plan quotas.
+
+The active production OAuth record and saved region select the account.
+Quota requests use the personal billing workspace; credentials are never changed.
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import math
+import fcntl
+import hashlib
+import json
+import os
+import sys
+import tempfile
+import time
+import urllib.error
+import urllib.request
+import urllib.parse
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any
+
+AGENT_ID = "mcode"
+AGENT_NAME = "MiniMax Code"
+AUTH_HELP = "Run `mcode login` to authenticate."
+
+# A scan this recent is only reused to dedup concurrent collector runs (the
+# update command backgrounds one per agent while the panel refreshes on its
+# own); every periodic widget refresh lands a real rescan, however low
+# refreshIntervalSec is set. --limits-only promises only fresh limits, so it
+# may reuse a scan for up to 15 minutes.
+SCAN_REUSE_SECONDS = 20
+LIMITS_ONLY_REUSE_SECONDS = 900
+
+# The platform coding-plan endpoint is cheap but not free, and the rate
+# windows only move on a 5-hour / weekly cadence; a 15-minute cache keeps the
+# panel from re-hitting it on every widget tick. --limits-only bypasses the
+# cache so refreshLimits() always sees the freshest window.
+LIMITS_REUSE_SECONDS = 900
+
+
+def expand_path(value: str) -> Path:
+  return Path(os.path.abspath(value))
+
+
+def config_root() -> Path:
+  for key in ("MINIMAX_DATA_DIR", "MAVIS_DATA_DIR"):
+    value = os.environ.get(key, "").strip()
+    if value:
+      return expand_path(value)
+  profile = os.environ.get("__MAVIS_RUNTIME_PROFILE", "").strip() if os.environ.get("__MAVIS_ALLOW_LEGACY_RUNTIME_ENV") == "1" else ""
+  return Path(os.path.abspath(Path.home() / (".minimax-" + profile if profile else ".minimax")))
+
+
+def session_root() -> Path:
+  return config_root() / "v2" / "sessions"
+
+
+def cache_root() -> Path:
+  root = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "omarchy" / "agent-usage"
+  root.mkdir(parents=True, exist_ok=True)
+  return root
+
+
+def local_day(value: Any) -> str:
+  today = datetime.now().strftime("%Y-%m-%d")
+  if value is None:
+    return today
+  if isinstance(value, (int, float)):
+    # mcode timestamps are milliseconds since the epoch.
+    seconds = float(value) / 1000.0 if float(value) > 10_000_000_000 else float(value)
+    try:
+      return datetime.fromtimestamp(seconds).strftime("%Y-%m-%d")
+    except Exception:
+      return today
+  text = str(value).strip()
+  if not text:
+    return today
+  try:
+    if text.endswith("Z"):
+      parsed = datetime.fromisoformat(text[:-1] + "+00:00")
+    else:
+      parsed = datetime.fromisoformat(text)
+    if parsed.tzinfo is not None:
+      parsed = parsed.astimezone()
+    return parsed.strftime("%Y-%m-%d")
+  except Exception:
+    return today
+
+
+def number(value: Any) -> int:
+  try:
+    return max(0, int(value or 0))
+  except Exception:
+    return 0
+
+
+def model_name(raw: Any) -> str:
+  value = str(raw or "mcode").strip()
+  return value if value else "mcode"
+
+
+def recent_dates() -> list[str]:
+  today = datetime.now().date()
+  return [(today - timedelta(days=offset)).strftime("%Y-%m-%d") for offset in range(6, -1, -1)]
+
+
+def empty_bucket() -> dict[str, int]:
+  return {
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 0,
+  }
+
+
+def collect_usage(entry: dict[str, Any], state: dict[str, Any]) -> None:
+  message = entry.get("message")
+  if not isinstance(message, dict):
+    return
+  if message.get("role") == "user":
+    day = local_day(message.get("timestamp") or entry.get("timestamp"))
+    state["totalPrompts"] += 1
+    if day == state["today"]:
+      state["todayPrompts"] += 1
+    return
+  if message.get("role") != "assistant":
+    return
+  usage = message.get("usage")
+  if not isinstance(usage, dict):
+    return
+
+  cache_read = number(usage.get("cacheRead"))
+  cache_write = number(usage.get("cacheWrite"))
+  # MiniMax input excludes cache tokens, which have their own buckets.
+  raw_input = number(usage.get("input"))
+  raw_output = number(usage.get("output"))
+  reported_total = number(usage.get("totalTokens"))
+  if "input" in usage or "output" in usage:
+    input_tokens = raw_input
+    output_tokens = raw_output
+  elif reported_total > 0:
+    # No breakdown available; attribute it all to input so the model row
+    # still has something to show, and leave output at zero. This is rare
+    # in practice: the assistant usage payload always carries a split.
+    input_tokens = max(0, reported_total - cache_read - cache_write)
+    output_tokens = 0
+  elif cache_read > 0 or cache_write > 0:
+    input_tokens = output_tokens = 0
+  else:
+    return
+
+  total = input_tokens + output_tokens + cache_read + cache_write
+  if total <= 0:
+    return
+
+  model = model_name(message.get("model") or entry.get("model"))
+  day = local_day(message.get("timestamp") or entry.get("timestamp"))
+  # Sessions are 1:1 with the directory containing messages.jsonl; the
+  # directory name carries the mcode session id and is stable across
+  # rescans. The message payload itself has no session id field, so the
+  # file path is the only reliable session key.
+  session_key = str(state.get("current_session_key") or "")
+
+  if session_key:
+    state["totalSessions"].add(session_key)
+  state["activeDays"].add(day)
+
+  bucket = state["modelUsage"].setdefault(model, empty_bucket())
+  bucket["inputTokens"] += input_tokens
+  bucket["outputTokens"] += output_tokens
+  bucket["cacheReadInputTokens"] += cache_read
+  bucket["cacheCreationInputTokens"] += cache_write
+
+  recent = state["recent"]
+  if day in recent:
+    # recentDays.messageCount is actually a token total, despite the legacy
+    # name shared with synced snapshots.
+    recent[day]["messageCount"] += total
+
+  if day == state["today"]:
+    if session_key:
+      state["todaySessions"].add(session_key)
+    state["todayTotalTokens"] += total
+    state["todayTokensByModel"][model] = state["todayTokensByModel"].get(model, 0) + total
+
+
+def scan_sessions(roots: list[Path], cutoff_seconds: float) -> dict[str, Any]:
+  today = datetime.now().strftime("%Y-%m-%d")
+  recent_map = {day: {"date": day, "messageCount": 0} for day in recent_dates()}
+  state: dict[str, Any] = {
+    "today": today,
+    "todayPrompts": 0,
+    "todaySessions": set(),
+    "todayTotalTokens": 0,
+    "todayTokensByModel": {},
+    "recent": recent_map,
+    "modelUsage": {},
+    "totalPrompts": 0,
+    "totalSessions": set(),
+    "activeDays": set(),
+  }
+
+  files: list[Path] = []
+  for root in roots:
+    if not root.exists():
+      continue
+    for path in root.rglob("messages.jsonl"):
+      try:
+        if path.stat().st_mtime >= cutoff_seconds:
+          files.append(path)
+      except OSError:
+        continue
+
+  for path in files:
+    # Use the session directory name as the session key; messages.jsonl is
+    # the only file the collector reads under that directory.
+    state["current_session_key"] = str(path.parent)
+    try:
+      with path.open("r", encoding="utf-8", errors="replace") as handle:
+        for raw in handle:
+          try:
+            entry = json.loads(raw)
+          except Exception:
+            continue
+          if not isinstance(entry, dict):
+            continue
+          collect_usage(entry, state)
+    except Exception as exc:
+      print(f"omarchy-agent-usage-mcode: ignoring unreadable session {path}: {exc}", file=sys.stderr)
+
+  return {
+    "todayPrompts": state["todayPrompts"],
+    "todaySessions": len(state["todaySessions"]),
+    "todayTotalTokens": state["todayTotalTokens"],
+    "todayTokensByModel": state["todayTokensByModel"],
+    "recentDays": [state["recent"][day] for day in recent_dates()],
+    "modelUsage": state["modelUsage"],
+    "totalPrompts": state["totalPrompts"],
+    "totalSessions": len(state["totalSessions"]),
+    "activeDays": len(state["activeDays"]),
+    "activeDates": sorted(state["activeDays"]),
+  }
+
+
+def scan_cache_paths() -> tuple[Path, Path]:
+  digest = hashlib.sha1(str(session_root()).encode("utf-8")).hexdigest()[:16]
+  root = cache_root()
+  return root / f"mcode-scan-{digest}.json", root / f"mcode-scan-{digest}.lock"
+
+
+def read_fresh_json(path: Path, max_age_seconds: float) -> dict[str, Any] | None:
+  if max_age_seconds <= 0 or not path.exists():
+    return None
+  try:
+    if time.time() - path.stat().st_mtime <= max_age_seconds:
+      return json.loads(path.read_text(encoding="utf-8"))
+  except Exception:
+    return None
+  return None
+
+
+def write_json(path: Path, payload: dict[str, Any]) -> None:
+  handle_fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
+  tmp = Path(tmp_name)
+  try:
+    with os.fdopen(handle_fd, "w", encoding="utf-8") as handle:
+      handle.write(json.dumps(payload, separators=(",", ":"), sort_keys=True) + "\n")
+    tmp.chmod(0o644)
+    tmp.replace(path)
+  except BaseException:
+    tmp.unlink(missing_ok=True)
+    raise
+
+
+def cached_local_stats(max_age_seconds: float) -> dict[str, Any]:
+  """Local stats, with the cache as a pure optimization.
+
+  The cache must never take the collector down: any cache-layer failure
+  (unwritable cache root, lock errors, disk full) degrades to a direct scan
+  and a warning on stderr. The JSON record is the contract; the cache is not.
+  """
+  try:
+    cache_file, lock_file = scan_cache_paths()
+  except OSError:
+    return scan_sessions([session_root()], 0)
+
+  cached = read_fresh_json(cache_file, max_age_seconds)
+  if cached is not None:
+    return cached
+
+  try:
+    with lock_file.open("w") as lock:
+      fcntl.flock(lock, fcntl.LOCK_EX)
+      cached = read_fresh_json(cache_file, max_age_seconds)
+      if cached is not None:
+        return cached
+      cutoff = 0
+      stats = scan_sessions([session_root()], cutoff)
+      write_json(cache_file, stats)
+      return stats
+  except Exception as exc:
+    print(f"omarchy-agent-usage-mcode: cache unavailable ({exc}); scanning directly", file=sys.stderr)
+    cutoff = 0
+    return scan_sessions([session_root()], cutoff)
+
+
+def auth_status() -> dict[str, str]:
+  if load_access_token():
+    return {"usageStatusText": "", "authHelpText": ""}
+  return {"usageStatusText": "Waiting for auth", "authHelpText": AUTH_HELP}
+
+
+def resolve_region() -> str:
+  inherited = os.environ.get("MAVIS_REGION")
+  if inherited in ("cn", "en"):
+    return inherited
+  try:
+    prefs = json.loads((config_root() / "preferences" / "mcode-region.json").read_text())
+    if prefs.get("version") == 1:
+      value = prefs.get("regions", {}).get("prod")
+      if value in ("cn", "en"):
+        return value
+  except (OSError, ValueError, AttributeError):
+    pass
+  reusable = []
+  for region in ("cn", "en"):
+    try:
+      path = config_root() / "auth" / "prod" / region / "mcode-public" / "auth-state.json"
+      state = json.loads(path.read_text())
+      if state.get("buildEnv") == "prod" and state.get("region") == region and state.get("status") in (
+        "authorizing", "authenticated", "refreshing", "scope_upgrade_required", "expired"
+      ):
+        reusable.append(region)
+    except (OSError, ValueError, AttributeError):
+      pass
+  return reusable[0] if len(reusable) == 1 else "cn"
+
+
+def auth_record_dir() -> tuple[Path, str]:
+  region = resolve_region()
+  return config_root() / "auth" / "prod" / region / "mcode-public", region
+
+
+def load_access_token() -> str:
+  directory, region = auth_record_dir()
+  account = base64.urlsafe_b64encode(hashlib.sha256(
+    (str(config_root() / "auth") + "\0mcode-public").encode()
+  ).digest()).decode().rstrip("=")
+  key = f"com.minimax.mcode.oauth.prod.{region}\0{account}"
+  try:
+    payload = json.loads((directory / "auth.json").read_text())
+    record = payload.get("records", {}).get(key, {})
+    token = record.get("accessToken")
+    if record.get("clientId") == "mcode-public" and isinstance(token, str):
+      return token.strip()
+  except (OSError, ValueError, AttributeError):
+    pass
+  return ""
+
+
+def platform_base_url(region: str) -> str:
+  """Openplatform host for the given region (mirrors mcode's `MCodeClient`).
+
+  The openplatform host is what serves `/v1/api/openplatform/...`; the
+  agent host (`agent.minimax.io` / `agent.minimaxi.com`) serves the
+  signed `/matrix/api/v1/...` paths instead. The coding-plan endpoint
+  lives on the openplatform host.
+  """
+  if region == "cn":
+    return "https://www.minimaxi.com"
+  return "https://platform.minimax.io"
+
+
+# Status code emitted by `/v1/api/openplatform/coding_plan/remains` when the
+# matching window has no cap on the user's account. The collector surfaces it
+# as `unlimited: true` and skips the percent so the panel renders the
+# "Unlimited" badge instead of a meter.
+UNLIMITED_STATUS = 3
+
+# Media side quotas the API reports as separate `model_remains` entries. They
+# ride on independent allowances (video generation, image gen, …) and are not
+# the user's coding quota, so the collector ignores them when picking the
+# primary entry.
+MEDIA_MODEL_NAMES = frozenset({"video", "image", "audio", "vision"})
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+  def redirect_request(self, req, fp, code, msg, headers, newurl):
+    return None
+
+
+def request_json(request: urllib.request.Request) -> dict[str, Any]:
+  with urllib.request.build_opener(NoRedirect()).open(request, timeout=8) as response:
+    payload = json.load(response)
+  if not isinstance(payload, dict):
+    raise ValueError("Invalid MiniMax response")
+  base = payload.get("base_resp", {})
+  status = payload.get("statusInfo", {})
+  if base.get("status_code", 0) != 0 or status.get("code", 0) != 0:
+    raise ValueError("MiniMax request failed")
+  return payload
+
+
+def personal_group(token: str, region: str) -> str:
+  origin = "https://agent.minimaxi.com" if region == "cn" else "https://agent.minimax.io"
+
+  def matrix(path: str, user_id: str = "0", body: bytes | None = None) -> dict[str, Any]:
+    now = int(time.time() * 1000)
+    second = str(now // 1000)
+    language = "zh" if region == "cn" else "en"
+    query = urllib.parse.urlencode({
+      "device_platform": "mcode", "biz_id": "3", "app_id": "3001",
+      "version_code": "22201", "unix": str(now),
+      "timezone_offset": str(-time.timezone), "sys_language": language,
+      "lang": language, "device_id": "0", "os_name": "linux",
+      "browser_name": "mcode", "user_id": user_id, "client": "mcode",
+    })
+    path_query = path + "?" + query
+    text = body.decode() if body is not None else "{}"
+    md5 = lambda value: hashlib.md5(value.encode()).hexdigest()
+    # Public first-party attribution constants; the bearer authorizes the request.
+    headers = {"Accept": "application/json", "Content-Type": "application/json",
+      "User-Agent": "MiniMaxCode", "Authorization": "Bearer " + token,
+      "yy": md5(urllib.parse.quote(path_query, safe="~()*!.'-") + "_" + text + md5(str(now)) + "ooui"),
+      "x-timestamp": second,
+      "x-signature": md5(second + "I*7Cf%WZ#S&%1RlZJ&C2" + (text if body is not None else "")),
+    }
+    return request_json(urllib.request.Request(origin + path_query, data=body, headers=headers))
+
+  identity = matrix("/v1/api/user/info")
+  data = identity.get("data", identity)
+  info = data.get("userInfo") or data.get("user_info") or identity.get("userInfo") or identity.get("user_info") or {}
+  user_id = info.get("realUserID") or info.get("real_user_id")
+  if not user_id:
+    raise ValueError("MiniMax account identity unavailable")
+  workspace = matrix("/matrix/api/v1/user/get_user_extra_info", str(user_id), b"{}")
+  groups = workspace.get("workspaces") or workspace.get("data", {}).get("workspaces") or []
+  for group in groups:
+    if isinstance(group, dict) and group.get("workspace_type") == 0:
+      group_id = group.get("op_group_id") or group.get("data", {}).get("op_group_id")
+      if group_id:
+        return str(group_id)
+  raise ValueError("MiniMax personal billing group unavailable")
+
+
+def fetch_token_plan_quota(token: str, base_url: str) -> dict[str, Any] | None:
+  empty = {
+    "limits": [],
+    "usageStatusText": "",
+    "authHelpText": "",
+    "retryAdvised": False,
+    "transportFailure": False,
+  }
+  if not token:
+    # The probe has nothing to say here; auth_status reports "Waiting for
+    # auth" if the directory is also missing. Returning empty lets the
+    # caller decide the right message based on the broader view.
+    return empty
+
+  url = f"{base_url}/v1/api/openplatform/coding_plan/remains"
+  try:
+    region = "cn" if base_url == platform_base_url("cn") else "en"
+    group = personal_group(token, region)
+    req = urllib.request.Request(url, headers={
+      "Accept": "application/json",
+      "Authorization": f"Bearer {token}",
+      "X-Group-Id": group,
+    }, method="GET")
+    try:
+      with urllib.request.build_opener(NoRedirect()).open(req, timeout=8) as resp:
+        raw = resp.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+      # The platform returns 401/403 when the bearer lapses. The user has
+      # to rerun `mcode login` to mint a new one — there is no refresh
+      # flow the collector can drive on its own. Saying so keeps the
+      # empty meter from looking like a quiet outage.
+      if exc.code in (401, 403):
+        empty["usageStatusText"] = "Sign-in expired"
+        empty["authHelpText"] = (
+          "MiniMax Code's saved sign-in expired. "
+          "Start MiniMax Code, or run `mcode login`, to refresh it."
+        )
+        return empty
+      # Any other HTTP error is a transport-shaped failure the panel
+      # should retry sooner for.
+      empty["retryAdvised"] = True
+      empty["transportFailure"] = True
+      return empty
+    except Exception:
+      empty["retryAdvised"] = True
+      empty["transportFailure"] = True
+      return empty
+  except urllib.error.HTTPError as exc:
+    if exc.code in (401, 403):
+      empty["usageStatusText"] = "Sign-in expired"
+      empty["authHelpText"] = AUTH_HELP
+    else:
+      empty["retryAdvised"] = empty["transportFailure"] = True
+    return empty
+  except Exception:
+    empty["retryAdvised"] = empty["transportFailure"] = True
+    return empty
+
+  try:
+    payload = json.loads(raw)
+  except Exception:
+    empty["retryAdvised"] = True
+    empty["transportFailure"] = True
+    return empty
+
+  if not isinstance(payload, dict):
+    empty["retryAdvised"] = True
+    empty["transportFailure"] = True
+    return empty
+  base_resp = payload.get("base_resp")
+  if isinstance(base_resp, dict):
+    code = base_resp.get("status_code")
+    if isinstance(code, int) and code != 0:
+      empty["retryAdvised"] = True
+      empty["transportFailure"] = True
+      return empty
+  remains = payload.get("model_remains")
+  if not isinstance(remains, list) or not remains:
+    return empty
+
+  # Media quotas have separate allowances from coding.
+  chosen: dict[str, Any] | None = None
+  for entry in remains:
+    if not isinstance(entry, dict):
+      continue
+    name = str(entry.get("model_name") or "").strip().lower()
+    if name in MEDIA_MODEL_NAMES:
+      continue
+    chosen = entry
+    break
+  if chosen is None:
+    return empty
+
+  def window(prefix: str, end_key: str) -> dict[str, Any] | None:
+    status = number(chosen.get(f"{prefix}_status"))
+    if status == UNLIMITED_STATUS:
+      # The panel filters `percent >= 0`, so an unlimited entry needs a
+      # numeric percent to survive the filter. Zero keeps the meter empty
+      # without lying about a cap, and `unlimited: True` lets the panel
+      # label it accordingly.
+      out: dict[str, Any] = {"percent": 0.0, "unlimited": True}
+    else:
+      remaining = chosen.get(f"{prefix}_remaining_percent")
+      if remaining is None:
+        total = chosen.get(f"{prefix}_total_count")
+        left = chosen.get(f"{prefix}_usage_count")
+        if isinstance(total, (int, float)) and total > 0 and isinstance(left, (int, float)):
+          remaining = left / total * 100
+      if not isinstance(remaining, (int, float)) or not math.isfinite(remaining):
+        return None
+      out = {"percent": max(0.0, min(1.0, (100 - remaining) / 100.0))}
+    try:
+      reset_at_ms = int(chosen.get(end_key, 0))
+    except Exception:
+      reset_at_ms = 0
+    # The panel reads `entry.resetsAt` (with an `s`) and feeds it straight
+    # into `new Date(...)`. Both ISO strings and millisecond numbers work,
+    # but every other collector emits an ISO string, so the field name and
+    # shape match here too. Without this, the reset countdown shows "now".
+    if reset_at_ms > 0:
+      try:
+        out["resetsAt"] = format_reset_iso(reset_at_ms)
+      except (ValueError, OverflowError, OSError):
+        pass
+    return out or None
+
+  limits: list[dict[str, Any]] = []
+  five_hour = window("current_interval", "end_time")
+  if five_hour is not None:
+    limits.append({"label": "5h", **five_hour})
+  weekly = window("current_weekly", "weekly_end_time")
+  if weekly is not None:
+    limits.append({"label": "Weekly", **weekly})
+  empty["limits"] = limits
+  return empty
+
+
+def format_reset_iso(reset_at_ms: int) -> str:
+  """Render a millisecond timestamp as an ISO-8601 string in UTC.
+
+  The collector feeds this to `new Date(...)` in the panel's `resetMsFor`;
+  the string format is irrelevant as long as `Date` can parse it. Matching
+  the Claude/Codex convention (ISO with explicit timezone) keeps the field
+  greppable across collectors.
+  """
+  if reset_at_ms <= 0:
+    return ""
+  return datetime.fromtimestamp(reset_at_ms / 1000.0, tz=timezone.utc).isoformat()
+
+
+def limits_cache_paths(token: str, region: str) -> tuple[Path, Path]:
+  identity = str(config_root()) + "\0" + region + "\0" + token
+  digest = hashlib.sha256(identity.encode()).hexdigest()[:24]
+  root = cache_root()
+  return root / f"mcode-limits-{digest}.json", root / f"mcode-limits-{digest}.lock"
+
+
+def cached_limits(max_age_seconds: float) -> dict[str, Any]:
+  token = load_access_token()
+  _, region = auth_record_dir()
+  if not token:
+    return {"limits": []}
+
+  def probe(cache_file: Path | None = None) -> dict[str, Any]:
+    cached = None
+    if cache_file is not None:
+      try:
+        cached = json.loads(cache_file.read_text())
+        if not isinstance(cached, dict) or not isinstance(cached.get("limits"), list):
+          cached = None
+      except (OSError, ValueError):
+        pass
+    if cached and max_age_seconds > 0 and time.time() * 1000 - cached.get("limitsFetchedAt", 0) < max_age_seconds * 1000:
+      return cached
+    result = fetch_token_plan_quota(token, platform_base_url(region))
+    if not result.get("transportFailure"):
+      result["limitsFetchedAt"] = int(time.time() * 1000)
+      if cache_file is not None:
+        try:
+          write_json(cache_file, result)
+        except OSError:
+          pass
+    elif cached and cached.get("limits"):
+      result["limits"] = cached["limits"]
+      result["limitsFetchedAt"] = cached.get("limitsFetchedAt", 0)
+      result["limitsStale"] = True
+    if result.get("transportFailure"):
+      result["usageStatusText"] = "MiniMax limits unavailable"
+    return result
+
+  try:
+    cache_file, lock_file = limits_cache_paths(token, region)
+    with lock_file.open("w") as lock:
+      fcntl.flock(lock, fcntl.LOCK_EX)
+      return probe(cache_file)
+  except OSError:
+    return probe()
+
+
+def main() -> int:
+  parser = argparse.ArgumentParser()
+  # --force rescans everything and rewrites both caches. --limits-only is kept
+  # for CLI compatibility with the panel's refreshLimits() call: only the
+  # limits probe must be fresh, so it may reuse a scan for far longer than a
+  # normal run, whose short window exists purely to dedup concurrent
+  # collector runs.
+  parser.add_argument("--force", action="store_true")
+  parser.add_argument("--limits-only", action="store_true")
+  args = parser.parse_args()
+
+  if args.force:
+    scan_age = 0
+    limits_age = 0
+  elif args.limits_only:
+    # refreshLimits() wants fresh windows without paying for a transcript
+    # rescan; reuse the cached stats and bypass the limits cache too.
+    scan_age = LIMITS_ONLY_REUSE_SECONDS
+    limits_age = 0
+  else:
+    scan_age = SCAN_REUSE_SECONDS
+    limits_age = LIMITS_REUSE_SECONDS
+
+  stats = cached_local_stats(scan_age)
+  limits_record = cached_limits(limits_age)
+  # auth_status reports the broadest state ("Waiting for auth" when no login
+  # exists at all); the live probe can override it with finer-grained messages
+  # ("Sign-in expired", "MiniMax limits unavailable") when a login exists.
+  auth = auth_status()
+  usage_status = limits_record.get("usageStatusText") or auth.get("usageStatusText", "")
+  auth_help = limits_record.get("authHelpText") or auth.get("authHelpText", "")
+
+  record = {
+    "schemaVersion": 1,
+    "id": AGENT_ID,
+    "name": AGENT_NAME,
+    "updatedAt": datetime.now(timezone.utc).isoformat(),
+    "ready": bool(stats.get("modelUsage")) or bool(limits_record.get("limits")),
+    "hasLocalStats": True,
+    "scope": "device",
+    "limits": limits_record.get("limits", []),
+    "tierLabel": "",
+  }
+  # Set after the merge so the probe's finer-grained status overrides the
+  # auth_status default; auth_help uses `or` so the broader "run mcode login"
+  # hint falls back when the probe didn't have a more specific one.
+  record["usageStatusText"] = usage_status
+  record["authHelpText"] = auth_help
+  for field in ("limitsStale", "limitsFetchedAt"):
+    if field in limits_record:
+      record[field] = limits_record[field]
+  if limits_record.get("retryAdvised"):
+    record["retryAdvised"] = True
+  record.update(stats)
+  print(json.dumps(record, separators=(",", ":"), sort_keys=True))
+  return 0
+
+
+if __name__ == "__main__":
+  raise SystemExit(main())
