@@ -502,6 +502,21 @@ PanelWindow {
       Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
     }
 
+    // A line under a running app, on the screen-edge side of a vertical dock.
+    Rectangle {
+      readonly property int thickness: Style.space(2)
+      readonly property int length: Style.space(10)
+
+      visible: appSlot.windowCount > 0
+      width: window.vertical ? thickness : length
+      height: window.vertical ? length : thickness
+      radius: thickness / 2
+      color: Commons.Color.accent
+      x: window.vertical ? (window.position === "left" ? Style.space(1) : window.slotSize - thickness - Style.space(1)) : (window.slotSize - width) / 2
+      y: window.vertical ? (window.slotSize - height) / 2 : window.slotSize - thickness - Style.space(1)
+      opacity: appSlot.launching ? appSlot.pulse : 1
+    }
+
     SequentialAnimation {
       running: appSlot.launching
       loops: Animation.Infinite
@@ -558,7 +573,7 @@ PanelWindow {
       MenuRow {
         visible: menu.hasEntry && menu.running
         text: "New Window"
-        onTriggered: window.dock.launch(menu.item)
+        onTriggered: window.dock.newWindow(menu.item)
       }
 
       MenuRow {

@@ -93,6 +93,31 @@ Item {
     Util.execDetached("uwsm-app -- gtk-launch " + Util.shellQuote(id + ".desktop"))
   }
 
+  // Runs one of an app's desktop actions, such as Nautilus's new-window, through
+  // the same launcher as launch() so the app stays in its own scope. An action
+  // the app does not have falls back to launching the app.
+  function launchAction(desktopId, actionId, name) {
+    var id = String(desktopId || "")
+    var entry = DesktopEntries.byId(id)
+    var action = root.desktopAction(entry, actionId)
+    if (!action) {
+      root.launch(id, name)
+      return
+    }
+    root.beginLaunchFeedback(name)
+    var argv = (action.command || []).filter(function(word) { return !/^%[a-zA-Z]$/.test(String(word)) })
+    if (entry.runInTerminal) Util.execDetached("omarchy-launch-tui " + argv.map(function(word) { return Util.shellQuote(word) }).join(" "))
+    else Util.execArgv(["uwsm-app", "--"].concat(argv))
+  }
+
+  function desktopAction(entry, actionId) {
+    var actions = entry && entry.actions ? entry.actions : []
+    for (var i = 0; i < actions.length; i++) {
+      if (actions[i] && actions[i].id === actionId) return actions[i]
+    }
+    return null
+  }
+
   // The command a terminal entry runs, without the field codes it leaves for a
   // launcher to fill in; empty for an entry that is not run in a terminal.
   function terminalCommand(entry) {

@@ -48,6 +48,15 @@ function isMinimizedWorkspace(name) {
   return String(name || "") === MINIMIZED_WORKSPACE
 }
 
+// An app that is D-Bus activatable, such as Nautilus, presents its running
+// instance when launched, so a new window comes from its new-window action.
+function newWindowAction(actions) {
+  for (var i = 0; i < (actions || []).length; i++) {
+    if (actions[i] && actions[i].id === "new-window") return actions[i]
+  }
+  return null
+}
+
 // A terminal app's window carries the app id its launcher gave the terminal,
 // which no desktop entry names as its class. The entry that passes that app id
 // claims it, and so does a terminal entry for the command Omarchy's TUI
@@ -179,6 +188,7 @@ if (typeof module !== "undefined") {
     pinnedIds: pinnedIds,
     isDockWindow: isDockWindow,
     isMinimizedWorkspace: isMinimizedWorkspace,
+    newWindowAction: newWindowAction,
     claimingEntryId: claimingEntryId,
     buildItems: buildItems,
     orderItems: orderItems,

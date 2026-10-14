@@ -108,6 +108,9 @@ assertEqual(dock.pickWindow(foot, 4), 2, 'dock brings forward the window on the 
 assertEqual(dock.pickWindow(foot, 3), 1, 'dock restores a minimized window before leaving for another workspace')
 assertEqual(dock.pickWindow(foot.map((w, i) => Object.assign({}, w, { activated: i === 2 })), 4), 1, 'dock cycles from the window here to the minimized one')
 assertEqual(dock.pickWindow([], 4), -1, 'dock has no window to pick for an app that is not running')
+assertEqual(dock.newWindowAction([{ id: 'new-window', execute() {} }, { id: 'other' }]).id, 'new-window', 'dock finds the new-window action of an app')
+assertEqual(dock.newWindowAction([{ id: 'other' }]), null, 'dock finds no new-window action for an app without one')
+assertEqual(dock.newWindowAction(undefined), null, 'dock finds no new-window action for an app with no actions')
 
 JS
 
@@ -211,3 +214,8 @@ grep -qF 'var command = root.terminalCommand(DesktopEntries.byId(id))' "$ROOT/sh
   grep -qF '"omarchy-launch-tui "' "$ROOT/shell/services/AppLibrary.qml" ||
   fail "the app library launches terminal apps through the TUI launcher"
 pass "the app library launches terminal apps through the TUI launcher"
+
+grep -qF 'Util.execArgv(["uwsm-app", "--"].concat(argv))' "$ROOT/shell/services/AppLibrary.qml" &&
+  grep -qF 'root.appLibrary.launchAction(entry.id, actionId, entry.name)' "$ROOT/shell/plugins/dock/Dock.qml" ||
+  fail "the dock runs a desktop action through the app's scope, not the action's own execute"
+pass "the dock runs a desktop action through the app's scope, not the action's own execute"

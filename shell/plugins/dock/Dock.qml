@@ -157,13 +157,20 @@ Item {
     return root.appLibrary ? root.appLibrary.iconSource(icon) : Quickshell.iconPath(icon, true)
   }
 
-  function launch(item) {
+  function launch(item, actionId) {
     var entry = entryFor(item)
     if (!entry) return
     var next = Object.assign({}, root.launches)
     next[item.key] = { at: Date.now(), windows: item.windows.length }
     root.launches = next
-    root.launchEntry(entry)
+    if (actionId && root.appLibrary) root.appLibrary.launchAction(entry.id, actionId, entry.name)
+    else root.launchEntry(entry)
+  }
+
+  function newWindow(item) {
+    var entry = entryFor(item)
+    var action = entry ? DockModel.newWindowAction(entry.actions) : null
+    root.launch(item, action ? action.id : "")
   }
 
   function launchEntry(entry) {
