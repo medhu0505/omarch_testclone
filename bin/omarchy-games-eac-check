@@ -1,0 +1,510 @@
+#!/bin/bash
+
+# omarchy:summary=Check local EAC Linux v2 system requirements
+# omarchy:args=[--json]
+
+set -euo pipefail
+
+readonly EPIC_REQUIREMENTS_URL="https://onlineservices.epicgames.com/news/introducing-easy-anti-cheat-linux-v2"
+readonly TEST_ROOT=${OMARCHY_EAC_CHECK_TEST_ROOT:-}
+
+if [[ -n $TEST_ROOT ]]; then
+  readonly SYS_ROOT="$TEST_ROOT/sys"
+  readonly PROC_ROOT="$TEST_ROOT/proc"
+else
+  readonly SYS_ROOT="/sys"
+  readonly PROC_ROOT="/proc"
+fi
+
+declare -a CHECK_NUMBERS=()
+declare -a CHECK_NAMES=()
+declare -a CHECK_STATUSES=()
+declare -a CHECK_DETAILS=()
+declare -a CHECK_NEXT_STEPS=()
+
+add_check() {
+  CHECK_NUMBERS+=("$1")
+  CHECK_NAMES+=("$2")
+  CHECK_STATUSES+=("$3")
+  CHECK_DETAILS+=("$4")
+  CHECK_NEXT_STEPS+=("$5")
+}
+
+read_value() {
+  local path="$1"
+
+  [[ -r $path ]] || return 1
+  VALUE=$(<"$path")
+}
+
+check_kernel_and_modules() {
+  local module module_count=0 signer module_sysfs_name module_taint
+  local sbctl_output="" sbctl_status=0 unsigned_boot_files="" signed_boot_note=""
+  local module_list_available=true modinfo_available=true
+  local unsigned_modules=() uninspectable_modules=()
+
+  if [[ ! -r $PROC_ROOT/modules ]]; then
+    module_list_available=false
+  elif ! command -v modinfo >/dev/null 2>&1; then
+    modinfo_available=false
+    while IFS=' ' read -r module _; do
+      [[ -n $module ]] || continue
+      module_count=$((module_count + 1))
+    done <"$PROC_ROOT/modules"
+  else
+    while IFS=' ' read -r module _; do
+      [[ -n $module ]] || continue
+      module_count=$((module_count + 1))
+
+      if ! signer=$(modinfo -F signer "$module" 2>/dev/null); then
+        uninspectable_modules+=("$module")
+        continue
+      fi
+
+      signer=${signer//[[:space:]]/}
+      if [[ -z $signer ]]; then
+        unsigned_modules+=("$module")
+        continue
+      fi
+
+      module_sysfs_name=${module//-/_}
+      if read_value "$SYS_ROOT/module/$module_sysfs_name/taint"; then
+        module_taint=$VALUE
+        if [[ $module_taint == *E* ]]; then
+          unsigned_modules+=("$module")
+        fi
+      fi
+    done <"$PROC_ROOT/modules"
+  fi
+
+  if command -v sbctl >/dev/null 2>&1; then
+    if sbctl_output=$(sbctl verify 2>&1); then
+      unsigned_boot_files=$(grep -F "is not signed" <<<"$sbctl_output" || true)
+      if [[ -z $unsigned_boot_files ]]; then
+        signed_boot_note=" sbctl reports its tracked boot files signed with the locally configured key."
+      fi
+    else
+      sbctl_status=$?
+      unsigned_boot_files=$(grep -F "is not signed" <<<"$sbctl_output" || true)
+      if [[ -z $unsigned_boot_files ]]; then
+        signed_boot_note=" sbctl could not verify its tracked boot files (exit $sbctl_status)."
+      fi
+    fi
+  else
+    signed_boot_note=" sbctl is unavailable, so tracked boot-file signatures were not checked."
+  fi
+
+  if (( ${#unsigned_modules[@]} > 0 )) || [[ -n $unsigned_boot_files ]]; then
+    local unsigned_list=""
+    if (( ${#unsigned_modules[@]} > 0 )); then
+      unsigned_list=$(printf '%s, ' "${unsigned_modules[@]}")
+      unsigned_list=${unsigned_list%, }
+    fi
+    if [[ -n $unsigned_boot_files ]]; then
+      [[ -z $unsigned_list ]] || unsigned_list+="; "
+      unsigned_list+="sbctl: $unsigned_boot_files"
+    fi
+    add_check 1 "Signed kernel and kernel modules" FAIL \
+      "Unsigned or untrusted loaded modules, or unsigned EFI files tracked by sbctl, were reported: $unsigned_list. The running kernel signature and Epic key trust are not verified by this check." \
+      "Use signed kernel modules from a distribution whose key Epic accepts. Do not treat a locally generated key as an Epic-approved key."
+  elif [[ $module_list_available == "false" ]]; then
+    add_check 1 "Signed kernel and kernel modules" UNKNOWN \
+      "The loaded-module list is not readable, so this check cannot inspect loaded module signatures or verify the running kernel signature. Epic key trust is also unknown.$signed_boot_note" \
+      "Run this command on the installed Omarchy system. Ask Epic and Omarchy maintainers which distribution signing keys will be accepted."
+  elif [[ $modinfo_available == "false" ]]; then
+    add_check 1 "Signed kernel and kernel modules" UNKNOWN \
+      "modinfo is unavailable, so signatures on the $module_count loaded modules could not be inspected. The running kernel signature and Epic key trust are also unknown.$signed_boot_note" \
+      "Install the standard kmod tools if they are missing, then ask Epic and Omarchy maintainers which distribution keys will be accepted."
+  elif (( module_count == 0 )); then
+    add_check 1 "Signed kernel and kernel modules" UNKNOWN \
+      "No loaded modules were found. This does not establish the signature of the running kernel or of modules loaded later.$signed_boot_note" \
+      "Use a kernel and modules signed by a distribution key that Epic accepts; a locally enrolled key is not proof of acceptance."
+  elif (( ${#uninspectable_modules[@]} > 0 )); then
+    local uninspectable_list
+    uninspectable_list=$(printf '%s, ' "${uninspectable_modules[@]}")
+    uninspectable_list=${uninspectable_list%, }
+    add_check 1 "Signed kernel and kernel modules" UNKNOWN \
+      "Some loaded modules could not be inspected: $uninspectable_list. Other module signer names do not prove Epic key recognition, and the running kernel signature is not verified.$signed_boot_note" \
+      "Resolve the module inspection errors, then ask Epic and Omarchy maintainers which distribution signing keys will be accepted."
+  else
+    add_check 1 "Signed kernel and kernel modules" UNKNOWN \
+      "All currently loaded module files report a signer, but this cannot verify the running kernel signature or whether any signer is on Epic's well-known key list.$signed_boot_note" \
+      "Ask Epic and Omarchy maintainers which distribution signing keys will be accepted. Do not assume a local key is trusted by EAC."
+  fi
+}
+
+check_tpm() {
+  local version_file="$SYS_ROOT/class/tpm/tpm0/tpm_version_major"
+
+  if read_value "$version_file"; then
+    if [[ $VALUE == "2" ]]; then
+      add_check 2 "TPM 2.0" PASS \
+        "Linux exposes a TPM 2.0 device." \
+        "No local change is indicated. Epic must still validate the TPM measurements during game startup."
+    else
+      add_check 2 "TPM 2.0" FAIL \
+        "Linux reports TPM major version $VALUE, not TPM 2.0." \
+        "Enable TPM 2.0 in UEFI firmware and confirm that Linux exposes the TPM device."
+    fi
+  elif [[ -d $SYS_ROOT/class/tpm ]]; then
+    add_check 2 "TPM 2.0" FAIL \
+      "No TPM 2.0 device is exposed to Linux." \
+      "Enable TPM 2.0 in UEFI firmware and confirm that Linux exposes the TPM device."
+  else
+    add_check 2 "TPM 2.0" UNKNOWN \
+      "The TPM sysfs interface is unavailable, so this environment cannot determine whether TPM 2.0 is enabled." \
+      "Run the check on the installed system with sysfs mounted, then confirm TPM 2.0 is enabled in UEFI firmware."
+  fi
+}
+
+check_secure_boot() {
+  local secure_boot_var="$SYS_ROOT/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+  local secure_boot_value=""
+
+  if [[ -r $secure_boot_var ]]; then
+    if ! secure_boot_value=$(od -An -tu1 -j4 -N1 "$secure_boot_var" 2>/dev/null | tr -d '[:space:]'); then
+      secure_boot_value=""
+    fi
+  fi
+
+  case "$secure_boot_value" in
+    1)
+      add_check 3 "Secure Boot and trusted keys" UNKNOWN \
+        "UEFI Secure Boot is enabled. This does not show whether the active boot chain uses keys on Epic's well-known list." \
+        "Use only a signing key Epic has accepted for the distribution. A locally enrolled key does not establish EAC compatibility."
+      ;;
+    0)
+      add_check 3 "Secure Boot and trusted keys" FAIL \
+        "UEFI reports Secure Boot disabled." \
+        "Secure Boot must be enabled, and the keys used for the boot chain must also be accepted by Epic."
+      ;;
+    *)
+      add_check 3 "Secure Boot and trusted keys" UNKNOWN \
+        "The UEFI SecureBoot variable is unavailable or unreadable." \
+        "Run this check from a UEFI boot with efivarfs mounted. Confirm both Secure Boot state and Epic's accepted signing keys."
+      ;;
+  esac
+}
+
+check_measured_boot() {
+  local event_dir="$SYS_ROOT/kernel/security/tpm0"
+  local event_log="$event_dir/binary_bios_measurements"
+  local ascii_log="$event_dir/ascii_bios_measurements"
+  local event_file
+  local measured_limine_events=false
+  local -a event_logs=()
+
+  [[ -r $event_log ]] && event_logs+=("$event_log")
+  [[ -r $ascii_log ]] && event_logs+=("$ascii_log")
+
+  for event_file in "${event_logs[@]}"; do
+    if grep -aFq "limine_cfg" "$event_file" &&
+      grep -aFq "cmdline:" "$event_file" &&
+      grep -aFq "path:" "$event_file"; then
+      measured_limine_events=true
+      break
+    fi
+  done
+
+  if [[ $measured_limine_events == "true" ]]; then
+    add_check 4 "Measured Boot" PASS \
+      "The current TPM event log contains Limine configuration, command-line, and boot-image measurement events. This does not validate the PCR values against Epic's policy." \
+      "Keep the measured boot chain intact and have Epic validate its measurements and signing keys."
+  elif (( ${#event_logs[@]} > 0 )); then
+    add_check 4 "Measured Boot" UNKNOWN \
+      "A TPM event log is exposed, but this check did not find Limine configuration, command-line, and boot-image measurement events together." \
+      "Check the Limine version and measured-boot configuration, then inspect the current TPM event log. A firmware event log alone is not proof that the bootloader measured the running kernel."
+  else
+    add_check 4 "Measured Boot" UNKNOWN \
+      "No readable TPM event log is exposed, so this check cannot establish which boot components were measured." \
+      "Confirm TPM event-log support and inspect the current boot measurements with the bootloader's documented tooling."
+  fi
+}
+
+check_iommu() {
+  local cmdline=""
+  local cmdline_available=false
+  local iommu_groups_available=false
+  local disabled_parameter=""
+  local passthrough_parameter=""
+  local explicit_translated=false
+  local group_count=0
+  local group
+  local -a cmdline_args=()
+
+  if read_value "$PROC_ROOT/cmdline"; then
+    cmdline=$VALUE
+    cmdline_available=true
+    read -r -a cmdline_args <<<"$cmdline"
+  fi
+
+  [[ -d $SYS_ROOT/kernel/iommu_groups ]] && iommu_groups_available=true
+  for group in "$SYS_ROOT/kernel/iommu_groups/"*; do
+    [[ -d $group ]] || continue
+    group_count=$((group_count + 1))
+  done
+
+  for group in "${cmdline_args[@]}"; do
+    case "$group" in
+      iommu=off|intel_iommu=off|amd_iommu=off)
+        disabled_parameter=$group
+        ;;
+      iommu=pt|iommu.passthrough=1|intel_iommu=pt|amd_iommu=pt)
+        passthrough_parameter=$group
+        ;;
+      iommu.passthrough=0)
+        explicit_translated=true
+        ;;
+    esac
+  done
+
+  if [[ -n $disabled_parameter ]]; then
+    add_check 5 "IOMMU with passthrough disabled" FAIL \
+      "The kernel command line disables IOMMU with $disabled_parameter." \
+      "Enable IOMMU in firmware and use a translated DMA domain. Re-check the exact parameters supported by the installed kernel."
+  elif [[ -n $passthrough_parameter ]]; then
+    add_check 5 "IOMMU with passthrough disabled" FAIL \
+      "The kernel command line requests passthrough mode with $passthrough_parameter." \
+      "Enable IOMMU in firmware and use a translated DMA domain. Re-check the exact parameters supported by the installed kernel."
+  elif [[ $iommu_groups_available == "false" ]]; then
+    add_check 5 "IOMMU with passthrough disabled" UNKNOWN \
+      "The IOMMU groups sysfs interface is unavailable, so this check cannot determine whether IOMMU is active." \
+      "Run the check on the installed system with sysfs mounted, then confirm IOMMU is enabled in firmware and passthrough is disabled."
+  elif (( group_count == 0 )); then
+    add_check 5 "IOMMU with passthrough disabled" FAIL \
+      "No active IOMMU groups are visible under sysfs." \
+      "Enable the IOMMU in UEFI firmware and configure the installed kernel to use it with passthrough disabled."
+  elif [[ $cmdline_available == "true" && $explicit_translated == "true" ]]; then
+    add_check 5 "IOMMU with passthrough disabled" PASS \
+      "IOMMU groups are active and the kernel command line explicitly disables passthrough." \
+      "No local change is indicated. Epic must still validate the runtime IOMMU state."
+  else
+    add_check 5 "IOMMU with passthrough disabled" UNKNOWN \
+      "IOMMU groups are active, but the current state does not explicitly prove that passthrough is disabled." \
+      "Confirm the active IOMMU domain is translated rather than passthrough. Hardware and kernel defaults can vary."
+  fi
+}
+
+check_lockdown() {
+  local lockdown_file="$SYS_ROOT/kernel/security/lockdown"
+
+  if read_value "$lockdown_file"; then
+    if [[ $VALUE == *"[integrity]"* || $VALUE == *"[confidentiality]"* ]]; then
+      add_check 6 "Kernel Lockdown Integrity Mode" PASS \
+        "The running kernel reports integrity or the stricter confidentiality lockdown mode." \
+        "No local change is indicated. Re-check after each kernel or boot-configuration update."
+    elif [[ $VALUE == *"[none]"* || $VALUE == "none" ]]; then
+      add_check 6 "Kernel Lockdown Integrity Mode" FAIL \
+        "The running kernel reports lockdown mode none." \
+        "Boot with kernel lockdown integrity mode enabled, then confirm the selected mode in /sys/kernel/security/lockdown."
+    else
+      add_check 6 "Kernel Lockdown Integrity Mode" UNKNOWN \
+        "The lockdown interface did not expose a recognized selected mode: $VALUE" \
+        "Check the running kernel's lockdown interface and boot configuration."
+    fi
+  else
+    add_check 6 "Kernel Lockdown Integrity Mode" UNKNOWN \
+      "The kernel lockdown interface is unavailable or unreadable." \
+      "Confirm the kernel exposes lockdown status and that securityfs is mounted."
+  fi
+}
+
+check_kexec() {
+  local kexec_file="$PROC_ROOT/sys/kernel/kexec_load_disabled"
+  local cmdline=""
+  local cmdline_available=false
+  local kexec_boot_parameter=false
+  local argument
+  local -a cmdline_args=()
+
+  if read_value "$PROC_ROOT/cmdline"; then
+    cmdline=$VALUE
+    cmdline_available=true
+    read -r -a cmdline_args <<<"$cmdline"
+  fi
+
+  for argument in "${cmdline_args[@]}"; do
+    case "$argument" in
+      sysctl.kernel.kexec_load_disabled=1|sysctl.kernel/kexec_load_disabled=1)
+        kexec_boot_parameter=true
+        ;;
+    esac
+  done
+
+  if read_value "$kexec_file"; then
+    case "$VALUE" in
+      1)
+        if [[ $cmdline_available == "true" && $kexec_boot_parameter == "true" ]]; then
+          add_check 7 "kexec disabled" PASS \
+            "The running kernel reports kexec_load_disabled=1 and the kernel command line sets this sysctl before init starts." \
+            "No local change is indicated. Preserve this boot parameter in every entry used for protected gameplay."
+        else
+          add_check 7 "kexec disabled" UNKNOWN \
+            "The running kernel reports kexec_load_disabled=1, but the kernel command line does not prove that it was disabled before init started." \
+            "Add sysctl.kernel.kexec_load_disabled=1 to the selected boot entry and re-check."
+        fi
+        ;;
+      0)
+        add_check 7 "kexec disabled" FAIL \
+          "The running kernel reports kexec_load_disabled=0." \
+          "Disable kexec during boot and re-check /proc/sys/kernel/kexec_load_disabled."
+        ;;
+      *)
+        add_check 7 "kexec disabled" UNKNOWN \
+          "The kernel returned an unrecognized kexec_load_disabled value: $VALUE" \
+          "Check the running kernel's kexec_load_disabled sysctl."
+        ;;
+    esac
+  else
+    add_check 7 "kexec disabled" UNKNOWN \
+      "The kexec_load_disabled sysctl is unavailable or unreadable." \
+      "Confirm the running kernel exposes /proc/sys/kernel/kexec_load_disabled."
+  fi
+}
+
+check_bpf_lsm() {
+  local lsm_file="$SYS_ROOT/kernel/security/lsm"
+  local lsm_list
+
+  if read_value "$lsm_file"; then
+    lsm_list=",$VALUE,"
+    if [[ $lsm_list == *",bpf,"* ]]; then
+      add_check 8 "BPF Linux Security Module" PASS \
+        "The active LSM list includes bpf." \
+        "No local change is indicated. Preserve the active LSM list in future kernel-command-line changes."
+    else
+      add_check 8 "BPF Linux Security Module" FAIL \
+        "The active LSM list does not include bpf: $VALUE" \
+        "Enable BPF LSM in the kernel and include bpf in the active LSM list while preserving the other required LSMs."
+    fi
+  else
+    add_check 8 "BPF Linux Security Module" UNKNOWN \
+      "The active LSM list is unavailable or unreadable." \
+      "Confirm the kernel exposes /sys/kernel/security/lsm and inspect the active LSM list."
+  fi
+}
+
+overall_status() {
+  local status
+  local result=PASS
+
+  for status in "${CHECK_STATUSES[@]}"; do
+    if [[ $status == "FAIL" ]]; then
+      printf 'FAIL'
+      return
+    fi
+    if [[ $status == "UNKNOWN" ]]; then
+      result=UNKNOWN
+    fi
+  done
+
+  printf '%s' "$result"
+}
+
+print_human() {
+  local index
+
+  printf 'EAC Linux v2 local readiness check\n\n'
+  for index in "${!CHECK_NUMBERS[@]}"; do
+    printf 'EAC-%s %-7s %s\n' \
+      "${CHECK_NUMBERS[$index]}" "${CHECK_STATUSES[$index]}" "${CHECK_NAMES[$index]}"
+    printf '  %s\n' "${CHECK_DETAILS[$index]}"
+    printf '  Next step: %s\n\n' "${CHECK_NEXT_STEPS[$index]}"
+  done
+
+  printf 'Overall local result: %s\n' "$OVERALL_STATUS"
+  printf 'Epic key recognition and official compatibility: UNKNOWN\n'
+  printf 'This read-only report is not an Epic certification and does not prove that Fortnite runs. No system settings were changed.\n'
+  printf 'Epic requirements: %s\n' "$EPIC_REQUIREMENTS_URL"
+}
+
+print_json() {
+  local index checks_json item
+  local -a check_items=()
+
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "jq is required for --json output." >&2
+    return 1
+  fi
+
+  for index in "${!CHECK_NUMBERS[@]}"; do
+    item=$(jq -cn \
+      --arg number "${CHECK_NUMBERS[$index]}" \
+      --arg name "${CHECK_NAMES[$index]}" \
+      --arg status "${CHECK_STATUSES[$index]}" \
+      --arg detail "${CHECK_DETAILS[$index]}" \
+      --arg next_step "${CHECK_NEXT_STEPS[$index]}" \
+      '{requirement: ($number | tonumber), name: $name, status: $status, detail: $detail, next_step: $next_step}')
+    check_items+=("$item")
+  done
+
+  checks_json=$(printf '%s\n' "${check_items[@]}" | jq -s '.')
+  jq -n \
+    --arg overall "$OVERALL_STATUS" \
+    --argjson checks "$checks_json" \
+    --arg requirements_url "$EPIC_REQUIREMENTS_URL" \
+    '{
+      schema_version: 1,
+      command: "omarchy games eac check",
+      overall: $overall,
+      epic_key_recognition: "UNKNOWN",
+      official_compatibility: "UNKNOWN",
+      checks: $checks,
+      note: "Local read-only diagnostics only. This is not an Epic certification and does not prove that Fortnite runs.",
+      requirements_url: $requirements_url
+    }'
+}
+
+show_help() {
+  cat <<EOF
+Usage: omarchy games eac check [--json]
+
+Check the locally observable EAC Linux v2 requirements without changing the system.
+UNKNOWN means the requirement could not be established from local interfaces or
+depends on Epic recognizing a signing key. PASS is not Epic certification.
+
+Requirements: $EPIC_REQUIREMENTS_URL
+EOF
+}
+
+json_output=false
+while (( $# > 0 )); do
+  case "$1" in
+    --json)
+      json_output=true
+      shift
+      ;;
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      show_help >&2
+      exit 2
+      ;;
+  esac
+done
+
+check_kernel_and_modules
+check_tpm
+check_secure_boot
+check_measured_boot
+check_iommu
+check_lockdown
+check_kexec
+check_bpf_lsm
+
+OVERALL_STATUS=$(overall_status)
+
+if [[ $json_output == "true" ]]; then
+  print_json || exit 1
+else
+  print_human
+fi
+
+case "$OVERALL_STATUS" in
+  PASS) exit 0 ;;
+  FAIL) exit 1 ;;
+  *) exit 2 ;;
+esac
