@@ -249,5 +249,5 @@ const renamedExitNodes = tailscale.parseStatus(JSON.stringify({
 assertDeepEqual(renamedExitNodes.exitNodes.map(tailscale.exitNodeLabel), ['alpha', 'zulu'], 'tailscale sorts exit node rows by the label they show')
 
 assert(/readonly property string peerName: tailscale\.exitNodeLabel\(peer\)/.test(panelSource), 'tailscale labels exit node rows with the MagicDNS helper')
-assert(/readonly property string peerName: peer \? String\(peer\.DisplayName \|\| peer\.HostName \|\| "Unknown"\) : "Unknown"/.test(panelSource), 'tailscale keeps the friendly hostname on machine rows')
+assert(/readonly property string peerName: peer \? String\(peer\.DisplayName \|\| peer\.HostName \|\| Commons\.I18n\.t\("tailscale\.unknown"\)\) : Commons\.I18n\.t\("tailscale\.unknown"\)/.test(panelSource), 'tailscale keeps the friendly hostname on machine rows')
 JS
