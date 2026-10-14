@@ -367,7 +367,9 @@ stage=""
 create_complete=1
 echo "Created $plugin_name ($new_id) in $target_dir"
 
-omarchy-shell shell rescanPlugins >/dev/null
+# Best-effort: the plugin is in place either way, and enabling below still
+# fails clearly if the shell never discovers it.
+omarchy-shell -q shell rescanPlugins >/dev/null
 
 if [[ -z $enable_after ]]; then
   if (( ASSUME_YES )) || ! interactive; then

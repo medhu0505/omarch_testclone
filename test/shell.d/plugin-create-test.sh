@@ -12,6 +12,11 @@ CALLS="$TMPDIR/calls"
 
 cat >"$TMPDIR/bin/omarchy-shell" <<'SH'
 #!/bin/bash
+if [[ ${FAKE_SHELL_DOWN:-0} == 1 ]]; then
+  [[ $1 == "-q" ]] && exit 0
+  echo "omarchy-shell: shell is not running" >&2
+  exit 1
+fi
 if [[ $* == *"listPlugins"* ]]; then
   if [[ ${FAKE_NO_DISCOVERY:-0} == 1 ]]; then
     printf '[]\n'
@@ -169,3 +174,16 @@ for file in Dnd.qml Reminder.qml; do
   [[ -f $lights/$loader_dir$file ]] || fail "indicators scaffold cannot load $loader_dir$file"
 done
 pass "--from points moved clone paths at their copies"
+
+if ! offline_output=$(FAKE_SHELL_DOWN=1 create_plugin Offline --kind bar-widget --git --yes 2>&1); then
+  fail "scaffold fails when the shell is not running: $offline_output"
+fi
+[[ -d $PLUGINS/tester.offline/.git ]] || fail "scaffold skips --git when the shell is not running"
+pass "scaffold finishes without a running shell"
+
+if FAKE_SHELL_DOWN=1 create_plugin Unreachable --kind bar-widget --enable >/dev/null 2>&1; then
+  fail "--enable succeeds without a running shell"
+fi
+[[ -f $PLUGINS/tester.unreachable/manifest.json ]] ||
+  fail "a failed enable removes the created plugin"
+pass "--enable still fails clearly without a running shell"
