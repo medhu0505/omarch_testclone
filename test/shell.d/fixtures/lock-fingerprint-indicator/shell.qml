@@ -105,6 +105,31 @@ ShellRoot {
             root.assertTrue(!notice.visible, "notice clears when the reader recovers")
             root.assertTrue(indicator.text === workingGlyph, "icon restores when the reader recovers")
           }
+
+          // A rejected finger must read differently from a reader that never
+          // answered, so the user knows to try again rather than wait.
+          var rejected = findByObjectName(view, "fingerprintRejectedNotice")
+          root.assertTrue(rejected !== null, "rejected notice exists in the lock view")
+
+          if (rejected) {
+            var idleColor = String(indicator.color)
+            root.assertTrue(!rejected.visible, "rejected notice stays hidden before any touch")
+
+            view.fingerprintRejected = true
+            root.assertTrue(rejected.visible, "rejected notice appears when the finger is rejected")
+            root.assertTrue(rejected.text === "Fingerprint not recognized", "rejected notice names the fingerprint, got " + rejected.text)
+            root.assertTrue(rejected.implicitWidth <= view.width, "rejected notice fits the lock view")
+            root.assertTrue(String(indicator.color) !== idleColor || String(Color.lock.textError) === String(Color.lock.placeholder),
+              "icon tints when the finger is rejected")
+
+            view.fingerprintUnavailable = true
+            root.assertTrue(!rejected.visible, "an unavailable reader does not also claim a rejected finger")
+            view.fingerprintUnavailable = false
+
+            view.fingerprintRejected = false
+            root.assertTrue(!rejected.visible, "rejected notice clears once the rejection clears")
+            root.assertTrue(String(indicator.color) === idleColor, "icon restores once the rejection clears")
+          }
         }
 
         view.destroy()
