@@ -1,4 +1,4 @@
-import QtQuick 2.0
+import QtQuick 2.15
 import SddmComponents 2.0
 
 Rectangle {
@@ -9,6 +9,13 @@ Rectangle {
 
   property string currentUser: userModel.lastUser
   property bool loginFailed: false
+  // With more than one account the screen asks who is logging in, starting
+  // from the last user. A name is typed, not picked from a list, so it works
+  // for any number of accounts, also ones the list doesn't show.
+  property bool askUser: users.count > 1
+  property var userNames: []
+  // #ffffff is the theme's text color: omarchy-plymouth-set swaps it in.
+  property color textColor: "#ffffff"
   property int sessionIndex: {
     for (var i = 0; i < sessionModel.rowCount(); i++) {
       var name = (sessionModel.data(sessionModel.index(i, 0), Qt.DisplayRole) || "").toString()
@@ -16,6 +23,27 @@ Rectangle {
         return i
     }
     return sessionModel.lastIndex
+  }
+
+  Repeater {
+    id: users
+    model: userModel
+    Item {
+      Component.onCompleted: root.userNames = root.userNames.concat([model.name])
+    }
+  }
+
+  // The first account whose name starts with what was typed, for completion.
+  function completeUser(typed) {
+    if (typed.length === 0) return ""
+    var names = userNames.slice().sort()
+    for (var i = 0; i < names.length; i++)
+      if (names[i].indexOf(typed) === 0) return names[i]
+    return ""
+  }
+
+  function loginUser() {
+    return askUser ? username.text : currentUser
   }
 
   Connections {
@@ -41,6 +69,70 @@ Rectangle {
       height: sourceSize.width > 0 ? Math.round(width * sourceSize.height / sourceSize.width) : 0
       fillMode: Image.PreserveAspectFit
       anchors.horizontalCenter: parent.horizontalCenter
+    }
+
+    Row {
+      visible: root.askUser
+      anchors.horizontalCenter: parent.horizontalCenter
+      spacing: 15
+
+      // Lines the name up with the password box beside the lock.
+      Item {
+        width: 34
+        height: 38
+      }
+
+      Item {
+        width: nameEntry.width
+        height: nameEntry.height
+
+        Image {
+          id: nameEntry
+          source: root.loginFailed ? "entry-failed.png" : "entry.png"
+          anchors.centerIn: parent
+        }
+
+        TextInput {
+          id: username
+          property bool deleting: false
+          anchors.fill: parent
+          anchors.leftMargin: 20
+          anchors.rightMargin: 20
+          verticalAlignment: TextInput.AlignVCenter
+          font.family: "JetBrainsMono Nerd Font"
+          font.pixelSize: 24
+          color: root.textColor
+          selectionColor: Qt.rgba(root.textColor.r, root.textColor.g, root.textColor.b, 0.25)
+          selectedTextColor: root.textColor
+          text: root.currentUser
+          KeyNavigation.tab: password
+          KeyNavigation.down: password
+
+          // Complete as the name is typed, leaving the completion selected so
+          // the next key replaces it. Deleting never completes.
+          onTextEdited: {
+            root.loginFailed = false
+            var wasDeleting = deleting
+            deleting = false
+            if (wasDeleting || cursorPosition !== text.length) return
+            var match = root.completeUser(text)
+            if (match !== "" && match !== text) {
+              var typed = text.length
+              text = match
+              select(typed, match.length)
+            }
+          }
+
+          Keys.onPressed: {
+            deleting = event.key === Qt.Key_Backspace || event.key === Qt.Key_Delete
+            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+              deselect()
+              password.forceActiveFocus()
+              event.accepted = true
+            }
+          }
+        }
+      }
     }
 
     Row {
@@ -100,10 +192,12 @@ Rectangle {
           focus: true
 
           onTextChanged: root.loginFailed = false
+          KeyNavigation.backtab: username
+          KeyNavigation.up: username
 
           Keys.onPressed: {
             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-              sddm.login(root.currentUser, password.text, root.sessionIndex)
+              sddm.login(root.loginUser(), password.text, root.sessionIndex)
               event.accepted = true
             }
           }
@@ -113,5 +207,12 @@ Rectangle {
 
   }
 
-  Component.onCompleted: password.forceActiveFocus()
+  // The last user only types their password; with nobody remembered, the
+  // name comes first.
+  Component.onCompleted: {
+    if (askUser && currentUser === "")
+      username.forceActiveFocus()
+    else
+      password.forceActiveFocus()
+  }
 }
