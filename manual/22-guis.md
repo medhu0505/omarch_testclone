@@ -103,10 +103,11 @@ Press `Tab` to focus the controls, `Enter` to activate a button and `Escape` to 
 
 The three-dot button opens mpv's native player menu directly. The palette button beside it opens Appearance. Choose Theme to follow the desktop automatically or use an installed palette for this player only. Choosing Automatic again picks up the current desktop theme. These choices last for the current player process. Choose Toolbar background from Appearance, or use `Ctrl + F9` to cycle Opaque, Translucent and Gradient controls. The choice applies to the current player. To persist a choice, edit `~/.config/mpv/script-opts/omarchy-controls.conf` and set `surface_mode` to `solid`, `translucent` or `gradient`. This file also contains opacity, font and corner settings. Light themes use a stronger backing for readable dark text. Native selection menus remain solid.
 
-`Delete` cycles automatic, always-visible and hidden controls. Hidden controls stay hidden during seeks and file changes. `F10` pins or unpins them. Bottom-positioned subtitles move above visible controls and return to your configured margin when the controls hide.
+`Delete` cycles automatic, always-visible and hidden controls. Hidden controls stay hidden during seeks and file changes, and also hide the idle drop hint. `F10` pins or unpins them. Bottom-positioned subtitles move above visible controls and return to your configured margin when the controls hide.
 
 Existing mpv configurations are preserved during upgrades. To opt in, first back up `~/.config/mpv`, then copy the Omarchy scripts and script-option files from `/usr/share/omarchy/config/mpv/` into your config after checking for conflicting controllers. Set `osc=no`, `border=no` and `osd-bar=no` in the global part of your `mpv.conf`; preserve your other preferences. Refresh the current Omarchy theme once to generate the palette, then reopen mpv. Disable any alternative controller yourself before activating these controls. Later theme changes apply live without reopening the player.
 
+To return to stock controls, back up your config, move `omarchy-controls.lua` and `omarchy-theme.lua` out of `~/.config/mpv/scripts/`, and set `osc=yes`, `border=yes` and `osd-bar=yes` in the global part of `mpv.conf`. Remove any conflicting later overrides and reopen mpv. Keep your other scripts, input bindings and preferences. Restore your backup to opt in again.
 
 ## Omacut
 
