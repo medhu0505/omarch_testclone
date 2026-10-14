@@ -154,6 +154,7 @@ Panel {
     id: dropbox
     settings: root.settings
     omarchyPath: root.omarchyPath
+    detailsWanted: root.opened
   }
 
   Connections {
