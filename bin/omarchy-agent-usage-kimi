@@ -189,7 +189,9 @@ def request_refresh(refresh_token: str) -> dict[str, Any]:
     raise KimiError("Kimi token refresh timed out", retry=True) from error
   except json.JSONDecodeError as error:
     raise KimiError("Kimi returned an invalid token response") from error
-  if not isinstance(decoded, dict) or not decoded.get("access_token"):
+  if not isinstance(decoded, dict) or any(
+    not isinstance(decoded.get(key), str) or not decoded[key] for key in ("access_token", "refresh_token")
+  ):
     raise KimiError("Kimi returned an invalid token response")
   try:
     duration = float(decoded.get("expires_in"))
@@ -270,6 +272,13 @@ def refresh_credentials(auth: dict[str, str] | None = None) -> dict[str, Any]:
       raise KimiError("Kimi sign-in is missing; sign in with `kimi login`")
     granted = request_refresh(refresh_token)
     check()
+    latest = read_credentials()
+    if latest != credentials:
+      if auth is not None:
+        auth["key"] = str(latest.get("access_token") or "")
+      if token_fresh(latest):
+        return latest
+      raise KimiError("Kimi sign-in changed during refresh; try again")
     credentials.update(
       {
         "access_token": str(granted["access_token"]),

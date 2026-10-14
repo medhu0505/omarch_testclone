@@ -63,11 +63,7 @@ written by `omarchy-agent-usage-update`. That command runs one
 on its refresh timer and whenever you ask for a refresh, and picks up any
 record that lands in the directory regardless of who wrote it.
 
-Adding an agent therefore never touches this plugin: ship a collector that
-prints the record contract (see the `claude` and `codex` collectors in
-`bin/`), and the panel gains a tab. An `assets/<id>.svg` mark is optional —
-with an `assets/<id>-light.svg` twin if the mark needs a dark variant for
-light surfaces — and the bar glyph stands in when there is none.
+Adding an agent needs no QML changes: ship a collector that prints the record contract (see the `claude` and `codex` collectors in `bin/`), and the panel gains a section. An `assets/<id>.svg` mark is optional, with an `assets/<id>-light.svg` twin if the mark needs a dark variant for light surfaces; the bar glyph stands in when there is none.
 
 | Collector | Limits | Local stats |
 |---|---|---|
@@ -108,7 +104,7 @@ and finally the key opencode stores in `~/.local/share/opencode/auth.json`.
 
 Kimi reads `KIMI_API_KEY` first, then `credentials/kimi-code.json` under an explicit `KIMI_CODE_HOME`. Without that override it prefers `~/.kimi-code/credentials/kimi-code.json`, with the legacy `~/.kimi/credentials/kimi-code.json` as a compatibility fallback. An explicit home never borrows another home's sign-in. Its record reports account quotas, without local token or prompt statistics.
 
-Expired tokens are refreshed under the current CLI's renewable directory lock at `<home>/oauth/kimi-code.lock`; legacy credentials use their sibling file lock. The rotated token pair is flushed and published atomically with private permissions. A failed lock prevents refresh, and credentials are sent only to trusted Kimi HTTPS hosts without following redirects. When sign-in expires, run `kimi login`; an invalid overriding `KIMI_API_KEY` must instead be updated or unset.
+Expired tokens are refreshed under the current CLI's renewable directory lock at `<home>/oauth/kimi-code.lock`; legacy credentials use their sibling file lock. The rotated token pair is flushed and published atomically with private permissions. Credentials are reread after the exchange so a sign-in or logout completed during the request takes precedence. A failed lock prevents refresh, and credentials are sent only to trusted Kimi HTTPS hosts without following redirects. When sign-in expires, run `kimi login`; an invalid overriding `KIMI_API_KEY` must instead be updated or unset.
 
 Limits probes reuse a result for one minute unless `--force` is requested. A failed probe retains the last-known limits with stale metadata. Cache identity follows the token used by the request, and a refresh this collector performs carries the same account's previous limits forward. Different credentials or endpoints never share cached quota.
 

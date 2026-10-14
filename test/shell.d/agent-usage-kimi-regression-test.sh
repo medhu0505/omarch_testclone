@@ -47,13 +47,15 @@ class Handler(BaseHTTPRequestHandler):
   def do_POST(self):
     body = self.rfile.read(int(self.headers["Content-Length"])).decode()
     requests.append((self.path, None, urllib.parse.parse_qs(body)))
+    if state.get("token_hook"):
+      state["token_hook"]()
     if state.get("entered"):
       state["entered"].set()
     time.sleep(state.get("delay", 0))
     if state.get("token_status"):
       self.reply(state["token_status"], {"error_description": "Echo RT_old"})
     else:
-      self.reply(200, {"access_token": "AT_new", "refresh_token": "RT_new", "expires_in": 3600})
+      self.reply(200, state.get("grant", {"access_token": "AT_new", "refresh_token": "RT_new", "expires_in": 3600}))
 
 server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -233,6 +235,28 @@ def cache_identity(root):
   state["usage_status"] = 503
   assert record()["limits"] == [], "request quota was cached under a different token"
 
+def concurrent_signin(root):
+  credentials()
+  state["token_hook"] = lambda: credentials("AT_signed_in", time.time() + 3600)
+  assert record()["ready"]
+  assert json.loads(scanner.CREDENTIALS_PATH.read_text())["access_token"] == "AT_signed_in", "refresh overwrote a completed sign-in"
+  assert requests[-1][1] == "Bearer AT_signed_in", "usage ignored the newly signed-in account"
+
+def concurrent_logout(root):
+  credentials()
+  state["token_hook"] = scanner.CREDENTIALS_PATH.unlink
+  assert not record()["ready"] and not scanner.CREDENTIALS_PATH.exists(), "refresh restored a signed-out account"
+
+def invalid_grant(root):
+  for grant in ({"access_token": "AT_new", "expires_in": 3600},
+                {"access_token": True, "refresh_token": "RT_new", "expires_in": 3600},
+                {"access_token": "AT_new", "refresh_token": "RT_new", "expires_in": 0}):
+    credentials()
+    before = scanner.CREDENTIALS_PATH.read_text()
+    state["grant"] = grant
+    assert not record()["ready"], "invalid rotated token was accepted"
+    assert scanner.CREDENTIALS_PATH.read_text() == before, "invalid grant replaced usable credentials"
+
 def key_help(root):
   os.environ["KIMI_API_KEY"] = "AT_invalid"
   state["usage_status"] = 401
@@ -253,6 +277,8 @@ cases = {"destination": destination, "home": home_isolation, "static": static_to
          "cli_lock": cli_lock, "lock_failure": lock_failure, "heartbeat": heartbeat,
          "private_write": private_write, "quota": modern_quota, "stale": stale_limits,
          "rotation_cache": rotated_cache, "cache_identity": cache_identity,
+         "concurrent_signin": concurrent_signin, "concurrent_logout": concurrent_logout,
+         "invalid_grant": invalid_grant,
          "key_help": key_help, "redaction": error_redaction, "redirects": redirects}
 failed = False
 for name, check in cases.items():
