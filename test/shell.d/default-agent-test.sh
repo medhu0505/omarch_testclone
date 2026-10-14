@@ -166,6 +166,7 @@ grep -Fx "$crush_package" "$stub_log" >/dev/null || fail "user setup creates the
 grep -Fx "$ori_package ori" "$stub_log" >/dev/null || fail "user setup creates the Ori lazy stub"
 OMARCHY_TEST_MISSING_COMMAND=muse source "$ROOT/install/user/mise.sh"
 grep -Fx "$muse_package muse" "$stub_log" >/dev/null || fail "user setup creates the Muse lazy stub"
+OMARCHY_TEST_MISSING_COMMAND=kimi source "$ROOT/install/user/mise.sh"
 grep -Fx "$kimi_package kimi" "$stub_log" >/dev/null || fail "user setup creates the Kimi lazy stub"
 pass "user setup creates the custom agent lazy stubs"
 
@@ -190,7 +191,7 @@ pass "Muse migration preserves existing installs and the preinstall opt-out"
 
 
 : >"$stub_log"
-source "$ROOT/migrations/1786967403.sh" >/dev/null
+OMARCHY_TEST_MISSING_COMMAND=kimi source "$ROOT/migrations/1786967403.sh" >/dev/null
 grep -Fx "$kimi_package kimi" "$stub_log" >/dev/null || fail "Kimi migration creates its lazy stub"
 
 : >"$stub_log"
@@ -295,7 +296,7 @@ source "$ROOT/migrations/1785617047.sh" >/dev/null
 source "$ROOT/migrations/1785846769.sh" >/dev/null
 source "$ROOT/migrations/1787342993.sh" >/dev/null
 OMARCHY_TEST_MISSING_COMMAND=cursor-agent source "$ROOT/migrations/1788577553.sh" >/dev/null
-source "$ROOT/migrations/1786967403.sh" >/dev/null
+OMARCHY_TEST_MISSING_COMMAND=kimi source "$ROOT/migrations/1786967403.sh" >/dev/null
 [[ ! -s $stub_log ]] || fail "agent migrations respect the preinstall opt-out"
 [[ ! -e $test_home/.local/bin/omp ]] || fail "agent migration removes the obsolete Oh My Pi wrapper after opt-out"
 
@@ -428,6 +429,7 @@ grep -Fx "unuse -y -g $legacy_grok_package" "$mise_history" >/dev/null ||
 pass "agent migrations install working wrappers without overriding the preinstall opt-out"
 
 "$ROOT/bin/omarchy-mise-install" "$muse_package" muse
+"$ROOT/bin/omarchy-mise-install" "$kimi_package" kimi
 touch "$test_home/.local/bin/agy" "$test_home/.local/bin/ori"
 omarchy-remove-preinstalls >/dev/null
 for command in agy omp ori grok crush cursor-agent muse kimi; do

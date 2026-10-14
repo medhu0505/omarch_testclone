@@ -13,7 +13,9 @@ omarchy-mise-install npm:playwright playwright
 omarchy-mise-install pi
 omarchy-mise-install github:can1357/oh-my-pi omp
 omarchy-mise-install grok
-omarchy-mise-install npm:@moonshot-ai/kimi-code kimi
+if omarchy-cmd-missing kimi; then
+  omarchy-mise-install npm:@moonshot-ai/kimi-code kimi
+fi
 # Cursor's own installer links the same path, so a re-provision keeps it.
 omarchy-cmd-missing cursor-agent && omarchy-mise-install cursor-agent
 omarchy-mise-install npm:@kitlangton/ghui ghui
