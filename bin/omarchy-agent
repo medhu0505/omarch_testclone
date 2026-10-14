@@ -139,8 +139,11 @@ kimi)
   fi
   ;;
 dsh)
-  # The web profile uses the upstream no-approval permission preset.
-  command=(env DSH_PERMISSION_MODE=danger-full-access dsh web)
+  if [[ -n ${prompt:-} ]]; then
+    command=(env DSH_PERMISSION_MODE=danger-full-access dsh headless -- "$prompt")
+  else
+    command=(env DSH_PERMISSION_MODE=danger-full-access dsh web)
+  fi
   ;;
 *)
   echo "Unsupported default agent: $agent" >&2
