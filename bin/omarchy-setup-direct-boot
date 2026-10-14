@@ -1,43 +1,234 @@
 #!/bin/bash
 
 # omarchy:summary=Add or remove an EFI boot entry for the Omarchy UKI, allowing the system to boot directly
+# omarchy:args=[--refresh]
+# omarchy:examples=omarchy-setup-direct-boot | omarchy-setup-direct-boot --refresh
 # omarchy:requires-sudo=true
+
+# --refresh repoints an existing entry at the UKI Limine boots first, without
+# prompting, and does nothing when direct boot is not set up. Each kernel has its
+# own omarchy_<kernel>.efi, so an entry does not follow a new default kernel.
+
+root="${OMARCHY_DIRECT_BOOT_ROOT:-}"
+refresh=false
+
+if [[ ${1:-} == "--refresh" ]]; then
+  refresh=true
+fi
+
+# A refresh runs from a migration that must finish on every machine, so where
+# interactive setup refuses, a refresh exits quietly instead.
+refuse() {
+  if [[ $refresh == "true" ]]; then
+    exit 0
+  fi
+  echo "Error: $1" >&2
+  exit 1
+}
+
+# The Boot#### numbers in an efibootmgr listing, one per line.
+entry_numbers() {
+  sed -nE 's/^Boot([0-9A-Fa-f]{4})\*?[[:space:]].*/\1/p' <<<"$1"
+}
+
+# The Omarchy entry the firmware boots: the first in BootOrder, or the lowest
+# numbered one when none of them is in the order.
+omarchy_entry() {
+  local listing="$1" order num candidate
+  local -a candidates=()
+
+  mapfile -t candidates < <(grep -E '^Boot[0-9A-Fa-f]{4}\*?[[:space:]]+Omarchy([[:space:]]|$)' <<<"$listing" | sed -E 's/^Boot([0-9A-Fa-f]{4}).*/\1/')
+  (( ${#candidates[@]} > 0 )) || return 0
+
+  order=$(sed -n 's/^BootOrder: //p' <<<"$listing")
+  for num in ${order//,/ }; do
+    for candidate in "${candidates[@]}"; do
+      if [[ ${num^^} == "${candidate^^}" ]]; then
+        grep -E "^Boot$candidate\*?[[:space:]]" <<<"$listing" | head -1
+        return 0
+      fi
+    done
+  done
+
+  grep -E "^Boot${candidates[0]}\*?[[:space:]]" <<<"$listing" | head -1
+}
+
+# The UKI of the first kernel in BOOT_ORDER, reading config the way
+# limine-entry-tool does: the same files in the same order, the last assignment
+# wins, the value is trimmed and loses surrounding quotes when it has them.
+preferred_uki() {
+  local ukis=() boot_order="" patterns=() pattern uki kernel conf value
+
+  mapfile -t ukis < <(sudo find "$root/boot/EFI/Linux/" -maxdepth 1 -name "omarchy_*.efi" -printf "%f\n" 2>/dev/null | sort)
+
+  for conf in "$root"/usr/share/limine-entry-tool.d/*.conf "$root/etc/limine-entry-tool.conf" "$root"/etc/limine-entry-tool.d/*.conf "$root/etc/default/limine"; do
+    [[ -f $conf ]] || continue
+    value=$(sed -nE 's/^[[:space:]]*BOOT_ORDER[[:space:]]*\+?=(.*)$/\1/p' "$conf" | tail -1)
+    value=${value#"${value%%[![:space:]]*}"}
+    value=${value%"${value##*[![:space:]]}"}
+    if (( ${#value} >= 2 )) && [[ $value == \"*\" ]]; then
+      value=${value:1:-1}
+    fi
+    [[ -n $value ]] && boot_order=$value
+  done
+
+  IFS=',' read -ra patterns <<<"$boot_order"
+  for pattern in "${patterns[@]}"; do
+    read -r pattern <<<"$pattern"
+
+    for uki in "${ukis[@]}"; do
+      kernel=${uki#omarchy_}
+      kernel=${kernel%.efi}
+
+      if [[ -n $pattern && $kernel == $pattern ]]; then
+        echo "$uki"
+        return
+      fi
+    done
+  done
+
+  if (( ${#ukis[@]} > 0 )); then
+    echo "${ukis[0]}"
+  fi
+}
+
+create_entry() {
+  local uki_file="$1" boot_source disk part
+
+  boot_source=$(findmnt -n -o SOURCE /boot)
+  disk=$(echo "$boot_source" | sed 's/p\?[0-9]*$//')
+  part=$(echo "$boot_source" | grep -o 'p\?[0-9]*$' | sed 's/^p//')
+
+  sudo efibootmgr --create \
+    --disk "$disk" \
+    --part "$part" \
+    --label "Omarchy" \
+    --loader "\\EFI\\Linux\\$uki_file"
+}
 
 # Apple Silicon boots m1n1, then U-Boot, which finds the bootloader on its own
 # and creates its boot entries itself, so there is no direct-boot entry to add
 # or remove.
 if omarchy-hw-aarch64-apple; then
-  echo "Error: Direct boot is not supported on Apple Silicon: U-Boot finds the bootloader itself" >&2
-  exit 1
+  refuse "Direct boot is not supported on Apple Silicon: U-Boot finds the bootloader itself"
 fi
 
-if [[ ! -d /sys/firmware/efi ]]; then
-  echo "Error: System is not booted in UEFI mode" >&2
-  exit 1
+if [[ ! -d $root/sys/firmware/efi ]]; then
+  refuse "System is not booted in UEFI mode"
 fi
 
 if ! efibootmgr &>/dev/null; then
-  echo "Error: efibootmgr is not available or not functional" >&2
-  exit 1
+  refuse "efibootmgr is not available or not functional"
 fi
 
-bios_vendor=$(cat /sys/class/dmi/id/bios_vendor 2>/dev/null)
+bios_vendor=$(cat "$root/sys/class/dmi/id/bios_vendor" 2>/dev/null)
+vendor_refusal=""
 
 case "${bios_vendor,,}" in
   *"american megatrends"*)
-    echo "Error: American Megatrends firmware may not safely support custom EFI entries" >&2
-    exit 1
+    vendor_refusal="American Megatrends firmware may not safely support custom EFI entries"
     ;;
   *apple*)
-    echo "Error: Apple firmware uses its own boot manager" >&2
-    exit 1
+    vendor_refusal="Apple firmware uses its own boot manager"
     ;;
 esac
 
-existing_entry=$(efibootmgr | grep -E "^Boot[0-9A-Fa-f]+\*? Omarchy([[:space:]]|$)" | head -1)
+listing=$(efibootmgr)
+existing_entry=$(omarchy_entry "$listing")
+
+if [[ $refresh == "true" ]]; then
+  [[ -n $existing_entry ]] || exit 0
+
+  boot_num=$(entry_numbers "$existing_entry")
+
+  # Interactive setup refuses to write entries on this firmware, so a refresh
+  # does not either, even to one that is already there.
+  if [[ -n $vendor_refusal ]]; then
+    echo "Leaving direct boot entry Boot$boot_num alone: $vendor_refusal."
+    echo "Run omarchy-setup-direct-boot to remove it and boot through Limine again."
+    exit 0
+  fi
+
+  # Firmware may report the loader path in upper case, and efibootmgr prints
+  # an entry's optional data straight after the path, so keep only the file
+  # name up to its .efi. Only entries for a UKI in \EFI\Linux\ are Omarchy's to
+  # repoint.
+  loader=${existing_entry,,}
+  if [[ $loader == *'\efi\linux\omarchy_'*'.efi'* ]]; then
+    current_uki=${loader##*\\efi\\linux\\}
+    current_uki=${current_uki%%.efi*}.efi
+  else
+    echo "Leaving direct boot entry Boot$boot_num alone: it does not point at an Omarchy UKI in \\EFI\\Linux\\."
+    exit 0
+  fi
+
+  uki_file=$(preferred_uki)
+  [[ -n $uki_file && $current_uki != "${uki_file,,}" ]] || exit 0
+
+  echo "Pointing direct boot at $uki_file instead of $current_uki"
+
+  # Create the new entry before deleting the old one so an Omarchy entry always
+  # exists. The firmware hands out the lowest free number, so the new entry is
+  # whichever number the listing gained, not whichever Omarchy entry comes
+  # first.
+  boot_order=$(sed -n 's/^BootOrder: //p' <<<"$listing")
+  before=$(entry_numbers "$listing" | sort)
+
+  if ! create_entry "$uki_file" >/dev/null; then
+    echo "Error: efibootmgr could not create an EFI boot entry for $uki_file; Boot$boot_num is unchanged" >&2
+    exit 1
+  fi
+
+  listing=$(efibootmgr)
+  after=$(entry_numbers "$listing" | sort)
+  mapfile -t new_nums < <(comm -13 <(printf '%s\n' "$before") <(printf '%s\n' "$after"))
+
+  if (( ${#new_nums[@]} != 1 )); then
+    echo "Error: expected one new EFI boot entry for $uki_file, found ${#new_nums[@]}: ${new_nums[*]}; Boot$boot_num is unchanged" >&2
+    exit 1
+  fi
+  new_num=${new_nums[0]}
+
+  if ! sudo efibootmgr --bootnum "$boot_num" --delete-bootnum >/dev/null; then
+    echo "Error: efibootmgr could not delete the old EFI boot entry Boot$boot_num; Boot$new_num also boots $uki_file now" >&2
+    exit 1
+  fi
+
+  # Give the new entry the old one's place in the boot order (creating it put
+  # it first), dropping numbers with no entry: efibootmgr rejects the whole
+  # order over one of those.
+  if [[ -n $boot_order ]]; then
+    listing=$(efibootmgr)
+    remaining=$(entry_numbers "$listing")
+    new_order=""
+
+    for num in ${boot_order//,/ }; do
+      if [[ ${num^^} == "${boot_num^^}" ]]; then
+        num=$new_num
+      fi
+      grep -qix "$num" <<<"$remaining" || continue
+      if [[ ",$new_order," != *",$num,"* ]]; then
+        new_order="${new_order:+$new_order,}$num"
+      fi
+    done
+
+    if [[ -n $new_order ]] && ! sudo efibootmgr --bootorder "$new_order" >/dev/null; then
+      echo "Error: efibootmgr could not set the boot order to $new_order; Boot$new_num boots $uki_file but is first in the order" >&2
+      exit 1
+    fi
+  fi
+
+  omarchy-state set reboot-required
+  exit 0
+fi
+
+if [[ -n $vendor_refusal ]]; then
+  echo "Error: $vendor_refusal" >&2
+  exit 1
+fi
 
 if [[ -n $existing_entry ]]; then
-  boot_num=$(echo "$existing_entry" | sed -n 's/^Boot\([0-9A-Fa-f]\+\).*/\1/p')
+  boot_num=$(entry_numbers "$existing_entry")
 
   if gum confirm "Disable direct boot (remove Omarchy EFI entry)?"; then
     echo "Removing EFI boot entry $boot_num"
@@ -46,24 +237,15 @@ if [[ -n $existing_entry ]]; then
 
   exit 0
 else
-  uki_file=$(sudo find /boot/EFI/Linux/ -name "omarchy*.efi" -printf "%f\n" 2>/dev/null | head -1)
+  uki_file=$(preferred_uki)
 
   if [[ -z $uki_file ]]; then
     echo "Error: No Omarchy UKI found in /boot/EFI/Linux/" >&2
     exit 1
   fi
 
-  boot_source=$(findmnt -n -o SOURCE /boot)
-  disk=$(echo "$boot_source" | sed 's/p\?[0-9]*$//')
-  part=$(echo "$boot_source" | grep -o 'p\?[0-9]*$' | sed 's/^p//')
-
   if gum confirm "Setup direct boot (so snapshot booting must be done via bios)?"; then
     echo "Creating EFI boot entry for $uki_file"
-
-    sudo efibootmgr --create \
-      --disk "$disk" \
-      --part "$part" \
-      --label "Omarchy" \
-      --loader "\\EFI\\Linux\\$uki_file"
+    create_entry "$uki_file"
   fi
 fi
