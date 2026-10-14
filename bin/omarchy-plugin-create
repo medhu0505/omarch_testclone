@@ -226,7 +226,9 @@ copy_entry() {
 copy_starter() {
   local source_dir="$1"
   local manifest="$2"
-  local entry source target
+  local entry source target file
+  local copied=()
+  local -A moved=()
 
   if [[ ${manifest##*/} == "manifest.json" ]]; then
     while IFS= read -r entry; do
@@ -238,12 +240,22 @@ copy_starter() {
 
   while IFS=$'\t' read -r source target; do
     copy_entry "$source_dir/$source" "$target"
+    copied+=("$stage/$target")
+    [[ $source == "$target" ]] || moved[$source]="$target"
   done < <(jq -r '
     [
       (.entryPoints[] | {source: ., target: .}),
       (.omarchy.clonePaths[]? | {source: .source, target: .target})
     ] | unique_by(.target)[] | [.source, .target] | @tsv
   ' "$manifest")
+
+  # A clone path can land somewhere other than its source (Indicators loads
+  # ../indicators/), so point the copied code at where it now lives.
+  for source in "${!moved[@]}"; do
+    while IFS= read -r -d '' file; do
+      sed -i "s|${source//./\\.}|${moved[$source]}|g" "$file"
+    done < <(rg --files-with-matches --null --fixed-strings "$source" "${copied[@]}" || true)
+  done
 }
 
 for want_kind in "${kinds[@]}"; do

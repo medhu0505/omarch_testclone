@@ -157,3 +157,15 @@ if FAKE_NO_DISCOVERY=1 create_plugin Ghost --kind bar-widget --enable >/dev/null
   fail "scaffold succeeds before the shell discovers it"
 fi
 pass "scaffold reports a plugin the shell never discovered"
+
+create_plugin Lights --kind bar-widget --from omarchy.indicators --yes >/dev/null
+lights="$PLUGINS/tester.lights"
+loader=$(grep -o 'Qt.resolvedUrl("[^"]*"' "$lights/Indicators.qml") ||
+  fail "indicators scaffold lost its component loader"
+loader_dir=${loader#Qt.resolvedUrl(\"}
+loader_dir=${loader_dir%\"}
+[[ $loader_dir != *".."* ]] || fail "indicators scaffold loads components from outside the plugin: $loader_dir"
+for file in Dnd.qml Reminder.qml; do
+  [[ -f $lights/$loader_dir$file ]] || fail "indicators scaffold cannot load $loader_dir$file"
+done
+pass "--from points moved clone paths at their copies"
