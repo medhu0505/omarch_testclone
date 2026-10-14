@@ -869,7 +869,7 @@ EOF
 chmod +x "$NOTIFY_FAKE_BIN/omarchy-notification-send"
 
 status=0
-output=$(NOTIFY_LOG="$NOTIFY_TMPDIR/notify.log" PATH="$NOTIFY_FAKE_BIN:$PATH" "$ROOT/bin/omarchy-transcode" --path "$EMPTY_MEDIA_TMPDIR" 2>&1) || status=$?
+output=$(NOTIFY_LOG="$NOTIFY_TMPDIR/notify.log" OMARCHY_PATH="$ROOT" OMARCHY_LANGUAGE_FILE="$ROOT/test/.no-language" PATH="$NOTIFY_FAKE_BIN:$PATH" "$ROOT/bin/omarchy-transcode" --path "$EMPTY_MEDIA_TMPDIR" 2>&1) || status=$?
 (( status == 1 )) || fail "transcode exits 1 when nothing matches (got $status)"
 [[ $(<"$NOTIFY_TMPDIR/notify.log") == "-g|󰧸|Nothing to transcode|No pictures or videos under $EMPTY_MEDIA_TMPDIR|" ]] || fail "transcode notifies with a glyph, headline and description when nothing matches"
 if [[ $output == *"Usage: omarchy-menu-select"* ]]; then
@@ -894,7 +894,7 @@ fi
 
 file_status=0
 PATH="$NOTIFY_FAKE_BIN:$PATH" "$ROOT/bin/omarchy-menu-file" "Pick media" "$FOUND_MEDIA_TMPDIR" "mp4" >/dev/null 2>&1 || file_status=$?
-NOTIFY_LOG="$NOTIFY_TMPDIR/notify.log" PATH="$NOTIFY_FAKE_BIN:$PATH" "$ROOT/bin/omarchy-transcode" --path "$FOUND_MEDIA_TMPDIR" >/dev/null 2>&1 || true
+NOTIFY_LOG="$NOTIFY_TMPDIR/notify.log" OMARCHY_PATH="$ROOT" OMARCHY_LANGUAGE_FILE="$ROOT/test/.no-language" PATH="$NOTIFY_FAKE_BIN:$PATH" "$ROOT/bin/omarchy-transcode" --path "$FOUND_MEDIA_TMPDIR" >/dev/null 2>&1 || true
 locked_status=0
 "$ROOT/bin/omarchy-menu-file" "Pick media" "$LOCKED_MEDIA_TMPDIR" "mp4" >/dev/null 2>&1 || locked_status=$?
 if (( EUID != 0 )); then
