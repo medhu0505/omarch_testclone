@@ -524,7 +524,7 @@ Panel {
     PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
-      blocked: arrangement.popupOpen
+      blocked: arrangement.popupOpen || arrangement.coordinateEditing
       onMoveRequested: function(dx, dy) {
         if (!root.cursorActive) { root.cursorActive = true; return }
         if (root.focusSection === "arrangement" && arrangement.keyboardEditing) { arrangement.nudge(dx, dy); return }

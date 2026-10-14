@@ -40,6 +40,23 @@ function overlaps(monitors) {
   return false
 }
 
+function connected(monitors) {
+  if (!monitors.length) return true
+  var visited = [monitors[0]], remaining = monitors.slice(1)
+  for (var i = 0; i < visited.length; i++) {
+    var a = visited[i]
+    remaining = remaining.filter(function(b) {
+      var touches = ((a.x + a.logicalWidth === b.x || b.x + b.logicalWidth === a.x)
+        && Math.max(a.y, b.y) < Math.min(a.y + a.logicalHeight, b.y + b.logicalHeight))
+        || ((a.y + a.logicalHeight === b.y || b.y + b.logicalHeight === a.y)
+        && Math.max(a.x, b.x) < Math.min(a.x + a.logicalWidth, b.x + b.logicalWidth))
+      if (touches) visited.push(b)
+      return !touches
+    })
+  }
+  return remaining.length === 0
+}
+
 function preset(monitors, name, reference, side, alignment) {
   var m = monitors.filter(function(s) { return s.name === name })[0]
   var a = monitors.filter(function(s) { return s.name === reference })[0]
@@ -90,4 +107,4 @@ function changed(original, draft) {
   return Object.keys(before).some(function(name) { return !after[name] || before[name][0] !== after[name][0] || before[name][1] !== after[name][1] })
 }
 
-if (typeof module !== "undefined") module.exports = { pair: pair, bounds: bounds, positions: positions, place: place, overlaps: overlaps, preset: preset, snap: snap, changed: changed }
+if (typeof module !== "undefined") module.exports = { pair: pair, bounds: bounds, positions: positions, place: place, overlaps: overlaps, connected: connected, preset: preset, snap: snap, changed: changed }

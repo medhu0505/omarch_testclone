@@ -42,11 +42,15 @@ Column {
   property bool preserveMessage: false
   property int cursorIndex: -1
   property bool identifying: false
+  property bool connected: true
   property var identificationScreens: Quickshell.screens
   readonly property bool popupOpen: movingPicker.popupOpen || referencePicker.popupOpen || alignmentPicker.popupOpen
+  readonly property bool coordinateEditing: xField.field.activeFocus || xField.field.contentItem.activeFocus
+                                           || yField.field.activeFocus || yField.field.contentItem.activeFocus
   readonly property bool ready: active && visible && expanded && !busy && monitors.length >= 2
-  readonly property bool canApply: ready && preview.length > 0 && Model.changed(monitors, preview)
+  readonly property bool canApply: ready && connected && preview.length > 0 && Model.changed(monitors, preview)
   readonly property var shownMonitors: preview.length ? preview : monitors
+  readonly property var selectedMonitor: shownMonitors.filter(function(m) { return m.name === root.moving })[0] || null
   readonly property var layoutBounds: dragging ? dragBounds : Model.bounds(shownMonitors)
   readonly property var screenOptions: monitors.map(function(m) { return m.name })
   readonly property var referenceOptions: screenOptions.filter(function(name) { return name !== root.moving })
@@ -55,7 +59,7 @@ Column {
     ? ["left", "center", "right"] : ["top", "center", "bottom"]
 
   readonly property var navigationItems: !expanded ? [sectionButton] : [sectionButton, identifyButton, diagram, applyButton, discardButton, refreshButton, presetsButton].concat(
-    showPresets ? [movingPicker, referencePicker, directionButtons.itemAt(0), directionButtons.itemAt(1), directionButtons.itemAt(2), directionButtons.itemAt(3), alignmentPicker] : [])
+    showPresets ? [movingPicker, referencePicker, xField, yField, directionButtons.itemAt(0), directionButtons.itemAt(1), directionButtons.itemAt(2), directionButtons.itemAt(3), alignmentPicker] : [])
   readonly property int navigationCount: navigationItems.length
 
   function indexOf(item) { return navigationItems.indexOf(item) }
@@ -84,6 +88,8 @@ Column {
     movingPicker.close()
     referencePicker.close()
     alignmentPicker.close()
+    xField.field.focus = false
+    yField.field.focus = false
     identifying = false
     identifyTimer.stop()
     keyboardEditing = false
@@ -137,6 +143,7 @@ Column {
 
   function clearPreview() {
     preview = []
+    connected = Model.connected(monitors)
     side = ""
     alignment = "top"
     error = false
@@ -162,6 +169,15 @@ Column {
     if (!ready || side === "" || alignmentOptions.indexOf(value) < 0) return
     alignment = value
     chooseSide(side)
+  }
+
+  function chooseCoordinate(axis, value) {
+    if (!ready || !selectedMonitor) return
+    var draft = Model.place(shownMonitors, moving, axis === "x" ? value : selectedMonitor.x,
+                            axis === "y" ? value : selectedMonitor.y)
+    side = ""
+    pendingPositions = Model.positions(draft)
+    request("preview")
   }
 
   function beginDrag(name, x, y) {
@@ -233,6 +249,7 @@ Column {
     else if (item === movingPicker && ready) movingPicker.open()
     else if (item === referencePicker && ready) referencePicker.open()
     else if (item === alignmentPicker && ready && side !== "") alignmentPicker.open()
+    else if ((item === xField || item === yField) && ready) { item.field.contentItem.forceActiveFocus(); item.field.contentItem.selectAll() }
     else if (item === applyButton) applyDraft()
     else if (item === discardButton) discard()
     else if (item === refreshButton) refresh()
@@ -288,15 +305,19 @@ Column {
           if (!Array.isArray(response.monitors) || !Array.isArray(response.snapshot)) throw new Error("Invalid display response")
           if (action === "preview") {
             preview = response.monitors
-            message = side ? moving + " " + side + " of " + reference + ", aligned " + alignment + ". Preview only." : "Unsaved arrangement. Apply layout to save it."
+            connected = response.connected !== false
+            message = !connected ? "Some screens are disconnected. Move them against the layout before applying."
+              : side ? moving + " " + side + " of " + reference + ", aligned " + alignment + ". Preview only." : "Unsaved arrangement. Apply layout to save it."
           } else {
             monitors = response.monitors
+            connected = response.connected !== false
             snapshot = response.snapshot
             var selected = Model.pair(monitors, moving, reference)
             moving = selected.moving
             reference = selected.reference
             if (!preserveMessage) message = monitors.length < 2
               ? "Connect and enable at least two screens to arrange them."
+              : !connected ? "Some screens are disconnected. Arrange them against a shared edge."
               : "Drag screens to match your desk. Apply saves the layout."
           }
         }
@@ -566,7 +587,10 @@ Column {
           foreground: root.foreground
           fontFamily: root.fontFamily
           hasCursor: root.cursorIndex === root.indexOf(movingPicker)
-          onChanged: function(value) { root.selectScreen(value) }
+          onChanged: function(value) {
+            root.selectScreen(value)
+            movingPicker.value = Qt.binding(function() { return root.moving })
+          }
           onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(movingPicker), movingPicker) }
         }
         Dropdown {
@@ -580,8 +604,54 @@ Column {
           foreground: root.foreground
           fontFamily: root.fontFamily
           hasCursor: root.cursorIndex === root.indexOf(referencePicker)
-          onChanged: function(value) { root.reference = value; root.side = "" }
+          onChanged: function(value) {
+            root.reference = value; root.side = ""
+            referencePicker.value = Qt.binding(function() { return root.reference })
+          }
           onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(referencePicker), referencePicker) }
+        }
+      }
+
+      Row {
+        width: parent.width
+        spacing: Style.space(8)
+        NumberField {
+          id: xField
+          objectName: "arrangementX"
+          label: "X"
+          width: (parent.width - parent.spacing) / 2
+          fieldWidth: width
+          from: -1000000
+          to: 1000000
+          value: root.selectedMonitor ? root.selectedMonitor.x : 0
+          enabled: root.ready
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+          hasCursor: root.cursorIndex === root.indexOf(xField)
+          onModified: function(value) {
+            root.chooseCoordinate("x", value)
+            xField.field.value = Qt.binding(function() { return xField.value })
+          }
+          onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(xField), xField) }
+        }
+        NumberField {
+          id: yField
+          objectName: "arrangementY"
+          label: "Y"
+          width: (parent.width - parent.spacing) / 2
+          fieldWidth: width
+          from: -1000000
+          to: 1000000
+          value: root.selectedMonitor ? root.selectedMonitor.y : 0
+          enabled: root.ready
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+          hasCursor: root.cursorIndex === root.indexOf(yField)
+          onModified: function(value) {
+            root.chooseCoordinate("y", value)
+            yField.field.value = Qt.binding(function() { return yField.value })
+          }
+          onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(yField), yField) }
         }
       }
 
@@ -624,7 +694,10 @@ Column {
         foreground: root.foreground
         fontFamily: root.fontFamily
         hasCursor: root.cursorIndex === root.indexOf(alignmentPicker)
-        onChanged: function(value) { root.chooseAlignment(value) }
+        onChanged: function(value) {
+          root.chooseAlignment(value)
+          alignmentPicker.value = Qt.binding(function() { return root.alignment })
+        }
         onHovered: function(hot) { if (hot) root.cursorRequested(root.indexOf(alignmentPicker), alignmentPicker) }
       }
     }

@@ -50,7 +50,7 @@ def logical_size(monitor):
   return math.floor(width / scale + 0.5), math.floor(height / scale + 0.5)
 
 
-def arrange(monitors, output, reference, side, alignment=None):
+def arrange(monitors, output, reference, side, alignment=None, allow_disconnected=False):
   by_name = {m['name']: m for m in monitors}
   if output == reference:
     raise RuntimeError('Choose two different screens.')
@@ -76,10 +76,10 @@ def arrange(monitors, output, reference, side, alignment=None):
     x += offset
   positions = {m['name']: (m['x'], m['y']) for m in monitors}
   positions[output] = (x, y)
-  return validate_positions(monitors, positions)
+  return validate_positions(monitors, positions, allow_disconnected)
 
 
-def validate_positions(monitors, positions):
+def validate_positions(monitors, positions, allow_disconnected=False):
   if not isinstance(positions, dict) or set(positions) != {m['name'] for m in monitors}:
     raise LayoutError('The layout must include each enabled screen exactly once.')
   if any(not isinstance(point, (list, tuple)) or len(point) != 2
@@ -93,7 +93,35 @@ def validate_positions(monitors, positions):
     bw, bh = logical_size(b)
     if ax < bx + bw and bx < ax + aw and ay < by + bh and by < ay + ah:
       raise LayoutError(f"The layout would overlap {a['name']} and {b['name']}. Move the obstructing screen first.")
+  if not allow_disconnected and len(connected_groups(monitors, positions)) > 1:
+    raise LayoutError('Every screen must touch the layout along an edge. Move the disconnected screens together before applying.')
   return {name: tuple(point) for name, point in positions.items()}
+
+
+def connected_groups(monitors, positions):
+  """Corner contact alone does not provide a path between screens."""
+  neighbors = {m['name']: set() for m in monitors}
+  for a, b in itertools.combinations(monitors, 2):
+    ax, ay = positions[a['name']]
+    bx, by = positions[b['name']]
+    aw, ah = logical_size(a)
+    bw, bh = logical_size(b)
+    if ((ax + aw == bx or bx + bw == ax) and max(ay, by) < min(ay + ah, by + bh)
+        or (ay + ah == by or by + bh == ay) and max(ax, bx) < min(ax + aw, bx + bw)):
+      neighbors[a['name']].add(b['name'])
+      neighbors[b['name']].add(a['name'])
+  remaining = set(neighbors)
+  groups = []
+  while remaining:
+    pending = [remaining.pop()]
+    group = set(pending)
+    while pending:
+      for name in neighbors[pending.pop()] & remaining:
+        remaining.remove(name)
+        group.add(name)
+        pending.append(name)
+    groups.append(group)
+  return groups
 
 
 def monitor_rules(contents):
@@ -272,6 +300,42 @@ def atomic_write(path, contents):
       temp_path.unlink()
 
 
+def publish_config(path, contents, expected):
+  """Retain the displaced file so an editor racing publication is detectable."""
+  if path.is_symlink() or not path.is_file() or path.read_text() != expected:
+    raise RuntimeError('The monitor configuration changed before saving. Try again.')
+  with tempfile.NamedTemporaryFile(dir=path.parent, prefix='.monitor-position-conflict-', delete=False) as temp:
+    replacement = Path(temp.name)
+  retain = False
+  try:
+    atomic_write(replacement, contents)
+    replacement.chmod(path.stat().st_mode & 0o777)
+    candidate = replacement.stat()
+    exchange_config(replacement, path)
+    retain = True
+    try:
+      changed = replacement.is_symlink() or not replacement.is_file() or replacement.read_text() != expected
+    except (OSError, UnicodeError):
+      changed = True
+    if changed:
+      # A later external writer may already own path. Do not replace that file.
+      current = path.lstat()
+      if (current.st_dev, current.st_ino) == (candidate.st_dev, candidate.st_ino) and path.read_text() == contents:
+        exchange_config(replacement, path)
+      raise RuntimeError(f'Concurrent monitors.lua edit. File versions were retained at {path} and {replacement}.')
+    retain = False
+  finally:
+    if not retain:
+      replacement.unlink(missing_ok=True)
+
+
+def exchange_config(replacement, path):
+  result = subprocess.run(['mv', '--exchange', '--no-copy', '-T', str(replacement), str(path)],
+                          capture_output=True, text=True, timeout=12)
+  if result.returncode:
+    raise RuntimeError(result.stderr.strip() or 'Cannot safely publish the monitor configuration.')
+
+
 def snapshot(monitors):
   return sorted((m['name'], m['x'], m['y'], m['width'], m['height'], m['scale'], m.get('transform', 0)) for m in monitors)
 
@@ -307,7 +371,9 @@ def restore_layout(monitors):
 def apply(output=None, reference=None, side=None, dry_run=False, expected_snapshot=None, alignment=None, positions=None, confirmation=None):
   config = (Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'hypr/monitors.lua').resolve(strict=True)
   # Lock a separate inode because atomic replacement changes the config inode.
-  with config.with_name('monitors.lua.monitor-position.lock').open('a') as lock:
+  state = Path(os.environ.get('XDG_STATE_HOME', Path.home() / '.local/state')) / 'omarchy'
+  state.mkdir(parents=True, exist_ok=True)
+  with (state / 'monitor-config.lock').open('a') as lock:
     try:
       fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError as error:
@@ -331,7 +397,7 @@ def apply(output=None, reference=None, side=None, dry_run=False, expected_snapsh
     atomic_write(config.with_name('monitors.lua.bak.monitor-position'), original)
     if config.read_text() != original:
       raise RuntimeError('The configuration changed while creating its backup. Try again.')
-    atomic_write(config, updated)
+    publish_config(config, updated, original)
     restored = False
     try:
       hypr('reload')
@@ -352,7 +418,7 @@ def apply(output=None, reference=None, side=None, dry_run=False, expected_snapsh
         if keep:
           wait_layout(monitors, positions)
         else:
-          atomic_write(config, original)
+          publish_config(config, original, updated)
           restored = True
           hypr('reload')
           restore_layout(monitors)
@@ -360,7 +426,7 @@ def apply(output=None, reference=None, side=None, dry_run=False, expected_snapsh
     except Exception as error:
       if config.read_text() != (original if restored else updated):
         raise RuntimeError(f'{error}\nConfiguration changed during apply; restore monitors.lua.bak.monitor-position manually.') from error
-      atomic_write(config, original)
+      publish_config(config, original, original if restored else updated)
       try:
         hypr('reload')
         restore_layout(monitors)
@@ -379,7 +445,8 @@ def layout_state(monitors, positions=None):
     x, y = positions[monitor['name']] if positions else (monitor['x'], monitor['y'])
     label = 'Built-in display' if re.match(r'^(eDP|LVDS|DSI)', monitor['name']) else (monitor.get('model') or monitor.get('description') or monitor['name'])
     layout.append(dict(name=monitor['name'], label=label, number=numbers[monitor['name']], x=x, y=y, logicalWidth=width, logicalHeight=height))
-  return {'monitors': layout, 'snapshot': snapshot(monitors)}
+  connected = len(connected_groups(monitors, positions or {m['name']: (m['x'], m['y']) for m in monitors})) <= 1
+  return {'monitors': layout, 'snapshot': snapshot(monitors), 'connected': connected}
 
 
 def trial_paths(token):
@@ -461,7 +528,10 @@ def panel_request(request):
   monitors = displays()
   if snapshot(monitors) != expected:
     raise RuntimeError('The screens changed since the preview. Refresh screens and choose the position again.')
-  return layout_state(monitors, validate_positions(monitors, positions) if positions is not None else arrange(monitors, output, reference, side, alignment))
+  # A disconnected draft can take several moves to repair. Only Apply requires
+  # one connected group; preview still rejects overlap and invalid coordinates.
+  return layout_state(monitors, validate_positions(monitors, positions, allow_disconnected=True) if positions is not None
+                      else arrange(monitors, output, reference, side, alignment, allow_disconnected=True))
 
 
 def main():

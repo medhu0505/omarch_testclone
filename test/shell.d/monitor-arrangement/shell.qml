@@ -16,6 +16,7 @@ ShellRoot {
   property bool finished: false
   property bool keyboardFixtureActive: false
   property int droppedY: 0
+  property int keyboardX: 0
   readonly property var ui: controls.item
   readonly property var secondUi: secondControls.item
   readonly property string testDir: Quickshell.env("ARRANGEMENT_TEST_DIR")
@@ -61,6 +62,8 @@ ShellRoot {
     visible: true
     PanelKeyCatcher {
       id: keyboard
+      anchors.fill: parent
+      blocked: root.ui && (root.ui.popupOpen || root.ui.coordinateEditing)
       onActivateRequested: if (root.ui) root.ui.activate(root.ui.cursorIndex)
     }
     Connections {
@@ -72,6 +75,7 @@ ShellRoot {
     TestCase { id: pointer; name: "Arrangement pointer input"; when: false }
     Loader {
       id: controls
+      parent: keyboard
       width: 380
       active: false
       source: "file://" + Quickshell.env("OMARCHY_PATH") + "/shell/plugins/panels/monitor/Arrangement.qml"
@@ -124,6 +128,7 @@ ShellRoot {
         root.check(ui.moving === "DP-2" && ui.canApply && ui.preview.length === 3, "Changing selection retains other unsaved screen moves")
         root.done("preview and selection")
         root.child("arrangementDiscard").clicked()
+        ui.selectScreen("DP-3")
         root.child("arrangementBelow").clicked()
         root.phase++
         break
@@ -137,7 +142,7 @@ ShellRoot {
       case 6:
         if (root.child("arrangementApply").text === "Keep layout") { root.check(false, "One Apply click must save without asking for Keep"); root.finish(); return }
         if (ui.busy) return
-        root.check(root.screen("DP-2").y === 1080 && ui.message.indexOf("saved") >= 0 && !ui.canApply, "Apply saves and refreshes the actual layout")
+        root.check(root.screen("DP-3").y === 1080 && ui.message.indexOf("saved") >= 0 && !ui.canApply, "Apply saves and refreshes the actual layout")
         root.done("successful Apply")
         root.configure({reloadError: true})
         root.child("arrangementLeft").clicked()
@@ -156,7 +161,7 @@ ShellRoot {
         break
       case 9:
         if (ui.busy) return
-        root.check(root.screen("DP-2").y === 1080, "Rollback restored the saved display layout")
+        root.check(root.screen("DP-3").y === 1080, "Rollback restored the saved display layout")
         root.child("arrangementLeft").clicked()
         root.phase++
         break
@@ -167,7 +172,7 @@ ShellRoot {
         break
       case 11:
         if (ui.busy) return
-        root.check(!ui.error && root.screen("DP-2").x === -1920, "Apply can be retried after rollback")
+        root.check(!ui.error && root.screen("DP-3").x === -1280, "Apply can be retried after rollback")
         root.done("rollback and retry")
         root.child("arrangementAbove").clicked()
         root.phase++
@@ -435,18 +440,18 @@ ShellRoot {
       case 51:
         if (ui.busy) return
         root.check(root.screen("DP-3").y === -720 && ui.ready, "Reopening after 21 seconds reads the saved layout without reverting")
-        root.droppedY = root.screen("DP-3").y
-        ui.nudge(0, -1)
+        root.keyboardX = root.screen("DP-3").x
+        ui.nudge(1, 0)
         root.phase++
         break
       case 52:
         if (ui.busy) return
-        root.check(ui.preview[2].y === root.droppedY - 1, "Keyboard movement changes one logical pixel")
+        root.check(ui.preview[2].x === root.keyboardX + 1, "Keyboard movement changes one logical pixel")
         root.child("arrangementDiscard").clicked()
-        root.check(!ui.canApply && ui.preview.length === 0 && root.screen("DP-3").y === root.droppedY,
+        root.check(!ui.canApply && ui.preview.length === 0 && root.screen("DP-3").x === root.keyboardX,
                    "Discard clears the draft without moving physical screens")
         root.done("precise keyboard movement and Discard")
-        ui.nudge(0, -1)
+        ui.nudge(1, 0)
         root.phase++
         break
       case 53:
@@ -462,10 +467,10 @@ ShellRoot {
         break
       case 55:
         if (ui.busy) return
-        root.check(root.screen("DP-3").y === root.droppedY - 1, "Closing during Apply still finishes saving the layout")
-        root.droppedY -= 1
+        root.check(root.screen("DP-3").x === root.keyboardX + 1, "Closing during Apply still finishes saving the layout")
+        root.keyboardX += 1
         root.done("closing during immediate Apply")
-        ui.nudge(0, -1)
+        ui.nudge(1, 0)
         root.phase++
         break
       case 56:
@@ -476,12 +481,12 @@ ShellRoot {
         break
       case 57:
         if (ui.busy) return
-        root.check(ui.error && ui.canApply && ui.preview[2].y === root.droppedY - 1 && ui.preview[1].y === 1080,
+        root.check(ui.error && ui.canApply && ui.preview[2].x === root.keyboardX + 1 && ui.preview[1].y === 1080,
                    "A rejected second preset keeps the earlier valid draft moves")
         root.child("arrangementDiscard").clicked()
         root.done("invalid preset preserves earlier draft")
         ui.selectScreen("DP-3")
-        ui.nudge(0, -1)
+        ui.nudge(1, 0)
         root.phase++
         break
       case 58:
@@ -506,6 +511,85 @@ ShellRoot {
                    "Enter finishes editing without starting the highlighted Apply action")
         root.child("arrangementDiscard").clicked()
         root.done("hover and Enter end keyboard editing safely")
+        ui.showPresets = true
+        root.keyboardFixtureActive = false
+        root.child("arrangementMoving").open()
+        root.phase++
+        break
+      case 60:
+        pointer.keyClick(Qt.Key_Up)
+        pointer.keyClick(Qt.Key_Return)
+        root.check(ui.moving === "DP-2" && root.child("arrangementMoving").value === "DP-2", "Actual dropdown selection updates moving screen")
+        ui.selectScreen("eDP-1")
+        root.check(root.child("arrangementMoving").value === "eDP-1", "Diagram selection refreshes dropdown after its own selection")
+        root.child("arrangementReference").open()
+        root.phase++
+        break
+      case 61:
+        pointer.keyClick(Qt.Key_Down)
+        pointer.keyClick(Qt.Key_Return)
+        ui.selectScreen(ui.reference)
+        root.check(root.child("arrangementReference").value === ui.reference && ui.reference !== ui.moving, "Changing moving screen refreshes the reference picker binding")
+        ui.selectScreen("DP-3")
+        ui.reference = "eDP-1"
+        ui.chooseSide("left")
+        root.phase++
+        break
+      case 62:
+        if (ui.busy) return
+        root.child("arrangementAlignment").open()
+        root.phase++
+        break
+      case 63:
+        pointer.keyClick(Qt.Key_Down)
+        pointer.keyClick(Qt.Key_Down)
+        pointer.keyClick(Qt.Key_Return)
+        root.phase++
+        break
+      case 64:
+        if (ui.busy) return
+        root.check(ui.alignment === "bottom" && root.child("arrangementAlignment").value === "bottom", "Actual alignment selection updates draft")
+        ui.discard()
+        root.check(ui.alignment === "top" && root.child("arrangementAlignment").value === "top", "Discard restores alignment dropdown binding")
+        root.done("real dropdown selection and binding restoration")
+        var y = root.child("arrangementY")
+        y.field.contentItem.forceActiveFocus()
+        y.field.contentItem.selectAll()
+        pointer.keyClick(Qt.Key_Minus); pointer.keyClick(Qt.Key_7); pointer.keyClick(Qt.Key_2); pointer.keyClick(Qt.Key_0)
+        pointer.keyClick(Qt.Key_Return)
+        root.phase++
+        break
+      case 65:
+        if (ui.busy) return
+        var x = root.child("arrangementX")
+        x.field.contentItem.forceActiveFocus()
+        x.field.contentItem.selectAll()
+        pointer.keyClick(Qt.Key_1); pointer.keyClick(Qt.Key_2); pointer.keyClick(Qt.Key_3)
+        pointer.keyClick(Qt.Key_Return)
+        root.phase++
+        break
+      case 66:
+        if (ui.busy) return
+        root.check(ui.preview[2].x === 123 && ui.preview[2].y === -720 && ui.canApply, "Typed X/Y builds a connected read-only preview")
+        ui.discard()
+        root.check(root.child("arrangementX").field.value === root.screen("DP-3").x, "Discard resets the numeric editor to live geometry")
+        root.done("exact X/Y input and Discard")
+        ui.selectScreen("DP-2")
+        ui.reference = "eDP-1"
+        ui.chooseCoordinate("x", 6000)
+        root.phase++
+        break
+      case 67:
+        if (ui.busy) return
+        root.check(!ui.connected && !ui.canApply && ui.message.indexOf("disconnected") >= 0, "An isolated screen keeps a draft but disables Apply")
+        ui.chooseCoordinate("x", 0)
+        root.phase++
+        break
+      case 68:
+        if (ui.busy) return
+        root.check(ui.connected && ui.canApply && ui.preview[1].x === 0 && ui.preview[1].y === 1080, "A subsequent move repairs the disconnected layout")
+        root.done("disconnected drafts and whole-layout repair")
+        ui.discard()
         root.finish()
         break
       }

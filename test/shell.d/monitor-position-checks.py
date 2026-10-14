@@ -1,6 +1,7 @@
 """Geometry, Lua preservation and transaction regressions for monitor positioning."""
 
 import copy
+import fcntl
 import importlib.util
 import json
 import os
@@ -100,6 +101,24 @@ class GeometryTests(unittest.TestCase):
     self.assertEqual(position.arrange(screens, 'DP-2', 'DP-1', 'right', 'top')['DP-2'], (1920, 0))
     with self.assertRaisesRegex(RuntimeError, 'overlap'):
       position.arrange(screens, 'DP-2', 'DP-1', 'right', 'bottom')
+
+  def test_middle_screen_move_cannot_isolate_a_third_screen(self):
+    screens = [monitor('DP-1'), monitor('DP-2', 1920), monitor('DP-3', 3840)]
+    with self.assertRaisesRegex(position.LayoutError, 'Every screen must touch'):
+      position.arrange(screens, 'DP-2', 'DP-1', 'below')
+
+  def test_contact_requires_a_shared_edge_not_a_corner(self):
+    screens = [monitor('DP-1'), monitor('DP-2', 1920)]
+    with self.assertRaisesRegex(position.LayoutError, 'touch'):
+      position.validate_positions(screens, {'DP-1': (0, 0), 'DP-2': (1920, 1080)})
+    self.assertEqual(position.validate_positions(screens, {'DP-1': (-1920, -123), 'DP-2': (0, 0)})['DP-2'], (0, 0))
+
+  def test_connectivity_follows_scaled_rotated_edges(self):
+    screens = [monitor('DP-1', width=3840, height=2160, scale=2),
+               monitor('DP-2', width=2560, height=1440, scale=1.25, transform=1),
+               monitor('DP-3', width=1280, height=720)]
+    layout = {'DP-1': (0, 0), 'DP-2': (1920, 123), 'DP-3': (3072, 900)}
+    self.assertEqual(position.validate_positions(screens, layout), layout)
 
 
 class ConfigTests(unittest.TestCase):
@@ -201,12 +220,85 @@ class TransactionTests(unittest.TestCase):
     self.config.write_text(self.original)
     self.config.chmod(0o640)
     self.screens = [monitor('DP-1'), monitor('DP-2', 1920)]
-    self.environment = patch.dict(os.environ, {'XDG_CONFIG_HOME': str(self.config_home)})
+    self.environment = patch.dict(os.environ, {'XDG_CONFIG_HOME': str(self.config_home), 'XDG_STATE_HOME': str(self.config_home / 'state')})
     self.environment.start()
     self.addCleanup(self.environment.stop)
 
   def run_apply(self, **kwargs):
     return position.apply('DP-2', 'DP-1', 'left', **kwargs)
+
+
+  def test_external_edit_at_publication_is_retained(self):
+    exchange = position.exchange_config
+    edited = self.original + '-- editor saved at publication\n'
+    def racing_exchange(replacement, path):
+      if path == self.config and self.config.read_text() == self.original:
+        self.config.write_text(edited)
+      exchange(replacement, path)
+    with patch.object(position, 'displays', return_value=self.screens), patch.object(position, 'hypr', return_value=''), patch.object(position, 'exchange_config', side_effect=racing_exchange):
+      with self.assertRaisesRegex(RuntimeError, 'Concurrent monitors.lua edit'):
+        self.run_apply()
+    self.assertEqual(self.config.read_text(), edited)
+    retained = list(self.config.parent.glob('.monitor-position-conflict-*'))
+    self.assertEqual(len(retained), 1)
+    self.assertIn('Position saved', retained[0].read_text())
+
+  def test_external_edit_at_rollback_is_retained(self):
+    exchange = position.exchange_config
+    calls = 0
+    edited = '-- editor saved at rollback\n'
+    def racing_exchange(replacement, path):
+      nonlocal calls
+      calls += 1
+      if calls == 2:
+        self.config.write_text(edited)
+      exchange(replacement, path)
+    with patch.object(position, 'displays', return_value=self.screens), patch.object(position, 'hypr', return_value=''), patch.object(position, 'wait_layout', side_effect=RuntimeError('ignored apply')), patch.object(position, 'exchange_config', side_effect=racing_exchange):
+      with self.assertRaisesRegex(RuntimeError, 'Concurrent monitors.lua edit'):
+        self.run_apply()
+    self.assertEqual(self.config.read_text(), edited)
+    self.assertTrue(list(self.config.parent.glob('.monitor-position-conflict-*')))
+
+  def test_symlink_racing_publication_does_not_overwrite_its_target(self):
+    target = self.config_home / 'personal.lua'
+    target.write_text('-- unrelated file\n')
+    exchange = position.exchange_config
+    raced = False
+    def racing_exchange(replacement, path):
+      nonlocal raced
+      if not raced:
+        raced = True
+        path.unlink()
+        path.symlink_to(target)
+      exchange(replacement, path)
+    with patch.object(position, 'displays', return_value=self.screens), patch.object(position, 'hypr', return_value=''), patch.object(position, 'exchange_config', side_effect=racing_exchange):
+      with self.assertRaisesRegex(RuntimeError, 'Concurrent monitors.lua edit'):
+        self.run_apply()
+    self.assertTrue(self.config.is_symlink())
+    self.assertEqual(target.read_text(), '-- unrelated file\n')
+
+  def test_apply_respects_the_scaling_config_lock(self):
+    state = self.config_home / 'state/omarchy'
+    state.mkdir(parents=True)
+    with (state / 'monitor-config.lock').open('a') as lock:
+      fcntl.flock(lock, fcntl.LOCK_EX)
+      with self.assertRaisesRegex(RuntimeError, 'in progress'):
+        self.run_apply()
+    self.assertEqual(self.config.read_text(), self.original)
+
+  def test_disconnected_preview_can_be_repaired_before_apply(self):
+    screens = [monitor('DP-1'), monitor('DP-2', 1920), monitor('DP-3', 3840)]
+    draft = {'DP-1': [0, 0], 'DP-2': [0, 1080], 'DP-3': [3840, 0]}
+    request = dict(action='preview', positions=draft, snapshot=position.snapshot(screens))
+    with patch.object(position, 'displays', return_value=screens), patch.object(position, 'hypr', return_value=''), patch.object(position, 'wait_layout'):
+      self.assertFalse(position.panel_request(request)['connected'])
+      with self.assertRaisesRegex(position.LayoutError, 'touch'):
+        position.panel_request(dict(request, action='apply'))
+      self.assertEqual(self.config.read_text(), self.original)
+      draft['DP-3'] = [1920, 1080]
+      self.assertTrue(position.panel_request(request)['connected'])
+      position.panel_request(dict(request, action='apply'))
+    self.assertEqual(evaluate(self.config.read_text())['DP-3', 'position'], '1920x1080')
 
   def test_panel_preview_is_read_only_and_returns_logical_geometry(self):
     screens = [monitor('DP-1', width=3840, height=2160, scale=2),
