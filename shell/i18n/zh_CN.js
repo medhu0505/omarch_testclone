@@ -47,6 +47,14 @@ var labels = {
   "No adapter": "没有适配器", "No Bluetooth adapter": "没有蓝牙适配器"
 }
 
+// True only for Simplified Chinese locales: zh, zh_CN, zh_SG, zh_Hans, ...
+// zh_TW / zh_HK / zh_MO / zh_Hant are Traditional and must NOT match.
+// LANGUAGE is a colon-separated priority list, so only its first entry counts.
+function isSimplified(locale) {
+  var s = String(locale || "").toLowerCase().split(":")[0].split(".")[0].replace(/-/g, "_")
+  return s === "zh" || /^zh_(cn|sg|hans)\b/.test(s) || /^zh_hans_/.test(s)
+}
+
 function translate(value) {
   var text = String(value || "")
   return labels[text] || text
@@ -66,4 +74,4 @@ function translateItems(items) {
   return out
 }
 
-if (typeof module !== "undefined") module.exports = { labels: labels, translate: translate, translateItems: translateItems }
+if (typeof module !== "undefined") module.exports = { labels: labels, isSimplified: isSimplified, translate: translate, translateItems: translateItems }

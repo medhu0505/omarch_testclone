@@ -13,9 +13,10 @@ Item {
   // Injected by omarchy-shell when this plugin is summoned.
   property string omarchyPath: Quickshell.env("OMARCHY_PATH")
   // Set OMARCHY_UI_LANGUAGE=en to force English, or zh-CN to force Chinese.
-  // With no override, the desktop LANG is used.
+  // With no override, the desktop LANG is used. Simplified only: zh_TW /
+  // zh_HK / zh_MO / zh_Hant are Traditional and stay on English for now.
   readonly property string uiLanguage: Quickshell.env("OMARCHY_UI_LANGUAGE") || Quickshell.env("LANGUAGE") || Quickshell.env("LANG") || "en_US"
-  readonly property bool chineseUi: uiLanguage.toLowerCase().indexOf("zh") === 0
+  readonly property bool chineseUi: ZhCN.isSimplified(uiLanguage)
   property var shell: null
   property var manifest: null
 

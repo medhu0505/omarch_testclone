@@ -8,7 +8,9 @@ Item {
 
   property bool opened: false
   property string message: ""
-  readonly property bool chineseUi: (Quickshell.env("OMARCHY_UI_LANGUAGE") || Quickshell.env("LANGUAGE") || Quickshell.env("LANG") || "").toLowerCase().indexOf("zh") === 0
+  // Simplified Chinese only: zh_TW / zh_HK / zh_MO / zh_Hant are Traditional
+  // and intentionally stay on the English UI until a zh_TW pack exists.
+  readonly property bool chineseUi: ZhCN.isSimplified(Quickshell.env("OMARCHY_UI_LANGUAGE") || Quickshell.env("LANGUAGE") || Quickshell.env("LANG") || "")
   property string cancelText: chineseUi ? ZhCN.translate("Cancel") : "Cancel"
   property string confirmText: chineseUi ? ZhCN.translate("Confirm") : "Confirm"
   property int selectedIndex: 1
