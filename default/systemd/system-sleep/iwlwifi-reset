@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Intel BE200/BE211 Wi-Fi 7 cards fail to recover their PCIe link from D3cold
+# Intel BE200 (8086:272b) Wi-Fi 7 cards fail to recover their PCIe link from D3cold
 # on modern standby (s2idle), causing the PCIe bridge to timeout and driver crash.
 # Unload before suspend and reload after wake to cleanly re-enumerate the device.
 
@@ -22,12 +22,12 @@ run_modprobe() {
 }
 
 is_affected_device() {
-  lspci -nn 2>/dev/null | grep -qE '\[8086:(e440|272b)\]'
+  lspci -nn 2>/dev/null | grep -q '\[8086:272b\]'
 }
 
 case "$1" in
   pre)
-    # Only unload before suspend on affected BE200/BE211 hardware, not on full hibernate
+    # Only unload before suspend on affected BE200 hardware, not on full hibernate
     if [[ $sleep_action != "hibernate" ]] && is_affected_device && lsmod | grep -q "^iwlwifi"; then
       log "Pre-suspend: unloading wifi drivers"
       opmode="iwlwifi"
@@ -78,7 +78,7 @@ case "$1" in
         log "Failed to reload iwlwifi on resume"
       fi
     elif ! lsmod | grep -q "^iwlwifi" && is_affected_device; then
-      log "Post-resume: reloading iwlwifi (Intel BE200/BE211 detected)"
+      log "Post-resume: reloading iwlwifi (Intel BE200 detected)"
       run_modprobe iwlwifi || true
     fi
     ;;

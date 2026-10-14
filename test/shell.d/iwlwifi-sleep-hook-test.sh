@@ -89,21 +89,21 @@ grep -Fx 'modprobe -r iwlmld' "$tmp_dir/calls" >/dev/null || fail "pre suspend u
 grep -Fx 'modprobe -r iwlwifi' "$tmp_dir/calls" >/dev/null || fail "pre suspend unloads iwlwifi"
 pass "pre suspend with BE200 unloads modules and records state"
 
-# Test 2: pre suspend with BE211 (8086:e440) and iwlmvm selects, unloads, records, and restores opmode
-setup_env "iwlmvm 123 0\niwlwifi 456 1 iwlmvm" "$be211_pci"
+# Test 2: pre suspend with BE200 and iwlmvm selects, unloads, records, and restores opmode
+setup_env "iwlmvm 123 0\niwlwifi 456 1 iwlmvm" "$be200_pci"
 run_hook pre suspend
 
-[[ -f $tmp_dir/run/iwlwifi-suspended ]] || fail "pre suspend creates state file for BE211 with iwlmvm"
+[[ -f $tmp_dir/run/iwlwifi-suspended ]] || fail "pre suspend creates state file for BE200 with iwlmvm"
 [[ $(<"$tmp_dir/run/iwlwifi-suspended") == "iwlmvm" ]] || fail "state file records iwlmvm opmode"
-grep -Fx 'modprobe -r iwlmvm' "$tmp_dir/calls" >/dev/null || fail "pre suspend unloads iwlmvm on BE211"
-grep -Fx 'modprobe -r iwlwifi' "$tmp_dir/calls" >/dev/null || fail "pre suspend unloads iwlwifi on BE211"
+grep -Fx 'modprobe -r iwlmvm' "$tmp_dir/calls" >/dev/null || fail "pre suspend unloads iwlmvm on BE200"
+grep -Fx 'modprobe -r iwlwifi' "$tmp_dir/calls" >/dev/null || fail "pre suspend unloads iwlwifi on BE200"
 
 # Verify subsequent restore on post-resume
 run_hook post suspend
 [[ ! -f $tmp_dir/run/iwlwifi-suspended ]] || fail "post suspend cleans up state file for iwlmvm"
 grep -Fx 'modprobe iwlwifi' "$tmp_dir/calls" >/dev/null || fail "post suspend reloads iwlwifi"
 grep -Fx 'modprobe iwlmvm' "$tmp_dir/calls" >/dev/null || fail "post suspend reloads iwlmvm"
-pass "pre suspend with BE211 and iwlmvm unloads, records, and restores opmode"
+pass "pre suspend with BE200 and iwlmvm unloads, records, and restores opmode"
 
 # Test 3: post suspend reloads iwlwifi then iwlmld and removes state file on success
 setup_env "" "$be200_pci"
@@ -146,6 +146,18 @@ run_hook pre suspend
 [[ ! -f $tmp_dir/run/iwlwifi-suspended ]] || fail "pre suspend must not touch AX210"
 [[ ! -s $tmp_dir/calls ]] || fail "pre suspend must not unload AX210 drivers"
 pass "pre suspend skips unaffected Intel AX210 hardware"
+
+# Test 7a: BE211 (8086:e440) has not shown the link hang, so it is left alone
+setup_env "iwlmvm 123 0\niwlwifi 456 1 iwlmvm" "$be211_pci"
+run_hook pre suspend
+
+[[ ! -f $tmp_dir/run/iwlwifi-suspended ]] || fail "pre suspend must not touch BE211"
+[[ ! -s $tmp_dir/calls ]] || fail "pre suspend must not unload BE211 drivers"
+
+setup_env "" "$be211_pci"
+run_hook post suspend
+[[ ! -s $tmp_dir/calls ]] || fail "post fallback must not load iwlwifi on BE211"
+pass "hook skips BE211 hardware"
 
 # Test 8: pre hibernate does not unload drivers
 setup_env "iwlmld 123 0\niwlwifi 456 1 iwlmld" "$be200_pci"
@@ -213,6 +225,22 @@ grep -q '^install -D -m 0755 -o root -g root ' "$tmp_dir/calls" || fail "install
 pass "hardware installer installs iwlwifi-reset hook for BE200"
 rm -rf "$inst_dir"
 
+# Test 11a: installation script keeps the EHT fix but not the hook on BE211
+inst_dir=$(mktemp -d)
+mkdir -p "$inst_dir/etc/modprobe.d" "$inst_dir/usr/lib/systemd/system-sleep"
+(
+  export OMARCHY_PATH="$ROOT"
+  export PATH="$tmp_dir/bin:$PATH"
+  setup_env "" "$be211_pci"
+  sed -e "s|/etc/modprobe.d|$inst_dir/etc/modprobe.d|g" \
+      -e "s|/usr/lib/systemd/system-sleep|$inst_dir/usr/lib/systemd/system-sleep|g" \
+      "$ROOT/install/hardware/intel/fix-wifi7-eht.sh" | bash
+)
+[[ -f $inst_dir/etc/modprobe.d/iwlwifi-disable-eht.conf ]] || fail "installer still disables EHT on BE211"
+[[ ! -f $inst_dir/usr/lib/systemd/system-sleep/iwlwifi-reset ]] || fail "installer must not install iwlwifi-reset hook on BE211"
+pass "hardware installer skips iwlwifi-reset hook for BE211"
+rm -rf "$inst_dir"
+
 # Test 12: migration installs hook on BE200 system
 migration="$ROOT/migrations/1791994565.sh"
 [[ -f $migration ]] || fail "migration 1791994565.sh exists"
@@ -255,5 +283,10 @@ run_migration "$ax210_pci"
 [[ ! -f $mig_dir/system-sleep/iwlwifi-reset ]] || fail "migration must not install hook on AX210"
 [[ ! -s $mig_dir/calls ]] || fail "migration must not invoke sudo on AX210"
 pass "migration no-ops on unaffected hardware"
+
+run_migration "$be211_pci"
+[[ ! -f $mig_dir/system-sleep/iwlwifi-reset ]] || fail "migration must not install hook on BE211"
+[[ ! -s $mig_dir/calls ]] || fail "migration must not invoke sudo on BE211"
+pass "migration no-ops on BE211"
 
 rm -rf "$mig_dir"
