@@ -795,7 +795,7 @@ assert_bypass() {
   assert_launched "$agent" "skips permission prompts" "$@"
 }
 
-assert_launch dsh env DSH_PERMISSION_MODE=danger-full-access dsh headless -- "Review this project"
+assert_launch dsh env DSH_PERMISSION_MODE=danger-full-access dsh headless -- -- "Review this project"
 assert_launch pi pi "Review this project"
 assert_launch omp omp --auto-approve -- "Review this project"
 assert_launch opencode opencode --auto --prompt "Review this project"
@@ -812,7 +812,7 @@ assert_launch copilot copilot --allow-all --interactive "Review this project"
 assert_launch kimi kimi --prompt "Review this project"
 printf '%s\n' dsh >"$agent_file"
 omarchy-agent-prompt '-n --help; echo literal'
-assert_launched dsh "keeps an option-like prompt literal" env DSH_PERMISSION_MODE=danger-full-access dsh headless -- '-n --help; echo literal'
+assert_launched dsh "keeps an option-like prompt literal" env DSH_PERMISSION_MODE=danger-full-access dsh headless -- -- '-n --help; echo literal'
 
 pass "agent launcher adapts initial prompts for every supported agent"
 
