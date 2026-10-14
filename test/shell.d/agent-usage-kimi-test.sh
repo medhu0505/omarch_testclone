@@ -52,7 +52,9 @@ legacy_dir = test_home / "home" / ".kimi" / "credentials"
 code_dir.mkdir(parents=True, exist_ok=True)
 legacy_dir.mkdir(parents=True, exist_ok=True)
 (legacy_dir / "kimi-code.json").write_text("{}")
+del os.environ["KIMI_CODE_HOME"]
 summary["legacyFallback"] = scanner.credentials_dir() == legacy_dir
+os.environ["KIMI_CODE_HOME"] = str(test_home / "kimi-code")
 (code_dir / "kimi-code.json").write_text("{}")
 summary["codeStorePreferred"] = scanner.credentials_dir() == code_dir
 
@@ -60,7 +62,6 @@ summary["codeStorePreferred"] = scanner.credentials_dir() == code_dir
 # the rotated single-use refresh token is persisted back.
 scanner.CREDENTIALS_DIR = code_dir
 scanner.CREDENTIALS_PATH = code_dir / "kimi-code.json"
-scanner.CREDENTIALS_LOCK = code_dir / "kimi-code.lock"
 
 fresh = {"access_token": "at_fresh", "refresh_token": "rt_1", "expires_at": time.time() + 3600}
 scanner.CREDENTIALS_PATH.write_text(json.dumps(fresh))
@@ -116,6 +117,7 @@ out = io.StringIO()
 with redirect_stdout(out):
   scanner.main()
 summary["record"] = json.loads(out.getvalue())
+summary["quotaOnly"] = not summary["record"]["hasLocalStats"] and not summary["record"]["hasPromptStats"]
 
 print(json.dumps(summary, separators=(",", ":")))
 PY
@@ -144,3 +146,6 @@ pass "Kimi collector renders usage windows into display rows"
 [[ $(jq -r '.record.ready | tostring' <<<"$result") == "true" && $(jq -r '.record.id' <<<"$result") == "kimi" ]] ||
   fail "Kimi collector prints the display-ready record contract" "$result"
 pass "Kimi collector prints the display-ready record contract"
+
+[[ $(jq -r '.quotaOnly' <<<"$result") == "true" ]] || fail "Kimi quota is not local usage statistics" "$result"
+pass "Kimi quota is not local usage statistics"
