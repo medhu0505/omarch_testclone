@@ -2,16 +2,18 @@
 
 ### Autentifikacija otiskom prsta
 
-Mnoga prijenosna računala dolaze sa senzorom otiska prsta za autentifikaciju. To možete koristiti s Omarchyjem pokretanjem _Postavke > Security > Fingerprint_ u Omarchy izborniku (`Super + Space`).
+Mnoga prijenosna računala dolaze sa senzorom otiska prsta za autentifikaciju. To možete koristiti s Omarchyjem pokretanjem _Postavljanje > Sigurnost > Otisak prsta_ u izborniku Omarchy (`Super + Space`).
 
-Time se instalira paket za otisak prsta, prikuplja vaš otisak, provjerava ga i spremni ste koristiti otisak prsta za otključavanje sa zaslona za zaključavanje (koji možete pokrenuti s `Super + Ctrl + L`), ulazak u sudo način i odobravanje upita sustava.
+Time će se instalirati paket za otisak prsta, zabilježiti vaš otisak i provjeriti ga, pa ćete biti spremni koristiti otisak prsta za otključavanje sa zaslona zaključavanja (koji možete pokrenuti sa `Super + Ctrl + L`), za ulazak u sudo način rada i za autorizaciju upita sustava.
 
-Kad je poklopac vašeg prijenosnog računala zatvoren, upit za otisak prsta automatski se preskače, pa idete izravno na upit za lozinku umjesto da čekate senzor koji ne možete dosegnuti. Ako inače trebate raditi na vanjskoj tipkovnici koja nema senzor, samo pritisnite `CTRL + C` kad vam se zatraži otisak prsta tijekom `sudo`.
+Kada zaslon zaključavanja isključi zaslon, senzor miruje kako bi uštedio energiju, pa probudite zaslon bilo kojom tipkom ili dodirnom pločicom prije nego što ga dodirnete.
 
-Autentifikaciju otiskom prsta možete ukloniti pod _Ukloni > Security > Fingerprint_ u Omarchy izborniku.
+Kada je poklopac vašeg prijenosnog računala zatvoren, upit za otisak prsta automatski se preskače, pa idete ravno na upit za lozinku umjesto da čekate senzor do kojeg ne možete doći. Ako inače morate raditi na vanjskoj tipkovnici koja nema senzor, samo pritisnite `CTRL + C` kada se od vas zatraži otisak prsta tijekom `sudo`.
+
+Autentifikaciju otiskom prsta možete ukloniti pod _Ukloni > Sigurnost > Otisak prsta_ u izborniku Omarchy.
 
 ### Fido2 autentifikacija
 
-Ako koristite Fido2 uređaj, možete ga postaviti za `sudo` autentifikaciju pomoću _Postavke > Security > Fido2_ u Omarchy izborniku (`Super + Space`). Pokriva, doduše, `sudo` i upite za odobrenje sustava, ali ne i otključavanje računala.
+Ako koristite Fido2 uređaj, možete ga postaviti za `sudo` autentifikaciju pomoću _Postavljanje > Sigurnost > Fido2_ u izborniku Omarchy (`Super + Space`). To međutim pokriva `sudo` i upite za autorizaciju sustava, a ne otključavanje vašeg računala.
 
-Fido2 autentifikaciju možete ukloniti pod _Ukloni > Security > Fido2_ u Omarchy izborniku.
+Fido2 autentifikaciju možete ukloniti pod _Ukloni > Sigurnost > Fido2_ u izborniku Omarchy.

@@ -1,17 +1,19 @@
-# Qurilma autentifikatsiyasi
+# Apparat autentifikatsiyasi
 
-### Barmoq izi autentifikatsiyasi
+### Barmoq izi bilan autentifikatsiya
 
-Koʻplab noutbuklar autentifikatsiya qilish uchun barmoq izi sensori bilan keladi. Siz buni Omarchy menyusida (`Super + Space`) _Sozlash > Xavfsizlik > Barmoq izi_ ni ishga tushirib Omarchy bilan ishlatishingiz mumkin.
+Ko'plab noutbuklar autentifikatsiya qilish uchun barmoq izi sensori bilan keladi. Buni Omarchy-da Omarchy menyusida (`Super + Space`) _O'rnatish > Xavfsizlik > Barmoq izi_-ni ishga tushirish orqali ishlatishingiz mumkin.
 
-Bu barmoq izi paketini oʻrnatadi, izingizni oladi, uni tekshiradi va siz qulf ekranidan ochish (uni `Super + Ctrl + L` bilan ishga tushirishingiz mumkin), sudo rejimiga kirish va tizim soʻrovlarini avtorizatsiyalash uchun barmoq izingizdan foydalanishga tayyor boʻlasiz.
+Bu barmoq izi paketini o'rnatadi, izingizni oladi, uni tekshiradi va siz barmoq izingizdan qulflangan ekrandan qulfni ochish (uni `Super + Ctrl + L` bilan ishga tushirishingiz mumkin), sudo rejimiga kirish va tizim so'rovlarini tasdiqlash uchun foydalanishga tayyor bo'lasiz.
 
-Noutbuk qopqogʻi yopiq boʻlganda, barmoq izi soʻrovi avtomatik oʻtkazib yuboriladi, shuning uchun yetib boʻlmaydigan sensorni kutish oʻrniga toʻgʻridan-toʻgʻri parol soʻroviga oʻtasiz. Agar boshqa bir holda sensori boʻlmagan tashqi klaviaturada ishlashingiz kerak boʻlsa, `sudo` paytida barmoq izingiz soʻralganda faqat `CTRL + C` ni bosing.
+Qulflangan ekran displeyni o'chirganidan so'ng, sensor quvvatni tejash uchun dam oladi, shuning uchun unga tegishdan oldin ekranni istalgan tugma yoki touchpad bilan uyg'oting.
 
-Siz Omarchy menyusida _Olib tashlash > Xavfsizlik > Barmoq izi_ ostida barmoq izi autentifikatsiyasini olib tashlashingiz mumkin.
+Noutbukingiz qopqog'i yopiq bo'lganda, barmoq izi so'rovi avtomatik ravishda o'tkazib yuboriladi, shuning uchun yetib bo'lmaydigan sensorni kutish o'rniga to'g'ridan-to'g'ri parol so'roviga o'tasiz. Agar aks holda sensori bo'lmagan tashqi klaviaturada ishlashingiz kerak bo'lsa, `sudo` paytida barmoq izingiz so'ralganda shunchaki `CTRL + C` tugmalarini bosing.
+
+Barmoq izi bilan autentifikatsiyani Omarchy menyusidagi _O'chirish > Xavfsizlik > Barmoq izi_ bo'limida o'chirishingiz mumkin.
 
 ### Fido2 autentifikatsiyasi
 
-Agar Fido2 qurilmasidan foydalansangiz, uni Omarchy menyusida (`Super + Space`) _Sozlash > Xavfsizlik > Fido2_ yordamida `sudo` autentifikatsiyasi uchun sozlashingiz mumkin. Ammo bu `sudo` va tizim avtorizatsiyasi soʻrovlarini qamrab oladi, kompyuterni ochishni emas.
+Agar siz Fido2 qurilmasidan foydalanayotgan bo'lsangiz, uni Omarchy menyusidagi (`Super + Space`) _O'rnatish > Xavfsizlik > Fido2_ yordamida `sudo` autentifikatsiyasi uchun sozlashingiz mumkin. Biroq, bu `sudo` va tizim avtorizatsiyasi so'rovlarini qamrab oladi, kompyuteringiz qulfini ochishni emas.
 
-Siz Omarchy menyusida _Olib tashlash > Xavfsizlik > Fido2_ ostida fido2 autentifikatsiyasini olib tashlashingiz mumkin.
+fido2 autentifikatsiyasini Omarchy menyusidagi _O'chirish > Xavfsizlik > Fido2_ bo'limida o'chirishingiz mumkin.

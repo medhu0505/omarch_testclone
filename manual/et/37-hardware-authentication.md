@@ -1,17 +1,19 @@
-# Riistvaraline autentimine
+# Riistvara autentimine
 
-### Sõrmejäljega autentimine
+### Sõrmejälje autentimine
 
-Paljudel sülearvutitel on autentimiseks sõrmejäljeskanner. Sa saad seda Omarchyga kasutada, käivitades Omarchy menüüs (`Super + Space`) jaotise _Seaded > Turvalisus > Sõrmejälg_.
+Paljudel sülearvutitel on autentimiseks sõrmejäljesensor. Saad seda Omarchyga kasutada, kui käivitad Omarchy menüüs (`Super + Space`) valiku _Setup > Security > Fingerprint_.
 
-See paigaldab sõrmejälje paketi, kogub sinu jälje, kinnitab selle ja saad sõrmejälge kasutada lukuekraanilt avamiseks (mille saad käivitada klahvikombinatsiooniga `Super + Ctrl + L`), sudo režiimi sisenemiseks ja süsteemipäringute volitamiseks.
+See installib sõrmejälje paketi, salvestab su jälje, kontrollib selle üle ja ongi kõik valmis, et saaksid sõrmejälge kasutada lukustuskuvalt avamiseks (mille saad esile kutsuda klahvidega `Super + Ctrl + L`), sudo režiimi sisenemiseks ja süsteemi päringute autoriseerimiseks.
 
-Kui sinu sülearvuti kaas on suletud, jäetakse sõrmejälje päring automaatselt vahele, nii et jõuad otse parooli päringuni, selle asemel et oodata skannerit, millele ligi ei pääse. Kui pead muul põhjusel töötama välise klaviatuuriga, millel skannerit pole, vajuta lihtsalt `CTRL + C`, kui `sudo` ajal sinult sõrmejälge küsitakse.
+Kui lukustuskuva on ekraani välja lülitanud, puhkab sensor energia säästmiseks, seega ärata ekraan enne selle puudutamist mis tahes klahvi või puuteplaadiga.
 
-Sõrmejäljega autentimise saad eemaldada Omarchy menüüs jaotise _Eemalda > Turvalisus > Sõrmejälg_ all.
+Kui su sülearvuti kaas on suletud, jäetakse sõrmejälje päring automaatselt vahele, nii et jõuad otse parooli päringu juurde, selle asemel et oodata sensori taga, milleni sa ei ulatu. Kui pead muul juhul töötama välise klaviatuuriga, millel sensorit ei ole, vajuta lihtsalt `CTRL + C`, kui sult küsitakse `sudo` ajal sõrmejälge.
+
+Sõrmejälje autentimise saad eemaldada Omarchy menüüs valiku _Remove > Security > Fingerprint_ alt.
 
 ### Fido2 autentimine
 
-Kui kasutad Fido2 seadet, saad selle seadistada `sudo` autentimiseks Omarchy menüüs (`Super + Space`) jaotise _Seaded > Turvalisus > Fido2_ kaudu. See katab `sudo` ja süsteemi autoriseerimise päringuid, aga mitte arvuti avamist.
+Kui kasutad Fido2 seadet, saad selle seadistada `sudo` autentimiseks Omarchy menüüs (`Super + Space`) valiku _Setup > Security > Fido2_ abil. See katab siiski `sudo` ja süsteemi autoriseerimise päringud, mitte arvuti avamist.
 
-Fido2 autentimise saad eemaldada Omarchy menüüs jaotise _Eemalda > Turvalisus > Fido2_ all.
+Saad fido2 autentimise eemaldada Omarchy menüüs valiku _Remove > Security > Fido2_ alt.

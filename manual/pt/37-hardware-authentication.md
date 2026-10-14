@@ -2,16 +2,18 @@
 
 ### Autenticação por impressão digital
 
-Muitos portáteis vêm com um sensor de impressões digitais para autenticação. Pode usá-lo com o Omarchy executando _Configurar > Segurança > Impressão digital_ no menu Omarchy (`Super + Space`).
+Muitos portáteis trazem um sensor de impressão digital para fazer a autenticação. Podes usá-lo com o Omarchy ao executar _Setup > Security > Fingerprint_ no menu do Omarchy (`Super + Space`).
 
-Isso instala o pacote de impressões digitais, recolhe a sua impressão, verifica-a, e fica pronto para usar a sua impressão digital para desbloquear a partir do ecrã de bloqueio (que pode acionar com `Super + Ctrl + L`), entrar no modo sudo e autorizar pedidos do sistema.
+Isso instala o pacote de impressão digital, recolhe a tua impressão, verifica-a, e ficas pronto para usar a tua impressão digital para desbloquear a partir do ecrã de bloqueio (que podes ativar com `Super + Ctrl + L`), entrar no modo sudo e autorizar pedidos do sistema.
 
-Quando a tampa do seu portátil está fechada, o pedido de impressão digital é automaticamente ignorado, por isso vai diretamente ao pedido de palavra-passe em vez de esperar por um sensor ao qual não consegue chegar. Se, de outra forma, precisar de trabalhar num teclado externo que não tenha sensor, basta premir `CTRL + C` quando lhe for pedida a impressão digital durante o `sudo`.
+Assim que o ecrã de bloqueio desligar o ecrã, o sensor fica em repouso para poupar energia, por isso acorda o ecrã com qualquer tecla ou com o touchpad antes de lhe tocares.
 
-Pode remover a autenticação por impressão digital em _Remover > Segurança > Impressão digital_ no menu Omarchy.
+Quando a tampa do portátil está fechada, o pedido de impressão digital é ignorado automaticamente, por isso vais diretamente para o pedido de palavra-passe em vez de ficares à espera de um sensor ao qual não consegues chegar. Se, noutra situação, precisares de trabalhar com um teclado externo que não tem sensor, basta carregares em `CTRL + C` quando te for pedida a impressão digital durante o `sudo`.
+
+Podes remover a autenticação por impressão digital em _Remove > Security > Fingerprint_ no menu do Omarchy.
 
 ### Autenticação Fido2
 
-Se estiver a usar um dispositivo Fido2, pode configurá-lo para autenticação `sudo` usando _Configurar > Segurança > Fido2_ no menu Omarchy (`Super + Space`). No entanto, abrange o `sudo` e os pedidos de autorização do sistema, e não o desbloqueio do seu computador.
+Se estás a usar um dispositivo Fido2, podes configurá-lo para autenticação `sudo` com _Setup > Security > Fido2_ no menu do Omarchy (`Super + Space`). No entanto, abrange os pedidos de `sudo` e de autorização do sistema, não o desbloqueio do computador.
 
-Pode remover a autenticação fido2 em _Remover > Segurança > Fido2_ no menu Omarchy.
+Podes remover a autenticação fido2 em _Remove > Security > Fido2_ no menu do Omarchy.

@@ -1,46 +1,46 @@
 # Navigácia
 
-Všetko v Omarchy sa deje cez klávesnicu — _VŠETKO!_ Keď sa systém prvýkrát spustí, doslova nemôžete urobiť nič len s myšou. Ale môžete stlačiť `Super + Space`, aby ste odhalili menu Omarchy, a odtiaľto môžete robiť takmer všetko.
+Všetko v Omarchy sa deje cez klávesnicu — _VŠETKO!_ Keď sa systém prvýkrát spustí, len s myšou doslova neurobíte nič. Môžete však stlačiť `Super + Space` a zobraziť tak Omarchy Menu a odtiaľ dokážete robiť takmer všetko.
 
-Ale menu Omarchy väčšinou ani nemá byť hlavným spôsobom obsluhy systému. Môžeme byť rýchlejší než to! Všetky najdôležitejšie aplikácie sú viazané priamo na jednotlivé klávesové skratky. Terminál spustíte pomocou `Super + Return` a prehliadač pomocou `Super + Shift + Return`. Skúste urobiť jedno po druhom a uvidíte mágiu dlaždíc Hyprlandu v akcii:
+Ale Omarchy menu ani nemá byť hlavným spôsobom ovládania systému po väčšinu času. Vieme to robiť rýchlejšie! Všetky najdôležitejšie aplikácie sú naviazané priamo na jednotlivé klávesové skratky. Terminál spustíte skratkou `Super + Return` a prehliadač skratkou `Super + Shift + Return`. Skúste ich spustiť jednu po druhej a uvidíte kúzlo dlaždicového usporiadania v Hyprland v akcii:
 
  ![navigation-browser-terminal](images/navigation-browser-terminal.webp)
 
-Potom môžete stlačiť `Super + J`, aby ste ich naskladali na seba namiesto vedľa seba:
+Potom môžete stlačiť `Super + J` a naskladať ich na seba namiesto vedľa seba:
 
  ![navigation-stacked](images/navigation-stacked.webp)
 
-Znova stlačte `Super + J`, aby ste ich vrátili do ich pozícií vedľa seba. Potom skúste `Super + Shift + Arrow Right`, kým ste v prehliadači, aby ste okná vymenili.
+Opätovným stlačením `Super + J` ich vrátite do polohy vedľa seba. Potom skúste v prehliadači stlačiť `Super + Shift + Arrow Right` a okná sa vymenia.
 
-Teraz skúste `Super + Ctrl + T` na spustenie monitora aktivity. Ten sa objaví ako plávajúce okno. Môžete ho vydláždicovať pomocou `Super + T` (a znova to stlačiť, aby znova plávalo). Teraz stlačte `Super + Shift + F` na otvorenie správcu súborov. Budete mať pekné štvorcestné usporiadanie:
+Teraz skúste `Super + Ctrl + T` a spustite monitor aktivity. Ten sa zobrazí ako plávajúce okno. Môžete ho usporiadať do dlaždíc skratkou `Super + T` (a opätovným stlačením z neho znova urobiť plávajúce okno). Teraz stlačte `Super + Shift + F` a otvorte správcu súborov. Získate prehľadné usporiadanie do štyroch okien:
 
  ![navigation-fourway-tiling](images/navigation-fourway-tiling.webp)
 
-Medzi oknami, ktoré chcete mať aktívne, sa pohybujete pomocou `Super + Arrow`. To prepne zameranie a presunie kurzor do stredu novej aplikácie.
+Medzi oknami, ktoré chcete mať aktívne, sa presúvate skratkou `Super + Arrow`. Tá prepne zameranie a presunie kurzor do stredu novej aplikácie.
 
-Ak stlačíte `Super + Shift + 2`, presuniete aktuálne zameranú aplikáciu na druhú pracovnú plochu. `Super + Shift + 1` ju presunie späť. (A `Super + Shift + Alt + 2` presunie aktuálne zameranú aplikáciu na druhú pracovnú plochu bez prepnutia na ňu).
+Ak stlačíte `Super + Shift + 2`, presuniete aktuálne zameranú aplikáciu na druhú pracovnú plochu. Skratkou `Super + Shift + 1` ju presuniete späť. (A `Super + Shift + Alt + 2` presunie aktuálne zameranú aplikáciu na druhú pracovnú plochu bez toho, aby na ňu prešlo).
 
-Ak podržíte `Super` a myšou kliknete na okno, budete môcť preusporiadať, kde sedí. Ak podržíte `Super` a použijete pravé tlačidlo myši, môžete voľne meniť veľkosť okna.
+Ak podržíte `Super` a myšou kliknete na okno, budete môcť zmeniť jeho umiestnenie. Ak podržíte `Super` a použijete pravé tlačidlo myši, môžete voľne meniť veľkosť okna.
 
-Okno zatvoríte pomocou `Super + W` alebo `Super + Q` (a všetky okná zatvoríte pomocou `Ctrl + Alt + Delete`).
+Okno zatvoríte skratkou `Super + W` alebo `Super + Q` (a všetky okná zatvoríte skratkou `Ctrl + Alt + Delete`).
 
-Môžete tiež prejsť na celú obrazovku pomocou `Super + F` alebo dokonca len na celú šírku (pri zachovaní hornej lišty) pomocou `Super + Alt + F` alebo na celú obrazovku v rámci okna pomocou `Super + Ctrl + F` (dobré pre YouTube!).
+Môžete tiež prejsť na celú obrazovku skratkou `Super + F`, alebo dokonca len na celú šírku (pri zachovaní horného panela) skratkou `Super + Alt + F`, prípadne na celú obrazovku v rámci okna skratkou `Super + Ctrl + F` (vhodné pre YouTube!).
 
-### Rozloženie dwindle vs posúvanie
+### Rozloženie dwindle vs. rolujúce rozloženie
 
-Predvolené rozloženie Omarchy sa nazýva dwindle. Udržiava všetky okná, ktoré otvoríte na jednej pracovnej ploche, vždy viditeľné, aj keď ich musí zmenšiť.
+Predvolené rozloženie v Omarchy sa nazýva dwindle. Všetky okná, ktoré otvoríte na jednej pracovnej ploche, zostávajú neustále viditeľné, aj keď ich musí zmenšiť.
 
  ![navigation-dwindle-layout](images/navigation-dwindle-layout.webp)
 
-Ale môžete si tiež vybrať premeniť pracovnú plochu na posúvacie rozloženie, kde sú okná zoradené vedľa seba za viditeľný okraj displeja. Jednotlivú pracovnú plochu na toto rozloženie prepnete pomocou `Super + L`.
+Môžete sa však rozhodnúť zmeniť pracovnú plochu na rolujúce rozloženie, v ktorom sú okná zoradené vedľa seba až za viditeľný okraj displeja. Jednu pracovnú plochu do tohto rozloženia prepnete skratkou `Super + L`.
 
-Opätovné stlačenie `Super + L` prepne pracovnú plochu na plávajúcu, kde sa okná voľne prekrývajú a umiestňujete ich sami, a tretie stlačenie ju vráti na dwindle. `Super + Alt + L` ním prechádza opačným smerom. Okno, ktoré aj tak pláva — to, ktoré ste vysunuli pomocou `Super + T`, alebo aplikácia, ktorá sa vždy otvára plávajúca — zostane plávať, keď sa pracovná plocha vráti k dlaždiciam. Horná lišta označuje pracovnú plochu, na ktorej ste, jej rozložením: štvorec pre dwindle, kruh pre posúvanie a trojuholník pre plávanie. Kliknutie na túto značku tiež cykluje rozloženie.
+Opätovným stlačením `Super + L` sa pracovná plocha zmení na plávajúcu, kde sa okná voľne prekrývajú a umiestňujete ich sami, a tretím stlačením sa vráti do rozloženia dwindle. Skratka `Super + Alt + L` nimi prechádza opačným smerom. Okno, ktoré je aj tak plávajúce — také, ktoré ste vytiahli skratkou `Super + T`, alebo aplikácia, ktorá sa vždy otvára ako plávajúca — zostane plávajúce aj vtedy, keď sa pracovná plocha vráti do dlaždicového usporiadania. Horný panel označuje pracovnú plochu, na ktorej sa nachádzate, jej rozložením: štvorcom pre dwindle, kruhom pre rolujúce a trojuholníkom pre plávajúce. Kliknutím na túto značku sa rozloženie tiež prepína.
 
  ![navigation-scrolling-layout](images/navigation-scrolling-layout.webp)
 
-Voľba je pre každú pracovnú plochu a drží sa. Takže pracovnú plochu 1 môžete nechať na dwindle na prehliadanie a pracovnú plochu 2 na posúvaní na kód a po reštarte sa tak vrátia.
+Voľba platí pre každú pracovnú plochu osobitne a zostáva zachovaná. Takže pracovnú plochu 1 môžete mať v rozložení dwindle na prehliadanie a pracovnú plochu 2 v rolujúcom rozložení na kód a po reštarte sa vrátia presne tak.
 
-Ak chcete používať posúvacie rozloženie ako predvolené, môžete to nastaviť v `~/.config/hypr/looknfeel.lua`:
+Ak chcete rolujúce rozloženie používať ako predvolené, môžete to nastaviť v súbore `~/.config/hypr/looknfeel.lua`:
 
 ```lua
 hl.config({
@@ -52,32 +52,32 @@ hl.config({
 
 ### Plávajúce pracovné plochy
 
-Plávajúca pracovná plocha funguje ako tradičná pracovná plocha: okná sa prekrývajú a sami ich presúvate a meníte ich veľkosť. Každé okno dostane záhlavie vo farbách vašej témy s tlačidlami na minimalizáciu, maximalizáciu a zatvorenie. `Super + M` tiež minimalizuje zamerané okno. Minimalizované okno čaká v docku; kliknite na jeho aplikáciu, aby ste ho priniesli späť. Kliknite na okno, aby ste ho priniesli dopredu. Zmeňte jeho veľkosť z ľubovoľného okraja alebo rohu. Dvakrát kliknite na záhlavie, aby ste okno maximalizovali pri zachovaní hornej lišty v dohľade, a znova, aby ste získali späť jeho starú veľkosť.
+Plávajúca pracovná plocha funguje ako tradičná pracovná plocha: okná sa prekrývajú a sami ich presúvate a meníte ich veľkosť. Každé okno dostane záhlavie vo farbách vašej témy s tlačidlami na minimalizáciu, maximalizáciu a zatvorenie. Skratkou `Super + M` minimalizujete aj zamerané okno. Minimalizované okno čaká v docku; kliknutím na jeho aplikáciu ho privediete späť. Kliknutím na okno ho prenesiete do popredia. Jeho veľkosť zmeníte z ktoréhokoľvek okraja alebo rohu. Dvojitým kliknutím na záhlavie okno maximalizujete, pričom horný panel zostane viditeľný, a opätovným dvojitým kliknutím mu vrátite pôvodnú veľkosť.
 
-Plávajúca pracovná plocha tiež zobrazuje dock s vašimi pripnutými aplikáciami, všetkým, čo beží, a mriežkou každej aplikácie za tlačidlom aplikácií, ktoré otvárajú aj `Super + Alt + Space` a _Aplikácie_ v menu Omarchy. Pravým tlačidlom kliknite na aplikáciu v mriežke alebo stlačte `Delete`, aby ste ju odinštalovali. Kliknite na aplikáciu, aby ste ju otvorili alebo priniesli jej okno dopredu; kliknite znova, aby ste prechádzali jej oknami. Kliknutie stredným tlačidlom otvorí nové okno. Potiahnite ikonu pozdĺž docku, aby ste ju presunuli; potiahnutie bežiacej aplikácie medzi ostatné ju tam nechá. Pravým tlačidlom kliknite, aby ste aplikáciu nechali v docku, vybrali ju alebo ju ukončili. Dock sa stiahne z cesty celobrazovkového okna. Pravým tlačidlom kliknite na tlačidlo aplikácií, aby ste dock presunuli k inému okraju alebo ho nechali skryť, kým ukazovateľ nedosiahne jeho okraj. Poloha je tiež pod _Akcie > Vzhľad > Dock > Poloha docku_ a `omarchy dock position left` a `omarchy dock autohide on` nastavujú obe z terminálu. Aplikácie, ktoré necháte v docku, sú vyblednuté, kým nebežia.
+Plávajúca pracovná plocha zobrazuje aj dock s pripnutými aplikáciami, so všetkým, čo práve beží, a s mriežkou všetkých aplikácií za tlačidlom aplikácií, ktorú otvára aj skratka `Super + Alt + Space` a položka _Apps_ v Omarchy menu. Kliknutím pravým tlačidlom myši na aplikáciu v mriežke, alebo stlačením `Delete`, ju odinštalujete. Kliknutím na aplikáciu ju otvoríte, alebo prenesiete jej okno do popredia; opätovným kliknutím prechádzate jej oknami. Kliknutím stredným tlačidlom otvoríte nové okno. Potiahnutím ikony pozdĺž docku ju presuniete; potiahnutím bežiacej aplikácie medzi ostatné ju tam ponecháte. Kliknutím pravým tlačidlom myši môžete aplikáciu ponechať v docku, odstrániť ju z neho alebo ju ukončiť. Dock ustúpi oknu na celú obrazovku. Kliknutím pravým tlačidlom myši na tlačidlo aplikácií presuniete dock na iný okraj, alebo ho necháte skrývať, kým ukazovateľ nedosiahne jeho okraj. Pozícia sa nachádza aj pod položkou _Trigger > Appearance > Dock > Dock Position_ a príkazy `omarchy dock position left` a `omarchy dock autohide on` nastavia obe možnosti z terminálu. Aplikácie, ktoré ponecháte v docku, sú vyblednuté, kým nebežia.
 
-Nové pracovné plochy a všetky, ktorým ste nedali vlastné rozloženie pomocou `Super + L`, používajú predvolené rozloženie. Zmena predvoleného resetuje každú pracovnú plochu bez okien na ňu, zatiaľ čo tá s oknami si zachová rozloženie, ktoré má. Vyberte si ho pod _Akcie > Vzhľad > Rozloženie plôch_: Dlaždice, Posúvanie alebo Plávajúce. `omarchy-hyprland-workspace-layout-default scrolling` ho nastaví z terminálu.
+Nové pracovné plochy, a všetky, ktorým ste skratkou `Super + L` nedali vlastné rozloženie, používajú predvolené rozloženie. Zmenou predvoleného rozloženia sa naň nastavia všetky pracovné plochy bez okien, zatiaľ čo pracovná plocha s oknami si ponechá rozloženie, ktoré má. Okno minimalizované do docku sa stále počíta ako okno na pracovnej ploche, z ktorej odišlo. Vyberte si ho pod položkou _Trigger > Appearance > Workspace Layout_: Tiling, Scrolling alebo Floating. Z terminálu ho nastaví príkaz `omarchy-hyprland-workspace-layout-default scrolling`.
 
 ### Zoskupovanie okien
 
-Okná možno zoskupiť pomocou `Super + G`. Keď ste raz v skupine, každé okno, ktoré spustíte, kým je táto aktívna, bude patriť do skupiny. Medzi týmito zoskupenými oknami sa môžete pohybovať pomocou `Super + Ctrl + Arrow Left/Right` alebo `Super + Alt + 1/2/3/4`, aby ste prešli priamo na zoskupené okno v poradí.
+Okná môžete zoskupovať skratkou `Super + G`. Keď ste v skupine, každé okno, ktoré počas jej aktívnosti spustíte, bude patriť do tejto skupiny. Medzi týmito zoskupenými oknami sa môžete presúvať skratkami `Super + Ctrl + Arrow Left/Right` alebo `Super + Alt + 1/2/3/4`, čím prejdete priamo na zoskupené okno v poradí.
 
-Okno môžete presunúť zo zoskupenia pomocou `Super + Alt + G` alebo rozložiť celú skupinu opätovným stlačením `Super + G`. Nakoniec môžete okná mimo skupiny presunúť do nej pomocou `Super + Alt + Arrows`.
+Okno môžete zo skupiny vybrať skratkou `Super + Alt + G` alebo celú skupinu rozobrať opätovným stlačením `Super + G`. Napokon môžete okná mimo skupiny presunúť do nej skratkou `Super + Alt + Arrows`.
 
-### Vyskakovanie okien
+### Vyťahovanie okien
 
-Okno môžete vysunúť z jeho pridelenia pracovnej ploche pomocou `Super + O`. To ho pripne ako plávajúce okno, ktoré vás nasleduje na akejkoľvek pracovnej ploche, na ktorú idete. Skvelé pre videoprehrávače a podobne.
+Okno môžete vytiahnuť z jeho pridelenia na pracovnej ploche skratkou `Super + O`. Tým ho pripnete ako plávajúce okno, ktoré vás nasleduje na ktorúkoľvek pracovnú plochu, na ktorú prejdete. Skvelé pre prehrávače videa a podobne.
 
  ![navigation-popped-window](images/navigation-popped-window.webp)
 
 ### Pracovná plocha scratchpad
 
-Nakoniec existuje špeciálna pracovná plocha scratchpad, ktorá sa spustí cez akúkoľvek pracovnú plochu, na ktorej práve ste, podobne ako konzola Quake. Prepnite ju pomocou `Super + Grave` alebo `Super + S` a umiestnite tam okno pomocou `Super + Shift + Grave` alebo `Super + Alt + S`.
+Napokon je tu špeciálna pracovná plocha scratchpad, ktorá sa vysunie cez ktorúkoľvek pracovnú plochu, na ktorej sa práve nachádzate, veľmi podobne ako konzola v hre Quake. Prepínate ju skratkou `Super + Grave` alebo `Super + S` a okno tam umiestnite skratkou `Super + Shift + Grave` alebo `Super + Alt + S`.
 
-Funguje obzvlášť dobre pre terminál, na ktorom beží agent, alebo pre ovládacie prvky, s ktorými chcete rýchlo interagovať bez opustenia aktuálnej pracovnej plochy. Ak chcete okno presunúť zo scratchpadu, pošlite ho priamo na inú pracovnú plochu niečím ako `Super + Shift + 1`.
+Obzvlášť dobre sa hodí pre terminál, v ktorom beží agent, alebo pre ovládacie prvky, s ktorými chcete rýchlo pracovať bez opustenia aktuálnej pracovnej plochy. Ak chcete okno zo scratchpadu presunúť preč, pošlite ho priamo na inú pracovnú plochu napríklad skratkou `Super + Shift + 1`.
 
-Kým scratchpad drží jedno okno, spustí sa ako centrovaný panel, namiesto aby pokrýval obrazovku. Dajte naň druhú aplikáciu a vráti sa na celú šírku, takže tie dve majú miesto sedieť vedľa seba.
+Kým scratchpad obsahuje jediné okno, vysunie sa ako vycentrovaný panel namiesto toho, aby sa roztiahol cez celú obrazovku. Ak naň umiestnite druhú aplikáciu, vráti sa na celú šírku, aby mali obe miesto vedľa seba.
 
-### Chce to trochu zvykania!
+### Treba si na to zvyknúť!
 
-Chvíľu trvá, kým si zvyknete na takúto navigáciu po pracovnej ploche, ale keď si zvyknete, bude ťažké vrátiť sa k tradičnému zážitku z pracovnej plochy ovládanej myšou!
+Chvíľu trvá, kým si zvyknete takto sa pohybovať po svojej pracovnej ploche, ale keď si zvyknete, bude ťažké vrátiť sa k tradičnej pracovnej ploche ovládanej myšou!

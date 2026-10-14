@@ -1,46 +1,46 @@
 # Navigeerimine
 
-Kõik Omarchys toimub klaviatuuri kaudu — _KÕIK!_ Kui süsteem esimest korda käivitub, ei saa sa sõna otseses mõttes ainuüksi hiirega midagi teha. Kuid saad vajutada `Super + Space`, et avada Omarchy menüü, ja siit saad teha peaaegu kõike.
+Kõik Omarchy's toimub klaviatuuri kaudu — _KÕIK!_ Kui süsteem esimest korda käivitub, ei saa te sõna otseses mõttes ainult hiirega midagi teha. Aga te saate vajutada `Super + Space`, et avada Omarchy menüü, ja sealt saate teha peaaegu kõike.
 
-Kuid Omarchy menüü ei olegi enamasti mõeldud süsteemi kasutamise peamiseks viisiks. Saame kiiremini! Kõik kõige olulisemad rakendused on seotud otse üksikute kiirklahvidega. Käivitad terminali `Super + Return` ja brauseri `Super + Shift + Return`. Proovi teha ühte teise järel ja näed Hyprlandi plaatide võlu tegutsemas:
+Aga Omarchy menüü ei ole enamasti isegi mõeldud olema peamine viis süsteemi kasutada. Me saame kiiremini! Kõik kõige olulisemad rakendused on seotud otse üksikute kiirklahvidega. Terminali käivitate klahvidega `Super + Return` ja brauseri klahvidega `Super + Shift + Return`. Proovige teha ühte pärast teist ja näete Hyprlandi plaatpaigutuse võlu tegevuses:
 
  ![navigation-browser-terminal](images/navigation-browser-terminal.webp)
 
-Seejärel saad vajutada `Super + J`, et need üksteise peale virnastada, mitte kõrvuti:
+Seejärel saate vajutada `Super + J`, et laduda need üksteise peale, mitte kõrvuti:
 
  ![navigation-stacked](images/navigation-stacked.webp)
 
-Vajuta `Super + J` uuesti, et need kõrvuti asendisse tagasi panna. Seejärel proovi `Super + Shift + Arrow Right`, kui oled brauseril, et aknad vahetada.
+Vajutage uuesti `Super + J`, et viia need tagasi kõrvuti asendisse. Seejärel proovige brauseris olles `Super + Shift + Arrow Right`, et aknad omavahel vahetada.
 
-Nüüd proovi `Super + Ctrl + T`, et käivitada Activity monitor. See ilmub ujuva aknana. Saad selle paigutada `Super + T` abil (ja vajuta seda uuesti, et see taas ujukiks teha). Nüüd vajuta `Super + Shift + F`, et avada failihaldur. Sul on kena neljapoolne paigutus:
+Nüüd proovige `Super + Ctrl + T`, et käivitada aktiivsusmonitor. See ilmub ujuva aknana. Saate selle plaatida klahvidega `Super + T` (ja vajutada seda uuesti, et muuta see taas ujuvaks). Nüüd vajutage `Super + Shift + F`, et avada failihaldur. Teil on kena neljaosaline paigutus:
 
  ![navigation-fourway-tiling](images/navigation-fourway-tiling.webp)
 
-Navigeerid akende vahel, mida soovid aktiivseks muuta, `Super + Arrow` abil. See vahetab fookust ja liigutab kursori uue rakenduse keskele.
+Te liigute akende vahel, mille soovite aktiivseks teha, klahvidega `Super + Arrow`. See vahetab fookust ja liigutab kursori uue rakenduse keskele.
 
-Kui vajutad `Super + Shift + 2`, liigutad parasjagu fookuses oleva rakenduse teisele tööalale. `Super + Shift + 1` liigutab selle tagasi. (Ja `Super + Shift + Alt + 2` liigutab parasjagu fookuses oleva rakenduse teisele tööalale, ilma sellele lülitumata).
+Kui vajutate `Super + Shift + 2`, liigutate praegu fookuses oleva rakenduse teisele tööruumile. `Super + Shift + 1` liigutab selle tagasi. (Ja `Super + Shift + Alt + 2` liigutab praegu fookuses oleva rakenduse teisele tööruumile ilma sellele lülitumata).
 
-Kui hoiad `Super` all ja kasutad hiirt aknal klõpsamiseks, saad ümber paigutada, kus see asub. Kui hoiad `Super` all ja kasutad hiire paremat nuppu, saad akna suurust vabalt muuta.
+Kui hoiate `Super` klahvi all ja klõpsate hiirega aknal, saate ümber korraldada, kus see asub. Kui hoiate `Super` klahvi all ja kasutate hiire paremat nuppu, saate akna suurust vabalt muuta.
 
-Sulged akna `Super + W` või `Super + Q` pealt (ja sulged kõik aknad `Ctrl + Alt + Delete` pealt).
+Akna sulgete klahvidega `Super + W` või `Super + Q` (ja kõik aknad sulgete klahvidega `Ctrl + Alt + Delete`).
 
-Saad minna ka täisekraanile `Super + F` abil või isegi lihtsalt täislaiusesse (menüüriba säilitades) `Super + Alt + F` abil või täisekraanile akna sees `Super + Ctrl + F` abil (hea YouTube'i jaoks!).
+Saate minna ka täisekraanile klahvidega `Super + F` või isegi lihtsalt täislaiusesse (ülemist riba säilitades) klahvidega `Super + Alt + F` või akna sees täisekraanile klahvidega `Super + Ctrl + F` (hea YouTube'i jaoks!).
 
-### Dwindle vs kerimise paigutus
+### Dwindle vs keriv paigutus
 
-Omarchy vaikepaigutust nimetatakse dwindle'iks. See hoiab kõik aknad, mille ühel tööalal avad, kogu aeg nähtavana, isegi kui peab neid väiksemaks kahandama.
+Omarchy vaikepaigutust nimetatakse dwindle'iks. See hoiab kõik aknad, mille ühes tööruumis avate, kogu aeg nähtaval, isegi kui see peab neid selleks kokku suruma.
 
  ![navigation-dwindle-layout](images/navigation-dwindle-layout.webp)
 
-Kuid saad valida ka tööala kerimise paigutuseks muutmise, kus aknad on rivistatud kõrvuti, ekraani nähtavast servast kaugemal. Muudad ühe tööala selleks paigutuseks `Super + L` kaudu.
+Aga te saate valida ka tööruumi muutmise kerivaks paigutuseks, kus aknad on rivistatud kõrvuti, kaugemale ekraani nähtavast servast. Te muudate üksiku tööruumi selleks paigutuseks klahvidega `Super + L`.
 
-`Super + L` uuesti vajutamine muudab tööala ujuvaks, kus aknad katuvad vabalt ja sa paigutad need ise, ja kolmas vajutus viib selle tagasi dwindle'i juurde. `Super + Alt + L` käib need läbi teistpidi. Aken, mis niikuinii ujub — üks, mille `Super + T` abil välja hüppasid, või rakendus, mis avaneb alati ujuvana — jääb ujuma, kui tööala läheb plaatide juurde tagasi. Menüüriba tähistab tööala, millel oled, selle paigutusega: ruut dwindle'i puhul, ring kerimise puhul ja kolmnurk ujuva puhul. Sellel tähisel klõpsamine vahetab ka paigutust.
+Uuesti `Super + L` vajutamine muudab tööruumi ujuvaks, kus aknad kattuvad vabalt ja paigutate need ise, ning kolmas vajutus viib selle tagasi dwindle'ile. `Super + Alt + L` läbib neid teistpidi. Aken, mis nagunii ujub — mille te tõstsite välja klahvidega `Super + T` või rakendus, mis avaneb alati ujuvalt — jääb ujuma ka siis, kui tööruum läheb tagasi plaatpaigutusele. Ülemine riba tähistab tööruumi, millel viibite, selle paigutusega: ruut dwindle'i jaoks, ring keriva jaoks ja kolmnurk ujuva jaoks. Selle märgi klõpsamine vahetab samuti paigutust järgemööda.
 
  ![navigation-scrolling-layout](images/navigation-scrolling-layout.webp)
 
-Valik on tööalaspetsiifiline ja see jääb püsima. Nii saad tööala 1 hoida dwindle'il sirvimiseks ja tööala 2 kerimisel koodi jaoks ning need tulevad pärast taaskäivitust samamoodi tagasi.
+Valik on iga tööruumi kohta eraldi ja see püsib. Nii saate hoida tööruumi 1 dwindle'il sirvimiseks ja tööruumi 2 kerival koodi jaoks ning need tulevad pärast taaskäivitust just nii tagasi.
 
-Kui soovid kasutada kerimise paigutust vaikimisi, saad selle seada failis `~/.config/hypr/looknfeel.lua`:
+Kui soovite kasutada kerivat paigutust vaikesättena, saate selle määrata failis `~/.config/hypr/looknfeel.lua`:
 
 ```lua
 hl.config({
@@ -50,34 +50,34 @@ hl.config({
 })
 ```
 
-### Ujuvad tööalad
+### Ujuvad tööruumid
 
-Ujuv tööala töötab nagu traditsiooniline töölaud: aknad katuvad ja sa liigutad ning muudad nende suurust ise. Iga aken saab tiitliriba sinu teema värvides, nuppudega minimeerimiseks, maksimeerimiseks ja sulgemiseks. `Super + M` minimeerib fookuses oleva akna samuti. Minimeeritud aken ootab dokis; klõpsa selle rakendust, et see tagasi tuua. Klõpsa akent, et see ette tuua. Muuda selle suurust mis tahes servast või nurgast. Tee tiitliribal topeltklõps, et aken maksimeerida, hoides menüüriba nähtaval, ja uuesti, et selle vana suurus tagasi saada.
+Ujuv tööruum toimib nagu traditsiooniline töölaud: aknad kattuvad ning liigutate ja muudate nende suurust ise. Iga aken saab tiitliriba teie teema värvides, nuppudega minimeerimiseks, maksimeerimiseks ja sulgemiseks. `Super + M` minimeerib ka fookuses oleva akna. Minimeeritud aken ootab dokis; klõpsake selle rakendust, et see tagasi tuua. Klõpsake akent, et see ette tuua. Muutke selle suurust mis tahes servast või nurgast. Topeltklõpsake tiitliribal, et aken maksimeerida, säilitades samas ülemise riba nähtaval, ja uuesti, et selle vana suurus tagasi saada.
 
-Ujuv tööala näitab ka dokki koos kinnitatud rakendustega, kõigega, mis töötab, ja ruudustikuga igast rakendusest rakenduste nupu taga, mille `Super + Alt + Space` ja Omarchy menüüs _Rakendused_ samuti avavad. Tee rakendusel ruudustikul paremklõps või vajuta `Delete`, et see desinstallida. Klõpsa rakendust, et see avada või selle aken ette tuua; klõpsa uuesti, et selle akende vahel ringelda. Keskmine klõps avab uue akna. Lohista ikooni mööda dokki, et seda liigutada; töötava rakenduse lohistamine teiste sekka hoiab selle seal. Tee paremklõps, et rakendus dokis hoida, see sealt välja võtta või sellest väljuda. Dokk läheb täisekraani akna eest kõrvale. Tee rakenduste nupul paremklõps, et dokk teise serva liigutada või lasta sellel peituda, kuni kursor selle servani jõuab. Asukoht on ka _Käivita > Välimus > Dokk > Doki asukoht_ all ning `omarchy dock position left` ja `omarchy dock autohide on` seavad mõlemad terminalist. Rakendused, mida dokis hoiad, on tuhmistatud, kui need ei tööta.
+Ujuv tööruum näitab ka dokki, kus on teie kinnitatud rakendused, kõik, mis töötab, ja kõigi rakenduste ruudustik rakenduste nupu taga, mille avavad ka `Super + Alt + Space` ja _Rakendused_ Omarchy menüüs. Paremklõpsake ruudustikus rakendust või vajutage `Delete`, et see desinstallida. Klõpsake rakendust, et see avada või selle aken ette tuua; klõpsake uuesti, et selle aknaid järgemööda läbida. Keskmine klõps avab uue akna. Lohistage ikooni mööda dokki, et seda liigutada; töötava rakenduse lohistamine teiste sekka jätab selle sinna. Paremklõpsake, et hoida rakendust dokis, võtta see sealt välja või sellest väljuda. Dokk taandub täisekraani akna eest. Paremklõpsake rakenduste nuppu, et liigutada dokk teise serva või panna see peituma, kuni kursor jõuab selle servani. Asukoht on ka jaotises _Trigger > Välimus > Dock > Doki asukoht_ ning `omarchy dock position left` ja `omarchy dock autohide on` määravad mõlemad terminalist. Rakendused, mida dokis hoiate, on tuhmunud, kuni need ei tööta.
 
-Uued tööalad ja kõik, millele sa pole `Super + L` abil oma paigutust andnud, kasutavad vaikepaigutust. Vaikepaigutuse muutmine lähtestab iga akendeta tööala sellele, samas kui akendega tööala säilitab paigutuse, mis sellel on. Vali see _Käivita > Välimus > Tööala paigutus_ alt: Plaaditud, Kerimine või Ujuv. `omarchy-hyprland-workspace-layout-default scrolling` seab selle terminalist.
+Uued tööruumid ja ükskõik millised, millele te ei ole klahvidega `Super + L` omaenda paigutust andnud, kasutavad vaikepaigutust. Vaikesätte muutmine lähtestab iga akendeta tööruumi sellele, samas kui tööruum, millel on aknad, säilitab paigutuse, mis sellel on. Dokki minimeeritud aken loeb endiselt aknana tööruumil, millelt see lahkus. Valige see jaotises _Trigger > Välimus > Tööruumi paigutus_: Plaatimine, Kerimine või Ujuv. `omarchy-hyprland-workspace-layout-default scrolling` määrab selle terminalist.
 
 ### Akende rühmitamine
 
-Aknaid saab rühmitada `Super + G` abil. Kui oled rühmas, kuulub iga aken, mille selle aktiivsusel käivitad, rühma. Nende rühmitatud akende vahel saad liikuda `Super + Ctrl + Arrow Left/Right` või `Super + Alt + 1/2/3/4` abil, et minna otse rühmitatud akna juurde järjestuses.
+Aknaid saab rühmitada klahvidega `Super + G`. Kui olete rühmas, kuulub iga aken, mille selle aktiivsena käivitate, rühma. Saate rühmitatud akende vahel liikuda klahvidega `Super + Ctrl + Arrow Left/Right` või klahvidega `Super + Alt + 1/2/3/4`, et minna otse rühmitatud akna juurde järjekorras.
 
-Saad akna rühmitusest välja liigutada `Super + Alt + G` abil või kogu rühma lahti võtta, vajutades `Super + G` uuesti. Lõpuks saad rühma välised aknad selle sisse liigutada `Super + Alt + Arrows` abil.
+Saate akna rühmitusest välja liigutada klahvidega `Super + Alt + G` või kogu rühma lahti võtta, vajutades uuesti `Super + G`. Lõpuks saate liigutada väljaspool rühma olevaid aknaid sinna sisse klahvidega `Super + Alt + Arrows`.
 
-### Akende väljahüppamine
+### Akende väljatõstmine
 
-Saad akna selle tööala jaotusest välja hüppata `Super + O` abil. See kinnitab selle ujuva aknana, mis järgneb sulle, mis tahes tööalale lähed. Suurepärane videopleierite ja muu sarnase jaoks.
+Saate akna selle tööruumi jaotusest välja tõsta klahvidega `Super + O`. See kinnitab selle ujuva aknana, mis järgneb teile, mis tahes tööruumile te lähete. Suurepärane videomängijate ja muu sellise jaoks.
 
  ![navigation-popped-window](images/navigation-popped-window.webp)
 
-### Scratchpadi tööala
+### Scratchpadi tööruum
 
-Lõpuks on olemas spetsiaalne scratchpadi tööala, mis langeb alla selle tööala peale, millel parasjagu oled, paljuski nagu Quake'i konsool. Lülita seda `Super + Grave` või `Super + S` abil ja paiguta aken sinna `Super + Shift + Grave` või `Super + Alt + S` abil.
+Lõpuks on olemas spetsiaalne scratchpadi tööruum, mis langeb alla selle tööruumi peale, millel praegu viibite, umbes nagu Quake'i konsool. Lülitage seda klahvidega `Super + Grave` või `Super + S` ja paigutage sinna aken klahvidega `Super + Shift + Grave` või `Super + Alt + S`.
 
-See töötab eriti hästi terminali korral, mis käitab agenti, või juhtelementide korral, millega soovid kiiresti suhelda, lahkumata praeguselt tööalalt. Akna scratchpadilt ära liigutamiseks saada see otse teisele tööalale millegi sellisega nagu `Super + Shift + 1`.
+See toimib eriti hästi terminali jaoks, milles töötab agent, või juhtelementide jaoks, millega soovite kiiresti suhelda ilma praeguselt tööruumilt lahkumata. Akna liigutamiseks scratchpadilt maha saatke see otse teisele tööruumile näiteks klahvidega `Super + Shift + 1`.
 
-Kui scratchpadil on üks aken, langeb see alla keskele asetatud paneelina, mitte ei ulatu üle ekraani. Pane sellele teine rakendus ja see läheb tagasi täislaiusesse, nii et kahel on ruumi kõrvuti istuda.
+Kui scratchpadil on üks aken, langeb see alla tsentreeritud paneelina, mitte ei ulatu üle kogu ekraani. Pange sinna teine rakendus ja see läheb tagasi täislaiusesse, nii et neil kahel on ruumi kõrvuti istuda.
 
-### Sellega harjumine võtab aega!
+### See nõuab veidi harjumist!
 
-Töölaual niimoodi navigeerimisega harjumine võtab veidi aega, kuid kui sellega harjud, on raske traditsioonilise hiirega juhitava töölauakogemuse juurde tagasi minna!
+Sellise töölauas navigeerimisega harjumine võtab veidi aega, aga kui olete harjunud, on raske naasta traditsioonilise hiirega juhitava töölauakogemuse juurde!

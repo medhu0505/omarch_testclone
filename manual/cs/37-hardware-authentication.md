@@ -2,16 +2,18 @@
 
 ### Ověřování otiskem prstu
 
-Mnoho notebooků má senzor otisků prstů pro ověřování. V Omarchy ho můžete používat spuštěním volby _Nastavení > Security > Fingerprint_ v nabídce Omarchy (`Super + Space`).
+Spousta notebooků se dodává se snímačem otisků prstů pro ověřování. V Omarchy ho můžeš používat spuštěním _Nastavení > Zabezpečení > Otisk prstu_ v nabídce Omarchy (`Super + Space`).
 
-Tím se nainstaluje balíček pro otisky prstů, načte se váš otisk, ověří se a budete mít hotovo — otisk prstu pak využijete k odemknutí ze zamykací obrazovky (kterou vyvoláte zkratkou `Super + Ctrl + L`), ke vstupu do režimu sudo a k autorizaci systémových výzev.
+Nainstaluje to balíček pro otisky prstů, sejme tvůj otisk, ověří ho a budeš připravený používat svůj otisk prstu k odemykání ze zamykací obrazovky (kterou můžeš vyvolat pomocí `Super + Ctrl + L`), vstupování do režimu sudo a autorizování systémových výzev.
 
-Když je víko notebooku zavřené, výzva k otisku prstu se automaticky přeskočí, takže přejdete rovnou k výzvě k zadání hesla, místo abyste čekali na senzor, na který nedosáhnete. Pokud jinak potřebujete pracovat na externí klávesnici bez senzoru, stačí při výzvě k otisku prstu během příkazu `sudo` stisknout `CTRL + C`.
+Jakmile zamykací obrazovka vypne displej, snímač odpočívá, aby šetřil energii, takže předtím, než se ho dotkneš, probuď obrazovku libovolnou klávesou nebo touchpadem.
 
-Ověřování otiskem prstu odstraníte v nabídce Omarchy v části _Odebrat > Security > Fingerprint_.
+Když je víko notebooku zavřené, výzva k otisku prstu se automaticky přeskočí, takže jdeš rovnou na výzvu k zadání hesla místo čekání na snímač, na který nedosáhneš. Pokud jinak potřebuješ pracovat na externí klávesnici, která snímač nemá, prostě stiskni `CTRL + C`, když tě během `sudo` vyzve k otisku prstu.
+
+Ověřování otiskem prstu můžeš odebrat pod _Odebrat > Zabezpečení > Otisk prstu_ v nabídce Omarchy.
 
 ### Ověřování pomocí Fido2
 
-Pokud používáte zařízení Fido2, můžete ho nastavit pro ověřování příkazu `sudo` pomocí volby _Nastavení > Security > Fido2_ v nabídce Omarchy (`Super + Space`). Pokrývá však výzvy pro `sudo` a autorizaci systému, nikoli odemykání počítače.
+Pokud používáš zařízení Fido2, můžeš ho nastavit pro ověřování `sudo` pomocí _Nastavení > Zabezpečení > Fido2_ v nabídce Omarchy (`Super + Space`). Pokrývá to ale `sudo` a systémové autorizační výzvy, ne odemykání počítače.
 
-Ověřování pomocí fido2 odstraníte v nabídce Omarchy v části _Odebrat > Security > Fido2_.
+Ověřování fido2 můžeš odebrat pod _Odebrat > Zabezpečení > Fido2_ v nabídce Omarchy.

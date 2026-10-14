@@ -2,16 +2,18 @@
 
 ### Autentifikácia odtlačkom prsta
 
-Mnoho notebookov má snímač odtlačkov prstov na autentifikáciu. Môžete ho používať s Omarchy spustením časti _Nastavenie > Security > Fingerprint_ v ponuke Omarchy (`Super + Space`).
+Veľa notebookov má snímač odtlačkov prstov na autentifikáciu. V Omarchy ho môžeš použiť spustením _Nastavenie > Zabezpečenie > Odtlačok prsta_ v menu Omarchy (`Super + Space`).
 
-Tým sa nainštaluje balík pre odtlačky prstov, zaznamená sa váš odtlačok, overí sa a ste pripravení používať odtlačok prsta na odomknutie zo zamknutej obrazovky (ktorú môžete vyvolať skratkou `Super + Ctrl + L`), na vstup do režimu sudo a na autorizáciu systémových výziev.
+Tým sa nainštaluje balík pre odtlačky prstov, nasníma sa tvoj odtlačok, overí sa a budeš môcť odtlačok prsta používať na odomykanie zo zamykacej obrazovky (ktorú vyvoláš stlačením `Super + Ctrl + L`), na vstup do režimu sudo a na autorizáciu systémových výziev.
 
-Keď je veko notebooku zatvorené, výzva na odtlačok prsta sa automaticky preskočí, takže prejdete rovno na výzvu na zadanie hesla, namiesto toho, aby ste čakali na snímač, na ktorý nedosiahnete. Ak inak potrebujete pracovať na externej klávesnici, ktorá snímač nemá, stačí stlačiť `CTRL + C`, keď sa vás systém počas `sudo` pýta na odtlačok prsta.
+Keď zamykacia obrazovka vypne displej, snímač odpočíva, aby šetril energiu, takže pred jeho dotykom prebuď obrazovku ľubovoľnou klávesou alebo touchpadom.
 
-Autentifikáciu odtlačkom prsta môžete odstrániť v časti _Odstrániť > Security > Fingerprint_ v ponuke Omarchy.
+Keď je veko notebooku zatvorené, výzva na odtlačok prsta sa automaticky preskočí, takže prejdeš rovno na výzvu na zadanie hesla namiesto čakania na snímač, na ktorý nedočiahneš. Ak inak potrebuješ pracovať na externej klávesnici, ktorá snímač nemá, stačí stlačiť `CTRL + C`, keď ťa počas `sudo` vyzve na odtlačok prsta.
+
+Autentifikáciu odtlačkom prsta môžeš odstrániť v menu Omarchy pod _Odstrániť > Zabezpečenie > Odtlačok prsta_.
 
 ### Autentifikácia Fido2
 
-Ak používate zariadenie Fido2, môžete ho nastaviť na autentifikáciu cez `sudo` v časti _Nastavenie > Security > Fido2_ v ponuke Omarchy (`Super + Space`). Pokrýva však `sudo` a výzvy na autorizáciu systému, nie odomykanie počítača.
+Ak používaš zariadenie Fido2, môžeš ho nastaviť na autentifikáciu pre `sudo` pomocou _Nastavenie > Zabezpečenie > Fido2_ v menu Omarchy (`Super + Space`). Vzťahuje sa však na výzvy pre `sudo` a systémovú autorizáciu, nie na odomykanie počítača.
 
-Autentifikáciu fido2 môžete odstrániť v časti _Odstrániť > Security > Fido2_ v ponuke Omarchy.
+Autentifikáciu fido2 môžeš odstrániť v menu Omarchy pod _Odstrániť > Zabezpečenie > Fido2_.

@@ -2,16 +2,18 @@
 
 ### Uthibitishaji wa alama ya kidole
 
-Kompyuta mpakato nyingi huja na kisomaji cha alama ya kidole cha kufanya uthibitishaji. Unaweza kutumia hii na Omarchy kwa kuendesha _Sanidi > Usalama > Alama ya kidole_ katika menyu ya Omarchy (`Super + Space`).
+Laptop nyingi huja na kitambuzi cha alama ya kidole kwa ajili ya uthibitishaji. Unaweza kukitumia na Omarchy kwa kuendesha _Setup > Security > Fingerprint_ katika menyu ya Omarchy (`Super + Space`).
 
-Hiyo itasakinisha kifurushi cha alama ya kidole, kukusanya alama yako, kuithibitisha, na utakuwa tayari kutumia alama yako ya kidole kufungua kutoka skrini ya kufunga (ambayo unaweza kuichochea kwa `Super + Ctrl + L`), kuingia hali ya sudo, na kuidhinisha madokezo ya mfumo.
+Hiyo itasakinisha kifurushi cha alama ya kidole, itakusanya alama yako, itaithibitisha, na utakuwa tayari kutumia alama yako ya kidole kufungua kutoka kwenye skrini iliyofungwa (ambayo unaweza kuianzisha kwa `Super + Ctrl + L`), kuingia katika hali ya sudo, na kuidhinisha vidokezo vya mfumo.
 
-Wakati kifuniko cha kompyuta yako mpakato kimefungwa, kidokezo cha alama ya kidole hurukwa kiotomatiki, kwa hivyo unaenda moja kwa moja kwenye kidokezo cha nenosiri badala ya kusubiri kisomaji ambacho huwezi kukifikia. Kama vinginevyo unahitaji kufanya kazi kwenye kibodi ya nje isiyo na kisomaji, bonyeza tu `CTRL + C', unapodokezwa alama yako ya kidole wakati wa `sudo`.
+Mara skrini iliyofungwa inapozima onyesho, kitambuzi hupumzika ili kuokoa umeme, kwa hivyo amsha skrini kwa kitufe chochote au touchpad kabla ya kukigusa.
 
-Unaweza kuondoa uthibitishaji wa alama ya kidole chini ya _Ondoa > Usalama > Alama ya kidole_ katika menyu ya Omarchy.
+Wakati mfuniko wa laptop yako umefungwa, kidokezo cha alama ya kidole hurukwa kiotomatiki, kwa hivyo unaenda moja kwa moja kwenye kidokezo cha nenosiri badala ya kusubiri kitambuzi ambacho huwezi kukifikia. Ikiwa kwa hali nyingine unahitaji kufanya kazi kwenye kibodi ya nje ambayo haina kitambuzi, bonyeza tu `CTRL + C`, unapoombwa alama yako ya kidole wakati wa `sudo`.
+
+Unaweza kuondoa uthibitishaji wa alama ya kidole chini ya _Remove > Security > Fingerprint_ katika menyu ya Omarchy.
 
 ### Uthibitishaji wa Fido2
 
-Kama unatumia kifaa cha Fido2, unaweza kukisanidi kwa uthibitishaji wa `sudo` kwa kutumia _Sanidi > Usalama > Fido2_ katika menyu ya Omarchy (`Super + Space`). Hushughulikia `sudo` na madokezo ya idhini ya mfumo, ingawa, si kufungua kompyuta yako.
+Ikiwa unatumia kifaa cha Fido2, unaweza kukisanidi kwa ajili ya uthibitishaji wa `sudo` kwa kutumia _Setup > Security > Fido2_ katika menyu ya Omarchy (`Super + Space`). Hata hivyo, kinahusu `sudo` na vidokezo vya uidhinishaji wa mfumo, siyo kuifungua kompyuta yako.
 
-Unaweza kuondoa uthibitishaji wa fido2 chini ya _Ondoa > Usalama > Fido2_ katika menyu ya Omarchy.
+Unaweza kuondoa uthibitishaji wa fido2 chini ya _Remove > Security > Fido2_ katika menyu ya Omarchy.

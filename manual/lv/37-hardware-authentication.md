@@ -2,16 +2,18 @@
 
 ### Pirksta nospieduma autentifikācija
 
-Daudzos klēpjdatoros autentifikācijai ir pirksta nospieduma sensors. Omarchy to varat izmantot, Omarchy izvēlnē (`Super + Space`) palaižot _Iestatīšana > Drošība > Pirksta nospiedums_.
+Daudziem klēpjdatoriem ir pirksta nospieduma sensors autentifikācijai. To vari izmantot ar Omarchy, Omarchy izvēlnē (`Super + Space`) palaižot _Iestatīšana > Drošība > Pirksta nospiedums_.
 
-Tas instalēs pirksta nospieduma pakotni, paņems jūsu nospiedumu, pārbaudīs to, un jūs varēsiet ar pirksta nospiedumu atbloķēt no bloķēšanas ekrāna (ko varat izsaukt ar `Super + Ctrl + L`), pāriet sudo režīmā un autorizēt sistēmas uzvednes.
+Tas instalēs pirksta nospieduma pakotni, nolasīs tavu nospiedumu, pārbaudīs to, un tu būsi gatavs ar pirksta nospiedumu atbloķēt datoru no bloķēšanas ekrāna (kuru vari izsaukt ar `Super + Ctrl + L`), ieiet sudo režīmā un apstiprināt sistēmas pieprasījumus.
 
-Kad klēpjdatora vāks ir aizvērts, pirksta nospieduma uzvedne tiek automātiski izlaista, tāpēc uzreiz nonākat pie paroles uzvednes, nevis gaidāt sensoru, ko nevarat aizsniegt. Ja citādi jāstrādā ar ārēju tastatūru bez sensora, vienkārši nospiediet `CTRL + C`, kad `sudo` laikā jums prasa pirksta nospiedumu.
+Kad bloķēšanas ekrāns ir izslēdzis displeju, sensors atpūšas, lai taupītu enerģiju, tāpēc pirms pieskaršanās tam pamodini ekrānu ar jebkuru taustiņu vai skārienpaliktni.
 
-Pirksta nospieduma autentifikāciju varat noņemt Omarchy izvēlnē sadaļā _Noņemt > Drošība > Pirksta nospiedums_.
+Kad tava klēpjdatora vāks ir aizvērts, pirksta nospieduma pieprasījums tiek automātiski izlaists, tāpēc tu nonāksi tieši pie paroles ievades, nevis gaidīsi sensoru, kuram nevari tikt klāt. Ja citādi tev jāstrādā ar ārējo tastatūru, kurai nav sensora, vienkārši nospied `CTRL + C`, kad `sudo` laikā tev tiek prasīts pirksta nospiedums.
+
+Pirksta nospieduma autentifikāciju vari noņemt Omarchy izvēlnē zem _Noņemt > Drošība > Pirksta nospiedums_.
 
 ### Fido2 autentifikācija
 
-Ja izmantojat Fido2 ierīci, varat to iestatīt `sudo` autentifikācijai Omarchy izvēlnē (`Super + Space`) sadaļā _Iestatīšana > Drošība > Fido2_. Tomēr tas attiecas uz `sudo` un sistēmas autorizācijas uzvednēm, nevis datora atbloķēšanu.
+Ja izmanto Fido2 ierīci, vari to iestatīt `sudo` autentifikācijai, Omarchy izvēlnē (`Super + Space`) izmantojot _Iestatīšana > Drošība > Fido2_. Taču tā attiecas uz `sudo` un sistēmas autorizācijas pieprasījumiem, nevis uz tava datora atbloķēšanu.
 
-Fido2 autentifikāciju varat noņemt Omarchy izvēlnē sadaļā _Noņemt > Drošība > Fido2_.
+Fido2 autentifikāciju vari noņemt Omarchy izvēlnē zem _Noņemt > Drošība > Fido2_.

@@ -1,17 +1,19 @@
-# Preverjanje pristnosti s strojno opremo
+# Overjanje s strojno opremo
 
-### Preverjanje pristnosti s prstnim odtisom
+### Overjanje s prstnim odtisom
 
-Veliko prenosnikov ima senzor prstnega odtisa za preverjanje pristnosti. To lahko uporabljate z Omarchyjem tako, da v meniju Omarchy (`Super + Space`) zaženete _Nastavitve > Security > Fingerprint_.
+Veliko prenosnikov ima senzor za prstne odtise za overjanje. Z Omarchy ga lahko uporabite tako, da v meniju Omarchy (`Super + Space`) zaženete _Setup > Security > Fingerprint_.
 
-S tem namestite paket za prstne odtise, zberete svoj odtis, ga preverite in ste pripravljeni uporabljati prstni odtis za odklepanje z zaklepanja zaslona (ki ga lahko sprožite s `Super + Ctrl + L`), vstop v način sudo in avtorizacijo sistemskih pozivov.
+To bo namestilo paket za prstne odtise, zbralo vaš odtis, ga preverilo in pripravljeni boste na uporabo prstnega odtisa za odklepanje na zaklenjenem zaslonu (ki ga lahko sprožite z `Super + Ctrl + L`), vstop v način sudo in odobritev sistemskih pozivov.
 
-Ko je pokrov prenosnika zaprt, se poziv za prstni odtis samodejno preskoči, tako da greste naravnost na poziv za geslo, namesto da čakate na senzor, ki ga ne morete doseči. Če morate sicer delati na zunanji tipkovnici, ki nima senzorja, med `sudo` preprosto pritisnite `CTRL + C`, ko vas sistem pozove k prstnemu odtisu.
+Ko zaklenjeni zaslon izklopi zaslon, senzor počiva, da prihrani energijo, zato zaslon pred dotikom senzorja zbudite s katero koli tipko ali sledilno ploščico.
 
-Preverjanje pristnosti s prstnim odtisom lahko odstranite pod _Odstrani > Security > Fingerprint_ v meniju Omarchy.
+Ko je pokrov prenosnika zaprt, se poziv za prstni odtis samodejno preskoči, tako da greste naravnost na poziv za geslo, namesto da čakate na senzor, ki ga ne morete doseči. Če morate sicer delati na zunanji tipkovnici brez senzorja, med pozivom za prstni odtis pri `sudo` preprosto pritisnite `CTRL + C`.
 
-### Preverjanje pristnosti Fido2
+Overjanje s prstnim odtisom lahko odstranite v meniju Omarchy pod _Remove > Security > Fingerprint_.
 
-Če uporabljate napravo Fido2, jo lahko nastavite za preverjanje pristnosti `sudo` prek _Nastavitve > Security > Fido2_ v meniju Omarchy (`Super + Space`). Pokriva pozive za `sudo` in sistemsko avtorizacijo, vendar ne odklepanja računalnika.
+### Overjanje s Fido2
 
-Preverjanje pristnosti fido2 lahko odstranite pod _Odstrani > Security > Fido2_ v meniju Omarchy.
+Če uporabljate napravo Fido2, jo lahko nastavite za overjanje pri `sudo` z _Setup > Security > Fido2_ v meniju Omarchy (`Super + Space`). Pokriva pozive za `sudo` in sistemsko pooblastitev, ne pa tudi odklepanja računalnika.
+
+Overjanje s Fido2 lahko odstranite v meniju Omarchy pod _Remove > Security > Fido2_.

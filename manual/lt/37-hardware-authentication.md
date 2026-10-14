@@ -1,17 +1,19 @@
-# Aparatinės įrangos tapatybės patvirtinimas
+# Aparatinės įrangos autentifikavimas
 
-### Piršto atspaudo tapatybės patvirtinimas
+### Autentifikavimas piršto atspaudu
 
-Daug nešiojamųjų kompiuterių turi piršto atspaudo jutiklį tapatybei patvirtinti. Gali jį naudoti su Omarchy Omarchy meniu (`Super + Space`) paleidęs _Nuostatos > Sauga > Piršto atspaudas_.
+Daug nešiojamųjų kompiuterių turi piršto atspaudų jutiklį autentifikavimui. Gali jį naudoti su Omarchy Omarchy meniu (`Super + Space`) paleidęs _Sąranka > Sauga > Piršto atspaudas_.
 
-Tai įdiegs piršto atspaudo paketą, nuskaitys tavo atspaudą, jį patikrins, ir būsi pasiruošęs naudoti piršto atspaudą atrakinimui iš užrakinimo ekrano (kurį gali iškviesti su `Super + Ctrl + L`), sudo režimui ir sisteminiams raginimams autorizuoti.
+Taip įdiegsi piršto atspaudų paketą, užfiksuosi savo atspaudą, jį patvirtinsi ir galėsi piršto atspaudu atsirakinti iš užrakinimo ekrano (kurį gali iškviesti su `Super + Ctrl + L`), įjungti sudo režimą ir patvirtinti sistemos užklausas.
 
-Kai tavo nešiojamojo dangtis uždarytas, piršto atspaudo raginimas automatiškai praleidžiamas, todėl eini tiesiai prie slaptažodžio raginimo, užuot laukęs jutiklio, kurio negali pasiekti. Jei vis dėlto tenka dirbti su išorine klaviatūra, neturinčia jutiklio, tiesiog paspausk `CTRL + C`, kai `sudo` metu tavęs prašo piršto atspaudo.
+Kai užrakinimo ekranas išjungia ekraną, jutiklis ilsisi, kad taupytų energiją, todėl prieš jį liesdamas pažadink ekraną bet kuriuo klavišu arba jutikliniu kilimėliu.
 
-Piršto atspaudo tapatybės patvirtinimą gali pašalinti Omarchy meniu po _Pašalinti > Sauga > Piršto atspaudas_.
+Kai nešiojamojo kompiuterio dangtelis uždarytas, piršto atspaudo užklausa automatiškai praleidžiama, todėl pereini tiesiai prie slaptažodžio užklausos, užuot laukęs jutiklio, kurio negali pasiekti. Jei kitais atvejais tau reikia dirbti su išorine klaviatūra, kuri neturi jutiklio, tiesiog paspausk `CTRL + C`, kai `sudo` metu tavęs paprašys piršto atspaudo.
 
-### Fido2 tapatybės patvirtinimas
+Autentifikavimą piršto atspaudu gali pašalinti Omarchy meniu pasirinkęs _Pašalinti > Sauga > Piršto atspaudas_.
 
-Jei naudoji Fido2 įrenginį, gali jį nustatyti `sudo` tapatybei patvirtinti Omarchy meniu (`Super + Space`) per _Nuostatos > Sauga > Fido2_. Tačiau jis apima `sudo` ir sisteminius autorizavimo raginimus, o ne kompiuterio atrakinimą.
+### Fido2 autentifikavimas
 
-Fido2 tapatybės patvirtinimą gali pašalinti Omarchy meniu po _Pašalinti > Sauga > Fido2_.
+Jei naudoji Fido2 įrenginį, gali jį nustatyti `sudo` autentifikavimui Omarchy meniu (`Super + Space`) pasirinkęs _Sąranka > Sauga > Fido2_. Vis dėlto tai apima `sudo` ir sistemos autorizavimo užklausas, o ne kompiuterio atrakinimą.
+
+fido2 autentifikavimą gali pašalinti Omarchy meniu pasirinkęs _Pašalinti > Sauga > Fido2_.
