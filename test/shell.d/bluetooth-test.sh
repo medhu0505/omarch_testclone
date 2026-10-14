@@ -134,6 +134,11 @@ assertDeepEqual(
   'bluetooth titles the first row of each section only'
 )
 assertDeepEqual(
+  bluetooth.scrollEntries(knownThenDiscovered, key => '[' + key + ']').map(entry => entry.sectionTitle),
+  ['[bluetooth.paired]', '', '[bluetooth.available]'],
+  'bluetooth titles sections in the shell language when the panel passes its translator'
+)
+assertDeepEqual(
   bluetooth.scrollEntries(knownThenDiscovered).map(entry => entry.key),
   ['known/1', 'known/2', 'discovered/3'],
   'bluetooth keys rows by section and address so a device changing section is a new row'

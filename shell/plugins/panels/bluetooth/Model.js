@@ -125,22 +125,25 @@ function scrollRowKey(row) {
 }
 
 // A row opens a section when it is the first of its kind in the flat list.
-function scrollSectionTitle(rows, index) {
+// tr is an optional translate(key, english) from the QML side (I18n.t);
+// without it the English text stands, which is what the Node tests assert.
+function scrollSectionTitle(rows, index, tr) {
+  var t = typeof tr === "function" ? tr : function(key, english) { return english }
   if (!rows || index < 0 || index >= rows.length) return ""
   if (index > 0 && rows[index - 1].section === rows[index].section) return ""
-  return rows[index].section === "known" ? "PAIRED" : "AVAILABLE"
+  return rows[index].section === "known" ? t("bluetooth.paired", "PAIRED") : t("bluetooth.available", "AVAILABLE")
 }
 
 // Flat, primitives-only projection of a row for the list model. ListModel
 // roles hold no nested objects, and `state` is already taken on the
 // delegate's Item, so the device's connection state travels as devState.
-function scrollEntry(rows, index) {
+function scrollEntry(rows, index, tr) {
   var row = rows[index] || {}
   var device = row.dev || {}
   return {
     key: scrollRowKey(row),
     section: row.section || "",
-    sectionTitle: scrollSectionTitle(rows, index),
+    sectionTitle: scrollSectionTitle(rows, index, tr),
     indexInSection: row.indexInSection !== undefined ? row.indexInSection : 0,
     address: device.address || "",
     name: device.name || "",
@@ -153,9 +156,9 @@ function scrollEntry(rows, index) {
   }
 }
 
-function scrollEntries(rows) {
+function scrollEntries(rows, tr) {
   var entries = []
-  for (var i = 0; i < (rows || []).length; i++) entries.push(scrollEntry(rows, i))
+  for (var i = 0; i < (rows || []).length; i++) entries.push(scrollEntry(rows, i, tr))
   return entries
 }
 

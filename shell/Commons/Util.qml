@@ -44,6 +44,10 @@ QtObject {
     return "file://" + String(path).split("/").map(encodeURIComponent).join("/")
   }
 
+  function isVideoPath(path) {
+    return /\.(mp4|m4v|mov|webm|mkv|avi)$/i.test(String(path || ""))
+  }
+
   // Single-quote a string for bash. The replace handles embedded single
   // quotes by closing, escaping, and re-opening the literal.
   function shellQuote(value) {
@@ -52,6 +56,15 @@ QtObject {
 
   function execDetached(command) {
     Quickshell.execDetached(["bash", "-lc", command])
+  }
+
+  // Run an argv vector without a shell interpreting it: the constant `exec "$@"`
+  // means the args only ever land in positional parameters, which bash expands
+  // without re-tokenizing — so untrusted data ($(id), a filename) stays literal.
+  // The login shell (-l) keeps the PATH/session env GUI targets (omasnap, mpv,
+  // xdg-open) need. Prefer this over execDetached for anything built from input.
+  function execArgv(argv) {
+    Quickshell.execDetached(["bash", "-lc", 'exec "$@"', "bash"].concat(argv))
   }
 
   function isPlainObject(value) {
@@ -95,6 +108,20 @@ QtObject {
   // True only when the event would actually change the text, so an empty
   // filter never swallows the key — panels keep their own empty-filter
   // fallbacks (e.g. menu back-navigation) in later branches.
+  // The arrow a horizontal key press means along the reading direction: in a
+  // right-to-left layout, mirrored, Left moves forward and Right back. With
+  // vim set, h and l count as Left and Right too.
+  function readingKey(event, vim) {
+    var key = event.key
+    if (vim && (key === Qt.Key_H || event.text === "h")) key = Qt.Key_Left
+    else if (vim && (key === Qt.Key_L || event.text === "l")) key = Qt.Key_Right
+    if (I18n.rightToLeft) {
+      if (key === Qt.Key_Left) return Qt.Key_Right
+      if (key === Qt.Key_Right) return Qt.Key_Left
+    }
+    return key
+  }
+
   function editsFilter(event, text) {
     if (!text) return false
     // Alt/Meta-modified sequences belong to other shortcuts — never edit here.
@@ -140,7 +167,8 @@ QtObject {
     return {
       left:   normalizeLayoutSection(src.left),
       center: normalizeLayoutSection(src.center),
-      right:  normalizeLayoutSection(src.right)
+      right:  normalizeLayoutSection(src.right),
+      tray: normalizeLayoutSection(src.tray)
     }
   }
 }
