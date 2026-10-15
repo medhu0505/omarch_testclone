@@ -113,7 +113,7 @@ case "$gpu_mode" in
   fi
   ;;
 "Vfio")
-  if gum confirm "GPU is in Vfio mode. Return to Hybrid mode and reboot?"; then
+  if gum confirm --affirmative "$(omarchy-i18n common.yes)" --negative "$(omarchy-i18n common.no)" "$(omarchy-i18n gpu.restoreHybrid)"; then
     # Vfio is never a resting state from this menu. The force-igpu resume
     # hook passes through it and can strand the config here when the trip
     # back to Integrated fails, so offer the same way out as Integrated.
@@ -125,7 +125,7 @@ case "$gpu_mode" in
     # Remove the startup delay override (not needed for Hybrid mode)
     sudo rm -rf /etc/systemd/system/supergfxd.service.d/delay-start.conf
 
-    omarchy-system-reboot
+    omarchy-system reboot
   fi
   ;;
 *)
