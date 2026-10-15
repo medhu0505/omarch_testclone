@@ -40,9 +40,6 @@ function nmServiceOwnerLost(oldOwner, newOwner) {
   return !!oldOwner && !newOwner
 }
 
-function connectionIcon(kind, signalStrength) {
-  if (kind === "wifi") return wifiIconFor(signalStrength)
-  if (kind === "ethernet") return "󰈀"
 // The connected network's own strength comes from the access points
 // Quickshell grouped under its SSID. When it has none (an OWE transition-mode
 // network between scans files the in-use access point under its hidden
