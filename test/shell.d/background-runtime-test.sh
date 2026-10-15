@@ -28,6 +28,7 @@ if ! command -v quickshell >/dev/null 2>&1; then
 fi
 
 require_command jq
+require_command magick
 
 TMPDIR=$(mktemp -d)
 test_root="$TMPDIR/omarchy"
@@ -43,7 +44,11 @@ mkdir -p "$test_root" "$test_home" "$stub_bin" "$images" "$(dirname "$link")"
 cp -a "$ROOT/shell" "$test_root/shell"
 ln -s "$ROOT/config" "$test_root/config"
 ln -s "$ROOT/bin" "$test_root/bin"
-touch "$images/a.png" "$images/b.png" "$images/c.png"
+# Images that decode, or a failed load recovers the link's target over the
+# wallpaper under test.
+for name in a b c; do
+  magick -size 16x16 xc:magenta "$images/$name.png"
+done
 mkfifo "$arrived" "$release"
 
 # The background's own read of its link, once per armed gate, takes the
