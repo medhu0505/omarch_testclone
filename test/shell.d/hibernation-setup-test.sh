@@ -20,6 +20,11 @@ cat >"$fake_bin/omarchy-hw-aarch64-apple" <<'STUB'
 exit 1
 STUB
 
+cat >"$fake_bin/omarchy-sleep-disabled" <<'STUB'
+#!/bin/bash
+exit 1
+STUB
+
 cat >"$fake_bin/sudo" <<'STUB'
 #!/bin/bash
 if [[ $1 == "btrfs" ]]; then
@@ -86,7 +91,8 @@ pass "forced hibernation repair reports rebuild failures"
 
 locale_bin="$test_tmp/locale-bin"
 mkdir -p "$locale_bin"
-cp "$fake_bin/omarchy-cmd-missing" "$fake_bin/omarchy-hw-aarch64-apple" "$locale_bin/"
+cp "$fake_bin/omarchy-cmd-missing" "$fake_bin/omarchy-hw-aarch64-apple" \
+  "$fake_bin/omarchy-sleep-disabled" "$locale_bin/"
 
 cat >"$locale_bin/grep" <<'STUB'
 #!/bin/bash
