@@ -41,14 +41,22 @@ Item {
         noteTextEdit.text = loaded
         noteTextEdit.cursorPosition = noteTextEdit.length
         root.isLoaded = true
-      } else if (!root.opened) {
+      } else if (!root.opened || noteTextEdit.text === root.originalLoadedText) {
         noteTextEdit.text = loaded
+        noteTextEdit.cursorPosition = Math.min(noteTextEdit.cursorPosition, noteTextEdit.length)
       } else if (loaded !== noteTextEdit.text) {
         if (loaded.startsWith(root.originalLoadedText)) {
           var appended = loaded.substring(root.originalLoadedText.length)
-          noteTextEdit.text = noteTextEdit.text + appended
+          if (noteTextEdit.text.length > 0 && !noteTextEdit.text.endsWith("\n") && !appended.startsWith("\n")) {
+            noteTextEdit.text = noteTextEdit.text + "\n" + appended
+          } else {
+            noteTextEdit.text = noteTextEdit.text + appended
+          }
+        } else if (noteTextEdit.text.startsWith(root.originalLoadedText)) {
+          var userAppended = noteTextEdit.text.substring(root.originalLoadedText.length)
+          noteTextEdit.text = loaded + userAppended
         } else {
-          noteTextEdit.text = noteTextEdit.text + "\n\n--- Background Changes ---\n" + loaded
+          noteTextEdit.text = loaded
         }
       }
       root.originalLoadedText = loaded
