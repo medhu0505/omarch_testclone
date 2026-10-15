@@ -78,7 +78,7 @@ Panel {
     if (brightnessAvailable) list.push("brightness")
     list.push("textsize")
     list.push("scale")
-    if (displays.length > 1) list.push("monitors")
+    if (displays.length > 0) list.push("monitors")
     return list
   }
 
