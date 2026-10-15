@@ -220,13 +220,16 @@ def font_path(config_home):
 
 
 def font_set(config_home, variant):
-  if variant not in FONT_VARIANTS:
+  if variant is not None and variant not in FONT_VARIANTS:
     raise ValueError(f"Unknown CJK variant: {variant}")
   # Only CJK fallback changes; retain the interface and terminal's Latin font.
+  # No variant still writes the file, so a later language or input method
+  # does not seed over an explicit return to the system's choice.
   rules = []
   for families, face in [("sans-serif|Liberation Sans", "Sans"), ("serif|Liberation Serif", "Serif"), ("monospace|JetBrainsMono Nerd Font", "Sans Mono")]:
     for family in families.split("|"):
-      rules.append(f'<alias><family>{family}</family><accept><family>Noto {face} CJK {variant}</family></accept></alias>')
+      if variant:
+        rules.append(f'<alias><family>{family}</family><accept><family>Noto {face} CJK {variant}</family></accept></alias>')
   atomic_write(font_path(config_home), '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">\n<fontconfig>\n' + "\n".join(rules) + "\n</fontconfig>\n")
 
 
@@ -349,7 +352,7 @@ def main():
     method, layout = selection()
     print(json.dumps({"installed_method": method, "layout": layout}))
   elif args.command == "font" and args.variant == "default":
-    font_path(config_home).unlink(missing_ok=True)
+    font_set(config_home, None)
   elif args.command == "font" and args.seed:
     font_default(config_home, None, args.variant.upper())
   elif args.command == "font":

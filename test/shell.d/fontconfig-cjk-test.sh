@@ -228,15 +228,19 @@ for line in sys.stdin:
   print(found)
 PY
 
+# chromium_fallback <query...> fills actual with one font per query, or fails.
 chromium_fallback() {
-  env -u LC_ALL -u LC_CTYPE -u FC_LANG LANG=C.UTF-8 python3 "$test_tmp/chromium-fallback.py"
+  local output
+  output=$(printf '%s\n' "$@" | env -u LC_ALL -u LC_CTYPE -u FC_LANG LANG=C.UTF-8 python3 "$test_tmp/chromium-fallback.py") || fail "the Chromium fallback replica runs"
+  mapfile -t actual <<<"$output"
+  (( ${#actual[@]} == $# )) || fail "the Chromium fallback replica answers every query" "${actual[*]}"
 }
 
 # Han, then the ideographic comma and corner bracket, which Noto Sans
 # Mongolian also carries and wins for an English page without a preference.
 for variant in jp kr sc tc hk; do
   OMARCHY_PATH=$ROOT python3 "$ROOT/default/input-methods/configure.py" font "$variant"
-  mapfile -t actual < <(printf '%s\n' "en 9aa8" "en 3001" "en 300c" "- 9aa8" "- 3001" | chromium_fallback)
+  chromium_fallback "en 9aa8" "en 3001" "en 300c" "- 9aa8" "- 3001"
   for found in "${actual[@]}"; do
     [[ $found == "Noto Sans CJK ${variant^^}" ]] || fail "Chromium fallback with the $variant preference uses Noto Sans CJK ${variant^^}" "${actual[*]}"
   done
@@ -250,12 +254,12 @@ done
 pass "a CJK preference sets untagged Han and CJK punctuation everywhere, Chromium included, and keeps the Latin families"
 
 OMARCHY_PATH=$ROOT python3 "$ROOT/default/input-methods/configure.py" font default
-[[ ! -e $XDG_CONFIG_HOME/fontconfig/conf.d/50-omarchy-input-method.conf ]] || fail "the default preference removes the file"
+! grep -q 'CJK' "$XDG_CONFIG_HOME/fontconfig/conf.d/50-omarchy-input-method.conf" || fail "the default preference names no CJK forms"
 pass "the default CJK preference leaves the system's choice"
 
 # With no preference, untagged Han takes Japanese forms in every app, and an
 # English page's CJK punctuation stays out of Noto Sans Mongolian.
-mapfile -t actual < <(printf '%s\n' "en 9aa8" "en 3001" "en 300c" "en ff01" "- 3001" | chromium_fallback)
+chromium_fallback "en 9aa8" "en 3001" "en 300c" "en ff01" "- 3001"
 for found in "${actual[@]}"; do
   [[ $found == "Noto Sans CJK JP" ]] || fail "Chromium fallback with no preference uses Noto Sans CJK JP" "${actual[*]}"
 done

@@ -31,8 +31,11 @@ omarchy-font-cjk hk
 pass "the preference an input method seeded is the one the command changes"
 
 omarchy-font-cjk default
-[[ ! -e $preference && $(omarchy-font-cjk) == "default" ]] || fail "default removes the preference"
-pass "default removes the preference"
+[[ $(omarchy-font-cjk) == "default" ]] || fail "default reads back" "$(omarchy-font-cjk)"
+! grep -q 'CJK' "$preference" || fail "default names no CJK forms" "$(cat "$preference")"
+python3 "$ROOT/default/input-methods/configure.py" font --seed kr
+[[ $(omarchy-font-cjk) == "default" ]] || fail "a later language or input method keeps an explicit default" "$(omarchy-font-cjk)"
+pass "default returns to the system's choice, and later seeding keeps it"
 
 if omarchy-font-cjk cn 2>/dev/null; then
   fail "an unknown variant is refused"

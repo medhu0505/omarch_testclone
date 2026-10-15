@@ -266,7 +266,9 @@ class InputMethodTest(unittest.TestCase):
     command("sc")
     self.assertIn("Noto Sans CJK SC", font.read_text())
     command("default")
-    self.assertFalse(font.exists())
+    self.assertNotIn("CJK", font.read_text())
+    command("--seed", "kr")
+    self.assertNotIn("CJK", font.read_text())
     with self.assertRaises(SystemExit), patch("sys.stderr"):
       command("cn")
 
