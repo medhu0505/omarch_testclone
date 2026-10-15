@@ -75,6 +75,18 @@ grep -Fx $'rate\t7.3W' <<<"$generic_output" >/dev/null || fail "battery status a
 grep -Fx $'time\t3h 53m' <<<"$generic_output" >/dev/null || fail "battery status time left follows the live draw"
 pass "battery status supports Apple Silicon and arbitrary native battery paths"
 
+# Some ACPI batteries list power_now and current_now but fail every read with
+# ENODEV, so the files pass -r and yield nothing. A directory stands in for
+# them here: readable, but nothing to read. UPower's rate is the reading then.
+mkdir -p "$tmp_dir/power/BAT0/power_now" "$tmp_dir/power/BAT0/current_now"
+printf '17537000\n' >"$tmp_dir/power/BAT0/voltage_now"
+sed -i 's/native-path:          CMB0/native-path:          BAT0/' "$tmp_dir/bin/upower"
+unreadable_output=$(OMARCHY_TEST_NATIVE_PATH=BAT0 OMARCHY_POWER_SUPPLY_PATH="$tmp_dir/power" PATH="$tmp_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell 2>"$tmp_dir/unreadable.err")
+grep -Fx $'rate\t7.3W' <<<"$unreadable_output" >/dev/null || fail "an unreadable power_now falls back to UPower's rate" "$unreadable_output"
+grep -Fx $'time\t3h 53m' <<<"$unreadable_output" >/dev/null || fail "an unreadable power_now still times the battery from UPower's rate" "$unreadable_output"
+[[ ! -s $tmp_dir/unreadable.err ]] || fail "an unreadable power_now reads quietly" "$(<"$tmp_dir/unreadable.err")"
+pass "battery status falls back to UPower's rate when sysfs cannot be read"
+
 # An 80% hold threshold doesn't trip while the battery is still below it.
 hold_dir=$(mktemp -d)
 trap 'rm -rf "$tmp_dir" "$hold_dir"' EXIT
