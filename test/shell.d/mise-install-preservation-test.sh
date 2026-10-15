@@ -6,60 +6,47 @@ source "$(dirname "${BASH_SOURCE[0]}")/base-test.sh"
 test_tmp=$(mktemp -d)
 trap 'rm -rf "$test_tmp"' EXIT
 export HOME="$test_tmp/home"
-mkdir -p "$HOME/.local/bin" "$test_tmp/bin"
-shopt -s nullglob
-backup_dir="$HOME/.local/state/omarchy/mise-backups"
+mkdir -p "$HOME/.local/bin"
 launcher="$HOME/.local/bin/tool"
 printf '#!/bin/bash\nexport MY_TOKEN=private\nexec custom-tool "$@"\n' >"$launcher"
 chmod 700 "$launcher"
 cp -p "$launcher" "$test_tmp/original"
 
-"$ROOT/bin/omarchy-mise-install" tool >/dev/null
-backups=("$backup_dir"/tool.*)
-(( ${#backups[@]} == 1 )) || fail "one backup is created"
-cmp -s "${backups[0]}" "$test_tmp/original" || fail "custom launcher is preserved verbatim"
-[[ $(stat -c %a "${backups[0]}") == "700" ]] || fail "backup retains private permissions"
-[[ $(stat -c %a "$launcher") == "700" ]] || fail "replacement retains private permissions"
-[[ -x $launcher ]] || fail "replacement wrapper is executable"
-grep -Fq 'mise use -g --quiet "tool"' "$launcher" || fail "replacement is the requested wrapper"
-pass "custom launchers are backed up with their permissions"
-
-"$ROOT/bin/omarchy-mise-install" tool >/dev/null
-backups=("$backup_dir"/tool.*)
-(( ${#backups[@]} == 1 )) || fail "identical reinstalls do not accumulate backups"
-pass "reinstalling the same wrapper creates no extra backup"
-
-chmod 600 "$launcher"
-"$ROOT/bin/omarchy-mise-install" tool >/dev/null
-[[ $(stat -c %a "$launcher") == "700" ]] || fail "a nonexecutable private launcher becomes executable without exposing its contents"
-pass "private nonexecutable launchers remain private and become runnable"
-
+"$ROOT/bin/omarchy-mise-install" tool 2>"$test_tmp/notice"
+cmp -s "$launcher" "$test_tmp/original" || fail "custom launcher stays active"
+[[ $(stat -c %a "$launcher") == "700" ]] || fail "custom launcher keeps private permissions"
+grep -Fq 'Keeping custom launcher' "$test_tmp/notice" || fail "skip is reported"
+pass "custom launchers remain active"
 
 ln -s "$test_tmp/original" "$HOME/.local/bin/linked"
-"$ROOT/bin/omarchy-mise-install" tool linked >/dev/null
-links=("$backup_dir"/linked.*)
-[[ -L ${links[0]} && ! -L $HOME/.local/bin/linked ]] || fail "symlink itself is saved"
-[[ $(readlink "${links[0]}") == "$test_tmp/original" ]] || fail "saved symlink retains its target"
-cmp -s "$test_tmp/original" "${backups[0]}" || fail "symlink target is untouched"
+"$ROOT/bin/omarchy-mise-install" tool linked 2>/dev/null
+[[ -L $HOME/.local/bin/linked ]] || fail "absolute symlink remains active"
+[[ $(readlink "$HOME/.local/bin/linked") == "$test_tmp/original" ]] || fail "absolute symlink target is unchanged"
+ln -s tool "$HOME/.local/bin/relative"
+"$ROOT/bin/omarchy-mise-install" tool relative 2>/dev/null
+[[ -L $HOME/.local/bin/relative && $(readlink "$HOME/.local/bin/relative") == "tool" ]] || fail "relative symlink remains valid"
 ln -s "$test_tmp/missing" "$HOME/.local/bin/dangling"
-"$ROOT/bin/omarchy-mise-install" tool dangling >/dev/null
-links=("$backup_dir"/dangling.*)
-[[ -L ${links[0]} && ! -e $test_tmp/missing ]] || fail "dangling link is backed up without creating its target"
-[[ $(readlink "${links[0]}") == "$test_tmp/missing" ]] || fail "saved dangling symlink retains its target"
-pass "symlinks are replaced without changing their targets"
+"$ROOT/bin/omarchy-mise-install" tool dangling 2>/dev/null
+[[ -L $HOME/.local/bin/dangling && ! -e $test_tmp/missing ]] || fail "dangling symlink remains unchanged"
+pass "symlinks remain active without moving their targets"
 
-cp "$test_tmp/original" "$launcher"
-cat >"$test_tmp/bin/cp" <<'STUB'
-#!/bin/bash
-exit 1
-STUB
-chmod +x "$test_tmp/bin/cp"
-if PATH="$test_tmp/bin:$PATH" "$ROOT/bin/omarchy-mise-install" tool; then
-  fail "backup failure aborts installation"
-fi
-cmp -s "$launcher" "$test_tmp/original" || fail "backup failure leaves the original launcher intact"
+printf '#!/bin/bash\nexport MISE_MINIMUM_RELEASE_AGE=0\nmise use -g --quiet "tool" || exit 1\nexec mise x "tool" -- "tool" "$@"\n' >"$launcher"
+chmod 600 "$launcher"
+"$ROOT/bin/omarchy-mise-install" tool >/dev/null
+[[ $(stat -c %a "$launcher") == "700" && -x $launcher ]] || fail "generated private wrapper becomes runnable without exposing its contents"
+pass "generated private wrappers retain restrictive permissions"
+
+cp -p "$launcher" "$test_tmp/generated"
+"$ROOT/bin/omarchy-mise-install" tool >/dev/null
+cmp -s "$launcher" "$test_tmp/generated" || fail "identical reinstall leaves generated wrapper intact"
+pass "reinstalling a generated wrapper is safe"
+
+printf '\0' >>"$launcher"
+cp -p "$launcher" "$test_tmp/with-nul"
+"$ROOT/bin/omarchy-mise-install" tool 2>/dev/null
+cmp -s "$launcher" "$test_tmp/with-nul" || fail "generated-looking file with a NUL byte stays active"
 [[ -z $(find "$HOME/.local/bin" -name '.mise-wrapper.*' -print) ]] || fail "staged wrapper is cleaned up"
-pass "failed backups leave the original launcher intact"
+pass "modified generated-looking files are not replaced"
 
 for form in cooldown-export bail-on-failure mise-exec bare-exec; do
   case $form in
@@ -69,11 +56,15 @@ for form in cooldown-export bail-on-failure mise-exec bare-exec; do
     bare-exec) printf '#!/bin/bash\nmise use -g "legacy"\nexec "legacy" "$@"\n' ;;
   esac >"$HOME/.local/bin/legacy"
   "$ROOT/bin/omarchy-mise-install" legacy >/dev/null
-  backups=("$backup_dir"/legacy.*)
-  (( ${#backups[@]} == 0 )) || fail "generated $form wrappers do not create backups"
+  grep -Fq 'mise use -g --quiet "legacy"' "$HOME/.local/bin/legacy" || fail "generated $form wrapper is refreshed"
 done
-pass "every historical generated wrapper refreshes without a backup"
+pass "every historical generated wrapper refreshes"
+
+printf '#!/bin/bash\nexport MISE_MINIMUM_RELEASE_AGE=0\nmise use -g --quiet "old-package" || exit 1\nexec mise x "old-package" -- "tool" "$@"\n' >"$launcher"
+"$ROOT/bin/omarchy-mise-install" new-package tool >/dev/null
+grep -Fq 'mise use -g --quiet "new-package"' "$launcher" || fail "generated wrapper accepts a package change"
+pass "generated wrappers can move to a new package"
 
 PATH="$ROOT/bin:$PATH" bash -euo pipefail "$ROOT/migrations/1787573629.sh" >/dev/null
-[[ -z $(find "$HOME/.local/bin" -name '*.bak.*' -print) ]] || fail "backups are never exposed on PATH"
-pass "the quiet-wrapper migration cannot regenerate saved launchers"
+[[ -z $(find "$HOME/.local/bin" -name '*.bak.*' -print) ]] || fail "migration creates no backup on PATH"
+pass "the quiet-wrapper migration does not replace custom launchers"
