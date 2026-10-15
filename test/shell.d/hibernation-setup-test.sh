@@ -83,3 +83,37 @@ if FAIL_REBUILD=1 run_setup --force >"$test_tmp/output" 2>&1; then
 fi
 ! grep -q 'Hibernation is already set up' "$test_tmp/output" || fail "a failed rebuild announces no success"
 pass "forced hibernation repair reports rebuild failures"
+
+locale_bin="$test_tmp/locale-bin"
+mkdir -p "$locale_bin"
+cp "$fake_bin/omarchy-cmd-missing" "$fake_bin/omarchy-hw-aarch64-apple" "$locale_bin/"
+
+cat >"$locale_bin/grep" <<'STUB'
+#!/bin/bash
+exit 1
+STUB
+
+cat >"$locale_bin/free" <<'STUB'
+#!/bin/bash
+if [[ ${LC_ALL:-} == "C" ]]; then
+  printf 'Mem: 31Gi 1Gi 30Gi\n'
+else
+  printf '内存： 31Gi 1Gi 30Gi\n'
+fi
+STUB
+
+cat >"$locale_bin/gum" <<'STUB'
+#!/bin/bash
+printf '%s\n' "$*" >"$PROMPT_LOG"
+exit 1
+STUB
+
+chmod +x "$locale_bin"/*
+
+env -u LC_ALL OMARCHY_HIBERNATION_IMAGE_SIZE_PATH="$image_size" \
+  PROMPT_LOG="$test_tmp/prompt" PATH="$locale_bin:$PATH" \
+  "$ROOT/bin/omarchy-hibernation-setup"
+
+[[ $(<"$test_tmp/prompt") == "confirm Use 31Gi on boot drive to make hibernation available?" ]] ||
+  fail "hibernation setup reads memory size independently of the user's locale"
+pass "hibernation setup reads memory size independently of the user's locale"
