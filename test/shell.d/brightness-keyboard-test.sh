@@ -56,6 +56,25 @@ printf '%s\n' "$*" >>"$BRIGHTNESS_FIXTURE/osd"
 SH
 chmod +x "$test_tmp/bin/brightnessctl" "$test_tmp/bin/omarchy-osd"
 
+cat >"$test_tmp/bin/flock" <<'SH'
+#!/bin/bash
+if [[ ${PROBE_LOCK:-0} == "1" ]]; then
+  if [[ ! -e $BRIGHTNESS_FIXTURE/first-lock ]]; then
+    : >"$BRIGHTNESS_FIXTURE/first-lock"
+  elif [[ ! -e $BRIGHTNESS_FIXTURE/lock-probed ]]; then
+    if /usr/bin/flock -n "$1"; then
+      : >"$BRIGHTNESS_FIXTURE/lock-free"
+      /usr/bin/flock -u "$1"
+    else
+      : >"$BRIGHTNESS_FIXTURE/lock-busy"
+    fi
+    : >"$BRIGHTNESS_FIXTURE/lock-probed"
+  fi
+fi
+exec /usr/bin/flock "$@"
+SH
+chmod +x "$test_tmp/bin/flock"
+
 run_keyboard() {
   "$ROOT/bin/omarchy-brightness-keyboard" --no-osd "$@"
 }
@@ -215,6 +234,21 @@ run_keyboard off
 run_keyboard restore
 assert_brightness 2 "a new session restores the lit level it had before locking"
 
+# A broken runtime lock must not stop commands while persistent state works.
+reset_fixture 0
+runtime_state="$XDG_RUNTIME_DIR/omarchy-keyboard-backlight-dell::kbd_backlight"
+printf '1\n' >"$state_file"
+printf '2\n' >"$runtime_state"
+touch -d '+1 minute' "$runtime_state"
+rm -f "$runtime_state.lock"
+mkdir "$runtime_state.lock"
+run_keyboard restore
+assert_brightness 1 "persistent state still restores when the runtime lock is unavailable"
+run_keyboard up
+[[ $(<"$state_file") == "2" ]] || fail "a runtime lock failure does not block persistent state saves"
+rmdir "$runtime_state.lock"
+rm "$runtime_state"
+
 if (( EUID == 0 )); then
   echo "skip - root bypasses directory write permissions"
 else
@@ -256,16 +290,21 @@ else
   done
   [[ -e $test_tmp/set-entered ]] || fail "the runtime fallback adjustment did not reach hardware"
   chmod 700 "${state_file%/*}"
-  run_keyboard down >"$test_tmp/second.out" 2>"$test_tmp/second.err" &
+  PROBE_LOCK=1 run_keyboard down >"$test_tmp/second.out" 2>"$test_tmp/second.err" &
   second_pid=$!
-  sleep 0.2
-  before_release=$(grep -c ' max$' "$test_tmp/calls")
+  for ((attempt = 0; attempt < 500; attempt++)); do
+    [[ ! -e $test_tmp/lock-probed ]] || break
+    sleep 0.01
+  done
+  [[ -e $test_tmp/lock-probed ]] || fail "the recovered command did not reach its lock"
+  [[ -e $test_tmp/lock-busy && ! -e $test_tmp/lock-free ]] ||
+    fail "the recovered command did not find the fallback adjustment's lock held"
   printf '\n' >"$test_tmp/release-set"
   wait "$first_pid" || fail "the fallback adjustment failed"
   wait "$second_pid" || fail "the adjustment after recovery failed"
-  (( before_release == 1 )) || fail "a recovered command touched hardware before the fallback command finished"
   assert_brightness 0 "recovery serializes a runtime adjustment with the next persistent adjustment"
-  rm "$test_tmp/release-set" "$test_tmp/set-entered" "$runtime_state"
+  rm "$test_tmp/release-set" "$test_tmp/set-entered" "$test_tmp/first-lock" "$test_tmp/lock-probed" \
+    "$test_tmp/lock-busy" "$runtime_state"
 fi
 
 reset_fixture 2
