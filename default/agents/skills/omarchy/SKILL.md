@@ -108,7 +108,7 @@ Omarchy is built on:
 
 ## Command Discovery
 
-Omarchy ships a single `omarchy` CLI that dispatches to all `omarchy-*` binaries via `omarchy <group> <action>`. Always prefer this form — it is self-documenting and stable. The underlying `omarchy-*` binaries still exist on `PATH` and remain safe to read for source.
+Omarchy ships a single `omarchy` CLI that dispatches to all `omarchy-*` binaries via `omarchy <group> <action>`. Always prefer this form — it is self-documenting and stable. The underlying `omarchy-*` binaries still exist on `PATH` and remain safe to read for source. The one exception is diagnostics: run `omarchy-debug --no-sudo --print` directly. On a package install it lives outside the directory the `omarchy` router searches, so `omarchy debug` can fail there with "Unknown Omarchy command".
 
 ```bash
 # List every documented command and its summary (--all includes hidden commands)
