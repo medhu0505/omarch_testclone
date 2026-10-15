@@ -97,6 +97,18 @@ fi
   fail "removing Heroic for an unknown user keeps the package"
 pass "removing Heroic for an unknown user fails without touching root's home"
 
+seed_heroic_dirs
+if run_remove PKEXEC_UID=9999 2>/dev/null; then
+  fail "removing Heroic fails when the pkexec uid cannot be resolved"
+fi
+for dir in "${heroic_dirs[@]}"; do
+  [[ -e $root_home/$dir ]] ||
+    fail "removing Heroic for an unresolvable pkexec uid leaves root's ~/$dir alone"
+done
+! grep -q "omarchy-pkg-drop" "$event_log" ||
+  fail "removing Heroic for an unresolvable pkexec uid keeps the package"
+pass "removing Heroic for an unresolvable pkexec uid fails without touching root's home"
+
 # Unelevated, the caller is the user, so $HOME is used without a lookup
 seed_heroic_dirs
 env -i PATH="$shim_bin:/usr/bin:/bin" HOME="$user_home" USER=nobody-here \

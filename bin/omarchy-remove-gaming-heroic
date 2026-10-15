@@ -10,6 +10,10 @@ set -e
 target_user=${OMARCHY_INSTALL_USER:-${SUDO_USER:-}}
 if [[ -z $target_user && -n ${PKEXEC_UID:-} ]]; then
   target_user=$(getent passwd "$PKEXEC_UID" | cut -d: -f1)
+  if [[ -z $target_user ]]; then
+    echo "Could not find the user with uid $PKEXEC_UID; nothing was removed." >&2
+    exit 1
+  fi
 fi
 target_user=${target_user:-$USER}
 
