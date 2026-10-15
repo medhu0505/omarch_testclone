@@ -280,11 +280,18 @@ printf '2\n' >"$runtime_state"
 touch -d '1 minute ago' "$runtime_state"
 : >"$runtime_state.lock"
 chmod 400 "$runtime_state.lock"
-run_keyboard restore
-assert_brightness 2 "a read-only runtime lock still restores the newer choice"
-run_keyboard off
-run_keyboard restore
-assert_brightness 2 "a read-only runtime lock keeps lock and wake working"
+if (( EUID == 0 )); then
+  skip "read-only runtime lock needs an unprivileged user to deny writes"
+else
+  if (: >"$runtime_state.lock") 2>/dev/null; then
+    fail "the read-only runtime lock fixture still allows a write-open"
+  fi
+  run_keyboard restore
+  assert_brightness 2 "a read-only runtime lock still restores the newer choice"
+  run_keyboard off
+  run_keyboard restore
+  assert_brightness 2 "a read-only runtime lock keeps lock and wake working"
+fi
 chmod 600 "$runtime_state.lock"
 rm "$runtime_state" "$runtime_state.lock"
 
