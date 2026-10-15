@@ -87,6 +87,22 @@ grep -Fx $'time\t3h 53m' <<<"$unreadable_output" >/dev/null || fail "an unreadab
 [[ ! -s $tmp_dir/unreadable.err ]] || fail "an unreadable power_now reads quietly" "$(<"$tmp_dir/unreadable.err")"
 pass "battery status falls back to UPower's rate when sysfs cannot be read"
 
+# With power_now unreadable, a readable current and voltage give the draw...
+rmdir "$tmp_dir/power/BAT0/current_now"
+printf '1000000\n' >"$tmp_dir/power/BAT0/current_now"
+current_output=$(OMARCHY_TEST_NATIVE_PATH=BAT0 OMARCHY_POWER_SUPPLY_PATH="$tmp_dir/power" PATH="$tmp_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell 2>"$tmp_dir/current.err")
+grep -Fx $'rate\t17.5W' <<<"$current_output" >/dev/null || fail "an unreadable power_now falls back to current times voltage" "$current_output"
+grep -Fx $'time\t1h 37m' <<<"$current_output" >/dev/null || fail "current times voltage times the battery" "$current_output"
+[[ ! -s $tmp_dir/current.err ]] || fail "current times voltage reads quietly" "$(<"$tmp_dir/current.err")"
+
+# ...and an unreadable voltage leaves UPower's rate in place.
+rm "$tmp_dir/power/BAT0/voltage_now"
+mkdir "$tmp_dir/power/BAT0/voltage_now"
+voltage_output=$(OMARCHY_TEST_NATIVE_PATH=BAT0 OMARCHY_POWER_SUPPLY_PATH="$tmp_dir/power" PATH="$tmp_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell 2>"$tmp_dir/voltage.err")
+grep -Fx $'rate\t7.3W' <<<"$voltage_output" >/dev/null || fail "an unreadable voltage_now falls back to UPower's rate" "$voltage_output"
+[[ ! -s $tmp_dir/voltage.err ]] || fail "an unreadable voltage_now reads quietly" "$(<"$tmp_dir/voltage.err")"
+pass "battery status works the draw out from current and voltage, or keeps UPower's"
+
 # An 80% hold threshold doesn't trip while the battery is still below it.
 hold_dir=$(mktemp -d)
 trap 'rm -rf "$tmp_dir" "$hold_dir"' EXIT
