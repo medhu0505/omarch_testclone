@@ -401,10 +401,10 @@
     "label": "Simplified Chinese"
   },
   "style.font.cjk.tc": {
-    "label": "Traditional Chinese (Taiwan)"
+    "label": "Taiwan"
   },
   "style.font.cjk.hk": {
-    "label": "Traditional Chinese (Hong Kong)"
+    "label": "Hong Kong"
   },
   "style.hyprland": {
     "label": "Hyprland"
