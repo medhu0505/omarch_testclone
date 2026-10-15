@@ -45,18 +45,14 @@ pass "invalid candidates leave the installed revision and local edits untouched"
 git -C "$remote" show "$initial:manifest.json" > "$remote/manifest.json"
 printf '%s\n' '// updated' >> "$remote/Service.qml"
 git -C "$remote" commit -qam 'valid candidate'
-if update test.plugin; then fail "local edits must prevent update"; fi
-[[ $(<"$checkout/notes.txt") == "uncommitted notes" ]] || fail "valid candidate preserves local edits"
-git -C "$remote" show "$initial:notes.txt" > "$checkout/notes.txt"
+printf '%s\n' 'runtime cache' > "$checkout/ignored-cache"
 ln -s notes.txt "$checkout/ignored-link"
-if update test.plugin; then fail "ignored local files must not bypass validation"; fi
-[[ -L $checkout/ignored-link ]] || fail "ignored local file remains intact"
-unlink "$checkout/ignored-link"
-pass "ignored local files cannot bypass the clean-checkout requirement"
 update test.plugin
 [[ $(git -C "$checkout" rev-parse HEAD) == $(git -C "$remote" rev-parse HEAD) ]] || fail "valid update fast-forwards"
+[[ $(<"$checkout/notes.txt") == "uncommitted notes" ]] || fail "unrelated local edit survives"
+[[ $(<"$checkout/ignored-cache") == "runtime cache" && -L $checkout/ignored-link ]] || fail "ignored runtime files survive"
 [[ $(wc -l < "$test_tmp/rescans") == 1 ]] || fail "successful update rescans once"
-pass "valid candidates require a clean checkout before fast-forwarding"
+pass "valid candidates fast-forward with unrelated local and ignored files"
 
 update test.plugin
 [[ $(wc -l < "$test_tmp/rescans") == 1 ]] || fail "unchanged update does not rescan"
@@ -81,6 +77,17 @@ if update test.diverged; then fail "diverged history must prevent update"; fi
 [[ $(git -C "$checkout" rev-parse HEAD) == "$before" ]] || fail "local commit survives"
 pass "diverged history is not reset or merged"
 
+clone test.ignored-collision
+printf 'local cache\n' >"$checkout/ignored-overlap"
+printf 'upstream file\n' >"$remote/ignored-overlap"
+git -C "$remote" add -f ignored-overlap
+git -C "$remote" commit -qm 'track previously ignored path'
+before=$(git -C "$checkout" rev-parse HEAD)
+if update test.ignored-collision; then fail "an update must not overwrite an ignored local file"; fi
+[[ $(git -C "$checkout" rev-parse HEAD) == "$before" ]] || fail "ignored collision leaves HEAD unchanged"
+[[ $(<"$checkout/ignored-overlap") == "local cache" ]] || fail "ignored collision preserves local data"
+pass "ignored files are protected if an update adds the same path"
+
 clone test.symlink
 before=$(git -C "$checkout" rev-parse HEAD)
 ln -s notes.txt "$remote/hidden-link"
@@ -91,8 +98,8 @@ if update test.symlink; then fail "export-ignore cannot bypass validation"; fi
 [[ $(git -C "$checkout" rev-parse HEAD) == "$before" ]] || fail "invalid tree remains uninstalled"
 pass "validation includes files marked export-ignore"
 
-# Inject a local write after the pre-merge status check, using the real Git
-# merge so the untracked file survives just as it would on a user's checkout.
+# Inject a local write during the merge, using the real Git merge so the
+# untracked file survives just as it would on a user's checkout.
 rm "$remote/hidden-link"
 git -C "$remote" add -u
 git -C "$remote" commit -qm 'remove symlink'
@@ -110,10 +117,11 @@ exec "$REAL_GIT" "$@"
 SH
 chmod +x "$test_tmp/bin/git"
 rescans_before=$(wc -l <"$test_tmp/rescans")
-if PATH="$test_tmp/bin:$PATH" update test.race; then fail "an edit during merge must not report a validated update"; fi
+PATH="$test_tmp/bin:$PATH" update test.race
 [[ -f $checkout/unvalidated.txt ]] || fail "concurrent edits remain intact"
-(( $(wc -l <"$test_tmp/rescans") == rescans_before )) || fail "a changed tree skips the explicit rescan"
-pass "a concurrent local write is detected without deleting it or requesting a rescan"
+[[ $(git -C "$checkout" rev-parse HEAD) == $(git -C "$remote" rev-parse HEAD) ]] || fail "concurrent edit does not prevent a valid fast-forward"
+(( $(wc -l <"$test_tmp/rescans") == rescans_before + 1 )) || fail "updated plugin is rescanned"
+pass "a concurrent unrelated write survives the update"
 
 cat >"$test_tmp/bin/omarchy-plugin-validate" <<'SH'
 #!/bin/bash
@@ -140,11 +148,11 @@ mkdir -p "$batch_home/.config/omarchy/plugins"
 for name in alpha beta; do
   git clone -q "$remote" "$batch_home/.config/omarchy/plugins/$name"
 done
-printf 'local file\n' >"$batch_home/.config/omarchy/plugins/beta/local.txt"
+printf 'local edit\n' >>"$batch_home/.config/omarchy/plugins/beta/Service.qml"
 printf '// batch update\n' >>"$remote/Service.qml"
 git -C "$remote" commit -qam 'batch update'
 rescans_before=$(wc -l <"$test_tmp/rescans")
 if HOME="$batch_home" bash "$ROOT/bin/omarchy-plugin-update" --yes; then fail "a partially refused batch reports failure"; fi
 [[ $(git -C "$batch_home/.config/omarchy/plugins/alpha" rev-parse HEAD) == $(git -C "$remote" rev-parse HEAD) ]] || fail "valid batch entries still update"
-(( $(wc -l <"$test_tmp/rescans") == rescans_before )) || fail "a failed batch skips the explicit rescan"
-pass "a partially failed batch makes no explicit rescan request"
+(( $(wc -l <"$test_tmp/rescans") == rescans_before + 1 )) || fail "successful batch entries trigger a rescan"
+pass "a partially failed batch rescans successful updates"

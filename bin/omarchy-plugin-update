@@ -88,24 +88,15 @@ update_one() {
   fi
   rm -rf -- "$staging"
 
-  # The validated tree must also be the one installed. Do not combine it with
-  # local edits or untracked files that the validator has not inspected,
-  # including ignored files that would still be visible to the plugin loader.
-  local status
-  status=$(git -C "$dir" status --porcelain --untracked-files=all --ignored) || return 1
-  if [[ -n $status ]]; then
-    echo "omarchy-plugin-update: '$id' has local changes in $dir; save them outside the checkout before updating" >&2
-    return 1
-  fi
-
-  if ! git -C "$dir" merge --ff-only "$candidate" >/dev/null 2>&1; then
+  # Git preserves unrelated local files, including runtime data. Refuse an
+  # update that would overwrite an ignored file when a new tracked path lands.
+  if ! git -C "$dir" merge --ff-only --no-overwrite-ignore "$candidate" >/dev/null 2>&1; then
     echo "omarchy-plugin-update: cannot fast-forward '$id'; you have local changes in $dir" >&2
     return 1
   fi
 
-  status=$(git -C "$dir" status --porcelain --untracked-files=all --ignored) || return 1
-  if [[ -n $status || $(git -C "$dir" rev-parse HEAD) != "$candidate" ]]; then
-    echo "omarchy-plugin-update: '$id' changed during the update; save local changes and validate it before reloading" >&2
+  if [[ $(git -C "$dir" rev-parse HEAD) != "$candidate" ]]; then
+    echo "omarchy-plugin-update: '$id' did not reach the validated revision" >&2
     return 1
   fi
 
@@ -161,7 +152,7 @@ for id in "${targets[@]}"; do
   update_one "$id" || rc=1
 done
 
-if (( UPDATED_ANY && rc == 0 )); then
+if (( UPDATED_ANY )); then
   omarchy-shell shell rescanPlugins >/dev/null
 fi
 exit $rc
