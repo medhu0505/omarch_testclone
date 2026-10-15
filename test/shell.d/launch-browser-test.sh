@@ -72,9 +72,12 @@ grep -F -- '--private-window' "$launch_log" >/dev/null || fail "Firefox private 
 
 HOME="$test_home" PATH="$mock_bin:$ROOT/bin:$PATH" HYPRLAND_INSTANCE_SIGNATURE=test \
   OMARCHY_TEST_BROWSER_LAUNCH="$launch_log" OMARCHY_TEST_BROWSER_FOCUS="$focus_log" \
+  OMARCHY_TEST_BROWSER_EXEC="$browser_exec_log" \
   bash "$ROOT/bin/omarchy-launch-browser" --private
 
 [[ ! -e $focus_log ]] || fail "private browser launcher leaves a new window on the current workspace"
+[[ ! -e $browser_exec_log ]] || fail "Chromium private launch does not probe the browser" "$(cat "$browser_exec_log")"
+grep -Fq -- '--incognito' "$launch_log" || fail "Chromium private launch receives its incognito flag"
 
 HOME="$test_home" PATH="$mock_bin:$ROOT/bin:$PATH" HYPRLAND_INSTANCE_SIGNATURE=test \
   OMARCHY_TEST_BROWSER_LAUNCH="$launch_log" OMARCHY_TEST_BROWSER_FOCUS="$focus_log" \
