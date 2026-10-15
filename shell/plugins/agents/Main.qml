@@ -181,12 +181,17 @@ Item {
   }
 
   function runUpdate(kind, agentIds) {
+    var targeted = !!agentIds && agentIds.length > 0
     if (updateProcess.running) {
-      // Collapse queued requests to one full rerun; a forced refresh outranks
-      // the cheaper kinds it might have been queued behind.
-      if (kind === "force" || root.pendingUpdateKind === "") {
+      // Collapse queued requests to one rerun; a forced refresh outranks the
+      // cheaper kinds, and a request for every agent widens one for a few.
+      if (root.pendingUpdateKind === "") {
         root.pendingUpdateKind = kind
-        root.pendingUpdateAgentIds = agentIds || null
+        root.pendingUpdateAgentIds = targeted ? agentIds.slice() : null
+      } else {
+        if (kind === "force") root.pendingUpdateKind = kind
+        if (!targeted) root.pendingUpdateAgentIds = null
+        else if (root.pendingUpdateAgentIds) root.pendingUpdateAgentIds = root.pendingUpdateAgentIds.concat(agentIds.filter(function(id) { return root.pendingUpdateAgentIds.indexOf(id) < 0 }))
       }
       return
     }
