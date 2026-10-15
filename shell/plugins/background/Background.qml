@@ -23,6 +23,8 @@ Item {
   // An instant switch keeps the displayed path until the replacement's header
   // is known, otherwise constrainDecode would clear the image's source.
   property string pendingInstantBackground: ""
+  // Its reload waits with it, so the old path is not reloaded meanwhile.
+  property bool pendingInstantReload: false
   property string incomingBackground: ""
   property string oldBackground: ""
   // A theme switch names its next background before it has staged the rest of
@@ -83,7 +85,8 @@ Item {
   property int recoverVersion: -1
 
   function recoverBackground(failedPath) {
-    if (!failedPath || failedPath !== displayedBackground) return
+    // A pending instant switch is about to replace the failed path anyway.
+    if (!failedPath || failedPath !== displayedBackground || pendingInstantBackground) return
     failedBackground = failedPath
     if (recoverProc.running) return
     recoverVersion = backgroundVersion
@@ -103,7 +106,6 @@ Item {
   }
 
   function setBackground(path, instant) {
-    if (instant) reloadVersion += 1
     transitionBackground("", path, path, instant, instant)
   }
 
@@ -113,6 +115,7 @@ Item {
     fromPath = String(fromPath || "").trim()
     if (!path || (!force && finalPath === currentBackground)) return
     pendingInstantBackground = ""
+    pendingInstantReload = false
     if (path !== preparedBackground) preparedBackground = ""
     preparedBackgroundTimer.stop()
     lastTransitionPath = path
@@ -135,6 +138,7 @@ Item {
       incomingBackground = ""
       preparedBackground = ""
       pendingInstantBackground = finalPath
+      pendingInstantReload = instant
       applyPendingInstantBackground()
       revealProgress = 1
       return
@@ -148,8 +152,11 @@ Item {
   function applyPendingInstantBackground() {
     var path = pendingInstantBackground
     if (!path || (!isVideo(path) && nativeSizes[path] === undefined)) return
+    // The version moves first, or a cached frame for the path's old version shows.
+    if (pendingInstantReload) reloadVersion += 1
     displayedBackground = path
     pendingInstantBackground = ""
+    pendingInstantReload = false
   }
 
   function setPendingTheme(colorsB64, shellB64) {

@@ -14,18 +14,19 @@ const media = fs.readFileSync(path.join(root, 'shell/Ui/BackgroundMedia.qml'), '
 function state(displayed = 'a.png') {
   const ctx = {
     currentBackground: displayed, displayedBackground: displayed,
-    pendingInstantBackground: '', incomingBackground: '', oldBackground: '',
+    pendingInstantBackground: '', pendingInstantReload: false, incomingBackground: '', oldBackground: '',
     preparedBackground: '', lastTransitionPath: '', sizeQueue: [],
     finishingTransition: false, backgroundVersion: 0, reloadVersion: 0, revealStartedVersion: -1,
     revealProgress: 1, sizeProbe: { running: false, path: '' },
     sizeProbeOut: { text: '' },
+    failedBackground: '', recoverVersion: -1, recoverProc: { running: false },
     preparedBackgroundTimer: { stop() {}, restart() {} },
     revealAnimation: { stop() {} },
     Util: { isVideoPath: value => /\.(mp4|m4v|mov|webm|mkv|avi)$/i.test(value) },
   }
   ctx.root = ctx
   vm.createContext(ctx)
-  for (const name of ['isVideo', 'setBackground', 'transitionBackground', 'applyPendingInstantBackground', 'prepareBackground', 'requestNativeSize', 'probeNextSize', 'pruneNativeSizes']) {
+  for (const name of ['isVideo', 'recoverBackground', 'setBackground', 'transitionBackground', 'applyPendingInstantBackground', 'prepareBackground', 'requestNativeSize', 'probeNextSize', 'pruneNativeSizes']) {
     const match = background.match(new RegExp(`^  function ${name}\\([^]*?^  }`, 'm'))
     // The original source has no pending helper; still execute its transition
     // so the first regression fails on the premature displayed-path change.
@@ -58,6 +59,31 @@ assertEqual(s.incomingBackground, '', 'instant switch does not start a wipe')
 s.completeProbe()
 assertEqual(s.displayedBackground, 'b.png', 'the new path is displayed once its size is known')
 assertEqual(s.pendingInstantBackground, '', 'the completed instant request releases its pending path')
+
+s = state()
+s.setBackground('b.png', true)
+assertEqual(s.reloadVersion, 0, 'a pending instant switch does not reload the wallpaper still on screen')
+s.completeProbe()
+assertEqual(s.reloadVersion, 1, 'an instant switch reloads once its path is displayed')
+
+s = state()
+s.setBackground('b.png', true)
+let shown = s.displayedBackground
+let versionWhenShown = -1
+Object.defineProperty(s, 'displayedBackground', { get: () => shown, set(value) { versionWhenShown = s.reloadVersion; shown = value } })
+s.completeProbe()
+assertEqual(versionWhenShown, 1, 'the new path is displayed only at its new version, so no stale cached frame shows')
+
+s = state()
+s.setBackground('a.png', true)
+assertEqual(s.reloadVersion, 1, 'a same-path instant switch still reloads at once')
+
+s = state()
+s.setBackground('b.png', true)
+s.recoverBackground('a.png')
+assertEqual(s.recoverProc.running, false, 'a failure of the old path starts no recovery over a pending instant switch')
+s.completeProbe()
+assertEqual(s.displayedBackground, 'b.png', 'the pending instant switch still lands after the old path fails')
 
 s = state()
 s.setBackground('b.png', true)
