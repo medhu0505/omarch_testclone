@@ -78,3 +78,29 @@ if grep -q -- '--disable-gpu-compositing' "$flags"; then
   fail "legacy GPU setup leaves other drivers on GPU compositing"
 fi
 pass "legacy GPU setup leaves other drivers on GPU compositing"
+
+migration_home="$tmp_dir/migration-home"
+mkdir -p "$migration_home/.config"
+printf '%s\n' '--ozone-platform=wayland' >"$migration_home/.config/chromium-flags.conf"
+printf '%s\n' '--ozone-platform=wayland' >"$migration_home/.config/brave-flags.conf"
+set_devices 0x1002:0x6741:radeon:connected:1
+HOME="$migration_home" bash -euo pipefail "$ROOT/migrations/1790699056.sh" >/dev/null
+for browser in chromium brave; do
+  grep -qxF -- '--disable-gpu-compositing' "$migration_home/.config/$browser-flags.conf" ||
+    fail "legacy GPU migration covers $browser-flags.conf"
+done
+[[ ! -e $migration_home/.config/chrome-flags.conf ]] || fail "legacy GPU migration does not create missing flags files"
+pass "legacy GPU migration covers every installed Chromium browser"
+
+mock_bin="$tmp_dir/mock-bin"
+mkdir -p "$mock_bin"
+for command in cp omarchy-refresh-limine omarchy-refresh-plymouth omarchy-install-chromium-legacy-gpu; do
+  printf '#!/bin/bash\necho %s >>"%s"\n' "$command" "$tmp_dir/reinstall.log" >"$mock_bin/$command"
+  chmod +x "$mock_bin/$command"
+done
+printf '#!/bin/bash\nexit 1\n' >"$mock_bin/omarchy-cmd-present"
+chmod +x "$mock_bin/omarchy-cmd-present"
+PATH="$mock_bin:$PATH" omarchy-reinstall-configs >/dev/null
+grep -A1 -xF cp "$tmp_dir/reinstall.log" | grep -qxF omarchy-install-chromium-legacy-gpu ||
+  fail "resetting configs reapplies the legacy GPU flag" "$(cat "$tmp_dir/reinstall.log")"
+pass "resetting configs reapplies the legacy GPU flag"

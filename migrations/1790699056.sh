@@ -1,3 +1,5 @@
 echo "Disable Chromium GPU compositing on legacy radeon GPUs"
 
-omarchy-install-chromium-legacy-gpu
+for browser in chromium chrome microsoft-edge-stable brave brave-origin; do
+  omarchy-install-chromium-legacy-gpu "$HOME/.config/$browser-flags.conf"
+done
