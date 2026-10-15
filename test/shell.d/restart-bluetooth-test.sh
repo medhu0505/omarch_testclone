@@ -55,8 +55,8 @@ STUB
 cat >"$tmp_dir/bin/bluetoothctl" <<'STUB'
 #!/bin/bash
 printf 'bluetoothctl %s\n' "$*" >>"$STUB_CALLS"
-if [[ $1 == "list" && -n ${STUB_LIST_STALLS_AT:-} ]]; then
-  (( $(grep -c '^bluetoothctl list' "$STUB_CALLS") >= STUB_LIST_STALLS_AT )) && exec sleep 30
+if [[ $1 == "list" && -n ${STUB_LIST_ANSWERS:-} ]]; then
+  (( $(grep -c '^bluetoothctl list' "$STUB_CALLS") > STUB_LIST_ANSWERS )) && exec sleep 30
 fi
 if [[ $1 == "list" && -f $STUB_STATE/controller ]]; then
   echo "Controller AA:BB:CC:DD:EE:FF omarchy [default]"
@@ -102,14 +102,15 @@ pass "restart bluetooth restarts bluetooth.service"
 grep -q '^modprobe' "$tmp_dir/calls" && fail "restart bluetooth leaves btusb alone once a controller answers"
 pass "restart bluetooth leaves btusb alone once a controller answers"
 
-# bluetoothd can go away between the probe that found a controller and the
-# status listing, and an unguarded bluetoothctl would then wait for it forever.
-# The third listing is that one: after the wait's probe and the final probe.
+# The status shows the listing that was checked. Listing again after the check
+# hangs, or prints nothing and exits 0, if bluetoothd goes away in between: here
+# it answers the wait's probe and the status check, then stops answering.
 reset_stubs
 started=$SECONDS
-STUB_LIST_STALLS_AT=3 run_restart_bluetooth restart >/dev/null 2>&1 || true
-(( SECONDS - started < 10 )) || fail "restart bluetooth bounds the final status listing"
-pass "restart bluetooth bounds the final status listing"
+output=$(STUB_LIST_ANSWERS=2 run_restart_bluetooth restart 2>&1) || fail "restart bluetooth reports the controller it checked" "$output"
+grep -q '^Controller ' <<<"$output" || fail "restart bluetooth prints the controller it checked" "$output"
+(( SECONDS - started < 10 )) || fail "restart bluetooth does not list again after the check"
+pass "restart bluetooth prints the controller it checked"
 
 # A restart the user cancelled at the password prompt must not be reported as a
 # recovery, however healthy the adapter already looked. The message is matched

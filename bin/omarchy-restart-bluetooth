@@ -74,8 +74,10 @@ fi
 
 echo -e "\nBluetooth status:\n"
 
-if controller_present; then
-  timeout 2s bluetoothctl list
+# List once and print what was checked: a second call could hang, or come back
+# empty, if bluetoothd went away in between.
+if controllers=$(timeout 2s bluetoothctl list 2>/dev/null | grep '^Controller '); then
+  echo "$controllers"
 else
   echo "No Bluetooth controller is available."
   echo "Check 'journalctl -b -k' for adapter firmware errors; bluetoothd's own log is 'journalctl -b -u bluetooth'."
