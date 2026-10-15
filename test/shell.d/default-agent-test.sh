@@ -844,7 +844,33 @@ assert_launch crush crush run "Review this project"
 printf '%s\n' '--thinking' 'high' >"$flags_dir/pi.flags"
 assert_bypass pi pi --thinking high
 pass "agent flags file adds flags only where the agent launches with them"
-rm -r "$flags_dir"
+
+# A flags file that can't be read stops the launch rather than dropping the
+# user's flags. Root reads any file, so the permission case needs a user.
+assert_unreadable_flags() {
+  local description=$1
+
+  printf '%s\n' "claude" >"$agent_file"
+  : >"$launch_log"
+  if omarchy-agent >"$test_tmp/flags-output" 2>&1; then
+    fail "agent launcher refuses $description"
+  fi
+  grep -Fq "Cannot read $flags_dir/claude.flags" "$test_tmp/flags-output" ||
+    fail "agent launcher explains $description"
+  [[ ! -s $launch_log ]] || fail "agent launcher starts nothing with $description"
+}
+
+rm "$flags_dir/claude.flags"
+ln -s "$flags_dir/missing.flags" "$flags_dir/claude.flags"
+assert_unreadable_flags "a dangling flags symlink"
+rm "$flags_dir/claude.flags"
+if (( EUID != 0 )); then
+  printf '%s\n' '--model' 'opus' >"$flags_dir/claude.flags"
+  chmod 000 "$flags_dir/claude.flags"
+  assert_unreadable_flags "an unreadable flags file"
+fi
+pass "unreadable agent flags file stops the launch"
+rm -rf "$flags_dir"
 
 printf '%s\n' "opencode" >"$agent_file"
 omarchy-agent
