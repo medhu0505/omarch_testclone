@@ -51,10 +51,10 @@ ShellRoot {
     }
   }
 
-  // Past BackgroundIntro's 10 s startup deadline and its fade, so a cover the
-  // deadline never lifts fails here rather than at the runner's timeout.
+  // Past the 1.5 s startup deadline the staged copy uses and its fade, so a
+  // cover the deadline never lifts fails here rather than at the runner's timeout.
   Timer {
-    interval: 12000
+    interval: 2500
     running: true
     onTriggered: {
       test.check(false, "the deadline fades the cover away despite the failed wallpaper")
