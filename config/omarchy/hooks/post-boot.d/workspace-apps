@@ -1,3 +1,4 @@
+
 #!/bin/bash
 # omarchy:summary=Launch default apps assigned to workspaces
 
@@ -9,13 +10,12 @@ valid_workspace() {
     [[ "${1:-}" =~ ^([1-9]|10)$ ]]
 }
 
-launch_and_place() {
+launch_on_workspace() {
     local ws="$1"
     local label="$2"
     local launch_type="$3"
     local target="$4"
-    local before after new_addr
-    local waited=0
+    local shell_command lua_command
     local -a launch_args
 
     if ! valid_workspace "$ws"; then
@@ -23,9 +23,7 @@ launch_and_place() {
             "Workspace apps: invalid workspace configuration"
         return 0
     fi
-    before=$(hyprctl clients -j | jq -r '.[].address' | sort)
 
-    # Launch without evaluating a command string from the config file.
     case "$launch_type" in
         app)
             if [[ "$target" != /* ||
@@ -36,8 +34,7 @@ launch_and_place() {
                 return 0
             fi
 
-            launch_args=(gio launch "$target")
-            uwsm-app -- "${launch_args[@]}" >/dev/null 2>&1 &
+            launch_args=(uwsm-app -- gio launch "$target")
             ;;
 
         web)
@@ -48,7 +45,6 @@ launch_and_place() {
             fi
 
             launch_args=(omarchy-launch-webapp "$target")
-            "${launch_args[@]}" >/dev/null 2>&1 &
             ;;
 
         *)
@@ -58,37 +54,25 @@ launch_and_place() {
             ;;
     esac
 
+    # Escape each argument before passing the command to Hyprland.
+    printf -v shell_command '%q ' "${launch_args[@]}"
+    shell_command=${shell_command% }
 
-    # Wait up to 10 seconds for a new window.
-    while (( waited < 20 )); do
-        sleep 0.5
-        waited=$((waited + 1))
+    lua_command=$(jq -Rn --arg command "$shell_command" '$command') || return 0
 
-        after=$(hyprctl clients -j | jq -r '.[].address' | sort)
-
-        new_addr=$(comm -13 \
-            <(printf '%s\n' "$before") \
-            <(printf '%s\n' "$after") |
-            head -n 1)
-
-        [[ -n "$new_addr" ]] && break
-    done
-
-    if [[ "$new_addr" =~ ^0x[[:xdigit:]]+$ ]]; then
-        hyprctl eval \
-            "hl.dispatch(hl.dsp.window.move({ workspace = \"$ws\", window = \"address:$new_addr\", follow = false }))" \
-            >/dev/null 2>&1
-    else
+    # Assign the workspace when launching, rather than moving the
+    # first unrelated window that happens to appear.
+    if ! hyprctl eval \
+        "hl.dispatch(hl.dsp.exec_cmd($lua_command, { workspace = \"$ws silent\" }))" \
+        >/dev/null 2>&1; then
         omarchy-notification-send -u low \
-            "Workspace apps: no window appeared for workspace $ws"
+            "Workspace apps: failed to dispatch $label"
     fi
-
-    sleep 0.1
 }
 
 while IFS=$'\t' read -r ws label launch_type target; do
     [[ -n "$ws" ]] || continue
     [[ -n "$label" && -n "$launch_type" && -n "$target" ]] || continue
 
-    launch_and_place "$ws" "$label" "$launch_type" "$target"
+    launch_on_workspace "$ws" "$label" "$launch_type" "$target"
 done < "$CONF"
