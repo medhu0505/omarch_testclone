@@ -91,13 +91,6 @@ function isTypedKeyboard(name) {
   return !UNTYPED_KEYBOARDS.test(String(name || ""))
 }
 
-function pollingKeyboardCount(keyboards) {
-  return keyboards.filter(function (keyboard) {
-    var name = String(keyboard.name || "")
-    return isTypedKeyboard(name) || name.indexOf("apple-headset") === 0
-  }).length
-}
-
 // Every keyboard on the seat carries the same layout list unless one was given
 // its own, but only the one being typed on advances through it. So the
 // furthest-advanced is the one worth reading, and a switch names the keyboard it
@@ -119,6 +112,24 @@ function selectKeyboard(typed, namedByEvent) {
   }, keyboards[0])
 }
 
+function inputLabel(state, fallback) {
+  if (!state || !state.current || state.current.indexOf("keyboard-") === 0) return fallback
+  if (state.label) return String(state.label).substring(0, 3)
+  var labels = { mozc: "あ", hangul: "한", pinyin: "拼", chewing: "注", cangjie5: "倉" }
+  return labels[state.current] || shortLabel(state.language || state.name, {})
+}
+
+function inputTooltip(state, layout, multipleLayouts) {
+  if (!state || !state.methods || state.methods.length < 2)
+    return layout + (multipleLayouts ? " · Super + I" : "")
+  var name = state.current && state.current.indexOf("keyboard-") === 0 ? layout : (state.name || layout)
+  return name.replace(/^Keyboard - /, "") + " · Super + I"
+}
+
+function showIndicator(layoutLabel, multipleLayouts, multipleInputs) {
+  return multipleInputs || (layoutLabel !== "" && multipleLayouts)
+}
+
 function layoutIndex(keyboard) {
   return (keyboard && keyboard.active_layout_index) || 0
 }
@@ -129,7 +140,9 @@ if (typeof module !== "undefined") {
     isTypedKeyboard: isTypedKeyboard,
     layoutBriefs: layoutBriefs,
     selectKeyboard: selectKeyboard,
-    pollingKeyboardCount: pollingKeyboardCount,
-    shortLabel: shortLabel
+    shortLabel: shortLabel,
+    inputLabel: inputLabel,
+    inputTooltip: inputTooltip,
+    showIndicator: showIndicator
   }
 }
