@@ -14,16 +14,16 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[3]
+OMARCHY = Path(os.environ['OMARCHY_PATH'])
 
 
 def test():
   with tempfile.TemporaryDirectory(prefix='mpv-controls-') as temp:
     home = Path(temp)
     config = home / 'config'
-    shutil.copytree(ROOT / 'config/mpv', config)
+    shutil.copytree(OMARCHY / 'config/mpv', config)
     generator=runpy.run_path(str(ROOT/'test/shell.d/fixtures/mpv/palette.py'))
-    omarchy=generator['OMARCHY']
-    palettes={name:generator['generate'](home/'render',omarchy/f'themes/{name}/colors.toml')
+    palettes={name:generator['generate'](home/'render',OMARCHY/f'themes/{name}/colors.toml', OMARCHY)
          for name in ('nord','flexoki-light','catppuccin-latte')}
     theme=home/'theme.conf'
     theme.write_text(palettes['nord'])

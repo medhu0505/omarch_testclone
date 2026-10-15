@@ -21,6 +21,28 @@ run_migration
 diff -r "$test_tmp/first" "$home" || fail "mpv migration is idempotent"
 pass "fresh upgrade bootstraps palette and idempotent defaults"
 
+# A dark palette with the legacy marker must still initialize in light mode.
+# An explicit mode in colors.toml takes precedence over that marker.
+for mode in marker explicit; do
+  home="$test_tmp/light-$mode"
+  theme="$home/.local/state/omarchy/current/theme"
+  mkdir -p "$theme"
+  sed '/^mode[[:space:]]*=/d; /^theme_type[[:space:]]*=/d' "$ROOT/themes/nord/colors.toml" > "$theme/colors.toml"
+  touch "$theme/light.mode"
+  expected="light"
+  if [[ $mode == "explicit" ]]; then
+    printf '\nmode = "dark"\n' >> "$theme/colors.toml"
+    expected="dark"
+  fi
+  run_migration
+  grep -qx "mode=$expected" "$theme/mpv-theme.conf" || fail "migration preserves $mode theme mode"
+  cp -a "$home" "$test_tmp/light-snapshot"
+  run_migration
+  diff -r "$test_tmp/light-snapshot" "$home" || fail "migration with $mode mode is idempotent"
+  rm -rf "$test_tmp/light-snapshot"
+done
+pass "migration preserves legacy light mode and explicit mode precedence"
+
 for fixture in regular uosc modernz oscc leaf-link parent-link dangling-link empty-dir; do
   home="$test_tmp/$fixture"
   mkdir -p "$home/.config/mpv"

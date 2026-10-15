@@ -15,6 +15,9 @@ else
       if [[ ! -e $mpv_theme/mpv-theme.conf ]]; then
         mkdir -p "$mpv_tmp/.local/state/omarchy/current/next-theme"
         cp "$mpv_theme/colors.toml" "$mpv_tmp/.local/state/omarchy/current/next-theme/"
+        if [[ -f $mpv_theme/light.mode ]]; then
+          cp "$mpv_theme/light.mode" "$mpv_tmp/.local/state/omarchy/current/next-theme/"
+        fi
         HOME="$mpv_tmp" PATH="$OMARCHY_PATH/bin:$PATH" bash "$OMARCHY_PATH/bin/omarchy-theme-set-templates"
         # Rename on the same filesystem so a running reader sees a whole file.
         mpv_palette=$(mktemp "$mpv_theme/.mpv-theme.XXXXXX")

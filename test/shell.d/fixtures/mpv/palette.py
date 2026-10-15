@@ -12,19 +12,19 @@ import time
 ROOT = Path(__file__).resolve().parents[4]
 OMARCHY = ROOT
 SCRIPTS = Path(os.environ.get('MPV_TEST_SCRIPTS', str(ROOT / 'config/mpv/scripts')))
-TEMPLATE = ROOT / 'default/themed/mpv-theme.conf.tpl'
 
 
-def generate(home, colors):
+def generate(home, colors, omarchy=OMARCHY):
+  template = omarchy / 'default/themed/mpv-theme.conf.tpl'
   stage = home / '.local/state/omarchy/current/next-theme'
   shutil.rmtree(stage, ignore_errors=True)
   stage.mkdir(parents=True)
   shutil.copyfile(colors, stage / 'colors.toml')
   templates = home / '.config/omarchy/themed'
   templates.mkdir(parents=True, exist_ok=True)
-  shutil.copyfile(TEMPLATE, templates / TEMPLATE.name)
-  subprocess.run([str(ROOT / 'bin/omarchy-theme-set-templates')], check=True,
-         env={**os.environ, 'HOME': str(home), 'OMARCHY_PATH': str(OMARCHY), 'PATH': str(ROOT / 'bin') + os.pathsep + os.environ['PATH']})
+  shutil.copyfile(template, templates / template.name)
+  subprocess.run([str(omarchy / 'bin/omarchy-theme-set-templates')], check=True,
+         env={**os.environ, 'HOME': str(home), 'OMARCHY_PATH': str(omarchy), 'PATH': str(omarchy / 'bin') + os.pathsep + os.environ['PATH']})
   data = (stage / 'mpv-theme.conf').read_text()
   assert '{{' not in data, 'Unresolved theme token'
   return data

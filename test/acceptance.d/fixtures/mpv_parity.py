@@ -11,7 +11,8 @@ import tempfile
 import time
 
 ROOT=Path(__file__).resolve().parents[3]
-CONFIG=ROOT/'config/mpv'
+OMARCHY=Path(os.environ['OMARCHY_PATH'])
+CONFIG=OMARCHY/'config/mpv'
 GENERATOR=ROOT/'test/shell.d/fixtures/mpv/palette.py'
 
 
@@ -27,7 +28,7 @@ def test():
     (config/'input.conf').write_text('WHEEL_UP set volume 33\nWHEEL_DOWN set volume 44\n')
     generator=runpy.run_path(str(GENERATOR))
     palette=home/'palette.conf'
-    palette.write_text(generator['generate'](home/'render',generator['OMARCHY']/'themes/nord/colors.toml'))
+    palette.write_text(generator['generate'](home/'render',OMARCHY/'themes/nord/colors.toml', OMARCHY))
     fixture=home/'fixture.mkv'
     subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y','-f','lavfi','-i',
             'testsrc2=size=640x360:rate=12','-f','lavfi','-i','anullsrc=channel_layout=stereo:sample_rate=48000','-map','0:v','-map','1:a','-c:a','aac','-t','60','-c:v','libx264','-preset','ultrafast',
