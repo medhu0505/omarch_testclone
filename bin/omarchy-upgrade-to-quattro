@@ -1825,8 +1825,10 @@ migrate_legacy_hypr_input() {
 
   for key in "${keys[@]}"; do
     if value=$(legacy_hypr_input_value "$key" "$legacy_file"); then
+      # Stopping here would leave a half-upgraded machine, so leave the key to Quattro and say so.
       if [[ $value == *'$'* ]]; then
-        fail "Resolve the $key variable in $legacy_file before upgrading; it cannot be copied into Lua."
+        printf 'Warning: %s in %s uses a variable, which cannot be copied into Lua; set it in %s after the upgrade.\n' "$key" "$legacy_file" "$input_file" >&2
+        continue
       fi
       if ! legacy_hypr_input_is_default "$key" "$value"; then
         values[$key]=$value

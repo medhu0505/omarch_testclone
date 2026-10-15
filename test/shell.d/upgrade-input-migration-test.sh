@@ -15,7 +15,7 @@ migration_functions=${migration_functions//\/etc\/vconsole.conf/$tmp_dir/vconsol
 run_migration() {
   local home="$1" vconsole="${2-}"
   printf '%s\n' "$vconsole" >"$tmp_dir/vconsole.conf"
-  printf '%s\n%s\n%s\n' "$migration_functions" 'fail() { echo "$*" >&2; return 1; }' 'migrate_legacy_hypr_input' | HOME="$home" bash -euo pipefail
+  printf '%s\nmigrate_legacy_hypr_input\n' "$migration_functions" | HOME="$home" bash -euo pipefail
 }
 
 home="$tmp_dir/custom"
@@ -126,13 +126,12 @@ pass "stock non-Latin layouts keep custom settings usable"
 home="$tmp_dir/variable"
 mkdir -p "$home/.config/hypr"
 printf '%s\n' '-- Quattro input overrides' >"$home/.config/hypr/input.lua"
-printf 'input {\n  kb_options = $opts\n}\n' >"$home/.config/hypr/input.conf"
-if run_migration "$home" 'XKBLAYOUT=us' >"$tmp_dir/variable-output" 2>&1; then
-  fail "unresolved hyprlang variables must not become literal Lua settings"
-fi
-grep -Fq 'Resolve the kb_options variable' "$tmp_dir/variable-output" || fail "variable failure explains the needed edit"
-! grep -Fq 'Preserved from legacy' "$home/.config/hypr/input.lua" || fail "variable failure leaves input.lua untouched"
-pass "variable settings stop with an actionable message"
+printf 'input {\n  kb_layout = de\n  kb_options = $opts\n}\n' >"$home/.config/hypr/input.conf"
+run_migration "$home" 'XKBLAYOUT=us' 2>"$tmp_dir/variable-output" || fail "variable settings do not stop the upgrade"
+grep -Fq 'kb_options in' "$tmp_dir/variable-output" || fail "variable settings are named in a warning"
+! grep -Fq '$opts' "$home/.config/hypr/input.lua" || fail "unresolved hyprlang variables do not become literal Lua settings"
+grep -Fq 'kb_layout = "de"' "$home/.config/hypr/input.lua" || fail "settings beside a variable are still migrated"
+pass "variable settings are left to Quattro with a warning"
 
 copy_line=$(grep -n '^copy_always_config_defaults$' "$upgrade_script" | cut -d: -f1)
 migrate_line=$(grep -n '^migrate_legacy_hypr_input$' "$upgrade_script" | cut -d: -f1)
