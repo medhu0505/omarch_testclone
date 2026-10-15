@@ -52,13 +52,20 @@ fi
 echo "codex home=${CODEX_HOME:-default} args=$*"
 SH
 
+# Grok keys its login by issuer and keeps the plan in the settings it caches,
+# as a JSON string inside that file.
 cat >"$mock_bin/grok" <<'SH'
 #!/bin/bash
 if [[ ${1:-} == "login" ]]; then
   "${BROWSER:-omarchy-test-default-browser}" "https://auth.x.ai/oauth/authorize"
-  mkdir -p "${GROK_HOME:-$HOME/.grok}"
-  echo '{"token":"t"}' >"${GROK_HOME:-$HOME/.grok}/auth.json"
+  home=${GROK_HOME:-$HOME/.grok}
+  mkdir -p "$home"
+  printf '{"https://auth.x.ai::client":{"key":"t","user_id":"%s","email":"%s"}}\n' \
+    "${OMARCHY_TEST_LOGIN_UUID:-u-grok}" "${OMARCHY_TEST_LOGIN_EMAIL:-me@example.com}" >"$home/auth.json"
+  printf '{"payload":"{\\"settings\\":{\\"subscription_tier_display\\":\\"SuperGrok\\"}}"}\n' >"$home/settings_cache.json"
+  exit 0
 fi
+echo "grok home=${GROK_HOME:-default} args=$*"
 SH
 
 cat >"$mock_bin/omarchy-test-default-browser" <<'SH'
@@ -88,7 +95,10 @@ export PATH="$mock_bin:$ROOT/bin:$PATH"
 export OMARCHY_PATH="$ROOT"
 export OMARCHY_TEST_NOTIFICATIONS="$notifications"
 export OMARCHY_TEST_BROWSER_LOG="$test_tmp/browser"
+# A session started by an account launch pins its home through these, and
+# a run from inside one (an agent working on Omarchy) must not inherit it.
 unset CLAUDE_CONFIG_DIR CODEX_HOME GROK_HOME BROWSER
+unset OMARCHY_AGENT_CLAUDE_HOME OMARCHY_AGENT_CODEX_HOME OMARCHY_AGENT_GROK_HOME
 
 accounts="$XDG_STATE_HOME/omarchy/agents/accounts"
 
@@ -183,24 +193,32 @@ OMARCHY_TEST_DEFAULT_AGENT="" omarchy-agent-account-add grok </dev/null >/dev/nu
   fail "the first agent signed in on a machine with no default becomes the default"
 [[ -s $HOME/.grok/auth.json ]] && grep -qx "default https://auth.x.ai/oauth/authorize" "$OMARCHY_TEST_BROWSER_LOG" ||
   fail "a first Grok sign-in lands in ~/.grok through the normal browser"
-if omarchy-agent-account-add grok Second </dev/null >"$test_tmp/grok-second" 2>&1; then
-  fail "a second Grok account says it isn't supported yet"
-fi
-grep -q "isn't supported yet" "$test_tmp/grok-second" || fail "a second Grok account says why it stops" "$(cat "$test_tmp/grok-second")"
 pass "Grok signs in its first account"
+
+OMARCHY_TEST_LOGIN_UUID=u-grok-2 OMARCHY_TEST_LOGIN_EMAIL=side@example.com \
+  omarchy-agent-account-add grok Side </dev/null >/dev/null
+[[ $(omarchy-agent-account-list grok --json | jq -c '.[0].accounts[1] | {id, email, plan}') == '{"id":"side","email":"side@example.com","plan":"SuperGrok"}' ]] ||
+  fail "a Grok account reads its identity and plan from its own home" "$(omarchy-agent-account-list grok --json)"
+[[ $(readlink "$accounts/grok/side/sessions") == "$HOME/.grok/sessions" ]] ||
+  fail "a Grok account shares sessions with the primary"
+grep -qx -- "--private https://auth.x.ai/oauth/authorize" "$OMARCHY_TEST_BROWSER_LOG" ||
+  fail "a second Grok login opens in a private window" "$(cat "$OMARCHY_TEST_BROWSER_LOG")"
+omarchy-agent-account-use grok side >/dev/null
+[[ $(omarchy-agent-account-exec grok --version) == "grok home=$accounts/grok/side args=--version" ]] || fail "grok starts as the active Grok account" "$(omarchy-agent-account-exec grok --version)"
+omarchy-agent-account-use grok main >/dev/null
+pass "Grok accounts are added and used like the others"
 
 # ---------------------------------------------------------------------- routing
 
 omarchy-agent-account-use claude work >/dev/null
 [[ $(omarchy-agent-account-home claude) == "$work" ]] || fail "the active account's home is what launches use"
-grep -q "New Claude sessions now use Work (Max 5x)" "$notifications" || fail "switching says where new sessions go"
+grep -q "New Claude sessions now use Work Running sessions stay on" "$notifications" || fail "switching says where new sessions go"
 pass "use makes an account active and says so"
 
-source "$ROOT/default/bash/fns/agent-accounts"
-[[ $(claude --version) == "claude home=$work args=--version" ]] || fail "claude at a prompt starts as the active account"
-[[ $(CLAUDE_CONFIG_DIR=/elsewhere claude) == "claude home=/elsewhere args=" ]] || fail "an explicit CLAUDE_CONFIG_DIR wins over the active account"
-[[ $(codex) == "codex home=default args=" ]] || fail "codex stays on its primary until switched"
-pass "shell launches follow the active account"
+[[ $(omarchy-agent-account-exec claude --version) == "claude home=$work args=--version" ]] || fail "claude at a prompt starts as the active account"
+[[ $(CLAUDE_CONFIG_DIR=/elsewhere omarchy-agent-account-exec claude) == "claude home=/elsewhere args=" ]] || fail "an explicit CLAUDE_CONFIG_DIR wins over the active account"
+[[ $(omarchy-agent-account-exec codex) == "codex home=default args=" ]] || fail "codex stays on its primary until switched"
+pass "account dispatch follows the active account"
 
 [[ $(OMARCHY_TEST_DEFAULT_AGENT=claude omarchy-agent --inline) == "claude home=$work args=--permission-mode auto" ]] ||
   fail "omarchy-agent starts Claude as the active account"
@@ -275,8 +293,8 @@ omarchy-agent-account-remove claude work </dev/null >/dev/null
 [[ -z $(omarchy-agent-account-home claude) ]] || fail "removing the active account falls back to the primary"
 pass "remove forgets an added account without touching shared files"
 
-# A registry that can't be saved leaves the new login pending, where the add
-# command cleans it up, rather than in a home nothing can manage.
+# A registry that can't be saved leaves the new login pending for recovery,
+# rather than in a home nothing can manage.
 STATE="$ROOT/bin/omarchy-agent-account-state" python3 - <<'PY' || fail "a failed registration rolls the new home back to pending"
 import importlib.machinery, importlib.util, json, os, sys
 loader = importlib.machinery.SourceFileLoader("state", os.environ["STATE"])
@@ -286,6 +304,7 @@ loader.exec_module(state)
 
 pending = state.begin("claude")
 (pending / ".claude.json").write_text(json.dumps({"oauthAccount": {"accountUuid": "u-stranded", "emailAddress": "stranded@example.com"}}))
+(pending / ".credentials.json").write_text(json.dumps({"claudeAiOauth": {"accessToken": "test-token"}}))
 
 def broken_save(provider, registry):
   raise OSError("disk full")
@@ -299,7 +318,7 @@ else:
   sys.exit("register should fail when the registry can't be saved")
 assert pending.is_dir(), "the login goes back to pending"
 assert not (state.accounts_root() / "claude" / "stranded").exists(), "no home is left outside the registry"
-# The add command would remove it on exit; this test stands in for it.
+# Remove the recoverable fixture before later tests.
 import shutil
 shutil.rmtree(pending)
 PY
@@ -307,7 +326,7 @@ pass "a failed registration rolls the new home back to pending"
 
 # ------------------------------------------------------------ panel add flow
 
-[[ $(omarchy-agent-account-add --check) == $'claude additional\ncodex additional\ngrok unsupported' ]] ||
+[[ $(omarchy-agent-account-add --check) == $'claude additional\ncodex additional\ngrok additional' ]] ||
   fail "--check says what adding would mean for each provider" "$(omarchy-agent-account-add --check)"
 pass "--check says what adding would mean for each provider"
 
