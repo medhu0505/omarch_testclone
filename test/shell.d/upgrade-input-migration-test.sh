@@ -15,7 +15,7 @@ migration_functions=${migration_functions//\/etc\/vconsole.conf/$tmp_dir/vconsol
 run_migration() {
   local home="$1" vconsole="${2-}"
   printf '%s\n' "$vconsole" >"$tmp_dir/vconsole.conf"
-  printf '%s\nmigrate_legacy_hypr_input\n' "$migration_functions" | HOME="$home" bash -euo pipefail
+  printf '%s\n%s\n%s\n' "$migration_functions" 'fail() { echo "$*" >&2; return 1; }' 'migrate_legacy_hypr_input' | HOME="$home" bash -euo pipefail
 }
 
 home="$tmp_dir/custom"
@@ -107,6 +107,32 @@ grep -Fq 'kb_options = "compose:caps,grp:alt_shift_toggle"' "$home/.config/hypr/
 grep -Fq 'kb_layout = "fr"' "$home/.config/hypr/input.lua" || fail "settings in later input blocks are carried across"
 ! grep -q 'ignored:nested' "$home/.config/hypr/input.lua" || fail "nested settings do not replace top-level settings"
 pass "last top-level keyboard assignments survive the upgrade"
+
+home="$tmp_dir/non-latin-custom"
+mkdir -p "$home/.config/hypr"
+printf '%s\n' '-- Quattro input overrides' >"$home/.config/hypr/input.lua"
+cat >"$home/.config/hypr/input.conf" <<'CONF'
+input {
+  kb_layout = ru
+  kb_variant = phonetic
+  kb_options = ctrl:nocaps
+}
+CONF
+run_migration "$home" 'XKBLAYOUT=ru'
+grep -Fq 'kb_variant = ",phonetic"' "$home/.config/hypr/input.lua" || fail "custom variant follows the derived Latin layout"
+grep -Fq 'kb_options = "ctrl:nocaps,grp:alts_toggle"' "$home/.config/hypr/input.lua" || fail "custom options retain the non-Latin layout switch"
+pass "stock non-Latin layouts keep custom settings usable"
+
+home="$tmp_dir/variable"
+mkdir -p "$home/.config/hypr"
+printf '%s\n' '-- Quattro input overrides' >"$home/.config/hypr/input.lua"
+printf 'input {\n  kb_options = $opts\n}\n' >"$home/.config/hypr/input.conf"
+if run_migration "$home" 'XKBLAYOUT=us' >"$tmp_dir/variable-output" 2>&1; then
+  fail "unresolved hyprlang variables must not become literal Lua settings"
+fi
+grep -Fq 'Resolve the kb_options variable' "$tmp_dir/variable-output" || fail "variable failure explains the needed edit"
+! grep -Fq 'Preserved from legacy' "$home/.config/hypr/input.lua" || fail "variable failure leaves input.lua untouched"
+pass "variable settings stop with an actionable message"
 
 copy_line=$(grep -n '^copy_always_config_defaults$' "$upgrade_script" | cut -d: -f1)
 migrate_line=$(grep -n '^migrate_legacy_hypr_input$' "$upgrade_script" | cut -d: -f1)

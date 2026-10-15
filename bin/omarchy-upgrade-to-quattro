@@ -1799,6 +1799,12 @@ legacy_hypr_input_is_default() {
   esac
 }
 
+legacy_hypr_input_has_non_latin_layout() {
+  local layout="$1"
+  local non_latin_layouts=" af am ara bd bg by et ge gr il in iq ir kg kh kz la lk mk mm mn mv np rs ru sy th tj ua "
+  [[ $non_latin_layouts == *" ${layout%%,*} "* ]]
+}
+
 lua_string() {
   local value="$1"
   value=${value//\\/\\\\}
@@ -1809,7 +1815,7 @@ lua_string() {
 migrate_legacy_hypr_input() {
   local legacy_file="$HOME/.config/hypr/input.conf"
   local input_file="$HOME/.config/hypr/input.lua"
-  local key value quoted
+  local key value quoted stock_layout
   local found=0
   local keys=(kb_layout kb_variant kb_model kb_options kb_rules)
   local -A values=()
@@ -1818,13 +1824,28 @@ migrate_legacy_hypr_input() {
   grep -qF 'Preserved from legacy ~/.config/hypr/input.conf' "$input_file" && return 0
 
   for key in "${keys[@]}"; do
-    if value=$(legacy_hypr_input_value "$key" "$legacy_file") && ! legacy_hypr_input_is_default "$key" "$value"; then
-      values[$key]=$value
-      found=1
+    if value=$(legacy_hypr_input_value "$key" "$legacy_file"); then
+      if [[ $value == *'$'* ]]; then
+        fail "Resolve the $key variable in $legacy_file before upgrading; it cannot be copied into Lua."
+      fi
+      if ! legacy_hypr_input_is_default "$key" "$value"; then
+        values[$key]=$value
+        found=1
+      fi
     fi
   done
 
   (( found )) || return 0
+
+  stock_layout=$(legacy_vconsole_value XKBLAYOUT)
+  if [[ -n $stock_layout && ! -v values[kb_layout] ]] && legacy_hypr_input_has_non_latin_layout "$stock_layout"; then
+    if [[ -v values[kb_variant] ]]; then
+      values[kb_variant]=",${values[kb_variant]}"
+    fi
+    if [[ -v values[kb_options] && ${values[kb_options]} != *grp:* ]]; then
+      values[kb_options]+=",grp:alts_toggle"
+    fi
+  fi
 
   {
     printf '\n-- Preserved from legacy ~/.config/hypr/input.conf during the Quattro upgrade.\n'
