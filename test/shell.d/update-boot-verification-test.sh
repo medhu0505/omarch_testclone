@@ -31,10 +31,14 @@ cat >"$stub_bin/limine-mkinitcpio" <<'SH'
 #!/bin/bash
 echo limine-mkinitcpio >>"$CALLS"
 [[ $REPAIR_MODE != "fail" ]] || exit 1
+if [[ $REPAIR_MODE == "silent-fail" ]]; then
+  echo "mkinitcpio failed for kernel $EXPECTED_VERSION, skipping." >&2
+  exit 0
+fi
 
 if [[ $REPAIR_MODE == "image" ]]; then
   printf '%s' "$EXPECTED_VERSION" >"$UNAME_SECTION"
-  "$REAL_OBJCOPY" --update-section .uname="$UNAME_SECTION" "$UKI"
+  "$REAL_OBJCOPY" -O pei-x86-64 --add-section .uname="$UNAME_SECTION" /bin/true "$UKI"
 fi
 
 hash=$(b2sum "$UKI" | awk '{ print $1 }')
@@ -52,7 +56,7 @@ printf '%s\n' 'ENABLE_UKI=yes' >"$uki_config"
 
 make_uki() {
   printf '%s' "$1" >"$uname_section"
-  objcopy --add-section .uname="$uname_section" /bin/true "$uki"
+  objcopy -O pei-x86-64 --add-section .uname="$uname_section" /bin/true "$uki"
 }
 
 write_limine_config() {
@@ -66,7 +70,7 @@ run_verifier() {
     OMARCHY_UKI_DIR="$uki_dir" \
     OMARCHY_LIMINE_CONFIG="$limine_config" \
     OMARCHY_UKI_CONFIG="$uki_config" \
-    OWNED_PKGBASES="$pkgbase" \
+    OWNED_PKGBASES="${OWNED_PKGBASES-$pkgbase}" \
     REPAIR_MODE="${REPAIR_MODE:-fail}" \
     CALLS="$calls" \
     EXPECTED_VERSION=6.1.0-test \
@@ -76,14 +80,16 @@ run_verifier() {
     LIMINE_CONFIG="$limine_config" \
     REAL_OBJCOPY="$(command -v objcopy)" \
     PATH="$stub_bin:$ROOT/bin:$PATH" \
-    bash "$ROOT/bin/omarchy-update-verify-boot"
+    bash "$ROOT/bin/omarchy-update-verify-boot" "$@"
 }
 
 make_uki 6.1.0-test
 write_limine_config
+original_hash=$(b2sum "$uki" | awk '{ print $1 }')
 run_verifier >"$test_tmp/out" 2>"$test_tmp/err" ||
   fail "a current UKI is rejected" "$(<"$test_tmp/err")"
 [[ ! -s $calls ]] || fail "a current UKI is rebuilt"
+[[ $(b2sum "$uki" | awk '{ print $1 }') == "$original_hash" ]] || fail "reading a PE UKI changes its hash"
 pass "a current UKI reaches restart without a rebuild"
 
 printf '  path: boot():/EFI/Linux/omarchy_linux.efi\n' >"$limine_config"
@@ -103,9 +109,10 @@ pass "only active Limine path entries satisfy boot verification"
 make_uki 6.0.9-old
 write_limine_config
 REPAIR_MODE=image run_verifier >"$test_tmp/out" 2>"$test_tmp/err" ||
-  fail "a stale UKI is not repaired"
+  fail "a stale UKI is not repaired" "$(<"$test_tmp/err")"
 grep -Fxq limine-mkinitcpio "$calls" || fail "a stale UKI does not trigger one rebuild"
-[[ $(objcopy --dump-section .uname=/dev/stdout "$uki") == "6.1.0-test" ]] ||
+objcopy -O binary --only-section=.uname "$uki" "$test_tmp/extracted-uname"
+[[ $(<"$test_tmp/extracted-uname") == "6.1.0-test" ]] ||
   fail "the repair leaves the old kernel in the UKI"
 pass "a stale UKI is rebuilt before restart"
 
@@ -180,17 +187,25 @@ run_effective_verifier >"$test_tmp/out" 2>"$test_tmp/err" || fail "single-quoted
 [[ ! -s $calls ]] || fail "single-quoted yes is not an effective UKI setting"
 pass "empty and literal quoted values follow limine-entry-tool semantics"
 
-# The early analyzer also propagates boot verification failures.
-analyzer_stub="$test_tmp/analyzer-bin"
-mkdir -p "$analyzer_stub"
-cat >"$analyzer_stub/omarchy-update-verify-boot" <<'SH'
-#!/bin/bash
-exit 23
-SH
-chmod +x "$analyzer_stub/omarchy-update-verify-boot"
-: >"$test_tmp/update.log"
-if OMARCHY_UPDATE_LOG="$test_tmp/update.log" PATH="$analyzer_stub:$PATH" \
-  bash "$ROOT/bin/omarchy-update-analyze-logs"; then
-  fail "boot verification cannot stop an update before restart"
+printf 'ENABLE_UKI=yes\n' >"$uki_config"
+if OWNED_PKGBASES="" run_verifier >"$test_tmp/out" 2>"$test_tmp/err"; then
+  fail "an enabled UKI installation without a package-owned kernel passes verification"
 fi
-pass "failed boot verification stops the update before restart"
+grep -q 'No installed kernel package' "$test_tmp/err" || fail "a missing installed kernel is explained"
+pass "a UKI installation with no package-owned kernel cannot pass unchecked"
+
+make_uki 6.1.0-test
+write_limine_config
+printf 'mkinitcpio failed for kernel 6.1.0-test, skipping.\n' >"$test_tmp/update.log"
+: >"$calls"
+OMARCHY_UPDATE_LOG="$test_tmp/update.log" REPAIR_MODE=hash run_verifier --from-update >"$test_tmp/out" 2>"$test_tmp/err" ||
+  fail "an update with a failed same-version build is not repaired" "$(<"$test_tmp/err")"
+grep -Fxq limine-mkinitcpio "$calls" || fail "a same-version build error is not retried"
+pass "a logged build error triggers repair even when version and hash still match"
+
+: >"$calls"
+if OMARCHY_UPDATE_LOG="$test_tmp/update.log" REPAIR_MODE=silent-fail run_verifier --from-update >"$test_tmp/out" 2>"$test_tmp/err"; then
+  fail "a hook that reports a failed build but exits zero permits reboot"
+fi
+grep -q 'reported a failed kernel build' "$test_tmp/err" || fail "a silent build failure is explained"
+pass "a second silent build failure stops the update despite matching version and hash"

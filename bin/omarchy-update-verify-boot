@@ -6,6 +6,16 @@
 
 set -euo pipefail
 
+from_update=0
+if [[ ${1:-} == "--from-update" ]]; then
+  from_update=1
+  shift
+fi
+if (( $# )); then
+  echo "Usage: omarchy-update-verify-boot [--from-update]" >&2
+  exit 2
+fi
+
 modules_dir="${OMARCHY_MODULES_DIR:-/usr/lib/modules}"
 uki_dir="${OMARCHY_UKI_DIR:-/boot/EFI/Linux}"
 limine_config="${OMARCHY_LIMINE_CONFIG:-/boot/limine.conf}"
@@ -44,7 +54,7 @@ done
 failures=()
 verify_boot_images() {
   local config pkgbase kernel_name kernel_version reference path filename uki
-  local embedded_version expected_hash actual_hash matched
+  local embedded_version expected_hash actual_hash matched version_file owned_kernels=0
   local -a references=()
 
   failures=()
@@ -63,6 +73,7 @@ verify_boot_images() {
     # kernel-modules-hook can preserve the running kernel after its package is
     # replaced. Limine deliberately ignores that unowned copy, so we do too.
     pacman -Qqo "$pkgbase" &>/dev/null || continue
+    ((owned_kernels += 1))
 
     kernel_name=$(<"$pkgbase")
     kernel_name=${kernel_name// /}
@@ -82,7 +93,16 @@ verify_boot_images() {
         continue
       fi
 
-      embedded_version=$(sudo objcopy --dump-section .uname=/dev/stdout "$uki" 2>/dev/null | tr -d '\0' || true)
+      if ! version_file=$(mktemp); then
+        failures+=("Could not create a temporary file to inspect $uki")
+        continue
+      fi
+      if sudo objcopy -O binary --only-section=.uname "$uki" "$version_file" 2>/dev/null; then
+        embedded_version=$(tr -d '\0' <"$version_file")
+      else
+        embedded_version=""
+      fi
+      rm -f -- "$version_file"
       if [[ $embedded_version != "$kernel_version" ]]; then
         failures+=("$uki contains ${embedded_version:-no kernel version}; expected $kernel_version")
       fi
@@ -100,16 +120,42 @@ verify_boot_images() {
   done
   shopt -u nullglob
 
+  ((owned_kernels > 0)) || failures+=("No installed kernel package was found under $modules_dir")
+
   ((${#failures[@]} == 0))
 }
 
-verify_boot_images && exit 0
+build_failed=0
+if (( from_update )) && [[ -r ${OMARCHY_UPDATE_LOG:-/tmp/omarchy-update.log} ]] &&
+  grep -q 'mkinitcpio failed for kernel' "${OMARCHY_UPDATE_LOG:-/tmp/omarchy-update.log}"; then
+  build_failed=1
+fi
+
+if verify_boot_images && (( build_failed == 0 )); then
+  exit 0
+fi
 
 echo -e "\e[33m\nThe installed kernels and Limine boot images do not match. Rebuilding once...\e[0m" >&2
-if sudo limine-mkinitcpio && verify_boot_images; then
+repair_log=$(mktemp) || {
+  echo "Could not create a temporary file for the Limine rebuild log. Do not reboot." >&2
+  exit 1
+}
+repair_failed=0
+if ! sudo limine-mkinitcpio 2>&1 | tee "$repair_log"; then
+  repair_failed=1
+fi
+if grep -q 'mkinitcpio failed for kernel' "$repair_log"; then
+  repair_failed=1
+fi
+rm -f -- "$repair_log"
+
+verify_boot_images || true
+if (( repair_failed == 0 )) && ((${#failures[@]} == 0)); then
   echo -e "\e[32mThe Limine boot images are repaired.\e[0m"
   exit 0
 fi
+
+(( repair_failed == 0 )) || failures+=("limine-mkinitcpio reported a failed kernel build")
 
 echo -e "\e[31m\nThe Limine boot images are still unsafe:\e[0m" >&2
 printf '  %s\n' "${failures[@]}" >&2
