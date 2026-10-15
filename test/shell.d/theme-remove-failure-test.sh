@@ -20,6 +20,10 @@ cat >"$test_tmp/bin/omarchy-notification-send" <<'SH'
 #!/bin/bash
 printf '%s\n' "$*" >>"$NOTIFICATION_LOG"
 SH
+cat >"$test_tmp/bin/omarchy-i18n" <<'SH'
+#!/bin/bash
+[[ $1 == "theme.removed" ]] && printf 'Theme removed\n'
+SH
 chmod +x "$test_tmp/bin/"*
 export HOME="$test_tmp/home" PATH="$test_tmp/bin:$PATH" NOTIFICATION_LOG="$test_tmp/notifications"
 
