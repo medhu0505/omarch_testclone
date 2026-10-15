@@ -27,7 +27,7 @@ Inside the panel:
 
 ## Requirements
 
-- `cf` on `PATH` (preinstalled by Omarchy through a mise wrapper)
+- `cf`, set up by _Install > Service > Cloudflare_. The panel runs the installed version through `mise x` offline and never upgrades it; running `cf` yourself does
 - `wl-copy` for clipboard copy actions
 
 ## How it works

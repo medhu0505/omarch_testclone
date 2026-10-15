@@ -12,10 +12,22 @@ scratch=$(mktemp -d)
 trap 'rm -rf "$scratch"' EXIT
 mkdir -p "$scratch/bin" "$scratch/home/.local/bin" "$scratch/runtime" "$scratch/Commons"
 chmod 700 "$scratch/runtime"
-cp "$ROOT/test/shell.d/fixtures/cloudflare/cf" "$scratch/home/.local/bin/cf"
+# The upgrading wrapper only marks cf as set up; calling it fails the scenario.
+printf '#!/bin/bash\nexit 96\n' >"$scratch/home/.local/bin/cf"
 chmod +x "$scratch/home/.local/bin/cf"
+cp "$ROOT/test/shell.d/fixtures/cloudflare/cf" "$scratch/cf"
+chmod +x "$scratch/cf"
 printf '#!/bin/bash\nexit 97\n' >"$scratch/bin/cf"
 chmod +x "$scratch/bin/cf"
+# The panel runs the installed cf through mise offline, so a call can never
+# start a download that outlives it. Any other mise call fails the scenario.
+cat >"$scratch/bin/mise" <<'EOF'
+#!/bin/bash
+[[ $# -ge 4 && $1 == "x" && $2 == "npm:cf" && $3 == "--" && $4 == "cf" && ${MISE_OFFLINE:-} == "1" ]] || exit 98
+shift 4
+exec "$CF_TEST_INSTALLED" "$@"
+EOF
+chmod +x "$scratch/bin/mise"
 cp "$ROOT/test/shell.d/fixtures/cloudflare/shell.qml" "$scratch/shell.qml"
 cp "$ROOT/shell/plugins/panels/cloudflare/"{Service.qml,Model.js} "$scratch/"
 cp "$ROOT/shell/Commons/Util.qml" "$scratch/Commons/"
@@ -25,7 +37,7 @@ for scenario in ${CF_TEST_SCENARIOS:-account detail repeat-account repeat-detail
   : >"$scratch/calls"
   if ! HOME="$scratch/home" XDG_CONFIG_HOME="$scratch/home/.config" XDG_RUNTIME_DIR="$scratch/runtime" \
     QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software PATH="$scratch/bin:$PATH" \
-    CF_TEST_SCENARIO="$scenario" CF_TEST_CALLS="$scratch/calls" FORCE_COLOR=1 \
+    CF_TEST_SCENARIO="$scenario" CF_TEST_INSTALLED="$scratch/cf" CF_TEST_CALLS="$scratch/calls" FORCE_COLOR=1 \
     timeout 15 quickshell -n -p "$scratch/shell.qml" >"$scratch/$scenario.log" 2>&1; then
     cat "$scratch/$scenario.log"
     fail "Cloudflare $scenario runtime regression"

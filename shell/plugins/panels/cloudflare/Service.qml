@@ -10,6 +10,10 @@ Item {
   property var settings: ({})
 
   readonly property string cliPath: Quickshell.env("HOME") + "/.local/bin/cf"
+  // The wrapper at cliPath upgrades cf before every call, and a watchdog that
+  // stops a call mid-download leaves that install holding mise's lock. Run
+  // the installed cf offline instead; upgrades happen when you run cf yourself.
+  readonly property var cliCommand: ["mise", "x", "npm:cf", "--", "cf"]
   property bool installed: false
   property bool authenticated: false
   property bool tokenValid: false
@@ -98,7 +102,7 @@ Item {
   // ignored while FORCE_COLOR is set. It reads the account for account-scoped
   // commands from CLOUDFLARE_ACCOUNT_ID, which is how the switcher scopes them.
   function cliEnvironment(accountId) {
-    var env = { "NO_COLOR": "1", "FORCE_COLOR": null }
+    var env = { "NO_COLOR": "1", "FORCE_COLOR": null, "MISE_OFFLINE": "1" }
     if (accountId) env["CLOUDFLARE_ACCOUNT_ID"] = accountId
     return env
   }
@@ -116,7 +120,7 @@ Item {
     _whoamiOutput = ""
     _whoamiError = ""
     refreshing = true
-    whoamiProcess.command = [cliPath, "auth", "whoami"]
+    whoamiProcess.command = cliCommand.concat(["auth", "whoami"])
     whoamiProcess.running = true
     pollWatchdog.restart()
   }
@@ -130,7 +134,7 @@ Item {
     process.page = page
     process.items = items
     process.environment = cliEnvironment(selectedAccountId)
-    var command = [cliPath, kind, "list", "--page", String(page), "--per-page", kind === "zones" ? "50" : "100"]
+    var command = cliCommand.concat([kind, "list", "--page", String(page), "--per-page", kind === "zones" ? "50" : "100"])
     if (kind === "zones") command = command.concat(["--account-id", selectedAccountId])
     process.command = command
     process.running = true
@@ -357,10 +361,10 @@ Item {
     _versionsError = ""
     _deploymentsOutput = ""
     versionsProcess.environment = env
-    versionsProcess.command = [cliPath, "workers", "versions", "list", "--worker-id", worker.name]
+    versionsProcess.command = cliCommand.concat(["workers", "versions", "list", "--worker-id", worker.name])
     versionsProcess.running = true
     deploymentsProcess.environment = env
-    deploymentsProcess.command = [cliPath, "workers", "deployments", "list", "--worker", worker.name]
+    deploymentsProcess.command = cliCommand.concat(["workers", "deployments", "list", "--worker", worker.name])
     deploymentsProcess.running = true
 
     detailWatchdog.restart()
@@ -373,10 +377,10 @@ Item {
     _usageOutput = ""
     _errorsOutput = ""
     usageProcess.environment = env
-    usageProcess.command = [cliPath, "observability", "telemetry", "query", "--body", Model.usageQuery(worker.name, from, to)]
+    usageProcess.command = cliCommand.concat(["observability", "telemetry", "query", "--body", Model.usageQuery(worker.name, from, to)])
     usageProcess.running = true
     errorsProcess.environment = env
-    errorsProcess.command = [cliPath, "observability", "telemetry", "query", "--body", Model.errorsQuery(worker.name, from, to)]
+    errorsProcess.command = cliCommand.concat(["observability", "telemetry", "query", "--body", Model.errorsQuery(worker.name, from, to)])
     errorsProcess.running = true
   }
 
@@ -433,7 +437,7 @@ Item {
     loginCode = ""
     lastError = ""
     actionStatus = "Approve the sign-in in your browser…"
-    loginProcess.command = [cliPath, "auth", "login"]
+    loginProcess.command = cliCommand.concat(["auth", "login"])
     loginProcess.running = true
   }
 
