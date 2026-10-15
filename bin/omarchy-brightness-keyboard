@@ -44,8 +44,12 @@ flock "$lock_fd" || exit 1
 
 # A runtime fallback may be newer than the persistent choice. Once storage
 # recovers, a later TTY change to the persistent file must take precedence.
-if [[ -n ${XDG_RUNTIME_DIR:-} && $state_dir != "$XDG_RUNTIME_DIR" ]]; then
+if [[ -n ${XDG_RUNTIME_DIR:-} && -d $XDG_RUNTIME_DIR && $state_dir != "$XDG_RUNTIME_DIR" ]]; then
   runtime_file="$XDG_RUNTIME_DIR/$state_name"
+  # Commands that started while persistent storage was unavailable still hold
+  # this lock. Take it after the persistent lock, which TTY commands use too.
+  exec {runtime_lock_fd}>"$runtime_file.lock" || exit 1
+  flock "$runtime_lock_fd" || exit 1
   if [[ -f $runtime_file && ( ! -f $state_file || $runtime_file -nt $state_file ) ]]; then
     state_file="$runtime_file"
   fi

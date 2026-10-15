@@ -40,6 +40,10 @@ get)
 max) cat "$BRIGHTNESS_FIXTURE/max" ;;
 set)
   [[ ${FAIL_SET:-0} != "1" ]] || exit 1
+  if [[ ${BLOCK_SET:-0} == "1" ]]; then
+    : >"$BRIGHTNESS_FIXTURE/set-entered"
+    read -r _ <"$BRIGHTNESS_FIXTURE/release-set"
+  fi
   printf '%s\n' "$2" >"$BRIGHTNESS_FIXTURE/brightness"
   ;;
 *) exit 1 ;;
@@ -240,6 +244,28 @@ else
   run_keyboard restore
   assert_brightness 0 "a later TTY selection overrides the older runtime fallback"
   rm "$runtime_state"
+
+  reset_fixture 0
+  mkfifo "$test_tmp/release-set"
+  chmod 500 "${state_file%/*}"
+  BLOCK_SET=1 run_keyboard up >"$test_tmp/first.out" 2>"$test_tmp/first.err" &
+  first_pid=$!
+  for ((attempt = 0; attempt < 100; attempt++)); do
+    [[ ! -e $test_tmp/set-entered ]] || break
+    sleep 0.01
+  done
+  [[ -e $test_tmp/set-entered ]] || fail "the runtime fallback adjustment did not reach hardware"
+  chmod 700 "${state_file%/*}"
+  run_keyboard down >"$test_tmp/second.out" 2>"$test_tmp/second.err" &
+  second_pid=$!
+  sleep 0.2
+  before_release=$(grep -c ' max$' "$test_tmp/calls")
+  printf '\n' >"$test_tmp/release-set"
+  wait "$first_pid" || fail "the fallback adjustment failed"
+  wait "$second_pid" || fail "the adjustment after recovery failed"
+  (( before_release == 1 )) || fail "a recovered command touched hardware before the fallback command finished"
+  assert_brightness 0 "recovery serializes a runtime adjustment with the next persistent adjustment"
+  rm "$test_tmp/release-set" "$test_tmp/set-entered" "$runtime_state"
 fi
 
 reset_fixture 2
