@@ -44,8 +44,18 @@ drop_npm_grok() {
 
 if [[ ! -f $HOME/.local/state/omarchy/preinstalls-removed ]]; then
   if [[ $npm_stub == true ]]; then
-    rm -f "$wrapper"
-    omarchy-mise-install grok
+    backup=$(mktemp "$HOME/.local/bin/.grok-wrapper.XXXXXX")
+    mv -fT "$wrapper" "$backup"
+    if omarchy-mise-install grok; then
+      rm -f "$backup"
+    else
+      if [[ -e $wrapper || -L $wrapper ]]; then
+        echo "Grok install failed; previous launcher saved at $backup" >&2
+      else
+        mv -T "$backup" "$wrapper"
+      fi
+      exit 1
+    fi
     drop_npm_grok
   elif [[ ! -f $wrapper ]] || ! grep -Fq "$npm_grok" "$wrapper"; then
     # The shim is ahead of ~/.local/bin, so remove it before checking PATH.
