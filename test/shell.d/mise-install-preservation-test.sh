@@ -15,7 +15,7 @@ cp -p "$launcher" "$test_tmp/original"
 "$ROOT/bin/omarchy-mise-install" tool 2>"$test_tmp/notice"
 cmp -s "$launcher" "$test_tmp/original" || fail "custom launcher stays active"
 [[ $(stat -c %a "$launcher") == "700" ]] || fail "custom launcher keeps private permissions"
-grep -Fq 'Keeping custom launcher' "$test_tmp/notice" || fail "skip is reported"
+grep -Fq 'Keeping existing launcher' "$test_tmp/notice" || fail "skip is reported"
 pass "custom launchers remain active"
 
 ln -s "$test_tmp/original" "$HOME/.local/bin/linked"
@@ -61,9 +61,10 @@ done
 pass "every historical generated wrapper refreshes"
 
 printf '#!/bin/bash\nexport MISE_MINIMUM_RELEASE_AGE=0\nmise use -g --quiet "old-package" || exit 1\nexec mise x "old-package" -- "tool" "$@"\n' >"$launcher"
-"$ROOT/bin/omarchy-mise-install" new-package tool >/dev/null
-grep -Fq 'mise use -g --quiet "new-package"' "$launcher" || fail "generated wrapper accepts a package change"
-pass "generated wrappers can move to a new package"
+cp "$launcher" "$test_tmp/old-package"
+"$ROOT/bin/omarchy-mise-install" new-package tool 2>/dev/null
+cmp -s "$launcher" "$test_tmp/old-package" || fail "a package edit is kept even when the file looks generated"
+pass "package choices in existing launchers remain active"
 
 PATH="$ROOT/bin:$PATH" bash -euo pipefail "$ROOT/migrations/1787573629.sh" >/dev/null
 [[ -z $(find "$HOME/.local/bin" -name '*.bak.*' -print) ]] || fail "migration creates no backup on PATH"
