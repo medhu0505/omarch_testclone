@@ -67,6 +67,12 @@ omarchy-install-chromium-legacy-gpu "$flags" >/dev/null
 (( $(grep -cxF -- '--disable-gpu-compositing' "$flags") == 1 )) || fail "legacy GPU flag is added once"
 pass "legacy GPU flag is added once"
 
+printf '%s' '--ozone-platform=wayland' >"$flags"
+omarchy-install-chromium-legacy-gpu "$flags" >/dev/null
+[[ $(<"$flags") == $'--ozone-platform=wayland\n--disable-gpu-compositing' ]] ||
+  fail "legacy GPU flag goes on its own line when the file lacks a final newline" "$(cat "$flags")"
+pass "legacy GPU flag goes on its own line when the file lacks a final newline"
+
 HOME="$tmp_dir/home" omarchy-install-chromium-legacy-gpu >/dev/null
 [[ ! -e $tmp_dir/home/.config/chromium-flags.conf ]] || fail "legacy GPU setup does not create a missing flags file"
 pass "legacy GPU setup does not create a missing flags file"

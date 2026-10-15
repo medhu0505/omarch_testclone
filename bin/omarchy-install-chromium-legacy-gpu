@@ -13,5 +13,6 @@ FLAG="--disable-gpu-compositing"
 
 if [[ -f $CONFIG_FILE ]] && omarchy-hw-radeon && ! grep -qxF -- "$FLAG" "$CONFIG_FILE"; then
   echo "Detected a legacy radeon GPU. Disabling Chromium GPU compositing."
+  [[ -n $(tail -c1 "$CONFIG_FILE") ]] && echo >>"$CONFIG_FILE"
   printf '%s\n' "$FLAG" >>"$CONFIG_FILE"
 fi
