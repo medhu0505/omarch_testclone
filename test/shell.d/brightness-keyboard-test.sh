@@ -232,6 +232,13 @@ else
   chmod 700 "${state_file%/*}"
   run_keyboard restore
   assert_brightness 2 "restore keeps the fallback preference when persistent storage becomes writable"
+
+  # A TTY has no runtime directory, so its later manual selection must replace
+  # the older compositor fallback once persistent storage recovers.
+  printf '0\n' >"$test_tmp/brightness"
+  env -u XDG_RUNTIME_DIR "$ROOT/bin/omarchy-brightness-keyboard" --no-osd down
+  run_keyboard restore
+  assert_brightness 0 "a later TTY selection overrides the older runtime fallback"
   rm "$runtime_state"
 fi
 
@@ -242,9 +249,26 @@ cat >"$test_tmp/bin/mv" <<'SH'
 exit 1
 SH
 chmod +x "$test_tmp/bin/mv"
-run_keyboard off 2>"$test_tmp/errors"
-assert_brightness 0 "a failed replacement save still blanks the keyboard when a restore preference exists"
-grep -q 'previous saved level' "$test_tmp/errors" || fail "a failed replacement save warns about the older restore level"
+if run_keyboard off 2>"$test_tmp/errors"; then
+  fail "a failed lock-time save must report failure when the older level differs"
+fi
+assert_brightness 2 "a failed lock-time save does not discard the lit level"
+grep -q 'leaving the light on' "$test_tmp/errors" || fail "a failed lock-time save explains why the light remains on"
 run_keyboard restore
 assert_brightness 1 "the earlier saved level remains usable after a failed lock-time save"
+
+printf '2\n' >"$state_file"
+printf '2\n' >"$test_tmp/brightness"
+run_keyboard off 2>"$test_tmp/errors"
+assert_brightness 0 "a failed save can still blank when the earlier level matches"
+run_keyboard restore
+assert_brightness 2 "a matching earlier level restores after a failed save"
+
+rm "$state_file"
+ln -s /dev/null "$state_file"
+if run_keyboard off 2>"$test_tmp/errors"; then
+  fail "an unreadable previous level must not permit blanking after a failed save"
+fi
+assert_brightness 2 "a failed save with unreadable state keeps the light on"
+rm "$state_file"
 rm "$test_tmp/bin/mv"
