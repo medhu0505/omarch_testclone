@@ -31,8 +31,10 @@ Item {
   FileView {
     id: noteFile
     path: Quickshell.env("HOME") + "/Documents/Notes/QuickNotes.md"
+    watchChanges: true
     atomicWrites: true
     printErrors: false
+    onFileChanged: reload()
     onLoaded: {
       var loaded = text() || ""
       if (!root.isLoaded) {
@@ -41,6 +43,13 @@ Item {
         root.isLoaded = true
       } else if (!root.opened) {
         noteTextEdit.text = loaded
+      } else if (loaded !== noteTextEdit.text) {
+        if (loaded.startsWith(root.originalLoadedText)) {
+          var appended = loaded.substring(root.originalLoadedText.length)
+          noteTextEdit.text = noteTextEdit.text + appended
+        } else {
+          noteTextEdit.text = noteTextEdit.text + "\n\n--- Background Changes ---\n" + loaded
+        }
       }
       root.originalLoadedText = loaded
     }
@@ -84,20 +93,6 @@ Item {
 
   function saveNote() {
     if (root.isLoaded) {
-      var currentDiskText = noteFile.text() || ""
-      if (currentDiskText !== root.originalLoadedText) {
-        // Disk changed in background! If it was just an append (like CLI), preserve it.
-        if (currentDiskText.startsWith(root.originalLoadedText)) {
-          var appendedText = currentDiskText.substring(root.originalLoadedText.length)
-          noteTextEdit.text = noteTextEdit.text + appendedText
-        } else {
-          // It was completely changed, just append it
-          noteTextEdit.text = noteTextEdit.text + "
-
---- Background Changes ---
-" + currentDiskText
-        }
-      }
       noteFile.setText(noteTextEdit.text)
       root.originalLoadedText = noteTextEdit.text
     }
