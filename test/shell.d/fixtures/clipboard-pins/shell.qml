@@ -105,9 +105,9 @@ ShellRoot {
           test.input = inputComponent.createObject(findItem(clipboard, "clipboardCard"))
           clickPin(0)
           check(clipboard.pinCount === 0, "clicking Unpin releases a pin")
-          check(selectedText() === "old" && clipboard.selectedIndex === 1, "Unpin keeps the same entry selected")
+          check(selectedText() === "old" && clipboard.selectedIndex === 0, "Unpin keeps the released entry selected at the front")
         } else if (test.step === 6) {
-          clickPin(1)
+          clickPin(0)
           check(clipboard.pinCount === 1 && selectedText() === "old" && clipboard.selectedIndex === 0, "clicking Pin pins the row and keeps it selected")
           check(input.keyClick(Qt.Key_P, Qt.ControlModifier, 0), "Ctrl+P reaches the panel after clicking Pin")
           check(clipboard.pinCount === 0 && selectedText() === "old", "Ctrl+P unpins and keeps the same entry selected")
@@ -173,6 +173,22 @@ ShellRoot {
         } else if (test.step === 15) {
           check(failedClipboard.pinCount === 1 && failedClipboard.history[0].text === "Pinned from a private request", "a pin saved on retry survives a fresh plugin instance")
           failedClipboard.destroy()
+        } else if (test.step === 16) {
+          var saturated = []
+          for (var n = 0; n < 500; n++) saturated.push({type: "text", text: "newer copy " + n})
+          saturated.push({type: "text", text: "old pinned entry", pinned: true})
+          clipboard.loadHistory(JSON.stringify(saturated))
+          clipboard.open("{}")
+        } else if (test.step === 17) {
+          clickPin(0)
+          check(clipboard.pinCount === 0 && clipboard.history.length === 500, "Unpin keeps ordinary history within its quota")
+          check(selectedText() === "old pinned entry" && clipboard.selectedIndex === 0, "Unpin retains and selects an old pin with full ordinary history")
+          check(!clipboard.history.some(function(entry) { return entry.text === "newer copy 499" }), "Unpin evicts the oldest ordinary entry instead of the released pin")
+          clipboard.destroy()
+          test.clipboard = Qt.createComponent("Clipboard.qml").createObject(host)
+        } else if (test.step === 18) {
+          check(clipboard.historyReady && clipboard.history.length === 500, "unpinning at capacity saves history across restart")
+          check(clipboard.history[0].text === "old pinned entry" && !clipboard.history[0].pinned, "the released entry survives restart without a pin")
         } else {
           running = false
           console.log("CLIPBOARD_PINS_QML_PASS")

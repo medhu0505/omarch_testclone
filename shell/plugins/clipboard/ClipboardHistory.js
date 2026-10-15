@@ -118,8 +118,10 @@ function togglePinnedAt(history, index, limit) {
     return { status: "invalid", history: values.slice() }
   if (!values[target].pinned) return pinEntry(values, values[target], limit)
   var next = values.slice()
-  next[target] = normalizeEntry(values[target])
-  delete next[target].pinned
+  var released = normalizeEntry(next.splice(target, 1)[0])
+  delete released.pinned
+  // Give a released pin a fresh history slot instead of evicting it at capacity.
+  next.unshift(released)
   return { status: "unpinned", history: trimHistory(next, limit) }
 }
 

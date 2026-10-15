@@ -32,6 +32,22 @@ assertEqual(clipboard.pinnedCount(unpinned.history), 9, 'unpin frees one slot')
 assertEqual(clipboard.pinEntry(unpinned.history, 'replacement', 500).status, 'pinned', 'a freed slot can be reused')
 assertEqual(clipboard.pinEntry(full, ' ', 500).status, 'invalid', 'whitespace cannot be pinned')
 assertEqual(clipboard.togglePinnedAt(full, 0.5, 500).status, 'invalid', 'fractional indexes are rejected')
+
+const ordinary = Array.from({ length: 500 }, (_, i) => ({ type: 'text', text: 'copy ' + i }))
+for (const releasedPin of [pin, image]) {
+  const retainedPin = releasedPin === pin ? image : pin
+  const saturated = ordinary.concat([retainedPin, releasedPin])
+  const original = JSON.stringify(saturated)
+  const released = clipboard.togglePinnedAt(saturated, 501, 500)
+  const expected = { ...releasedPin }
+  delete expected.pinned
+  assertEqual(released.status, 'unpinned', 'unpin succeeds with full ordinary history')
+  assertDeepEqual(released.history, [expected, ...ordinary.slice(0, 499), retainedPin],
+    'unpin retains released ' + releasedPin.type + ', evicts only the oldest ordinary entry and preserves other pins')
+  assertDeepEqual(clipboard.parseHistory(JSON.stringify(released.history)), released.history,
+    'released ' + releasedPin.type + ' survives serialization and restart')
+  assertEqual(JSON.stringify(saturated), original, 'unpin does not mutate the original history before saving')
+}
 JS
 
 work=$(mktemp -d)
