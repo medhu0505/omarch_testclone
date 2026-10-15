@@ -54,14 +54,13 @@ launch_on_workspace() {
             ;;
     esac
 
-    # Escape each argument before passing the command to Hyprland.
+        # Build a safely quoted command from the argument array.
     printf -v shell_command '%q ' "${launch_args[@]}"
     shell_command=${shell_command% }
 
     lua_command=$(jq -Rn --arg command "$shell_command" '$command') || return 0
 
-    # Assign the workspace when launching, rather than moving the
-    # first unrelated window that happens to appear.
+    # Pass the workspace rule separately to Hyprland.
     if ! hyprctl eval \
         "hl.dispatch(hl.dsp.exec_cmd($lua_command, { workspace = \"$ws silent\" }))" \
         >/dev/null 2>&1; then
