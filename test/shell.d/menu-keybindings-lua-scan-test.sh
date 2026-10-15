@@ -13,7 +13,7 @@ require_command lua
 # every bind declared after the failing line.
 
 script="$ROOT/bin/omarchy-menu-keybindings"
-scan=$(awk '/lua <<.LUA.$/ { capture = 1; next } /^LUA$/ { capture = 0 } capture' "$script")
+scan=$(awk '/lua (-E - )?<<.LUA.$/ { capture = 1; next } /^LUA$/ { capture = 0 } capture' "$script")
 [[ -n $scan ]] || fail "keybindings menu embeds the Lua bind scan"
 
 TMPDIR=$(mktemp -d)
@@ -53,5 +53,5 @@ grep -qF $'64\tKeybindings menu\tK\texec\tomarchy-menu keybindings' <<<"$output"
 grep -qF $'64\tLua only bind\tcode:20\tlua\thl.dsp.workspace({ name = "special" })' <<<"$output" || fail "Lua bind scan reports Lua dispatcher binds (got: $output)"
 pass "Lua bind scan reports binds declared after load-time compositor reads"
 
-grep -q "timeout 10 lua <<'LUA'" "$script" || fail "Lua bind scan is time-boxed"
+grep -q "timeout 10 lua -E - <<'LUA'" "$script" || fail "Lua bind scan is time-boxed"
 pass "Lua bind scan is time-boxed"
