@@ -119,6 +119,7 @@ Item {
     failedBackground = ""
     revealStartedVersion = -1
 
+    revealWaitTimer.stop()
     revealAnimation.stop()
     finishingTransition = false
 
@@ -166,11 +167,28 @@ Item {
     if (!incomingBackground || revealProgress >= 1) applyPendingTheme()
   }
 
+  // Every screen decodes its own copy of the incoming image but they share one
+  // reveal, so it waits up to revealWaitTimer for the screens still decoding.
   function startReveal(panel) {
     if (!incomingBackground) return
     panel.maskReady = true
     if (revealStartedVersion === backgroundVersion) return
+    for (var other of backgrounds.instances) {
+      if (other.maskReady) continue
+      if (!revealWaitTimer.running) {
+        revealWaitTimer.restart()
+        // Keep a pending theme's fallback from changing the colours mid-wait.
+        if (pendingThemeFallbackTimer.running) pendingThemeFallbackTimer.restart()
+      }
+      return
+    }
+    beginReveal()
+  }
+
+  function beginReveal() {
+    if (!incomingBackground || revealStartedVersion === backgroundVersion) return
     revealStartedVersion = backgroundVersion
+    revealWaitTimer.stop()
     applyPendingTheme()
     revealAnimation.restart()
   }
@@ -306,6 +324,15 @@ Item {
     interval: 5000
     repeat: false
     onTriggered: root.preparedBackground = ""
+  }
+
+  // Kept shorter than pendingThemeFallbackTimer, which startReveal restarts
+  // when the wait begins.
+  Timer {
+    id: revealWaitTimer
+    interval: 250
+    repeat: false
+    onTriggered: root.beginReveal()
   }
 
   Timer {
