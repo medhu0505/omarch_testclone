@@ -1,6 +1,7 @@
 echo "Add Surface keyboard modules to the boot image on existing AMD installations"
 
 omarchy-hw-surface || exit 0
+omarchy-hw-x86 || exit 0
 omarchy-cmd-present limine-mkinitcpio || exit 0
 pinctrl_module=$(lsmod | grep pinctrl_ || true)
 [[ -z $pinctrl_module ]] || exit 0

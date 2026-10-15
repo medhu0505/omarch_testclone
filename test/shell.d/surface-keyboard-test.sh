@@ -17,6 +17,11 @@ cat >"$stub_bin/omarchy-hw-surface" <<'SH'
 
 [[ $SURFACE_DEVICE == "yes" ]]
 SH
+cat >"$stub_bin/omarchy-hw-x86" <<'SH'
+#!/bin/bash
+
+true
+SH
 
 cat >"$stub_bin/lsmod" <<'SH'
 #!/bin/bash

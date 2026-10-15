@@ -23,6 +23,10 @@ cat >"$stub_bin/omarchy-hw-surface" <<'SH'
 #!/bin/bash
 [[ $SURFACE_DEVICE == "yes" ]]
 SH
+cat >"$stub_bin/omarchy-hw-x86" <<'SH'
+#!/bin/bash
+true
+SH
 cat >"$stub_bin/omarchy-cmd-present" <<'SH'
 #!/bin/bash
 [[ $1 == "limine-mkinitcpio" && $SURFACE_REBUILD_AVAILABLE == "yes" ]]
