@@ -86,12 +86,50 @@ nightlight_cli >/dev/null
 [[ $(<"$STATE") == 6500 ]] || fail "nightlight toggle restores daylight from night light"
 pass "nightlight toggle restores daylight from night light"
 
+# hyprsunset reports its age through ps. A boot still in progress applies its
+# default temperature on the first wait, overriding whatever was set before.
+BOOT_PENDING="$TMPDIR/boot-pending"
+printf '#!/bin/bash\n[[ $* == *etimes* ]] && echo "${HYPRSUNSET_AGE:-100}"\n' >"$TMPDIR/bin/ps"
+cat >"$TMPDIR/bin/sleep" <<'SH'
+#!/bin/bash
+printf 'sleep %s\n' "$*" >>"$OMARCHY_SHELL_LOG"
+if [[ -e $BOOT_PENDING ]]; then
+  rm -f "$BOOT_PENDING"
+  printf '6000\n' >"$HYPRSUNSET_STATE"
+fi
+SH
+printf '#!/bin/bash\necho 4242\n' >"$TMPDIR/bin/pgrep"
+chmod +x "$TMPDIR/bin/sleep" "$TMPDIR/bin/ps" "$TMPDIR/bin/pgrep"
+toggle_from_daylight() {
+  printf '6500\n' >"$STATE"
+  : >"$SHELL_LOG"
+  BOOT_PENDING="$BOOT_PENDING" HYPRSUNSET_AGE="$1" nightlight_cli >/dev/null
+}
+
+toggle_from_daylight 100
+[[ $(<"$STATE") == 4000 ]] && ! grep -q '^sleep' "$SHELL_LOG" || fail "a hyprsunset that has finished starting applies the toggle without waiting"
+pass "a hyprsunset that has finished starting applies the toggle without waiting"
+
+: >"$BOOT_PENDING"
+toggle_from_daylight 1
+[[ $(<"$STATE") == 4000 && ! -e $BOOT_PENDING ]] || fail "a hyprsunset still booting can't undo the toggle with its default"
+pass "a hyprsunset still booting can't undo the toggle with its default"
+
+printf '#!/bin/bash\nexit 1\n' >"$TMPDIR/bin/pgrep"
+printf '#!/bin/bash\nexit 0\n' >"$TMPDIR/bin/setsid"
+chmod +x "$TMPDIR/bin/setsid"
+: >"$BOOT_PENDING"
+toggle_from_daylight 100
+[[ $(<"$STATE") == 4000 && ! -e $BOOT_PENDING ]] || fail "a freshly started hyprsunset can't undo the toggle with its default"
+pass "a freshly started hyprsunset can't undo the toggle with its default"
+
 if rg -q 'omarchy.indicators' "$ROOT/bin/omarchy-toggle-nightlight"; then
   fail "nightlight toggle leaves indicator refresh to the nightlight service"
 fi
 pass "nightlight toggle leaves indicator refresh to the nightlight service"
 
 # A long-lived daemon must not keep a captured toggle's output pipe open.
+rm "$TMPDIR/bin/setsid"
 cat >"$TMPDIR/bin/pgrep" <<'SH'
 #!/bin/bash
 exit 1
@@ -105,7 +143,7 @@ if read -r input; then
 else
   printf 'eof\n' >"$DAEMON_STDIN_FILE"
 fi
-exec sleep 30
+exec /usr/bin/sleep 30
 SH
 chmod +x "$TMPDIR/bin/uwsm-app"
 trap '[[ ! -s $TMPDIR/daemon-pid ]] || kill "$(<"$TMPDIR/daemon-pid")" 2>/dev/null || true; rm -rf "$TMPDIR"' EXIT
@@ -115,7 +153,7 @@ if PATH="$TMPDIR/bin:$PATH" HYPRSUNSET_STATE="$STATE" OMARCHY_SHELL_LOG="$SHELL_
   timeout 3 bash -o pipefail -c 'printf "caller input\n" | "$1" 2>&1 | cat' _ "$ROOT/bin/omarchy-toggle-nightlight" >"$TMPDIR/captured"; then
   for attempt in {1..100}; do
     [[ ! -s $TMPDIR/daemon-pid || ! -s $TMPDIR/daemon-stdin ]] || break
-    sleep 0.01
+    /usr/bin/sleep 0.01
   done
   [[ -s $TMPDIR/daemon-pid ]] || fail "nightlight starts the missing daemon"
   kill -0 "$(<"$TMPDIR/daemon-pid")" || fail "nightlight leaves its daemon running"
