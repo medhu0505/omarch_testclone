@@ -26,6 +26,10 @@ cat >"$stub_bin/omarchy-hw-intel-haswell-gpu" <<'SH'
 #!/bin/bash
 (( ${HASWELL:-0} == 1 ))
 SH
+cat >"$stub_bin/omarchy-i18n" <<'SH'
+#!/bin/bash
+printf '%s\n' "$1"
+SH
 cat >"$stub_bin/voxtype" <<'SH'
 #!/bin/bash
 printf 'voxtype %s\n' "$*" >>"$TEST_LOG"
