@@ -62,7 +62,7 @@ grep -Fxq "prompt:confirm --affirmative Yes --negative No Linux kernel has been 
   fail "an updated kernel asks for a reboot"
 pass "an updated kernel asks for a reboot"
 
-# An upgrade leaves the new release owned and kernel-modules-hook restores the running one unowned
+# An upgrade leaves the new release owned beside whatever of the running one is left unowned
 kernel 7.2.9-1-aarch64-ARCH modules.builtin
 mkdir -p "$tmp_dir/modules/7.2.8-1-aarch64-ARCH"
 touch "$tmp_dir/modules/7.2.8-1-aarch64-ARCH/modules.builtin"
