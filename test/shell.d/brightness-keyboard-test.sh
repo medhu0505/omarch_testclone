@@ -234,18 +234,41 @@ run_keyboard off
 run_keyboard restore
 assert_brightness 2 "a new session restores the lit level it had before locking"
 
-# A broken runtime lock must not stop commands while persistent state works.
+# A broken runtime lock must not stop commands when persistent state is newer.
 reset_fixture 0
 runtime_state="$XDG_RUNTIME_DIR/omarchy-keyboard-backlight-dell::kbd_backlight"
 printf '1\n' >"$state_file"
 printf '2\n' >"$runtime_state"
-touch -d '+1 minute' "$runtime_state"
+touch -d '2 minutes ago' "$runtime_state"
 rm -f "$runtime_state.lock"
 mkdir "$runtime_state.lock"
 run_keyboard restore
 assert_brightness 1 "persistent state still restores when the runtime lock is unavailable"
 run_keyboard up
 [[ $(<"$state_file") == "2" ]] || fail "a runtime lock failure does not block persistent state saves"
+
+# A newer runtime zero may be an intentional manual off. Do not restore an
+# older positive level or save a lock-time level over it without its lock.
+reset_fixture 0
+printf '1\n' >"$state_file"
+touch -d '2 minutes ago' "$state_file"
+printf '0\n' >"$runtime_state"
+touch -d '1 minute ago' "$runtime_state"
+if run_keyboard restore 2>"$test_tmp/errors"; then
+  fail "restore must not use older persistent state when runtime state cannot be locked"
+fi
+assert_brightness 0 "an inaccessible newer manual off stays off on restore"
+grep -q 'Could not lock a newer' "$test_tmp/errors" || fail "the skipped restore explains why"
+printf '2\n' >"$test_tmp/brightness"
+if run_keyboard off 2>"$test_tmp/errors"; then
+  fail "lock-time blanking must not replace a newer manual off without its lock"
+fi
+assert_brightness 2 "lock-time blanking does not replace an inaccessible newer choice"
+[[ $(<"$state_file") == "1" ]] || fail "lock-time blanking does not overwrite older persistent state"
+run_keyboard cycle
+[[ $(<"$state_file") == "0" ]] || fail "a new manual choice can replace the inaccessible runtime state"
+run_keyboard restore
+assert_brightness 0 "a new persistent manual choice remains usable without the runtime lock"
 rmdir "$runtime_state.lock"
 rm "$runtime_state"
 
