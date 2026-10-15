@@ -11,9 +11,16 @@ migration="$ROOT/migrations/1787870942.sh"
 [[ -f $migration ]] || fail "screenshot binding migration exists" "missing $migration"
 pass "screenshot binding migration exists"
 
+# omarchy-migrate executes migrations (`bash -euo pipefail`); it does not
+# source them. The test has to invoke the script exactly the same way: a
+# top-level `return` passes under `source` and kills the real run, and a guard
+# that merely leaves the file alone still has to exit zero, or the migration
+# reruns as a failure on every update.
 run_migration() {
-  local home="$1"
-  ( HOME="$home"; source "$migration" >/dev/null 2>&1 )
+  local home="$1" stderr
+
+  stderr=$(HOME="$home" bash -euo pipefail "$migration" 2>&1 >/dev/null) ||
+    fail "migration exits zero the way omarchy-migrate runs it" "$stderr"
 }
 
 with_bindings() {
@@ -27,7 +34,7 @@ unbinds() { grep -c '^[[:space:]]*hl\.unbind("SUPER + SHIFT + S")' "$1/.config/h
 
 # A missing file is the common case on a fresh install.
 home=$(mktemp -d); mkdir -p "$home/.config/hypr"
-run_migration "$home" || fail "migration tolerates a missing bindings.lua" "it errored"
+run_migration "$home"
 pass "migration tolerates a missing bindings.lua"
 
 # The user kept the old screenshot example uncommented: their line stays, and
@@ -51,6 +58,24 @@ out=$(cat "$home/.config/hypr/bindings.lua")
 [[ $out == *'"Notes", "obsidian"'* && $(unbinds "$home") == 1 ]] ||
   fail "a chord rebound to another command is unbound first, not removed" "$out"
 pass "a chord rebound to another command is unbound first, not removed"
+
+# Every bind form stacks with the new default the same way, so o.bind_toggle
+# and bare hl.bind count as the chord being taken too.
+home=$(with_bindings 'o.bind_toggle("SUPER + SHIFT + S", "Toggle nightlight", "nightlight")
+')
+run_migration "$home"
+out=$(cat "$home/.config/hypr/bindings.lua")
+[[ $out == *'o.bind_toggle("SUPER + SHIFT + S", "Toggle nightlight", "nightlight")'* && $(unbinds "$home") == 1 ]] ||
+  fail "a chord bound with o.bind_toggle is unbound first" "$out"
+pass "a chord bound with o.bind_toggle is unbound first"
+
+home=$(with_bindings 'hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("omarchy-capture-screenshot"))
+')
+run_migration "$home"
+out=$(cat "$home/.config/hypr/bindings.lua")
+[[ $out == *'hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("omarchy-capture-screenshot"))'* && $(unbinds "$home") == 1 ]] ||
+  fail "a chord bound with bare hl.bind is unbound first" "$out"
+pass "a chord bound with bare hl.bind is unbound first"
 
 # Someone who already followed the documented pattern gets nothing added.
 home=$(with_bindings 'hl.unbind("SUPER + SHIFT + S")
