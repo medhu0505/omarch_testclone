@@ -60,8 +60,7 @@ Italian|it
 Japanese|jp106|mozc
 Japanese (US keyboard)|us|mozc
 Kazakh|kazakh
-Korean|us|hangul|kr
-Korean (Right Alt switches Hangul)|us|hangul|kr:kr104
+Korean|us|hangul|kr:kr104
 Kyrgyz|kyrgyz
 Lao|us||la
 Latvian|lv
