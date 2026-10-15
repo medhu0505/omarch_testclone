@@ -159,8 +159,6 @@ With screenrecordings, the hotkey first asks which audio you want, then starts r
 
 All capture options are also accessible under _Trigger > Capture_ in the Omarchy menu (`Super + Space`).
 
-Apple and Logitech keyboards have no Print Screen key, so `Super + Shift + S` — the chord Windows uses for the same job — takes the identical shot. It used to open Google Maps, which is now on `Super + Shift + Alt + S`.
-
 ## Notifications
 
 | Hotkey                  | Function              |

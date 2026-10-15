@@ -1,6 +1,6 @@
 # Screenshots & Recording
 
-Everything you can grab off the screen hangs off the Print Screen key. One key on its own takes a picture, and the modifiers take a recording, a colour, or the text inside a region.
+Everything you can grab off the screen hangs off the Print Screen key. One key on its own takes a picture, and the modifiers take a recording, a colour, or the text inside a region. If your keyboard doesn't have a Print Screen key at all, `Super + Shift + S` takes the same screenshot, and `Super + Ctrl + C` opens the whole set as a menu.
 
 | Hotkey | Function |
 | ------ | -------- |
@@ -12,11 +12,9 @@ Everything you can grab off the screen hangs off the Print Screen key. One key o
 | `Super + Ctrl + C` | Capture menu |
 | `Super + Ctrl + .` | Transcode a picture or video |
 
-Plenty of keyboards have no Print Screen key — Apple's don't, and neither do most of Logitech's. `Super + Shift + S` is there for those: it's the chord Windows uses for the same job, and it takes exactly the same shot as `Print Screen`. (It used to open Google Maps. That moved to `Super + Shift + Alt + S`.) `Super + Ctrl + C` opens the whole set as a menu, which is the way in if you'd rather not remember any of this.
-
 ## Screenshots
 
-Hit `Print Screen` (or `Super + Shift + S`) and the screen freezes so nothing shifts under you while you aim. Drag a box for a freeform region, or just click once and the shot snaps to whatever rectangle you clicked in — a window if you landed on one, the whole monitor if you landed on the bar or in a gap. Changed your mind? Hit the same key again to dismiss the picker.
+Hit `Print Screen` (or `Super + Shift + S`) and Omasnap captures the focused monitor before its overlay appears, so nothing shifts under you while you aim. Drag a freeform region, click a window to capture it, or click open space to capture the whole monitor. Press `S` before drawing to capture a scrolling region. Changed your mind? Hit the same key again to dismiss Omasnap.
 
 After you select an area, Omasnap saves the capture, copies it to the clipboard, and shows a preview for 10 seconds. Use the preview's pin button or `Ctrl + P` to keep it on screen, or choose Edit to annotate it.
 
