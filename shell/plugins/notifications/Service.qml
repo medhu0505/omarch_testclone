@@ -192,6 +192,10 @@ Item {
   readonly property var barRef: shell && shell.bar ? shell.bar : null
   readonly property string barPosition: barRef ? String(barRef.position || "top") : "top"
   readonly property bool barVertical: barPosition === "left" || barPosition === "right"
+  // A bar being dragged to another edge expands to fill its output on the Top
+  // layer. The deck sits above it on Overlay, so its input region would take
+  // the pointer from the bar mid-drag and end the move where the cards start.
+  readonly property bool barMoveActive: !!(barRef && barRef.barMoveActive)
   readonly property int defaultBarSize: barVertical ? Style.bar.sizeVertical : Style.bar.sizeHorizontal
   function marginsFor(screenName) {
     return Delivery.deckMargins(barPosition, Delivery.barThickness(barRef, screenName, defaultBarSize), edgeSpacing)
@@ -1781,7 +1785,8 @@ Item {
       anchors { top: true; bottom: true; right: true }
       implicitWidth: clipper.width + Style.space(10)
 
-      mask: Region { item: surface.showingNotifications ? deck : null }
+      // While the bar is moving, the cards stay visible but take no input.
+      mask: Region { item: surface.showingNotifications && !service.barMoveActive ? deck : null }
 
       Item {
         id: clipper

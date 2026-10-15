@@ -71,3 +71,11 @@ grep -q 'WlrLayershell.namespace: "omarchy-notifications"' "$service" ||
 grep -q 'omarchy-notifications' "$ROOT/default/hypr/toggles/window-glassy.lua" ||
   fail "glassy toggle still matches the notification layer namespace"
 pass "notification surface keeps the omarchy-notifications layer namespace"
+
+# The deck on Overlay would take the pointer from a bar being moved and end the
+# drag where the cards start, so its input region empties for the move.
+grep -qF 'readonly property bool barMoveActive: !!(barRef && barRef.barMoveActive)' "$service" ||
+  fail "toast cards take no input while the bar is being moved" "no barMoveActive from the bar"
+grep -qF 'mask: Region { item: surface.showingNotifications && !service.barMoveActive ? deck : null }' "$service" ||
+  fail "toast cards take no input while the bar is being moved" "deck mask ignores barMoveActive"
+pass "toast cards take no input while the bar is being moved"
