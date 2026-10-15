@@ -542,6 +542,12 @@ Item {
           panel.maskReady = false
           panel.maybeStartReveal()
         }
+        // A forced transition can keep the incoming path, and a panel still
+        // ready from the last one would never start or wait for this one.
+        function onBackgroundVersionChanged() {
+          panel.maskReady = false
+          Qt.callLater(panel.maybeStartReveal)
+        }
       }
 
       MouseArea {

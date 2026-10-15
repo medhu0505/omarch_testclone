@@ -93,4 +93,8 @@ assert(
     /id: revealWaitTimer[\s\S]*?onTriggered: root\.beginReveal\(\)/.test(backgroundQml),
   'background reveal waits briefly for the attached screens still decoding, and keeps the theme fallback from firing mid-wait'
 )
+assert(
+  /function onBackgroundVersionChanged\(\) \{\s*panel\.maskReady = false\s*Qt\.callLater\(panel\.maybeStartReveal\)/.test(backgroundQml),
+  'every transition, even one that keeps the incoming path, makes each screen ready for it afresh'
+)
 JS
