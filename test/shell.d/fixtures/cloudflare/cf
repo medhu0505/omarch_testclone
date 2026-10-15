@@ -54,7 +54,9 @@ elif args[:2] in [['workers', 'list'], ['zones', 'list']]:
     else:
         emit([{'id': account + '-zone', 'name': account + '.test', 'account': {'id': account}}])
 elif args == ['auth', 'login']:
-    time.sleep(0.3)
+    print('\n\t\tTo authorize Cloudflare CLI, please visit:\n\n\t\t  https://dash.cloudflare.com/oauth/device\n\n'
+          '\t\tand enter the code:\n\n\t\t  TESTCODE\n\n\t\tYou have 10 minutes to approve this request.\n', flush=True)
+    time.sleep(0.6)
     emit({'success': True})
 elif args[:3] == ['observability', 'telemetry', 'query']:
     body = json.loads(option('--body'))

@@ -27,6 +27,13 @@ function signedOut(message) {
   }
 }
 
+// `cf auth login` signs in with a device code. It prints the code under
+// "enter the code:", and the browser's approval page asks you to confirm it.
+function parseLoginCode(text) {
+  var match = /enter the code:\s*\n\s*(\S+)/.exec(stripAnsi(text))
+  return match ? match[1] : ""
+}
+
 // Parses `cf auth whoami`, which exits 0 whether or not you are signed in and
 // reports the difference in its JSON.
 function parseWhoami(raw) {
@@ -325,6 +332,7 @@ if (typeof module !== "undefined") {
     DASHBOARD_URL: DASHBOARD_URL,
     stripAnsi: stripAnsi,
     parseJson: parseJson,
+    parseLoginCode: parseLoginCode,
     parseWhoami: parseWhoami,
     parseZones: parseZones,
     parseWorkers: parseWorkers,

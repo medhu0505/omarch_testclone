@@ -22,6 +22,11 @@ assert(!showMetrics({ metricsError: 'Could not load metrics', detailMetrics: {} 
 
 // whoami
 
+const deviceLogin = '\n\t\tTo authorize Cloudflare CLI, please visit:\n\n\t\t  https://dash.cloudflare.com/oauth/device\n\n\t\tand enter the code:\n\n\t\t  nzcpYWwP\n\n\t\tYou have 10 minutes to approve this request.\n'
+assertEqual(cloudflare.parseLoginCode(deviceLogin), 'nzcpYWwP', 'cloudflare reads the device sign-in code')
+assertEqual(cloudflare.parseLoginCode('\u001b[1mand enter the code:\u001b[0m\n\n  \u001b[36mAB12cd34\u001b[0m\n'), 'AB12cd34', 'cloudflare reads a colored device sign-in code')
+assertEqual(cloudflare.parseLoginCode('To authorize Cloudflare CLI, please visit:\n'), '', 'cloudflare waits for the device sign-in code')
+
 const signedOut = cloudflare.parseWhoami('{\n  "authenticated": false,\n  "error": "Not logged in"\n}')
 assertEqual(signedOut.authenticated, false, 'cloudflare reads a signed-out whoami')
 assertEqual(signedOut.message, 'Not logged in', 'cloudflare surfaces the whoami error as status')

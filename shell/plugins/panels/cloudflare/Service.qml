@@ -23,6 +23,8 @@ Item {
   property string zonesError: ""
   property string workersError: ""
   property string actionStatus: ""
+  // The device code `cf auth login` asks you to confirm in the browser.
+  property string loginCode: ""
   property string lastError: ""
 
   // Worker detail view. `detailWorker` is the Worker on screen; the detail
@@ -428,10 +430,18 @@ Item {
   function login() {
     if (!installed || loginProcess.running) return
     _loginOutput = ""
+    loginCode = ""
     lastError = ""
     actionStatus = "Approve the sign-in in your browser…"
     loginProcess.command = [cliPath, "auth", "login"]
     loginProcess.running = true
+  }
+
+  function appendLoginOutput(data) {
+    _loginOutput += String(data || "") + "\n"
+    if (loginCode !== "") return
+    loginCode = Model.parseLoginCode(_loginOutput)
+    if (loginCode !== "") actionStatus = "Confirm this code in your browser:"
   }
 
   function openUrl(url) {
@@ -679,9 +689,10 @@ Item {
     running: false
     command: []
     environment: root.cliEnvironment("")
-    stdout: SplitParser { onRead: function(data) { root._loginOutput += String(data || "") + "\n" } }
-    stderr: SplitParser { onRead: function(data) { root._loginOutput += String(data || "") + "\n" } }
+    stdout: SplitParser { onRead: function(data) { root.appendLoginOutput(data) } }
+    stderr: SplitParser { onRead: function(data) { root.appendLoginOutput(data) } }
     onExited: function(exitCode) {
+      root.loginCode = ""
       if (exitCode !== 0) {
         root.lastError = root.elideStatus(root._loginOutput || "Cloudflare sign-in failed")
         root.actionStatus = ""

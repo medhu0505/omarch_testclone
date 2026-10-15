@@ -440,6 +440,17 @@ Panel {
             wrapMode: Text.WordWrap
           }
 
+          Text {
+            textFormat: Text.PlainText
+            visible: cloudflare.loginCode !== ""
+            width: parent.width
+            text: cloudflare.loginCode
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.display
+            font.letterSpacing: Style.space(2)
+          }
+
           LoginRow {
             visible: !root.signedIn
             width: parent.width

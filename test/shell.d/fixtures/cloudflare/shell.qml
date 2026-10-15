@@ -94,8 +94,10 @@ ShellRoot {
         }
       } else if (harness.scenario === "login") {
         if (harness.tick === 4) { service.login(); service.login() }
+        if (harness.tick === 8) harness.check(service.loginCode === "TESTCODE", "pending login shows the device code")
         if (harness.tick === 24) {
           harness.check(service.authenticated && !service.busy, "repeated login completes and refreshes status")
+          harness.check(service.loginCode === "", "finished login clears the device code")
           Qt.quit()
         }
       }
