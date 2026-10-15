@@ -419,7 +419,7 @@ Item {
     enteredPassword = ""
     pendingPassword = ""
     failedAttempts += 1
-    failureMessage = "Authentication failed (" + failedAttempts + ")"
+    failureMessage = I18n.t("lock.authenticationFailed").arg(I18n.formatNumber(failedAttempts))
     failureMessageTimer.restart()
     runWake()
   }
