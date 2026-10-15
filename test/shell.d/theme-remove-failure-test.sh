@@ -22,7 +22,10 @@ printf '%s\n' "$*" >>"$NOTIFICATION_LOG"
 SH
 cat >"$test_tmp/bin/omarchy-i18n" <<'SH'
 #!/bin/bash
-[[ $1 == "theme.removed" ]] && printf 'Theme removed\n'
+case $1 in
+  theme.removed) printf 'Theme removed\n' ;;
+  theme.removeFailed) printf 'Could not remove theme\n' ;;
+esac
 SH
 chmod +x "$test_tmp/bin/"*
 export HOME="$test_tmp/home" PATH="$test_tmp/bin:$PATH" NOTIFICATION_LOG="$test_tmp/notifications"

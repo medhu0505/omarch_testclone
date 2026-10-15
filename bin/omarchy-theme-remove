@@ -39,6 +39,6 @@ if rm -rf "$THEME_PATH"; then
   echo "Removed $THEME_NAME"
 else
   echo "Error: Could not remove theme '$THEME_NAME'." >&2
-  omarchy-notification-send -u critical "Could not remove theme" "$THEME_NAME" || true
+  omarchy-notification-send -u critical "$(omarchy-i18n theme.removeFailed)" "$THEME_NAME" || true
   exit 1
 fi
