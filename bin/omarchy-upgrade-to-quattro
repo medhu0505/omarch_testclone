@@ -1815,7 +1815,7 @@ lua_string() {
 migrate_legacy_hypr_input() {
   local legacy_file="$HOME/.config/hypr/input.conf"
   local input_file="$HOME/.config/hypr/input.lua"
-  local key value quoted stock_layout
+  local key value quoted stock_layout legacy_variant=""
   local found=0
   local keys=(kb_layout kb_variant kb_model kb_options kb_rules)
   local -A values=()
@@ -1830,6 +1830,7 @@ migrate_legacy_hypr_input() {
         printf 'Warning: %s in %s uses a variable, which cannot be copied into Lua; set it in %s after the upgrade.\n' "$key" "$legacy_file" "$input_file" >&2
         continue
       fi
+      [[ $key == kb_variant ]] && legacy_variant=$value
       if ! legacy_hypr_input_is_default "$key" "$value"; then
         values[$key]=$value
         found=1
@@ -1838,6 +1839,11 @@ migrate_legacy_hypr_input() {
   done
 
   (( found )) || return 0
+
+  # Quattro shapes its variant for the vconsole layout, so a carried layout takes its legacy variant with it.
+  if [[ -v values[kb_layout] && ! -v values[kb_variant] ]]; then
+    values[kb_variant]=$legacy_variant
+  fi
 
   stock_layout=$(legacy_vconsole_value XKBLAYOUT)
   if [[ -n $stock_layout && ! -v values[kb_layout] ]] && legacy_hypr_input_has_non_latin_layout "$stock_layout"; then

@@ -123,13 +123,21 @@ grep -Fq 'kb_variant = ",phonetic"' "$home/.config/hypr/input.lua" || fail "cust
 grep -Fq 'kb_options = "ctrl:nocaps,grp:alts_toggle"' "$home/.config/hypr/input.lua" || fail "custom options retain the non-Latin layout switch"
 pass "stock non-Latin layouts keep custom settings usable"
 
+home="$tmp_dir/custom-layout-stock-variant"
+mkdir -p "$home/.config/hypr"
+printf '%s\n' '-- Quattro input overrides' >"$home/.config/hypr/input.lua"
+printf 'input {\n  kb_layout = ru,us\n  kb_variant = phonetic\n}\n' >"$home/.config/hypr/input.conf"
+run_migration "$home" $'XKBLAYOUT=ru\nXKBVARIANT=phonetic'
+grep -Fq 'kb_variant = "phonetic"' "$home/.config/hypr/input.lua" || fail "a custom layout keeps its legacy variant"
+pass "custom layouts carry the variant that belongs to them"
+
 home="$tmp_dir/variable"
 mkdir -p "$home/.config/hypr"
 printf '%s\n' '-- Quattro input overrides' >"$home/.config/hypr/input.lua"
 printf 'input {\n  kb_layout = de\n  kb_options = $opts\n}\n' >"$home/.config/hypr/input.conf"
 run_migration "$home" 'XKBLAYOUT=us' 2>"$tmp_dir/variable-output" || fail "variable settings do not stop the upgrade"
 grep -Fq 'kb_options in' "$tmp_dir/variable-output" || fail "variable settings are named in a warning"
-! grep -Fq '$opts' "$home/.config/hypr/input.lua" || fail "unresolved hyprlang variables do not become literal Lua settings"
+! grep -Fq 'kb_options' "$home/.config/hypr/input.lua" || fail "unresolved hyprlang variables do not become Lua settings"
 grep -Fq 'kb_layout = "de"' "$home/.config/hypr/input.lua" || fail "settings beside a variable are still migrated"
 pass "variable settings are left to Quattro with a warning"
 
