@@ -46,9 +46,18 @@ flock "$lock_fd" || exit 1
 # recovers, a later TTY change to the persistent file must take precedence.
 if [[ -n ${XDG_RUNTIME_DIR:-} && -d $XDG_RUNTIME_DIR && $state_dir != "$XDG_RUNTIME_DIR" ]]; then
   runtime_file="$XDG_RUNTIME_DIR/$state_name"
+  runtime_lock="$runtime_file.lock"
   # Commands that started while persistent storage was unavailable still hold
-  # this lock. A newer runtime choice cannot safely be restored without it.
-  if { exec {runtime_lock_fd}>"$runtime_file.lock"; } 2>/dev/null && flock "$runtime_lock_fd"; then
+  # this lock. An existing lock can be opened read-only when writes are blocked;
+  # flock still serializes it with writers holding the same file.
+  runtime_locked=0
+  if { [[ -f $runtime_lock ]] && exec {runtime_lock_fd}<"$runtime_lock"; } 2>/dev/null ||
+    { exec {runtime_lock_fd}>"$runtime_lock"; } 2>/dev/null; then
+    if flock "$runtime_lock_fd"; then
+      runtime_locked=1
+    fi
+  fi
+  if (( runtime_locked )); then
     if [[ -f $runtime_file && ( ! -f $state_file || $runtime_file -nt $state_file ) ]]; then
       state_file="$runtime_file"
     fi

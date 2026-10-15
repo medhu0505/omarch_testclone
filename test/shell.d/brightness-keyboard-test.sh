@@ -272,6 +272,22 @@ assert_brightness 0 "a new persistent manual choice remains usable without the r
 rmdir "$runtime_state.lock"
 rm "$runtime_state"
 
+# An existing lock still works through flock when it is no longer writable.
+reset_fixture 0
+printf '1\n' >"$state_file"
+touch -d '2 minutes ago' "$state_file"
+printf '2\n' >"$runtime_state"
+touch -d '1 minute ago' "$runtime_state"
+: >"$runtime_state.lock"
+chmod 400 "$runtime_state.lock"
+run_keyboard restore
+assert_brightness 2 "a read-only runtime lock still restores the newer choice"
+run_keyboard off
+run_keyboard restore
+assert_brightness 2 "a read-only runtime lock keeps lock and wake working"
+chmod 600 "$runtime_state.lock"
+rm "$runtime_state" "$runtime_state.lock"
+
 if (( EUID == 0 )); then
   echo "skip - root bypasses directory write permissions"
 else
