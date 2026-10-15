@@ -13,6 +13,16 @@ Panel {
   ipcTarget: "omarchy.cloudflare"
   manageIpc: false
 
+  // Items inside the panel's lazily built content, null until it first
+  // opens. Code inside the content reaches its own ids directly.
+  readonly property Item panelFlick: panel.loadedContent ? panel.loadedContent.panelFlick : null
+  readonly property Item column: panel.loadedContent ? panel.loadedContent.column : null
+  readonly property Item versionsSection: panel.loadedContent ? panel.loadedContent.versionsSection : null
+  readonly property Item versionFlick: panel.loadedContent ? panel.loadedContent.versionFlick : null
+  readonly property Item versionColumn: panel.loadedContent ? panel.loadedContent.versionColumn : null
+  readonly property Item workerColumn: panel.loadedContent ? panel.loadedContent.workerColumn : null
+  readonly property Item zoneColumn: panel.loadedContent ? panel.loadedContent.zoneColumn : null
+
   readonly property string domainGlyph: "󰖟"
   readonly property string workerGlyph: "󰅴"
   readonly property string backGlyph: "󰅁"
@@ -52,10 +62,10 @@ Panel {
     var cap = panel.availableCardHeight > 0 ? Math.min(panel.availableCardHeight, maxContentHeight) : maxContentHeight
     return cap - panel.verticalContentInset
   }
-  readonly property real versionsViewportHeight: Math.max(Style.space(120), maxColumnHeight - versionsSection.y - versionsSection.rowsTop)
+  readonly property real versionsViewportHeight: Math.max(Style.space(120), maxColumnHeight - (versionsSection ? versionsSection.y + versionsSection.rowsTop : 0))
   // While versions load, their place is held at the height the list will
   // most likely fill, so the card does not jump when they arrive.
-  readonly property real versionsLoadingHeight: Math.max(Style.space(120), maxColumnHeight - versionsSection.y - versionsSection.statusTop)
+  readonly property real versionsLoadingHeight: Math.max(Style.space(120), maxColumnHeight - (versionsSection ? versionsSection.y + versionsSection.statusTop : 0))
   readonly property color iconColor: healthy ? foreground : dim
   // Only a confirmed sign-out carries the needs-login badge. An
   // unverified token or missing CLI dims the mark.
@@ -223,7 +233,7 @@ Panel {
     rowIndex = 0
     if (panelFlick) panelFlick.contentY = 0
     cloudflare.refresh()
-    Qt.callLater(function() { keyCatcher.forceActiveFocus() })
+    Qt.callLater(function() { if (panel.loadedContent) panel.loadedContent.forceActiveFocus() })
   }
   onRowIndexChanged: {
     scrollCursorIntoView()
@@ -289,12 +299,20 @@ Panel {
     owner: root
     bar: root.bar
     open: root.opened
-    focusTarget: keyCatcher
+    focusTarget: panel.loadedContent
     contentWidth: panel.fittedContentWidth(Style.space(380))
-    contentHeight: panel.fittedContentHeight(column.implicitHeight, root.maxContentHeight)
+    contentHeight: panel.fittedContentHeight(panel.loadedContentHeight, root.maxContentHeight)
 
-    PanelKeyCatcher {
+    content: PanelKeyCatcher {
       id: keyCatcher
+      property alias panelFlick: panelFlick
+      property alias column: column
+      property alias versionsSection: versionsSection
+      property alias versionFlick: versionFlick
+      property alias versionColumn: versionColumn
+      property alias workerColumn: workerColumn
+      property alias zoneColumn: zoneColumn
+      implicitHeight: column.implicitHeight
       anchors.fill: parent
       onMoveRequested: function(dx, dy) {
         if (!root.cursorActive && dx === 0) { root.cursorActive = true; return }
