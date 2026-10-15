@@ -3,6 +3,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "ClipboardHistory.js" as ClipboardHistory
 
@@ -24,13 +25,13 @@ Item {
   // Shares the [menu] surface tokens — themes that style the menu also
   // style the clipboard. Selected-row colors composed in the
   // singleton so consumers drop them straight into Rectangle bindings.
-  property color background: Color.menu.background
-  property color foreground: Color.menu.text
-  property color border: Color.menu.border
+  property color background: Commons.Color.menu.background
+  property color foreground: Commons.Color.menu.text
+  property color border: Commons.Color.menu.border
   property var borderSpec: Border.surfaceSpec("menu", "border", border, Math.max(1, Style.space(2)))
-  property color scrim: Color.menu.scrim
-  property color selectedBackground: Color.menu.selectedBackground
-  property color selectedText: Color.menu.selectedText
+  property color scrim: Commons.Color.menu.scrim
+  property color selectedBackground: Commons.Color.menu.selectedBackground
+  property color selectedText: Commons.Color.menu.selectedText
   readonly property int cornerRadius: Style.cornerRadius
   property string fontFamily: Style.font.menuFamily
   property int contentMargin: Style.spacing.panelPadding
@@ -96,7 +97,7 @@ Item {
 
   function finishPin(result) {
     if (result.status === "limit") {
-      root.statusMessage = "All " + ClipboardHistory.pinLimit + " pins are in use. Unpin an entry first."
+      root.statusMessage = Commons.I18n.t("clipboard.pinLimit").arg(Commons.I18n.formatNumber(ClipboardHistory.pinLimit))
       return result.status
     }
     if (result.status !== "pinned" && result.status !== "unpinned" && result.status !== "already-pinned") return result.status
@@ -122,7 +123,7 @@ Item {
       stored.destroy()
     }
     if (!saved) {
-      root.statusMessage = "Could not save clipboard history. Try again."
+      root.statusMessage = Commons.I18n.t("clipboard.saveFailedRetry")
       return false
     }
 
@@ -204,7 +205,7 @@ Item {
   }
 
   function rebuildDisplay() {
-    var rows = ClipboardHistory.displayRows(root.history, root.filterText, 50)
+    var rows = ClipboardHistory.displayRows(root.history, root.filterText, 50, Commons.I18n.t, Commons.I18n.tn, Commons.I18n.formatNumber)
 
     displayModel.clear()
     for (var i = 0; i < rows.length; i++) {
@@ -228,6 +229,13 @@ Item {
     Qt.callLater(function() {
       if (displayModel.count > 0) resultList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
     })
+  }
+
+  // Preview text is composed imperatively, so rebuild it when the
+  // language (and with it the string catalog) changes under an open panel.
+  Connections {
+    target: Commons.I18n
+    function onStringsChanged() { if (root.opened) root.rebuildDisplay() }
   }
 
   function select(delta) {
@@ -347,7 +355,7 @@ Item {
     onLoaded: root.loadHistory(text())
     onLoadFailed: root.loadHistory("[]")
     onFileChanged: reload()
-    onSaveFailed: root.statusMessage = "Could not save clipboard history."
+    onSaveFailed: root.statusMessage = Commons.I18n.t("clipboard.saveFailed")
   }
 
   // Reap watchers left behind by a previous shell instance, then start our
@@ -495,8 +503,8 @@ Item {
           anchors.fill: parent
           opened: root.clearConfirmOpen
           z: 10
-          message: "Delete entire clipboard history, including pinned entries?"
-          confirmText: "Delete"
+          message: Commons.I18n.t("clipboard.deleteHistory")
+          confirmText: Commons.I18n.t("common.delete")
           background: root.background
           foreground: root.foreground
           scrim: root.scrim
@@ -529,7 +537,7 @@ Item {
             anchors.right: pinCounter.left
             anchors.rightMargin: Style.spacing.md
             anchors.verticalCenter: parent.verticalCenter
-            text: root.filterText || "Search clipboard…"
+            text: root.filterText || Commons.I18n.t("clipboard.search")
             color: root.foreground
             opacity: root.filterText ? 1 : 0.58
             font.family: root.fontFamily
@@ -542,7 +550,7 @@ Item {
             textFormat: Text.PlainText
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            text: root.pinCount + " / " + ClipboardHistory.pinLimit + " pinned"
+            text: Commons.I18n.t("clipboard.pinCount").arg(Commons.I18n.formatNumber(root.pinCount)).arg(Commons.I18n.formatNumber(ClipboardHistory.pinLimit))
             color: root.foreground
             opacity: 0.58
             font.family: root.fontFamily
@@ -597,12 +605,11 @@ Item {
                     anchors.bottomMargin: Style.space(8)
                     spacing: Style.space(10)
 
-                    Image {
+                    SizedImage {
                       visible: parent.parent.previewImage.length > 0
                       width: visible ? parent.height : 0
                       height: parent.height
-                      source: parent.parent.previewImage
-                      fillMode: Image.PreserveAspectFit
+                      url: parent.parent.previewImage
                       asynchronous: true
                       smooth: true
                     }
@@ -628,7 +635,7 @@ Item {
                       Text {
                         textFormat: Text.PlainText
                         anchors.centerIn: parent
-                        text: row.pinned ? "Unpin" : "Pin"
+                        text: row.pinned ? Commons.I18n.t("clipboard.unpin") : Commons.I18n.t("clipboard.pin")
                         color: row.hasCursor ? root.selectedText : root.foreground
                         opacity: row.pinned || pinMouse.containsMouse ? 1 : 0.5
                         font.family: root.fontFamily
@@ -696,15 +703,14 @@ Item {
                 verticalAlignment: Text.AlignTop
               }
 
-              Image {
+              SizedImage {
                 visible: parent.activeRow && parent.activeRow.previewImage
                 anchors.fill: parent
                 anchors.leftMargin: root.contentMargin
                 anchors.rightMargin: 0
                 anchors.topMargin: 0
                 anchors.bottomMargin: 0
-                source: parent.activeRow ? parent.activeRow.previewImage : ""
-                fillMode: Image.PreserveAspectFit
+                url: parent.activeRow ? parent.activeRow.previewImage : ""
                 verticalAlignment: Image.AlignTop
                 asynchronous: true
                 smooth: true
@@ -729,7 +735,7 @@ Item {
 
             Text {
               textFormat: Text.PlainText
-              text: root.history.length === 0 ? "Clipboard is empty" : "No matches for “" + root.filterText + "”"
+              text: root.history.length === 0 ? Commons.I18n.t("clipboard.empty") : Commons.I18n.t("common.noMatchesFor").arg(root.filterText)
               color: root.foreground
               opacity: 0.7
               font.family: root.fontFamily
@@ -744,7 +750,7 @@ Item {
           textFormat: Text.PlainText
           width: parent.width
           height: root.footerHeight
-          text: root.statusMessage || "Ctrl+P: Pin / Unpin"
+          text: root.statusMessage || Commons.I18n.t("clipboard.pinShortcut")
           color: root.foreground
           opacity: root.statusMessage ? 1 : 0.58
           font.family: root.fontFamily
