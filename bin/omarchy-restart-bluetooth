@@ -75,7 +75,7 @@ fi
 echo -e "\nBluetooth status:\n"
 
 if controller_present; then
-  bluetoothctl list
+  timeout 2s bluetoothctl list
 else
   echo "No Bluetooth controller is available."
   echo "Check 'journalctl -b -k' for adapter firmware errors; bluetoothd's own log is 'journalctl -b -u bluetooth'."

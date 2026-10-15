@@ -55,6 +55,9 @@ STUB
 cat >"$tmp_dir/bin/bluetoothctl" <<'STUB'
 #!/bin/bash
 printf 'bluetoothctl %s\n' "$*" >>"$STUB_CALLS"
+if [[ $1 == "list" && -n ${STUB_LIST_STALLS_AT:-} ]]; then
+  (( $(grep -c '^bluetoothctl list' "$STUB_CALLS") >= STUB_LIST_STALLS_AT )) && exec sleep 30
+fi
 if [[ $1 == "list" && -f $STUB_STATE/controller ]]; then
   echo "Controller AA:BB:CC:DD:EE:FF omarchy [default]"
 fi
@@ -98,6 +101,15 @@ pass "restart bluetooth restarts bluetooth.service"
 
 grep -q '^modprobe' "$tmp_dir/calls" && fail "restart bluetooth leaves btusb alone once a controller answers"
 pass "restart bluetooth leaves btusb alone once a controller answers"
+
+# bluetoothd can go away between the probe that found a controller and the
+# status listing, and an unguarded bluetoothctl would then wait for it forever.
+# The third listing is that one: after the wait's probe and the final probe.
+reset_stubs
+started=$SECONDS
+STUB_LIST_STALLS_AT=3 run_restart_bluetooth restart >/dev/null 2>&1 || true
+(( SECONDS - started < 10 )) || fail "restart bluetooth bounds the final status listing"
+pass "restart bluetooth bounds the final status listing"
 
 # A restart the user cancelled at the password prompt must not be reported as a
 # recovery, however healthy the adapter already looked. The message is matched
