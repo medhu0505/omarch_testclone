@@ -46,7 +46,7 @@ mode=$(stat -c '%a' "$write_dir/color.json")
 pass "theme colour writes a 0644 color.json"
 
 if (( EUID == 0 )); then
-  pass "running as root; skipping the mktemp-failure check"
+  skip "running as root; skipping the mktemp-failure check"
 else
   chmod u+w "$write_dir"
   export TMPDIR=$test_tmp/missing-tmp
@@ -103,6 +103,8 @@ browser_policy_setup_dir "$planted_dir"
 [[ -d $planted_dir ]] || fail "policy setup leaves the managed directory in place"
 mode=$(stat -c '%a' "$planted_dir")
 [[ $mode == "755" ]] || fail "policy setup leaves the managed directory 0755" "mode=$mode"
+[[ $(jq '.DefaultBrowserSettingEnabled' "$planted_dir/omarchy.json") == "false" ]] ||
+  fail "policy setup hides the default browser setting"
 pass "policy setup drops non-root files and non-empty subdirectories"
 
 owned=$test_tmp/not-root
@@ -279,6 +281,25 @@ grep -F 'exit "$failed"' "$ROOT/bin/omarchy-theme-set-browser" >/dev/null ||
   fail "omarchy-theme-set-browser exits non-zero when a policy write fails"
 pass "omarchy-theme-set-browser exits non-zero when a policy write fails"
 
+# Bash 5.3 adopts the EXIT trap's last status as the script's exit status, so a
+# handler ending on a false test turns a clean run into a failure and aborts the
+# migration that calls this through omarchy-theme-set-browser.
+policy_cleanup=$(sed -n '/^cleanup() {/,/^}/p' "$ROOT/bin/omarchy-theme-set-browser-policy")
+[[ -n $policy_cleanup ]] || fail "omarchy-theme-set-browser-policy defines an EXIT cleanup handler"
+eval "$policy_cleanup"
+staged=""
+cleanup || fail "omarchy-theme-set-browser-policy's EXIT trap succeeds with nothing staged"
+staged=$test_tmp/staged-policy
+: >"$staged"
+cleanup || fail "omarchy-theme-set-browser-policy's EXIT trap succeeds with a staged file"
+[[ ! -e $staged ]] || fail "omarchy-theme-set-browser-policy's EXIT trap removes the staged file"
+unset -f cleanup
+pass "omarchy-theme-set-browser-policy's EXIT trap never leaks a failure status"
+
+grep -F 'omarchy-theme-set-browser || true' "$ROOT/migrations/1787515927.sh" >/dev/null ||
+  fail "the policy-directory migration hardens Firefox even when the theme refresh fails"
+pass "the policy-directory migration does not abort on a failed theme refresh"
+
 policy_files=(
   "$ROOT/bin/omarchy-install-browser"
   "$ROOT/bin/omarchy-provision-owner"
@@ -309,3 +330,18 @@ grep -F 'browser_policy_firefox_policy_file_ok' "${migrations[0]}" >/dev/null ||
 grep -F '/opt/zen-browser/distribution' "$ROOT/install/helpers/browser-policy.sh" >/dev/null ||
   fail "the shared helper names the Zen distribution directory"
 pass "a migration locks existing policy directories"
+
+fx_merge=$test_tmp/fx-merge
+mkdir -p "$fx_merge"
+printf '{"policies": {"DisableTelemetry": true}}\n' >"$fx_merge/policies.json"
+as_root() { unprivileged_as_root "$@"; }
+# Temp files are user-owned; trust them as the root-owned file they stand in for.
+browser_policy_firefox_policy_file_ok() { [[ -f $1 && ! -L $1 ]]; }
+browser_policy_firefox_skip_default_check "$fx_merge"
+browser_policy_firefox_skip_default_check "$fx_merge"
+[[ $(jq -c '.policies' "$fx_merge/policies.json") == '{"DisableTelemetry":true,"DontCheckDefaultBrowser":true}' ]] ||
+  fail "Firefox's default browser check is added beside an administrator's policies" "$(cat "$fx_merge/policies.json")"
+printf 'not json\n' >"$fx_merge/policies.json"
+browser_policy_firefox_skip_default_check "$fx_merge"
+[[ $(<"$fx_merge/policies.json") == "not json" ]] || fail "an unreadable Firefox policies.json is left alone"
+pass "Firefox's default browser check is merged into existing policies"
