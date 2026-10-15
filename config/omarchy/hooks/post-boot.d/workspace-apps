@@ -23,6 +23,7 @@ launch_and_place() {
             "Workspace apps: invalid workspace configuration"
         return 0
     fi
+    before=$(hyprctl clients -j | jq -r '.[].address' | sort)
 
     # Launch without evaluating a command string from the config file.
     case "$launch_type" in
@@ -57,7 +58,6 @@ launch_and_place() {
             ;;
     esac
 
-    before=$(hyprctl clients -j | jq -r '.[].address' | sort)
 
     # Wait up to 10 seconds for a new window.
     while (( waited < 20 )); do
