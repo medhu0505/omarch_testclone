@@ -252,3 +252,17 @@ pass "a CJK preference sets untagged Han and CJK punctuation everywhere, Chromiu
 OMARCHY_PATH=$ROOT python3 "$ROOT/default/input-methods/configure.py" font default
 [[ ! -e $XDG_CONFIG_HOME/fontconfig/conf.d/50-omarchy-input-method.conf ]] || fail "the default preference removes the file"
 pass "the default CJK preference leaves the system's choice"
+
+# With no preference, untagged Han takes Japanese forms in every app, and an
+# English page's CJK punctuation stays out of Noto Sans Mongolian.
+mapfile -t actual < <(printf '%s\n' "en 9aa8" "en 3001" "en 300c" "en ff01" "- 3001" | chromium_fallback)
+for found in "${actual[@]}"; do
+  [[ $found == "Noto Sans CJK JP" ]] || fail "Chromium fallback with no preference uses Noto Sans CJK JP" "${actual[*]}"
+done
+for generic in sans-serif serif monospace; do
+  actual=$(echo "$generic - 9aa8" | resolve C.UTF-8 string)
+  [[ $actual == "${cjk[$generic]} JP" ]] || fail "$generic Han with no preference is JP" "$actual"
+  actual=$(env -u LC_ALL -u LC_CTYPE -u FC_LANG LANG=C.UTF-8 fc-match -f '%{family[0]}' "$generic")
+  [[ $actual == "${latin[$generic]}" ]] || fail "the Japanese default leaves $generic on its Latin family" "$actual"
+done
+pass "with no preference, Han and CJK punctuation take Japanese forms everywhere"
