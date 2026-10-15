@@ -41,6 +41,8 @@ for scenario in fresh retry custom symlink invalid dangling; do
     custom|symlink)
       printf '%s\n' '{"plugins":["local.example"],"idle":{"lock":600},"bar":{"transparent":true,"layout":{"right":[{"id":"omacom.elsewhen","cities":["Tokyo"]}]}}}' >"$settings"
       if [[ $scenario == "symlink" ]]; then
+        jq '.bar.centerAnchor = "omarchy.clock" | .bar.layout.center = [{id: "omarchy.clock"}] | .bar.layout.right += [{id: "omarchy.tray"}]' "$settings" >"$test_tmp/symlink-settings"
+        mv "$test_tmp/symlink-settings" "$settings"
         mv "$settings" "$target_home/settings.json"
         ln -s "$target_home/settings.json" "$settings"
       fi
@@ -84,7 +86,7 @@ for scenario in fresh retry custom symlink invalid dangling; do
     (( bar_reset == 0 )) || fail "existing settings avoid the default bar reset"
     after=$(readlink "$settings" || sha256sum "$settings")
     [[ $before == "$after" ]] || fail "existing settings survive the transition"
-    for migration in 1780294774 1784989000 1785344985 1786099804 1790042972 1790528634; do
+    for migration in 1780294774 1784989000 1785344985 1786099804 1790042972 1790528634 1791968925 1791969355; do
       HOME="$target_home" OMARCHY_PATH="$ROOT" PATH="$test_tmp/bin:$ROOT/bin:$PATH" bash -euo pipefail "$ROOT/migrations/$migration.sh" >/dev/null
     done
     jq -e '.idle.lock == 600 and .bar.transparent and (.plugins | index("local.example") != null) and ([.bar.layout[]? | .[]? | select(type == "object" and .id == "omarchy.elsewhen") | .cities] | any(. == ["Tokyo"]))' "$settings" >/dev/null || fail "migrations preserve custom settings while updating legacy widgets"
