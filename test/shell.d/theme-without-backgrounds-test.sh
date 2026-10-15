@@ -30,6 +30,10 @@ set_theme "no-backgrounds"
   "background link: $(readlink "$background_link")"
 pass "a theme without backgrounds leaves no background link"
 
+current_name=$(HOME="$test_home" "$ROOT/bin/omarchy-theme-bg-current")
+[[ $current_name == "Unknown" ]] || fail "the current background reads as unknown without a link" "got: $current_name"
+pass "the current background reads as unknown without a link"
+
 set_theme "no-backgrounds"
 [[ ! -e $background_link && ! -L $background_link ]] || fail "reapplying a theme without backgrounds still leaves no link"
 pass "reapplying a theme without backgrounds still leaves no link"
