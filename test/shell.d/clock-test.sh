@@ -8,7 +8,10 @@ run_node_test <<'JS'
 const fs = require('fs')
 const calendar = requireFromRoot('shell/plugins/panels/clock/Model.js')
 const panelSource = fs.readFileSync(root + '/shell/plugins/panels/clock/Panel.qml', 'utf8')
+// Comments stripped: a wiring assertion that a commented-out line can satisfy
+// passes while the widget is broken.
 const widgetSource = fs.readFileSync(root + '/shell/plugins/panels/clock/BarWidget.qml', 'utf8')
+  .replace(/^\s*\/\/.*$/gm, '')
 
 // ---- week start resolution
 assertEqual(calendar.normalizedWeekStart('monday', 0), 1, 'calendar reads a named week start')
@@ -107,6 +110,57 @@ assertDeepEqual(julySunday.map(week => week.week), [27, 28, 29, 30, 31, 32], 'ca
 const januarySunday = calendar.monthGrid(2021, 0, 0, '')
 assertEqual(januarySunday[0].week, 53, 'calendar carries the previous ISO year into a straddling first row')
 
+// Zones that start DST at 00:00 have a calendar day with no local midnight, and
+// the engines disagree about which side of the gap it falls on: V4 resolves it
+// backward onto the previous date, V8 forward. Node therefore cannot see the
+// duplicated day the shell draws, so pin the property that makes the question
+// moot -- the grid is walked in UTC and never asks for a wall clock.
+const RealDate = Date
+class LocalTimeIsForbidden extends RealDate {
+  constructor(...args) {
+    if (args.length > 1) throw new Error('built a Date from local components')
+    super(...args)
+  }
+  getFullYear() { throw new Error('read the local year') }
+  getMonth() { throw new Error('read the local month') }
+  getDate() { throw new Error('read the local day') }
+  getDay() { throw new Error('read the local weekday') }
+  setDate() { throw new Error('stepped the local day') }
+}
+
+function withoutLocalTime(build) {
+  global.Date = LocalTimeIsForbidden
+  try {
+    return { value: build(), localTimeUse: '' }
+  } catch (error) {
+    return { value: null, localTimeUse: error.message }
+  } finally {
+    global.Date = RealDate
+  }
+}
+
+const september = withoutLocalTime(() => calendar.monthGrid(2026, 8, 0, ''))
+assertEqual(september.localTimeUse, '', 'calendar builds the month grid without reading local time')
+assertDeepEqual(
+  september.value.slice(0, 2).flatMap(week => week.days).map(day => day.day),
+  [30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  'calendar runs September 2026 straight through the Chilean DST midnight'
+)
+
+const stepped = withoutLocalTime(() => calendar.stepMonth(2026, 8, 1))
+assertEqual(stepped.localTimeUse, '', 'calendar steps months without reading local time')
+assertDeepEqual(stepped.value, { year: 2026, month: 9 }, 'calendar steps from September to October')
+
+// Samoa skipped 30 December 2011 outright, a gap even V8 cannot paper over.
+const previousTZ = process.env.TZ
+process.env.TZ = 'Pacific/Apia'
+const apia = calendar.monthGrid(2011, 11, 1, '')
+if (previousTZ === undefined) delete process.env.TZ
+else process.env.TZ = previousTZ
+assertDeepEqual(apia[4].days.map(day => day.day), [26, 27, 28, 29, 30, 31, 1], 'calendar keeps a day the local zone skipped')
+
+assert(/viewDate: new Date\(viewYear, viewMonth, 1, 12\)/.test(panelSource), 'calendar names the heading month from a noon that always exists')
+
 // ---- stepping
 assertDeepEqual(calendar.stepMonth(2026, 0, 1), { year: 2026, month: 1 }, 'calendar steps to the next month')
 assertDeepEqual(calendar.stepMonth(2026, 0, -1), { year: 2025, month: 11 }, 'calendar steps back across the new year')
@@ -145,6 +199,7 @@ assertDeepEqual(
   calendar.clockFormats(false),
   [
     'dddd HH:mm', 'dddd h:mm AP',
+    'dddd HH:mm:ss', 'dddd h:mm:ss AP',
     'HH:mm', 'h:mm AP',
     'ddd d MMM HH:mm', 'ddd d MMM h:mm AP',
     "d MMMM 'W'ww yyyy",
@@ -166,6 +221,23 @@ assertEqual(
 )
 assertEqual(calendar.isoWeekLiteral(2026, 0, 5), '02', 'clock zero-pads the ISO week token')
 
+// ---- seconds detection, which decides how often the widget's clock ticks
+assert(calendar.clockNeedsSeconds('dddd HH:mm:ss'), 'clock sees seconds in the live preset')
+assert(calendar.clockNeedsSeconds('h:mm:ss AP'), 'clock sees seconds in an AM/PM format')
+assert(!calendar.clockNeedsSeconds('dddd HH:mm'), 'clock sees no seconds in a minute format')
+assert(!calendar.clockNeedsSeconds("d MMMM 'W'ww yyyy"), 'clock sees no seconds in the long date format')
+assert(!calendar.clockNeedsSeconds("dd\nMMM\n'W'ww\n''yy"), 'clock sees no seconds in the stacked date format')
+assert(!calendar.clockNeedsSeconds("HH:mm 'since'"), 'clock reads an s inside a quoted literal as text')
+// Qt reads an opening quote with no closing one as a literal running to the end
+// of the format, so "HH:mm 'sec" prints "09:39 sec" and never a second count.
+assert(!calendar.clockNeedsSeconds("HH:mm 'sec"), 'clock reads an unterminated literal as text to the end')
+assert(!calendar.clockNeedsSeconds("HH:mm's"), 'clock reads a trailing unterminated literal as text')
+// The doubled quote is a literal apostrophe rather than an empty literal, so
+// the s after it is still the seconds token: Qt prints "'23".
+assert(calendar.clockNeedsSeconds("''s"), 'clock still sees seconds after an escaped apostrophe')
+assert(!calendar.clockNeedsSeconds(''), 'clock sees no seconds in an empty format')
+assert(!calendar.clockNeedsSeconds(null), 'clock sees no seconds in a missing format')
+
 // ---- widget wiring
 assert(/moduleName: "omarchy\.clock"/.test(panelSource), 'calendar panel declares its module name')
 assert(/ipcTarget: "omarchy\.clock"/.test(panelSource), 'calendar panel registers its IPC target')
@@ -173,6 +245,12 @@ assert(/manageIpc: false/.test(panelSource), 'calendar panel leaves the IPC targ
 assert(/anchorItem: root\.anchorItem/.test(panelSource), 'calendar panel anchors to the host widget button')
 assert(/function toggleWeekStart\(\)/.test(panelSource), 'calendar panel exposes a week start toggle')
 assert(/function toggleWeekStart\(\): void \{ root\.toggleWeekStart\(\) \}/.test(widgetSource), 'clock exposes the week start toggle over IPC')
+assert(/precision: root\.showsSeconds \? SystemClock\.Seconds : SystemClock\.Minutes/.test(widgetSource), 'clock ticks per second only for a format that prints seconds')
+// Both halves of the tick, because either one alone can be true while the
+// label sits frozen: the precision must follow the format, and every tick
+// must reach the label.
+assert(/showsSeconds: Model\.clockNeedsSeconds\(activeFormat\)/.test(widgetSource), 'clock decides its tick rate from the format it is showing')
+assert(/onDateChanged: root\.displayDate = date/.test(widgetSource), 'clock repaints the label on every tick')
 assert(/setting\("weekStartDay", null\)/.test(panelSource) && /persistSettings\(\{ weekStartDay:/.test(panelSource), 'calendar reads and writes the week start as weekStartDay')
 assert(/updateEntryInline/.test(panelSource), 'calendar panel persists the week start to shell.json')
 assert(/function moveMonth\(delta\)/.test(panelSource), 'calendar panel steps between months')
@@ -185,7 +263,7 @@ assert(/function close\(\) \{\s*\n\s*setCenterHoverRevealSuppressed\(false\)/.te
 assert(/width: Math\.max\(calendarScroll\.width, gridColumn\.width\)/.test(panelSource), 'calendar scrolls rather than clipping the grid on a narrow popup')
 assert(/enabled: !root\.viewingCurrentMonth/.test(panelSource) && /onClicked: root\.goToToday\(\)/.test(panelSource), 'calendar hero returns to today once the view has stepped away')
 assert(!/clampMonth/.test(panelSource), 'calendar steps freely into future months')
-assert(/Qt\.formatDate\(root\.today, "MMMM d"\)/.test(panelSource), 'calendar hero spells out today')
+assert(/root\.today\.toLocaleDateString\(root\.labelLocale, Commons\.I18n\.t\("clock\.dayMonthFormat"\)\)/.test(panelSource), 'calendar hero spells out today')
 assert(/id: yearLabel/.test(panelSource) && /root\.yearDone/.test(panelSource), 'calendar panel shows the year progress bar')
 
 // The memento mori bar is opt-in: double-tapping the year bar asks for an age,
@@ -198,7 +276,7 @@ assert(/readonly property int lifeExpectancy: Model\.parseLifeExpectancy\(settin
 assert(/id: expectancyField/.test(panelSource) && /id: bornField/.test(panelSource), 'calendar offers both inputs')
 assert(/visible: root\.editingLife\s*\n\s*anchors\.horizontalCenter: parent\.horizontalCenter/.test(panelSource), 'calendar centers the inputs over the bar they replace')
 assert(/visible: root\.birthYear > 0/.test(panelSource), 'calendar hides the life bar until a birth year is known')
-assert(/text: "LIFE"/.test(panelSource) && /root\.lifeDone/.test(panelSource), 'calendar shows the life bar')
+assert(/I18n\.t\("clock\.life"\)/.test(panelSource) && /root\.lifeDone/.test(panelSource), 'calendar shows the life bar')
 assert(/text: "Memento Mori"/.test(panelSource), 'calendar names the life bar on hover')
 assert(/onDoubleTapped: root\.clearLife\(\)/.test(panelSource), 'calendar puts the life bar away when it is double-tapped')
 assert(/persistSettings\(\{ birthYear: 0 \}\)/.test(panelSource), 'calendar clears the birth year to hide the life bar')
@@ -231,6 +309,17 @@ assert(/readonly property real labelWidth:/.test(fs.readFileSync(root + '/shell/
 // A horizontal wheel reports angleDelta.y === 0; without the guard every one
 // of them would read as a forward step.
 assert(/if \(event\.angleDelta\.y === 0\) return/.test(panelSource), 'calendar ignores wheel events with no vertical delta')
+
+// Qt.formatDate/formatDateTime and a bare Qt.locale() take names from the
+// system LANG, which only follows a language switch after the next login;
+// the clock formats through the Omarchy language's formatLocale instead.
+const panelCode = panelSource.replace(/^\s*\/\/.*$/gm, '')
+for (const [name, source] of [['Panel.qml', panelCode], ['BarWidget.qml', widgetSource]]) {
+  assert(!/Qt\.format(Date|Time|DateTime)\(/.test(source), `clock ${name} does not format with the system locale`)
+  assert(!/Qt\.locale\(\)/.test(source), `clock ${name} does not read the system locale`)
+}
+assert(/date\.toLocaleString\(root\.formatLocale,/.test(widgetSource), 'bar clock formats with the Omarchy language')
+assert(/standaloneMonthName\(viewMonth/.test(panelCode), 'calendar title uses the standalone month name')
 JS
 
 shell_json=$(cd "$ROOT" && jq -r '[.bar.layout.center[].id] | join(",")' config/omarchy/shell.json)
@@ -238,7 +327,7 @@ shell_json=$(cd "$ROOT" && jq -r '[.bar.layout.center[].id] | join(",")' config/
 [[ $shell_json != *"omarchy.calendar"* ]] || fail "clock hosts the calendar instead of a second bar pill" "center: $shell_json"
 pass "default bar layout includes the clock widget"
 
-grep -q 'o.bind("SUPER + CTRL + ALT + D", "Calendar", "omarchy-shell shell toggle omarchy.clock")' \
+grep -q 'o.bind("SUPER + CTRL + ALT + D", "Calendar", { panel = "omarchy.clock" })' \
   "$ROOT/default/hypr/bindings/utilities.lua" ||
   fail "SUPER+CTRL+ALT+D toggles the calendar panel"
 pass "SUPER+CTRL+ALT+D toggles the calendar panel"
