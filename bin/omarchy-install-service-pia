@@ -35,6 +35,6 @@ done
 echo -e "\nPIA installed! Connect with 'piactl connect' or from the Private Internet Access app."
 
 echo
-if gum confirm "Connect to PIA now?"; then
+if gum confirm --affirmative "$(omarchy-i18n common.yes)" --negative "$(omarchy-i18n common.no)" "$(omarchy-i18n pia.connectNow)"; then
   piactl connect
 fi

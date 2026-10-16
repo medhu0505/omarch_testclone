@@ -46,7 +46,9 @@ esac
 SCRIPT
 
 chmod +x "$tmp_dir/bin/"*
-export PATH="$tmp_dir/bin:$PATH"
+# The real omarchy-i18n supplies the prompts.
+export OMARCHY_PATH="$ROOT"
+export PATH="$tmp_dir/bin:$ROOT/bin:$PATH"
 
 output=$("$ROOT/bin/omarchy-install-service-pia")
 expected='omarchy-pkg-aur-add:piavpn-bin
