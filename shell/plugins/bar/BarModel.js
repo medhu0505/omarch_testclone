@@ -88,6 +88,14 @@ function customModulePath(entry, home, configDir) {
   return source
 }
 
+// The label a command module shows for its parsed output. An empty "text" is
+// how a Waybar-style script hides its module, so only output with no text at
+// all (a bare number, say) falls back to the raw line.
+function customCommandText(data, raw) {
+  var text = data ? data.text : undefined
+  return text === undefined || text === null ? String(raw || "").trim() : String(text)
+}
+
 // A widget's slot can be on a bar without being drawn: the widget has hidden
 // itself, or a drag has folded its slot away. Panel routing has to pick a
 // drawn one — it is the only one that can anchor a popup, carry the
@@ -647,6 +655,7 @@ if (typeof module !== "undefined") {
     expandPath: expandPath,
     customModuleSafeName: customModuleSafeName,
     customModuleType: customModuleType,
-    customModulePath: customModulePath
+    customModulePath: customModulePath,
+    customCommandText: customCommandText
   }
 }

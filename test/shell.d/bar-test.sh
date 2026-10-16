@@ -681,6 +681,13 @@ assertEqual(
   '/home/dhh/.config/omarchy/bar/modules/local.weather.qml',
   'bar builds default custom module paths'
 )
+
+assertEqual(bar.customCommandText({ text: '', class: 'ok' }, '{"text":"","class":"ok"}'), '', 'an empty JSON text hides a command module')
+assertEqual(bar.customCommandText({ text: 0 }, '{"text":0}'), '0', 'a command module shows a zero JSON text')
+assertEqual(bar.customCommandText({ text: 'VPN' }, '{"text":"VPN"}'), 'VPN', 'a command module shows its JSON text')
+assertEqual(bar.customCommandText({ text: 'up 3 days' }, 'up 3 days\n'), 'up 3 days', 'a command module shows plain output')
+assertEqual(bar.customCommandText(42, '42\n'), '42', 'a command module shows output that parses to a bare number')
+assertEqual(bar.customCommandText({}, ''), '', 'a command module with no output shows nothing')
 JS
 
 put_tmp=$(mktemp -d)
