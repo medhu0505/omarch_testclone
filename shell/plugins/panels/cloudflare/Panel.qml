@@ -618,6 +618,9 @@ Panel {
               flickableDirection: Flickable.VerticalFlick
               interactive: contentHeight > height
               ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+              // A status line above the card's sections takes its height
+              // from this list, so keep the cursor's row in view.
+              onHeightChanged: if (root.cursorActive) root.scrollCursorIntoView()
 
               Column {
                 id: versionColumn

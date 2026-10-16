@@ -20,6 +20,9 @@ const showMetrics = new Function('cloudflare', 'return (' + metricsVisibility[1]
 assert(showMetrics({ metricsError: 'Could not load error metrics', detailMetrics: { invocations: { value: 42 }, cpu: { value: 3 } } }), 'cloudflare keeps successful metrics visible when another query fails')
 assert(!showMetrics({ metricsError: 'Could not load metrics', detailMetrics: {} }), 'cloudflare hides empty metric rows when every query fails')
 
+const versionFlick = panelSource.match(/id: versionFlick[\s\S]*?\n {14}Column \{/)
+assert(versionFlick && /onHeightChanged: if \(root\.cursorActive\) root\.scrollCursorIntoView\(\)/.test(versionFlick[0]), 'cloudflare keeps the cursor version in view when a status line shrinks the list')
+
 // whoami
 
 const deviceLogin = '\n\t\tTo authorize Cloudflare CLI, please visit:\n\n\t\t  https://dash.cloudflare.com/oauth/device\n\n\t\tand enter the code:\n\n\t\t  nzcpYWwP\n\n\t\tYou have 10 minutes to approve this request.\n'
