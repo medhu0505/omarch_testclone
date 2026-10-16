@@ -786,7 +786,10 @@ Item {
     var item = resultList.itemAtIndex(root.selectedIndex)
     if (!item) return
 
-    var reach = root.rowPeek + root.rowSpacing
+    // Only reserve space for neighbors when the entire cursor row still fits.
+    var reach = Math.min(root.rowPeek + root.rowSpacing,
+      Math.max(0, (resultList.height - item.height) / 2))
+    if (reach === 0) return
     if (root.selectedIndex < displayModel.count - 1) {
       var maxY = Math.max(resultList.originY, resultList.originY + resultList.contentHeight - resultList.height)
       var overhang = item.y + item.height + reach - (resultList.contentY + resultList.height)
