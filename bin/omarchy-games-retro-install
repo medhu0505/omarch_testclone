@@ -35,6 +35,14 @@ if [[ ! -f $game_path ]]; then
   exit 1
 fi
 
+# The launcher runs from any directory, so Exec needs the absolute path. Read it
+# NUL-delimited, since command substitution would strip a newline ending the name.
+game_name_path="$game_path"
+if ! IFS= read -r -d '' game_path < <(realpath -e -z -- "$game_path"); then
+  echo "Could not resolve game path: $game_name_path" >&2
+  exit 1
+fi
+
 if [[ $core == */* ]]; then
   core_path="$core"
 else
@@ -46,9 +54,22 @@ if [[ ! -f $core_path ]]; then
   exit 1
 fi
 
-game_name=$(printf '%s' "${game_path##*/}" | sed 's/\.[^.]*$//; s/[[:space:]]*([^)]*)//g; s/[[:space:]]\+/ /g; s/^ //; s/ $//' | perl -Mopen=locale -pe 's/(^|[[:space:]])([^[:space:]])/$1\U$2/g')
+game_name=$(printf '%s' "${game_name_path##*/}" | sed 's/\.[^.]*$//; s/[[:space:]]*([^)]*)//g; s/[[:space:]]\+/ /g; s/^ //; s/ $//' | perl -Mopen=locale -pe 's/(^|[[:space:]])([^[:space:]])/$1\U$2/g')
+
+# A name that cleans to nothing, like "(Europe).sfc", keeps its raw file name.
+if [[ -z $game_name ]]; then
+  game_name="${game_name_path##*/}"
+fi
+
 desktop_name="$game_name"
 desktop_id=$(printf '%s' "$desktop_name" | tr '[:upper:]' '[:lower:]' | tr -cs '[:alnum:]' '-' | sed 's/^-//; s/-$//')
+
+# A name with no ASCII letters or digits, like a Japanese title, slugs to nothing,
+# so key it on the ROM path to keep each such game its own launcher.
+if [[ -z $desktop_id ]]; then
+  desktop_id="retro-game-$(printf '%s' "$game_path" | md5sum | cut -d' ' -f1)"
+fi
+
 desktop_dir="$HOME/.local/share/applications"
 desktop_file="$desktop_dir/$desktop_id.desktop"
 mkdir -p "$desktop_dir"
