@@ -1267,10 +1267,11 @@ Item {
   // since the drag started: a write from elsewhere that the drag hasn't let
   // go for yet (onLayoutWidgetsChanged) would put it in the wrong place. Every
   // widget keeps its own instance through the move, the dragged one too,
-  // whatever else shares its id (BarModel.layoutWidgets).
+  // whatever else shares its id (BarModel.layoutWidgets). A bar locked
+  // mid-drag keeps its layout.
   function landBarDrag(move) {
     clearBarDrag()
-    if (!move || JSON.stringify(layoutWidgets.sections) !== move.keys) return
+    if (!move || layoutLocked || JSON.stringify(layoutWidgets.sections) !== move.keys) return
     if (!root.shell || typeof root.shell.mutateShellConfig !== "function") return
     var expected = JSON.parse(move.keys)
     var into = expected[move.to.region]

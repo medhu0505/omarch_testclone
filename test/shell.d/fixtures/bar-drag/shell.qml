@@ -255,11 +255,18 @@ ShellRoot {
         var inner = root.slotsOf("test.inner")[0]
         root.check(inner && inner.activeItem.fixedEdge === "start", "moved to the left section, the tray has them grow from its start: " + (inner ? inner.activeItem.fixedEdge : "none shown"))
 
-        // A locked bar keeps its widgets where they are.
-        host.mutateShellConfig(function(config) { config.bar.locked = true })
-      }, 400],
-      [function() {
+
+        // A bar locked mid-drag keeps its widgets where they are.
         root.counts = JSON.stringify(root.ids("right"))
+        root.lift(root.slotOf("test.b", "right"))
+      }, 300],
+      [function() { root.pointAt(root.slotOf("test.c", "right"), 0.2) }, 300],
+      [function() { host.mutateShellConfig(function(config) { config.bar.locked = true }) }, 300],
+      [function() { root.letGo(root.slotOf("test.c", "right"), 0.2) }, 700],
+      [function() {
+        root.check(JSON.stringify(root.ids("right")) === root.counts, "a bar locked mid-drag does not move the widget: " + JSON.stringify(root.ids("right")))
+
+        // A locked bar does not start a drag at all.
         root.lift(root.slotOf("test.b", "right"))
       }, 300],
       [function() { root.pointAt(root.slotOf("test.c", "right"), 0.2) }, 300],
