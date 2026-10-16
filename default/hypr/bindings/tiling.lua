@@ -16,7 +16,11 @@ local function layout_dispatch(layout, dispatcher)
   end
 end
 
-o.bind("SUPER + J", "Toggle window split", layout_dispatch("dwindle", hl.dsp.layout("togglesplit")))
+-- Named so the keybindings menu, which sees this bind only as __lua, can run it.
+o.toggle_window_split = layout_dispatch("dwindle", hl.dsp.layout("togglesplit"))
+o.bind_commands[o.toggle_window_split] = "hyprctl eval 'o.toggle_window_split()'"
+
+o.bind("SUPER + J", "Toggle window split", o.toggle_window_split)
 o.bind("SUPER + P", "Pseudo window", hl.dsp.window.pseudo())
 o.bind("SUPER + T", "Toggle window floating/tiling", hl.dsp.window.float({ action = "toggle" }))
 o.bind("SUPER + F", "Full screen", hl.dsp.window.fullscreen({ mode = "fullscreen" }))

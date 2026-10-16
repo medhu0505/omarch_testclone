@@ -54,6 +54,7 @@ require("default.hypr.bindings.tiling")
 
 local toggle_split = bindings["SUPER + J"]
 assert(type(toggle_split) == "function", "Super+J must check the layout at keypress time")
+assert(o.bind_commands[toggle_split] == "hyprctl eval 'o.toggle_window_split()'", "the menu replays the layout-aware toggle")
 
 local function check(normal, special, expected, description)
   workspace = normal and { tiled_layout = normal } or nil
