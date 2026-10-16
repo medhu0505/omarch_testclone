@@ -8,7 +8,7 @@ custom_ms_override() {
 
   # Without -r, read joins a line continued with a trailing backslash, as tmux does.
   while IFS= read line || [[ -n $line ]]; do
-    [[ $line =~ ^[[:space:]]*set(-option)?[[:space:]].*[[:space:]]terminal-overrides ]] || continue
+    [[ $line =~ ^[[:space:]]*set(-option)?([[:space:]].*)?[[:space:]]terminal-overrides ]] || continue
     line=${line#*terminal-overrides}
     line=${line#\[*\]}
     line=${line%%[[:space:]]#*}

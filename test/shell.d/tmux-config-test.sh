@@ -142,6 +142,7 @@ ms_override_kept() {
 for kept in \
   'set -ag terminal-overrides ",*term*:RGB:Ms=custom"' \
   "set-option -ga terminal-overrides 'xterm-256color:Ms@'" \
+  "set terminal-overrides ',xterm*:Ms@'" \
   'set -g terminal-overrides[5] "xterm*:Ms@"' \
   $'set -as terminal-overrides \\\n  \',xterm*:Ms@\''; do
   ms_override_kept "$kept" || fail "an Ms override that applies under mosh is kept" "$kept"
