@@ -22,9 +22,6 @@
 -- Disable a default binding without replacing it.
 -- hl.unbind("SUPER + SHIFT + B")
 
--- Keyboards without a Print Screen key (Apple, Logitech MX Keys) already have
--- Super + Shift + S for screenshots by default.
-
 -- Logitech MX Keys examples:
 -- o.bind("SUPER + H", nil, "voxtype record toggle")
 -- o.bind("SUPER + PERIOD", nil, { panel = "omarchy.emojis" })
