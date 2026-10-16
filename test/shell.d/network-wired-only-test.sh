@@ -4,6 +4,28 @@ set -euo pipefail
 
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
+run_node_test <<'JS'
+const network = requireFromRoot('shell/plugins/panels/network/Model.js')
+
+const on = network.parseWiredOnlyStatus('enabled\ttrue\navailable\ttrue\n')
+assertEqual(on.enabled, true, 'parses an enabled toggle')
+assertEqual(on.available, true, 'parses availability')
+
+const off = network.parseWiredOnlyStatus('enabled\tfalse\navailable\tfalse\n')
+assertEqual(off.enabled, false, 'parses a disabled toggle')
+assertEqual(off.available, false, 'parses a machine without both devices')
+
+const empty = network.parseWiredOnlyStatus('')
+assertEqual(empty.enabled, false, 'empty output reads as disabled')
+assertEqual(empty.available, false, 'empty output reads as unavailable, so the section stays hidden')
+
+assertEqual(network.wiredOnlyTooltip(false), 'Turn Wi-Fi off while Ethernet is connected', 'tooltip explains what turning it on does')
+assertEqual(network.wiredOnlyTooltip(true), 'Leave Wi-Fi on while Ethernet is connected', 'tooltip explains what turning it off does')
+const tr = (key, english) => `[${key}]`
+assertEqual(network.wiredOnlyTooltip(false, tr), '[network.wiredOnlyTooltip]', 'tooltip reads the catalog when given a translator')
+assertEqual(network.wiredOnlyTooltip(true, tr), '[network.wiredOnlyLeaveTooltip]', 'the other tooltip reads the catalog too')
+JS
+
 # The command itself, against scripted nmcli, loginctl and getent: the stubs
 # serve device, radio, connection and session state from files and record
 # every radio switch they are asked for.
