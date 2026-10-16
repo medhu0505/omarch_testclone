@@ -128,6 +128,28 @@ grep -Fq 'vt100:Ms=custom-vt-clipboard' "$non_xterm" || fail "unrelated terminal
 grep -Fq 'xterm*:Ms=\\E]52;' "$non_xterm" || fail "unrelated terminal overrides do not skip the mosh fix"
 pass "non-xterm clipboard overrides do not block the xterm mosh capability"
 
+ms_override_kept() {
+  local config="$test_tmp/ms-case/.config/tmux/tmux.conf"
+  mkdir -p "${config%/*}"
+  printf '%s\n' "$1" >"$config"
+  HOME="$test_tmp/ms-case" TMUX_LOG="$tmux_log" PATH="$test_tmp/bin:$PATH" bash -euo pipefail "$migration" >/dev/null
+  [[ $(<"$config") == "$1" ]]
+}
+
+for kept in \
+  'set -ag terminal-overrides ",*term*:RGB:Ms=custom"' \
+  'set -as terminal-overrides "tmux*:RGB, *:Ms=\E]52;%p1%s;%p2%s\007"' \
+  "set-option -ga terminal-overrides 'xterm-256color:Ms@'"; do
+  ms_override_kept "$kept" || fail "an Ms override that applies under mosh is kept" "$kept"
+done
+for replaced in \
+  'set -ag terminal-overrides ",xterm-kitty:RGB:Ms=custom"' \
+  'set -ag terminal-overrides ",*:RGB" # no :Ms=custom here' \
+  'set -g @terminal-overrides ",xterm*:Ms=custom"'; do
+  ! ms_override_kept "$replaced" || fail "an Ms override that does not apply under mosh gets the fix" "$replaced"
+done
+pass "only Ms overrides matching the terminal mosh reports are treated as the user's own"
+
 selection_copies() {
   python3 - "$1" "$test_tmp/$2-selection.log" "$2-selection-$$" <<'PYTEST'
 import fcntl

@@ -2,10 +2,32 @@ echo "Keep tmux clipboard copies working over mosh"
 
 tmux_config="$HOME/.config/tmux/tmux.conf"
 
+# Mosh gives tmux TERM=xterm or xterm-256color, so only an Ms override whose pattern matches one of those is the user's choice for mosh.
+custom_ms_override() {
+  local line entry pattern entries
+
+  while IFS= read -r line; do
+    [[ $line =~ ^[[:space:]]*set(-option)?[[:space:]].*[[:space:]]terminal-overrides ]] || continue
+    line=${line#*terminal-overrides}
+    line=${line%%[[:space:]]#*}
+    IFS=, read -ra entries <<<"${line//[\"\']/}"
+
+    for entry in "${entries[@]}"; do
+      entry=${entry#"${entry%%[![:space:]]*}"}
+      pattern=${entry%%:*}
+      if [[ :${entry#*:}: =~ :Ms[=@] ]] && [[ xterm == $pattern || xterm-256color == $pattern ]]; then
+        return 0
+      fi
+    done
+  done <"$tmux_config"
+
+  return 1
+}
+
 if [[ -f $tmux_config ]]; then
   mosh_override='set -ag terminal-overrides ",xterm*:Ms=\\E]52;%?%p1%l%t%p1%s%ec%;;%p2%s\\007"'
   if ! grep -qFx "$mosh_override" "$tmux_config"; then
-    if grep -Eq "^[[:space:]]*set(-option)?[[:space:]].*terminal-overrides.*[,\"'[:space:]](\\*|xterm[^,:\"']*)(:[^,:\"']*)*:Ms[=@]" "$tmux_config"; then
+    if custom_ms_override; then
       echo "Keeping your custom tmux Ms override; check its OSC 52 clipboard selector when using mosh."
       exit 0
     fi
