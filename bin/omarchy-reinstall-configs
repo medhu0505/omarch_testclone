@@ -17,6 +17,7 @@ echo "Resetting Omarchy user configs to shipped defaults..."
 # nautilus-python extensions, branding, hypr toggles, and migration markers.
 # Trailing dot copies dotfiles; the shell wouldn't glob them with /etc/skel/*.
 cp -af /etc/skel/. ~/
+omarchy-install-chromium-legacy-gpu
 
 omarchy-refresh-limine
 omarchy-refresh-plymouth
