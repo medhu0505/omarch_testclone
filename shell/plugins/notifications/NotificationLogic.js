@@ -184,7 +184,7 @@ function shouldRenderCompactGlyph(glyph, iconSource, singleLineToast) {
 // an icon name, image://icon//tmp/…; it is a file, raw, so encode it as a URL.
 function imageOf(image) {
   var s = String(image || "")
-  var path = /^image:\/\/icon\/(\/.*)$/.exec(s)
+  var path = /^image:\/\/icon\/(\/[\s\S]*)$/.exec(s)
   return path ? "file://" + path[1].split("/").map(encodeURIComponent).join("/") : s
 }
 
