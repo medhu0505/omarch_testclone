@@ -162,7 +162,7 @@ mkdir -p "$paste_home" "$paste_root"
 paste_output=$(
   HOME="$paste_home" TEST_ROOT="$paste_root" CALL_LOG="$test_dir/paste.calls" \
     PASTE_PUBLIC_KEY="$test_dir/rsa.pub" GUM_LOG="$test_dir/paste.gum" \
-    PATH="$stub_bin:$PATH" \
+    OMARCHY_PATH="$ROOT" PATH="$stub_bin:$ROOT/bin:$PATH" \
     bash "$ROOT/bin/omarchy-setup-security-sshd" 2>&1
 ) || fail "pasted RSA public key is authorized" "$paste_output"
 grep -qxF "$rsa_key" "$paste_home/.ssh/authorized_keys" ||
