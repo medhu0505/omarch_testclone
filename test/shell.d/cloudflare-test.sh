@@ -137,6 +137,18 @@ assertEqual(cloudflare.formatChange(4730, 7426), '↘ 36%', 'cloudflare formats 
 assertEqual(cloudflare.formatChange(9, 8), '↗ 13%', 'cloudflare formats a rise against the previous period')
 assertEqual(cloudflare.formatChange(5, 0), '', 'cloudflare hides the change without an earlier value')
 
+// Panel text goes through tr(key, english) and numbers through the language's
+// formatter, as I18n.t and I18n.formatNumber do in the shell.
+const tr = (key, english) => '[' + key + ']' + english
+const danish = (value, decimals) => (decimals === undefined ? String(value) : Number(value).toFixed(decimals)).replace('.', ',')
+assertEqual(cloudflare.relativeTime('2026-09-24T10:00:00Z', Date.parse('2026-09-24T12:00:00Z'), tr), '[cloudflare.hoursAgo]2h ago', 'cloudflare translates relative times as whole phrases')
+assertEqual(cloudflare.zoneProblem({ status: 'pending' }, tr), '[cloudflare.zonePending]Pending', 'cloudflare translates zone states')
+assertEqual(cloudflare.zoneProblem({ status: 'archived' }, tr), 'Archived', 'cloudflare names an unknown zone state as Cloudflare does')
+assertEqual(cloudflare.rolloutText({ a: 10, b: 90 }, tr), '[cloudflare.split]Split 90/10', 'cloudflare translates a rollout split')
+assertEqual(cloudflare.formatCount(4730, danish), '4,73k', 'cloudflare writes counts with the language decimal separator')
+assertEqual(cloudflare.formatCount(100000, danish), '100k', 'cloudflare keeps significant zeros with a formatter')
+assertEqual(cloudflare.formatMs(2.5, danish), '2,5 ms', 'cloudflare writes CPU time with the language decimal separator')
+
 // worker versions and deployments
 
 const versions = cloudflare.parseVersions(JSON.stringify([

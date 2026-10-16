@@ -22,6 +22,18 @@ function parseJson(raw) {
   }
 }
 
+// Panel text takes an optional tr(key, english), as I18n.t; Node tests read
+// the English. Values kept or answered over IPC stay English.
+function translator(tr) {
+  return typeof tr === "function" ? tr : function(key, english) { return english }
+}
+
+// fmt(value, decimals) writes a number in the panel's language, as
+// I18n.formatNumber; Node tests leave it out and get plain English digits.
+function formatter(fmt) {
+  return typeof fmt === "function" ? fmt : function(v, d) { return d === undefined ? String(v) : Number(v).toFixed(d) }
+}
+
 function signedOut(message) {
   return {
     ok: true,
@@ -126,33 +138,42 @@ function parseWorkers(raw) {
 
 // A healthy zone needs no label, as in the dashboard; only a zone that is not
 // serving through Cloudflare calls attention to itself.
-function zoneProblem(zone) {
+function zoneProblem(zone, tr) {
   if (!zone) return ""
-  if (zone.paused) return "Paused"
-  if (zone.status !== "" && zone.status !== "active") return zone.status.charAt(0).toUpperCase() + zone.status.slice(1)
-  return ""
+  var t = translator(tr)
+  if (zone.paused) return t("cloudflare.zonePaused", "Paused")
+  switch (zone.status) {
+  case "": case "active": return ""
+  case "pending": return t("cloudflare.zonePending", "Pending")
+  case "initializing": return t("cloudflare.zoneInitializing", "Initializing")
+  case "moved": return t("cloudflare.zoneMoved", "Moved")
+  case "deleted": return t("cloudflare.zoneDeleted", "Deleted")
+  case "read only": return t("cloudflare.zoneReadOnly", "Read only")
+  }
+  return zone.status.charAt(0).toUpperCase() + zone.status.slice(1)
 }
 
-function zoneDetail(zone) {
-  var problem = zoneProblem(zone)
+function zoneDetail(zone, tr) {
+  var problem = zoneProblem(zone, tr)
   if (problem !== "") return problem
   return zone && zone.plan ? zone.plan.replace(/ Website$/, "") : ""
 }
 
-function relativeTime(iso, nowMs) {
+function relativeTime(iso, nowMs, tr) {
   var when = Date.parse(String(iso || ""))
   if (!isFinite(when)) return ""
+  var t = translator(tr)
   var seconds = Math.max(0, Math.round(((nowMs === undefined ? Date.now() : nowMs) - when) / 1000))
-  if (seconds < 60) return "just now"
+  if (seconds < 60) return t("cloudflare.justNow", "just now")
   var minutes = Math.round(seconds / 60)
-  if (minutes < 60) return minutes + "m ago"
+  if (minutes < 60) return t("cloudflare.minutesAgo", "%1m ago").replace("%1", minutes)
   var hours = Math.round(minutes / 60)
-  if (hours < 24) return hours + "h ago"
+  if (hours < 24) return t("cloudflare.hoursAgo", "%1h ago").replace("%1", hours)
   var days = Math.round(hours / 24)
-  if (days < 30) return days + "d ago"
+  if (days < 30) return t("cloudflare.daysAgo", "%1d ago").replace("%1", days)
   var months = Math.round(days / 30)
-  if (months < 12) return months + "mo ago"
-  return Math.round(days / 365) + "y ago"
+  if (months < 12) return t("cloudflare.monthsAgo", "%1mo ago").replace("%1", months)
+  return t("cloudflare.yearsAgo", "%1y ago").replace("%1", Math.round(days / 365))
 }
 
 // Worker metrics come from Workers Logs through `cf observability telemetry
@@ -232,32 +253,35 @@ function parseMetrics(raw) {
   return { ok: true, metrics: metrics }
 }
 
-function formatCount(value) {
+function formatCount(value, fmt) {
   if (value === null || value === undefined) return "–"
   var n = Number(value) || 0
-  if (n < 1000) return String(Math.round(n))
-  if (n < 1000000) return trimDecimals(n / 1000) + "k"
-  return trimDecimals(n / 1000000) + "M"
+  if (n < 1000) return formatter(fmt)(Math.round(n))
+  if (n < 1000000) return trimDecimals(n / 1000, fmt) + "k"
+  return trimDecimals(n / 1000000, fmt) + "M"
 }
 
-function trimDecimals(n) {
-  var text = n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : n.toFixed(0)
-  return text.indexOf(".") === -1 ? text : text.replace(/0+$/, "").replace(/\.$/, "")
+// Up to two decimals below 10 and one below 100, without trailing zeros.
+function trimDecimals(n, fmt) {
+  var decimals = n < 10 ? 2 : n < 100 ? 1 : 0
+  var rounded = Number(n.toFixed(decimals))
+  while (decimals > 0 && Number(rounded.toFixed(decimals - 1)) === rounded) decimals--
+  return formatter(fmt)(rounded, decimals)
 }
 
-function formatMs(value) {
+function formatMs(value, fmt) {
   if (value === null || value === undefined) return "–"
   var n = Number(value) || 0
-  return (n < 10 ? trimDecimals(n) : String(Math.round(n))) + " ms"
+  return (n < 10 ? trimDecimals(n, fmt) : formatter(fmt)(Math.round(n))) + " ms"
 }
 
 // "↘ 36%" style change against the previous period, or "" when there is no
 // earlier value to compare with.
-function formatChange(value, previous) {
+function formatChange(value, previous, fmt) {
   if (value === null || previous === null || previous === undefined || !(previous > 0)) return ""
   var percent = Math.round((value - previous) / previous * 100)
-  if (percent === 0) return "0%"
-  return (percent > 0 ? "↗ " : "↘ ") + Math.abs(percent) + "%"
+  if (percent === 0) return formatter(fmt)(0) + "%"
+  return (percent > 0 ? "↗ " : "↘ ") + formatter(fmt)(Math.abs(percent)) + "%"
 }
 
 var SOURCE_LABELS = { wrangler: "Wrangler", api: "API", dash: "Dashboard", dashboard: "Dashboard", terraform: "Terraform" }
@@ -310,12 +334,12 @@ function parseDeployments(raw) {
 }
 
 // "SPLIT 90/10" while a gradual rollout is in progress, else "".
-function rolloutText(live) {
+function rolloutText(live, tr) {
   var shares = []
   for (var id in live) shares.push(live[id])
   if (shares.length < 2) return ""
   shares.sort(function(a, b) { return b - a })
-  return "Split " + shares.map(function(share) { return Math.round(share) }).join("/")
+  return translator(tr)("cloudflare.split", "Split %1").replace("%1", shares.map(function(share) { return Math.round(share) }).join("/"))
 }
 
 function accountDashboardUrl(accountId) {

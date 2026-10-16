@@ -47,12 +47,25 @@ Panel {
   // Shown in one go once the deployment is in, rather than growing a source
   // a moment after the date.
   readonly property string workerMeta: {
-    if (!cloudflare.deploymentsLoaded) return "Loading…"
-    var rollout = Model.rolloutText(cloudflare.detailLive)
+    if (!cloudflare.deploymentsLoaded) return I18n.t("common.loading")
+    var rollout = Model.rolloutText(cloudflare.detailLive, I18n.t)
     if (rollout !== "") return rollout
-    var when = Model.relativeTime(cloudflare.detailDeployedOn)
-    if (when === "") return "Worker"
-    return "Deployed " + when + (cloudflare.detailSource !== "" ? " · " + cloudflare.detailSource : "")
+    var when = Model.relativeTime(cloudflare.detailDeployedOn, undefined, I18n.t)
+    if (when === "") return I18n.t("cloudflare.worker")
+    if (cloudflare.detailSource === "") return I18n.t("cloudflare.deployed").arg(when)
+    return I18n.t("cloudflare.deployedVia").arg(when).arg(cloudflare.detailSource)
+  }
+  // The service keeps its status in English for IPC; this is how it reads here.
+  readonly property string statusLabel: {
+    switch (cloudflare.statusText) {
+    case "Checking…": return I18n.t("cloudflare.checking")
+    case "Not installed": return I18n.t("cloudflare.notInstalled")
+    case "Signed out": return I18n.t("cloudflare.signedOut")
+    case "Status error": return I18n.t("cloudflare.statusError")
+    case "Could not verify Cloudflare login": return I18n.t("cloudflare.couldNotVerify")
+    case "Signed in": return I18n.t("cloudflare.signedIn")
+    }
+    return cloudflare.statusText
   }
   readonly property real maxContentHeight: Style.space(560)
   // In a Worker's view the header and metrics stay put and only the versions
@@ -352,7 +365,7 @@ Panel {
             // (which login this is) rather than activity phrases, since
             // nothing runs locally for Cloudflare.
             title: root.inWorker ? cloudflare.detailWorker.name : "Cloudflare"
-            meta: root.inWorker ? root.workerMeta : (root.healthy && cloudflare.email !== "" ? cloudflare.email : cloudflare.statusText)
+            meta: root.inWorker ? root.workerMeta : (root.healthy && cloudflare.email !== "" ? cloudflare.email : root.statusLabel)
             foreground: root.foreground
             fontFamily: root.fontFamily
             iconOpacity: root.healthy ? 1.0 : 0.5
@@ -485,7 +498,7 @@ Panel {
                   rowIndex: index
                   glyph: root.workerGlyph
                   title: modelData.name
-                  detail: Model.relativeTime(modelData.deployedOn)
+                  detail: Model.relativeTime(modelData.deployedOn, undefined, I18n.t)
                   copyTooltip: modelData.url !== "" ? I18n.t("cloudflare.copyWorkersDevUrl") : I18n.t("cloudflare.copyWorkerName")
                   drillable: true
                   onActivated: root.openWorkerView(modelData)
@@ -524,7 +537,7 @@ Panel {
                   rowIndex: cloudflare.workers.length + index
                   glyph: root.domainGlyph
                   title: modelData.name
-                  detail: Model.zoneDetail(modelData)
+                  detail: Model.zoneDetail(modelData, I18n.t)
                   detailUrgent: Model.zoneProblem(modelData) !== ""
                   copyTooltip: I18n.t("cloudflare.copyZoneId")
                   onActivated: cloudflare.openZone(modelData)
@@ -864,8 +877,8 @@ Panel {
     property bool alarming: false
     property bool showChange: true
     readonly property bool loading: metric === null && cloudflare.metricsLoading
-    readonly property string valueText: format === "ms" ? Model.formatMs(metric ? metric.value : null) : Model.formatCount(metric ? metric.value : null)
-    readonly property string changeText: metric && showChange ? Model.formatChange(metric.value, metric.previous) : ""
+    readonly property string valueText: format === "ms" ? Model.formatMs(metric ? metric.value : null, I18n.formatNumber) : Model.formatCount(metric ? metric.value : null, I18n.formatNumber)
+    readonly property string changeText: metric && showChange ? Model.formatChange(metric.value, metric.previous, I18n.formatNumber) : ""
     readonly property bool worse: higherIsWorse && changeText.indexOf("↗") === 0
 
     width: parent.width
@@ -921,7 +934,7 @@ Panel {
       if (!version) return ""
       var parts = []
       if (version.tag !== "") parts.push(version.tag)
-      if (version.source !== "") parts.push(version.source + (version.author !== "" ? " by " + version.author : ""))
+      if (version.source !== "") parts.push(version.author !== "" ? I18n.t("cloudflare.sourceBy").arg(version.source).arg(version.author) : version.source)
       return parts.join(" · ")
     }
 
@@ -992,7 +1005,7 @@ Panel {
 
       Text {
         textFormat: Text.PlainText
-        text: versionRow.version ? Model.relativeTime(versionRow.version.createdOn) : ""
+        text: versionRow.version ? Model.relativeTime(versionRow.version.createdOn, undefined, I18n.t) : ""
         color: root.dim
         font.family: root.fontFamily
         font.pixelSize: Style.font.caption

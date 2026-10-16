@@ -18,7 +18,9 @@ Item {
   property bool authenticated: false
   property bool tokenValid: false
   property bool refreshing: false
-  property string statusText: I18n.t("cloudflare.checking")
+  // statusText answers the IPC status() call, so it stays English; the panel
+  // translates it where it shows it.
+  property string statusText: "Checking…"  // i18n: ignore
   property string email: ""
   property var accounts: []
   property string selectedAccountId: ""
@@ -151,7 +153,7 @@ Item {
     }
     var result = Model.parseJson(stdout)
     if (exitCode !== 0 || !result.ok || !Array.isArray(result.value)) {
-      var error = elideStatus(stderr || (kind === "zones" ? "Could not list domains" : "Could not list Workers"))
+      var error = elideStatus(stderr || (kind === "zones" ? I18n.t("cloudflare.listDomainsFailed") : I18n.t("cloudflare.listWorkersFailed")))
       if (kind === "zones") zonesError = error
       else workersError = error
       return
@@ -163,7 +165,7 @@ Item {
       return
     }
     // Bound automatic requests even if a server keeps returning full pages.
-    var partial = fullPage ? "List truncated; open the dashboard for all results" : ""
+    var partial = fullPage ? I18n.t("cloudflare.listTruncated") : ""
     if (kind === "zones") {
       zones = Model.parseZones(JSON.stringify(items), process.accountId).zones
       zonesError = partial
@@ -187,7 +189,7 @@ Item {
   function applyWhoami(raw) {
     var parsed = Model.parseWhoami(raw)
     if (!parsed.ok) {
-      lastError = parsed.error
+      lastError = I18n.t("cloudflare.statusFailed")
       return
     }
     authenticated = parsed.authenticated
@@ -372,7 +374,7 @@ Item {
 
     detailWatchdog.restart()
     if (!worker.logsEnabled) {
-      metricsError = "Turn on Workers Logs to see metrics"
+      metricsError = I18n.t("cloudflare.turnOnLogs")
       return
     }
     var to = Date.now()
@@ -410,7 +412,7 @@ Item {
   function applyMetrics(raw, source) {
     var parsed = Model.parseMetrics(raw)
     if (!parsed.ok) {
-      setMetricsError(source, source === "usage" ? "Could not load metrics" : "Could not load error metrics")
+      setMetricsError(source, source === "usage" ? I18n.t("cloudflare.metricsFailed") : I18n.t("cloudflare.errorMetricsFailed"))
       return
     }
     var metrics = {}
@@ -430,7 +432,7 @@ Item {
   }
 
   function copyVersion(version) {
-    if (version) copyToClipboard(version.id, "version " + version.shortId)
+    if (version) copyToClipboard(version.id, I18n.t("cloudflare.copiedVersion").arg(version.shortId))
   }
 
   function selectAccount(id) {
@@ -453,7 +455,7 @@ Item {
     _loginOutput = ""
     loginCode = ""
     lastError = ""
-    actionStatus = "Approve the sign-in in your browser…"
+    actionStatus = I18n.t("cloudflare.approveSignIn")
     loginProcess.command = cliCommand.concat(["auth", "login"])
     loginProcess.running = true
   }
@@ -462,7 +464,7 @@ Item {
     _loginOutput += String(data || "") + "\n"
     if (loginCode !== "") return
     loginCode = Model.parseLoginCode(_loginOutput)
-    if (loginCode !== "") actionStatus = "Confirm this code in your browser:"
+    if (loginCode !== "") actionStatus = I18n.t("cloudflare.confirmCode")
   }
 
   function openUrl(url) {
@@ -481,24 +483,24 @@ Item {
     openUrl(Model.workerDashboardUrl(selectedAccountId, worker))
   }
 
-  function copyToClipboard(value, label) {
+  function copyToClipboard(value, message) {
     var text = String(value || "")
     if (text === "") return
     Quickshell.execDetached(["bash", "-c", "printf %s " + Util.shellQuote(text) + " | wl-copy"])
-    actionStatus = "Copied " + label
+    actionStatus = message
     actionStatusTimer.restart()
   }
 
   function copyZoneId(zone) {
-    if (zone) copyToClipboard(zone.id, zone.name + " zone ID")
+    if (zone) copyToClipboard(zone.id, I18n.t("cloudflare.copiedZoneId").arg(zone.name))
   }
 
   // A Worker without a public workers.dev route has nothing better to copy
   // than its name, which is what wrangler and cf take anyway.
   function copyWorker(worker) {
     if (!worker) return
-    if (worker.url !== "") copyToClipboard(worker.url, worker.name + " URL")
-    else copyToClipboard(worker.name, worker.name + " name")
+    if (worker.url !== "") copyToClipboard(worker.url, I18n.t("cloudflare.copiedUrl").arg(worker.name))
+    else copyToClipboard(worker.name, I18n.t("cloudflare.copiedName").arg(worker.name))
   }
 
   Timer {
@@ -538,9 +540,9 @@ Item {
     interval: 25000
     repeat: false
     onTriggered: {
-      if (usageProcess.running) root.setMetricsError("usage", "Metrics took too long to load")
-      if (errorsProcess.running) root.setMetricsError("errors", "Error metrics took too long to load")
-      if (versionsProcess.running) root.versionsError = "Versions took too long to load"
+      if (usageProcess.running) root.setMetricsError("usage", I18n.t("cloudflare.metricsTimedOut"))
+      if (errorsProcess.running) root.setMetricsError("errors", I18n.t("cloudflare.errorMetricsTimedOut"))
+      if (versionsProcess.running) root.versionsError = I18n.t("cloudflare.versionsTimedOut")
       var processes = [usageProcess, errorsProcess, versionsProcess, deploymentsProcess]
       for (var i = 0; i < processes.length; i++) {
         if (processes[i].running) {
@@ -598,7 +600,7 @@ Item {
       var stdout = String(whoamiStdout.text || root._whoamiOutput || "")
       var stderr = String(whoamiStderr.text || root._whoamiError || "")
       if (exitCode === 0) root.applyWhoami(stdout)
-      else root.lastError = root.elideStatus(stderr || stdout || "Could not read Cloudflare status")
+      else root.lastError = root.elideStatus(stderr || stdout || I18n.t("cloudflare.statusFailed"))
     }
   }
 
@@ -644,7 +646,7 @@ Item {
       if (generation !== root._detailGeneration) return
       if (exitCode !== 0 && root.retryOlderTelemetry(usageProcess, String(usageStderr.text || ""))) return
       if (exitCode === 0) root.applyMetrics(String(usageStdout.text || root._usageOutput || ""), "usage")
-      else root.setMetricsError("usage", root._usageError || "Could not load metrics")
+      else root.setMetricsError("usage", root._usageError || I18n.t("cloudflare.metricsFailed"))
       root.detailProcessDone()
     }
   }
@@ -661,7 +663,7 @@ Item {
       if (generation !== root._detailGeneration) return
       if (exitCode !== 0 && root.retryOlderTelemetry(errorsProcess, String(errorsStderr.text || ""))) return
       if (exitCode === 0) root.applyMetrics(String(errorsStdout.text || root._errorsOutput || ""), "errors")
-      else root.setMetricsError("errors", root._errorQueryError || "Could not load error metrics")
+      else root.setMetricsError("errors", root._errorQueryError || I18n.t("cloudflare.errorMetricsFailed"))
       root.detailProcessDone()
     }
   }
@@ -681,7 +683,7 @@ Item {
         root.detailVersions = parsed.versions
         root.versionsError = ""
       } else {
-        root.versionsError = root.versionsError || root.elideStatus(String(versionsStderr.text || root._versionsError || "") || "Could not list versions")
+        root.versionsError = root.versionsError || root.elideStatus(String(versionsStderr.text || root._versionsError || "") || I18n.t("cloudflare.listVersionsFailed"))
       }
       root.detailProcessDone()
     }
@@ -719,10 +721,10 @@ Item {
     onExited: function(exitCode) {
       root.loginCode = ""
       if (exitCode !== 0) {
-        root.lastError = root.elideStatus(root._loginOutput || "Cloudflare sign-in failed")
+        root.lastError = root.elideStatus(root._loginOutput || I18n.t("cloudflare.signInFailed"))
         root.actionStatus = ""
       } else {
-        root.actionStatus = "Signed in"
+        root.actionStatus = I18n.t("cloudflare.signedIn")
         actionStatusTimer.restart()
       }
       delayedRefresh.restart()
