@@ -95,7 +95,17 @@ DESKTOP
 }
 
 write_desktop
+# The installer creates the shortcut executable (omarchy-webapp-install chmod +x),
+# so model that and assert the repair keeps the exact mode. The old mv-from-mktemp
+# plus chmod +x forced it to 0700, dropping group/other bits.
+chmod 0755 "$desktop"
+mode_before=$(stat -c %a "$desktop")
 HOME="$test_dir/home" bash "$migration" >/dev/null 2>&1
+
+mode_after=$(stat -c %a "$desktop")
+[[ $mode_after == "$mode_before" ]] ||
+  fail "migration preserves the shortcut's file mode" "before=$mode_before after=$mode_after"
+pass "migration preserves the shortcut's file mode ($mode_after)"
 
 grep -qxF "Exec=omarchy-launch-webapp https://localhost:47990" "$desktop" ||
   fail "migration strips the flag from the entry's own Exec line" "$(cat "$desktop")"

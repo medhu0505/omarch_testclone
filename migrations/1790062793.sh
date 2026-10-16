@@ -25,8 +25,12 @@ if [[ $exec_line =~ $generated ]]; then
   # [Desktop Action] sections with their own Exec lines, and those are not what
   # was inspected above; rewriting them too would repoint unrelated actions.
   sed "0,/^Exec=/s|^Exec=.*|Exec=omarchy-launch-webapp $url|" "$desktop_file" >"$tmp"
-  mv -f "$tmp" "$desktop_file"
-  chmod +x "$desktop_file"
+  # Write the repaired contents back into the original file instead of mv'ing a
+  # fresh mktemp over it, so the entry keeps its own mode and owner. mktemp makes
+  # the temp file 0600, so mv followed by chmod +x forced the shortcut to 0700,
+  # dropping the group and other read bits the installer's chmod +x had set.
+  cat "$tmp" >"$desktop_file"
+  rm -f "$tmp"
   echo "Removed --ignore-certificate-errors from the Sunshine Admin shortcut."
   echo "The self-signed page now asks once instead of disabling TLS checks browser-wide."
 elif [[ $exec_line == *--ignore-certificate-errors* ]]; then
