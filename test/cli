@@ -910,6 +910,28 @@ fi
 [[ $(<"$NOTIFY_TMPDIR/notify.log") != *"Nothing to transcode"* ]] || fail "transcode does not report an empty search when the menu cannot open"
 pass "transcode does not report an empty search when the menu cannot open"
 
+# The collected list still reaches the picker newest first, filtered by
+# extension, and the pick comes back.
+make_tmpdir PICK_MEDIA_TMPDIR
+PICK_FAKE_BIN="$PICK_MEDIA_TMPDIR/fake-bin"
+mkdir -p "$PICK_FAKE_BIN" "$PICK_MEDIA_TMPDIR/Pictures" "$PICK_MEDIA_TMPDIR/Videos"
+
+cat >"$PICK_FAKE_BIN/omarchy-menu-select" <<'EOF'
+#!/bin/bash
+cat >"$MENU_ROWS"
+head -n 1 "$MENU_ROWS"
+EOF
+chmod +x "$PICK_FAKE_BIN/omarchy-menu-select"
+
+touch -d '2026-01-01' "$PICK_MEDIA_TMPDIR/Pictures/old.png"
+touch -d '2026-02-01' "$PICK_MEDIA_TMPDIR/Videos/new.mp4"
+touch "$PICK_MEDIA_TMPDIR/Pictures/notes.txt"
+
+pick=$(MENU_ROWS="$PICK_MEDIA_TMPDIR/rows" PATH="$PICK_FAKE_BIN:$PATH" "$ROOT/bin/omarchy-menu-file" "Pick media" "$PICK_MEDIA_TMPDIR/Pictures:$PICK_MEDIA_TMPDIR/Videos" "png mp4")
+[[ $(<"$PICK_MEDIA_TMPDIR/rows") == "$PICK_MEDIA_TMPDIR/Videos/new.mp4"$'\n'"$PICK_MEDIA_TMPDIR/Pictures/old.png" ]] || fail "menu-file offers matching files newest first"
+[[ $pick == "$PICK_MEDIA_TMPDIR/Videos/new.mp4" ]] || fail "menu-file returns the pick"
+pass "menu-file offers matching files newest first and returns the pick"
+
 # The same guarantee against the real command table, timed: an alias dispatch
 # that loads every header costs what help on it costs (about 190ms either way
 # before the candidates-only path, against 13ms after). Timing both in the same
