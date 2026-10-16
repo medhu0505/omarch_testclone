@@ -595,7 +595,7 @@ OMARCHY_TEST_AGENT_INSTALLED=true omarchy-default-agent pi
 : >"$terminal_log"
 omarchy-default-agent github-copilot
 mapfile -d '' -t terminal_args <"$terminal_log"
-[[ ${terminal_args[0]} == "omarchy-default-agent" && ${terminal_args[1]} == "--install" && ${terminal_args[2]} == "copilot" ]] ||
+[[ ${terminal_args[*]} == "--close-on-success omarchy-default-agent --install copilot" ]] ||
   fail "missing agent installation opens in a terminal"
 [[ ! -s $notification_history ]] || fail "missing agent installation skips notifications"
 [[ ! -s $agent_open_log ]] || fail "missing agent installation waits to open the agent"
@@ -655,7 +655,7 @@ touch "$test_home/.local/bin/cursor-agent"
 : >"$terminal_log"
 omarchy-default-agent cursor-agent
 mapfile -d '' -t terminal_args <"$terminal_log"
-[[ ${terminal_args[*]} == "omarchy-default-agent --install cursor-agent" ]] ||
+[[ ${terminal_args[*]} == "--close-on-success omarchy-default-agent --install cursor-agent" ]] ||
   fail "a dead file at the wrapper's path still installs Cursor CLI"
 rm -f "$test_home/.local/bin/cursor-agent"
 pass "a dead file at the wrapper's path does not pass for an install"
@@ -700,7 +700,7 @@ pass "default agent reports mise failures without notifications"
 : >"$terminal_log"
 omarchy-default-agent muse
 mapfile -d '' -t terminal_args <"$terminal_log"
-[[ ${terminal_args[0]} == "omarchy-default-agent" && ${terminal_args[1]} == "--install" && ${terminal_args[2]} == "muse" ]] ||
+[[ ${terminal_args[*]} == "--close-on-success omarchy-default-agent --install muse" ]] ||
   fail "missing Muse installation opens in a terminal"
 [[ ! -s $notification_history ]] || fail "missing Muse installation skips notifications"
 [[ ! -s $agent_open_log ]] || fail "missing Muse installation waits to open the agent"
@@ -944,7 +944,7 @@ pass "choosing OpenClaw uses its runtime and launches its terminal UI"
 : >"$terminal_log"
 OMARCHY_TEST_OPENCLAW_INSTALLED=false omarchy-default-agent openclaw
 mapfile -d '' -t terminal_args <"$terminal_log"
-[[ ${terminal_args[*]} == "omarchy-default-agent --install openclaw" ]] ||
+[[ ${terminal_args[*]} == "--close-on-success omarchy-default-agent --install openclaw" ]] ||
   fail "a missing OpenClaw routes through the install terminal"
 pass "a missing OpenClaw routes through the install terminal"
 
