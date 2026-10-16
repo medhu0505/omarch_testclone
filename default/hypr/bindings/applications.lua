@@ -30,7 +30,7 @@ if o.preinstalled_bindings_enabled() then
   o.bind("SUPER + SHIFT + ALT + G", "WhatsApp", { webapp = "https://web.whatsapp.com/", focus = true, entry = "WhatsApp" })
   o.bind( "SUPER + SHIFT + CTRL + G", "Google Messages", { webapp = "https://messages.google.com/web/conversations", focus = true, entry = "Google Messages" })
   o.bind("SUPER + SHIFT + P", "Google Photos", { webapp = "https://photos.google.com/", focus = true, entry = "Google Photos" })
-  o.bind("SUPER + SHIFT + S", "Google Maps", { webapp = "https://maps.google.com/", focus = true, entry = "Google Maps" })
+  o.bind("SUPER + SHIFT + ALT + S", "Google Maps", { webapp = "https://maps.google.com/", focus = true, entry = "Google Maps" })
   o.bind("SUPER + SHIFT + X", "X", { webapp = "https://x.com/", entry = "X" })
   o.bind("SUPER + SHIFT + ALT + X", "X Post", { webapp = "https://x.com/compose/post", entry = "X" })
 end
