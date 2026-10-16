@@ -18,7 +18,7 @@ Item {
   property bool authenticated: false
   property bool tokenValid: false
   property bool refreshing: false
-  property string statusText: "Checking…"
+  property string statusText: I18n.t("cloudflare.checking")
   property string email: ""
   property var accounts: []
   property string selectedAccountId: ""

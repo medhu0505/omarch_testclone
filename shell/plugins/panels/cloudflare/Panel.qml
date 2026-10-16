@@ -463,12 +463,12 @@ Panel {
 
           ResourceSection {
             visible: root.signedIn && !root.inWorker
-            title: "WORKERS"
+            title: I18n.t("cloudflare.workers")
             count: cloudflare.workers.length
             error: cloudflare.workersError
             loading: cloudflare.loadingResources
-            loadingText: "Loading Workers…"
-            emptyText: "No Workers in this account."
+            loadingText: I18n.t("cloudflare.loadingWorkers")
+            emptyText: I18n.t("cloudflare.noWorkers")
 
             Column {
               id: workerColumn
@@ -485,7 +485,7 @@ Panel {
                   glyph: root.workerGlyph
                   title: modelData.name
                   detail: Model.relativeTime(modelData.deployedOn)
-                  copyTooltip: modelData.url !== "" ? "Copy workers.dev URL" : "Copy Worker name"
+                  copyTooltip: modelData.url !== "" ? I18n.t("cloudflare.copyWorkersDevUrl") : I18n.t("cloudflare.copyWorkerName")
                   drillable: true
                   onActivated: root.openWorkerView(modelData)
                   onOpenRequested: cloudflare.openWorker(modelData)
@@ -502,12 +502,12 @@ Panel {
 
           ResourceSection {
             visible: root.signedIn && !root.inWorker
-            title: "DOMAINS"
+            title: I18n.t("cloudflare.domains")
             count: cloudflare.zones.length
             error: cloudflare.zonesError
             loading: cloudflare.loadingResources
-            loadingText: "Loading domains…"
-            emptyText: "No domains in this account."
+            loadingText: I18n.t("cloudflare.loadingDomains")
+            emptyText: I18n.t("cloudflare.noDomains")
 
             Column {
               id: zoneColumn
@@ -525,7 +525,7 @@ Panel {
                   title: modelData.name
                   detail: Model.zoneDetail(modelData)
                   detailUrgent: Model.zoneProblem(modelData) !== ""
-                  copyTooltip: "Copy zone ID"
+                  copyTooltip: I18n.t("cloudflare.copyZoneId")
                   onActivated: cloudflare.openZone(modelData)
                   onOpenRequested: cloudflare.openZone(modelData)
                   onCopyRequested: cloudflare.copyZoneId(modelData)
@@ -545,7 +545,7 @@ Panel {
             spacing: Style.space(10)
 
             PanelSectionHeader {
-              text: "METRICS · LAST 24 HOURS"
+              text: I18n.t("cloudflare.metricsLast24Hours")
               foreground: root.foreground
               fontFamily: root.fontFamily
             }
@@ -567,20 +567,20 @@ Panel {
               spacing: Style.space(12)
 
               MetricRow {
-                label: "Invocations"
+                label: I18n.t("cloudflare.invocations")
                 metric: cloudflare.detailMetrics.invocations || null
                 format: "count"
               }
 
               MetricRow {
-                label: "CPU time"
+                label: I18n.t("cloudflare.cpuTime")
                 metric: cloudflare.detailMetrics.cpu || null
                 format: "ms"
                 higherIsWorse: true
               }
 
               MetricRow {
-                label: "Errors"
+                label: I18n.t("cloudflare.errors")
                 metric: cloudflare.detailMetrics.errors || null
                 format: "count"
                 // Like the dashboard: the count says it all, and "down 100%"
@@ -599,13 +599,13 @@ Panel {
           ResourceSection {
             id: versionsSection
             visible: root.inWorker
-            title: "VERSIONS"
+            title: I18n.t("cloudflare.versions")
             count: cloudflare.detailVersions.length
             error: cloudflare.versionsError
             loading: cloudflare.versionsLoading
-            loadingText: "Loading versions…"
+            loadingText: I18n.t("cloudflare.loadingVersions")
             loadingHeight: root.versionsLoadingHeight
-            emptyText: "No versions found."
+            emptyText: I18n.t("cloudflare.noVersions")
 
             Flickable {
               id: versionFlick
@@ -683,7 +683,7 @@ Panel {
         Text {
           textFormat: Text.PlainText
           Layout.fillWidth: true
-          text: cloudflare.installed ? "Sign in to Cloudflare" : "Cloudflare CLI is not installed"
+          text: cloudflare.installed ? I18n.t("cloudflare.signIn") : I18n.t("cloudflare.cliMissing")
           color: root.foreground
           font.family: root.fontFamily
           font.pixelSize: Style.font.body
@@ -693,7 +693,7 @@ Panel {
         Text {
           textFormat: Text.PlainText
           Layout.fillWidth: true
-          text: cloudflare.installed ? "Opens the approval page in your browser" : "Install Cloudflare from the service menu"
+          text: cloudflare.installed ? I18n.t("cloudflare.signInHint") : I18n.t("cloudflare.installHint")
           color: root.dim
           font.family: root.fontFamily
           font.pixelSize: Style.font.caption
@@ -828,7 +828,7 @@ Panel {
 
       PanelActionButton {
         iconText: "󰏌"
-        tooltipText: "Open in dashboard"
+        tooltipText: I18n.t("cloudflare.openInDashboard")
         foreground: root.foreground
         fontFamily: root.fontFamily
         Layout.alignment: Qt.AlignVCenter
@@ -967,7 +967,7 @@ Panel {
         Text {
           textFormat: Text.PlainText
           Layout.fillWidth: true
-          text: versionRow.version && versionRow.version.message !== "" ? versionRow.version.message : "No message"
+          text: versionRow.version && versionRow.version.message !== "" ? versionRow.version.message : I18n.t("cloudflare.noMessage")
           color: root.foreground
           font.family: root.fontFamily
           font.pixelSize: Style.font.bodySmall
@@ -998,7 +998,7 @@ Panel {
 
       PanelActionButton {
         iconText: "󰆏"
-        tooltipText: "Copy version ID"
+        tooltipText: I18n.t("cloudflare.copyVersionId")
         foreground: root.foreground
         fontFamily: root.fontFamily
         Layout.alignment: Qt.AlignVCenter
