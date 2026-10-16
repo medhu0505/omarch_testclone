@@ -56,6 +56,8 @@ Item {
   // A see-through bar that Hyprland blurs behind (the bar-glassy toggle), so
   // its theme background stays faintly. A transparent bar wins over it.
   property bool glassy: false
+  // bar.locked keeps widgets from being dragged around; the CLI still moves them.
+  property bool layoutLocked: false
   // The look the blur behind the bar was last synced for. A background set by
   // editing shell.json skips the CLI, so the bar syncs Hyprland's blur itself.
   property string glassSyncedLook: ""
@@ -749,6 +751,7 @@ Item {
       glassSyncedLook = look
       Util.execDetached("omarchy-bar sync-glass")
     }
+    layoutLocked = config.locked === true
 
     // Each widget keeps its key while it stays in the layout, wherever it
     // moves and whatever its settings, so a config write builds just the
@@ -2620,7 +2623,7 @@ Item {
       property bool suppressClick: false
       property real pressedX: 0
       property real pressedY: 0
-      readonly property bool canReorder: root.shell && typeof root.shell.mutateShellConfig === "function"
+      readonly property bool canReorder: !root.layoutLocked && root.shell && typeof root.shell.mutateShellConfig === "function"
       readonly property real dragThreshold: Style.space(4)
 
       anchors.fill: parent
