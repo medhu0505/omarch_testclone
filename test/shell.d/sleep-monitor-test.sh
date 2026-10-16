@@ -107,12 +107,34 @@ if kill -0 "$producer_pid" 2>/dev/null; then
 fi
 pass "sleep monitor cleans up its producer when terminated"
 
-# The monitor must not resolve dbus-monitor by bare PATH lookup — a shadowing
-# PATH entry (Homebrew's relocatable dbus build) would redirect it to the wrong
-# system bus and leave omarchy-sleep-lock.service restart-looping silently.
-grep -q 'DBUS_MONITOR="${DBUS_MONITOR:-/usr/bin/dbus-monitor}"' "$sleep_monitor" ||
-  fail "sleep monitor resolves dbus-monitor by absolute path by default"
-if grep -Eq 'exec[[:space:]]+dbus-monitor[[:space:]]' "$sleep_monitor"; then
-  fail "sleep monitor still invokes bare dbus-monitor from PATH"
-fi
-pass "sleep monitor resolves dbus-monitor by absolute path by default"
+# A dbus-monitor shadowing /usr/bin, like Homebrew's, may default to a system
+# bus socket under its own prefix, so the monitor must never run it from PATH.
+shadow_log="$tmpdir/shadow-log"
+cat >"$mock_bin/dbus-monitor" <<'SH'
+#!/bin/bash
+
+echo ran >"$SHADOW_LOG"
+printf '   boolean true\n'
+exec sleep 30
+SH
+chmod +x "$mock_bin/dbus-monitor"
+
+env -u DBUS_MONITOR \
+  OMARCHY_PATH="$mock_omarchy" \
+  PATH="$mock_bin:$PATH" \
+  SHADOW_LOG="$shadow_log" \
+  LOCK_LOG="$lock_log" \
+  "$sleep_monitor" --inhibited >/dev/null 2>&1 &
+monitor_pid=$!
+
+for _ in {1..100}; do
+  [[ -e $shadow_log ]] && break
+  kill -0 "$monitor_pid" 2>/dev/null || break
+  sleep 0.01
+done
+kill "$monitor_pid" 2>/dev/null || true
+wait "$monitor_pid" 2>/dev/null || true
+
+[[ ! -e $shadow_log ]] ||
+  fail "sleep monitor ignores a dbus-monitor shadowing /usr/bin on PATH"
+pass "sleep monitor ignores a dbus-monitor shadowing /usr/bin on PATH"
