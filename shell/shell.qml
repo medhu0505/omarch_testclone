@@ -1503,10 +1503,7 @@ ShellRoot {
   Connections {
     target: shell.pluginRegistry
     function onLocalPluginChanged(pluginId) {
-      // A burst of file events lands here one line at a time, and a message
-      // that says "reloading" from this path describes reloads that the timer
-      // below will coalesce away. Name the event for what it is; the actual
-      // reload logs when it runs.
+      // Quiet per event: the timer coalesces a burst, and reloadPlugins() logs the reload that runs.
       localPluginReloadTimer.restart()
     }
     function onScanFinished() {
