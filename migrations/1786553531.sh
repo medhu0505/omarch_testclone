@@ -12,12 +12,13 @@ if [[ -f $tmux_config ]]; then
     printf '\n%s\n%s\n' \
       '# Make OSC 52 clipboard writes compatible with mosh 1.4.' \
       "$mosh_override" >>"$tmux_config"
-  fi
 
-  if omarchy-cmd-present tmux && tmux list-sessions >/dev/null 2>&1; then
-    if ! tmux source-file "$tmux_config"; then
-      echo "Could not reload tmux; fix the config error and run tmux source-file $tmux_config." >&2
+    if omarchy-cmd-present tmux && tmux list-sessions >/dev/null 2>&1; then
+      # Add only the override: re-sourcing the config would append every -a option in it a second time.
+      if ! tmux set -ag terminal-overrides ',xterm*:Ms=\E]52;%?%p1%l%t%p1%s%ec%;;%p2%s\007'; then
+        echo "Could not update the running tmux server; restart tmux to pick up the clipboard fix." >&2
+      fi
+      echo "Reattach existing tmux clients to refresh their clipboard capabilities."
     fi
-    echo "Reattach existing tmux clients to refresh their clipboard capabilities."
   fi
 fi

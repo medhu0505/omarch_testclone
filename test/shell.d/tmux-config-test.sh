@@ -7,7 +7,7 @@ source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 test_tmp=$(mktemp -d)
 export TMUX_TMPDIR=$test_tmp
 socket="omarchy-tmux-config-$$"
-trap 'for server in "$socket" "packaged-$$" "migrated-$$"; do tmux -L "$server" kill-server 2>/dev/null || true; done; rm -rf "$test_tmp"' EXIT
+trap 'for server in "$socket" "packaged-$$" "migrated-$$" default; do tmux -L "$server" kill-server 2>/dev/null || true; done; rm -rf "$test_tmp"' EXIT
 
 # Attach a real client and read what tmux writes to its terminal: tmux writes nothing when ncurses cannot expand Ms.
 osc52_emitted() {
@@ -43,7 +43,7 @@ printf '%s' 'set -g status off' >>"$home/.config/tmux/tmux.conf"
 cat >"$test_tmp/bin/tmux" <<'SH'
 #!/bin/bash
 printf '%s\n' "$*" >>"$TMUX_LOG"
-[[ $1 == "list-sessions" ]] || { [[ $1 == "source-file" ]] && exit "${SOURCE_RESULT:-0}"; }
+[[ $1 == "list-sessions" ]] || { [[ $1 == "set" ]] && exit "${SET_RESULT:-0}"; }
 SH
 
 cat >"$test_tmp/bin/omarchy-cmd-present" <<'SH'
@@ -63,8 +63,10 @@ grep -Fq 'y send -X copy-selection-and-cancel' "$home/.config/tmux/tmux.conf" ||
   fail "tmux migration leaves native copy bindings alone"
 grep -Fqx 'set -g status off' "$home/.config/tmux/tmux.conf" ||
   fail "tmux migration preserves a final line without a newline"
-grep -Fqx "source-file $home/.config/tmux/tmux.conf" "$tmux_log" ||
-  fail "tmux migration reloads a running server"
+grep -Fqx 'set -ag terminal-overrides ,xterm*:Ms=\E]52;%?%p1%l%t%p1%s%ec%;;%p2%s\007' "$tmux_log" ||
+  fail "tmux migration adds the override to a running server" "$(cat "$tmux_log")"
+! grep -q '^source-file' "$tmux_log" ||
+  fail "tmux migration does not re-source the whole config" "$(cat "$tmux_log")"
 pass "tmux migration updates existing configs and live servers"
 
 osc52_emitted "$home/.config/tmux/tmux.conf" migrated ||
@@ -87,9 +89,27 @@ grep -Fqx "$custom_binding" "$custom_home/.config/tmux/tmux.conf" ||
   fail "tmux migration preserves a custom copy binding"
 pass "tmux migration leaves custom copy bindings alone"
 
-HOME="$home" SOURCE_RESULT=1 TMUX_LOG="$tmux_log" PATH="$test_tmp/bin:$PATH" bash -euo pipefail "$migration" >"$test_tmp/reload-output" 2>&1 || fail "optional live reload failures must not stop migrations"
-grep -q 'Could not reload tmux' "$test_tmp/reload-output" || fail "reload failure tells the user to repair the live config"
+reload_home="$test_tmp/reload-home"
+mkdir -p "$reload_home/.config/tmux"
+printf '%s\n' 'set -g mouse on' >"$reload_home/.config/tmux/tmux.conf"
+HOME="$reload_home" SET_RESULT=1 TMUX_LOG="$tmux_log" PATH="$test_tmp/bin:$PATH" bash -euo pipefail "$migration" >"$test_tmp/reload-output" 2>&1 || fail "optional live reload failures must not stop migrations"
+grep -q 'Could not update the running tmux server' "$test_tmp/reload-output" || fail "a failed live update tells the user to restart tmux"
 pass "failed live reloads warn without stopping later migrations"
+
+# A real server on the default socket: a client attaching after the migration gets the override without a restart.
+live_home="$test_tmp/live-home"
+mkdir -p "$live_home/.config/tmux" "$test_tmp/live-bin"
+printf '%s\n' 'set -g status off' >"$live_home/.config/tmux/tmux.conf"
+cp "$test_tmp/bin/omarchy-cmd-present" "$test_tmp/live-bin/"
+tmux -f "$live_home/.config/tmux/tmux.conf" new-session -d -s live
+HOME="$live_home" PATH="$test_tmp/live-bin:$PATH" bash -euo pipefail "$migration" >/dev/null
+[[ $(tmux show -s terminal-overrides | grep -c 'Ms=') == 1 ]] ||
+  fail "the live server gets the override once" "$(tmux show -s terminal-overrides)"
+TERM=xterm-256color timeout 10 script -qfec "stty rows 24 cols 80; tmux new-session 'tmux set-buffer -w hello; sleep 0.5'" "$test_tmp/live.log" < <(sleep 5) >/dev/null
+grep -aqF $'\e]52;c;aGVsbG8=\a' "$test_tmp/live.log" ||
+  fail "a client attaching to the migrated live server emits the mosh selector" "$(cat -v "$test_tmp/live.log")"
+tmux kill-server
+pass "tmux migration updates a running server for the next client"
 
 printf '%s\n' 'set -ag terminal-overrides ",xterm*:RGB:Ms=custom-clipboard"' >>"$custom_home/.config/tmux/tmux.conf"
 # Start with only user-owned capabilities, not a previously added Omarchy override.
