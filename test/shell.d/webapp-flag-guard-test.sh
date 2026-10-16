@@ -107,6 +107,15 @@ mode_after=$(stat -c %a "$desktop")
   fail "migration preserves the shortcut's file mode" "before=$mode_before after=$mode_after"
 pass "migration preserves the shortcut's file mode ($mode_after)"
 
+# The atomic-rename repair stages a temp beside the original; it must not leave
+# one behind on success.
+shopt -s nullglob
+leftover=("$desktop_dir/Sunshine Admin.desktop."*)
+shopt -u nullglob
+(( ${#leftover[@]} == 0 )) ||
+  fail "migration leaves no staging temp behind" "${leftover[*]}"
+pass "migration leaves no staging temp behind"
+
 grep -qxF "Exec=omarchy-launch-webapp https://localhost:47990" "$desktop" ||
   fail "migration strips the flag from the entry's own Exec line" "$(cat "$desktop")"
 pass "migration strips the flag from the entry's own Exec line"

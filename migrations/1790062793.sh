@@ -20,17 +20,21 @@ exec_line=$(grep -m1 '^Exec=' "$desktop_file" 2>/dev/null || true)
 
 if [[ $exec_line =~ $generated ]]; then
   url=${BASH_REMATCH[1]}
-  tmp=$(mktemp)
+  # Stage the rewrite next to the original so the final mv is an atomic
+  # same-filesystem rename: an interrupted run leaves either the intact original
+  # or the finished replacement, never a truncated file a retry would read as
+  # already-stripped and skip (leaving the shortcut broken and the migration
+  # marked done). Copy the original's mode onto the stage first, since mktemp
+  # makes it 0600; the rename then keeps the mode and owner, so the earlier
+  # mv-from-/tmp plus chmod +x that forced it to 0700 is no longer needed.
+  tmp=$(mktemp "$desktop_file.XXXXXX")
+  trap 'rm -f "$tmp"' EXIT
   # Only the entry's own Exec line. A .desktop file may also carry
   # [Desktop Action] sections with their own Exec lines, and those are not what
   # was inspected above; rewriting them too would repoint unrelated actions.
   sed "0,/^Exec=/s|^Exec=.*|Exec=omarchy-launch-webapp $url|" "$desktop_file" >"$tmp"
-  # Write the repaired contents back into the original file instead of mv'ing a
-  # fresh mktemp over it, so the entry keeps its own mode and owner. mktemp makes
-  # the temp file 0600, so mv followed by chmod +x forced the shortcut to 0700,
-  # dropping the group and other read bits the installer's chmod +x had set.
-  cat "$tmp" >"$desktop_file"
-  rm -f "$tmp"
+  chmod --reference="$desktop_file" "$tmp"
+  mv -f "$tmp" "$desktop_file"
   echo "Removed --ignore-certificate-errors from the Sunshine Admin shortcut."
   echo "The self-signed page now asks once instead of disabling TLS checks browser-wide."
 elif [[ $exec_line == *--ignore-certificate-errors* ]]; then
