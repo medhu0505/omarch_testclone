@@ -42,6 +42,9 @@ Item {
   property string metricsError: ""
   property string _usageError: ""
   property string _errorQueryError: ""
+  // cf 1.0 renamed `observability` to `o11y`. Ask with the new name and
+  // switch for the session when an older cf does not know it.
+  property string telemetryCommand: "o11y"
   property var detailVersions: []
   property var detailLive: ({})
   property string detailDeployedOn: ""
@@ -377,11 +380,25 @@ Item {
     _usageOutput = ""
     _errorsOutput = ""
     usageProcess.environment = env
-    usageProcess.command = cliCommand.concat(["observability", "telemetry", "query", "--body", Model.usageQuery(worker.name, from, to)])
+    usageProcess.command = telemetryQuery(Model.usageQuery(worker.name, from, to))
     usageProcess.running = true
     errorsProcess.environment = env
-    errorsProcess.command = cliCommand.concat(["observability", "telemetry", "query", "--body", Model.errorsQuery(worker.name, from, to)])
+    errorsProcess.command = telemetryQuery(Model.errorsQuery(worker.name, from, to))
     errorsProcess.running = true
+  }
+
+  function telemetryQuery(body) {
+    return cliCommand.concat([telemetryCommand, "telemetry", "query", "--body", body])
+  }
+
+  // Reruns a telemetry call that asked an older cf for `o11y`, under the
+  // same generation, so the load finishes as if it had asked right first.
+  function retryOlderTelemetry(process, stderr) {
+    if (process.command[cliCommand.length] !== "o11y" || !Model.isUnknownCommand(stderr)) return false
+    telemetryCommand = "observability"
+    process.command = cliCommand.concat(["observability"], process.command.slice(cliCommand.length + 1))
+    process.running = true
+    return true
   }
 
   function setMetricsError(source, message) {
@@ -621,9 +638,11 @@ Item {
     running: false
     command: []
     stdout: StdioCollector { id: usageStdout; waitForEnd: true; onStreamFinished: root._usageOutput = text }
+    stderr: StdioCollector { id: usageStderr; waitForEnd: true }
     onExited: function(exitCode) {
       Qt.callLater(root.startPendingDetail)
       if (generation !== root._detailGeneration) return
+      if (exitCode !== 0 && root.retryOlderTelemetry(usageProcess, String(usageStderr.text || ""))) return
       if (exitCode === 0) root.applyMetrics(String(usageStdout.text || root._usageOutput || ""), "usage")
       else root.setMetricsError("usage", root._usageError || "Could not load metrics")
       root.detailProcessDone()
@@ -636,9 +655,11 @@ Item {
     running: false
     command: []
     stdout: StdioCollector { id: errorsStdout; waitForEnd: true; onStreamFinished: root._errorsOutput = text }
+    stderr: StdioCollector { id: errorsStderr; waitForEnd: true }
     onExited: function(exitCode) {
       Qt.callLater(root.startPendingDetail)
       if (generation !== root._detailGeneration) return
+      if (exitCode !== 0 && root.retryOlderTelemetry(errorsProcess, String(errorsStderr.text || ""))) return
       if (exitCode === 0) root.applyMetrics(String(errorsStdout.text || root._errorsOutput || ""), "errors")
       else root.setMetricsError("errors", root._errorQueryError || "Could not load error metrics")
       root.detailProcessDone()

@@ -6,6 +6,12 @@ function stripAnsi(text) {
   return String(text || "").replace(/\u001b\[[0-9;]*m/g, "")
 }
 
+// cf answers a command it does not know with its usage rather than an error.
+function isUnknownCommand(text) {
+  var value = stripAnsi(text)
+  return /^\s*cf <command> \[options\]/.test(value) || /Unknown commands?:/.test(value)
+}
+
 function parseJson(raw) {
   var text = stripAnsi(raw).trim()
   if (text === "") return { ok: true, value: null }
@@ -331,6 +337,7 @@ if (typeof module !== "undefined") {
   module.exports = {
     DASHBOARD_URL: DASHBOARD_URL,
     stripAnsi: stripAnsi,
+    isUnknownCommand: isUnknownCommand,
     parseJson: parseJson,
     parseLoginCode: parseLoginCode,
     parseWhoami: parseWhoami,

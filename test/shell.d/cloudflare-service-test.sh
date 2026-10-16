@@ -33,7 +33,7 @@ cp "$ROOT/shell/plugins/panels/cloudflare/"{Service.qml,Model.js} "$scratch/"
 cp "$ROOT/shell/Commons/"{Util.qml,I18n.qml,Plural.js,Numbers.js} "$scratch/Commons/"
 printf 'singleton Util 1.0 Util.qml\nsingleton I18n 1.0 I18n.qml\n' >"$scratch/Commons/qmldir"
 
-for scenario in ${CF_TEST_SCENARIOS:-account detail repeat-account repeat-detail signout offline pagination pagination-failure login detail-timeout stubborn-detail errors-query}; do
+for scenario in ${CF_TEST_SCENARIOS:-account detail repeat-account repeat-detail signout offline pagination pagination-failure login detail-timeout stubborn-detail errors-query old-cli}; do
   : >"$scratch/calls"
   if ! OMARCHY_PATH="$ROOT" HOME="$scratch/home" XDG_CONFIG_HOME="$scratch/home/.config" XDG_RUNTIME_DIR="$scratch/runtime" \
     QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software PATH="$scratch/bin:$PATH" \
@@ -45,6 +45,11 @@ for scenario in ${CF_TEST_SCENARIOS:-account detail repeat-account repeat-detail
   cat "$scratch/$scenario.log"
   if grep -qE "not ok -|Error:|Unable to assign|Cannot assign" "$scratch/$scenario.log"; then
     fail "Cloudflare $scenario assertions or QML errors"
+  fi
+  if [[ $scenario == "old-cli" ]]; then
+    [[ $(grep -c '\["o11y", "telemetry"' "$scratch/calls") == 2 ]] || fail "an older cf is asked for o11y only on the first load"
+  elif grep -q '\["observability", "telemetry"' "$scratch/calls"; then
+    fail "Cloudflare $scenario asks cf 1.0 for observability"
   fi
   if [[ $scenario == "login" ]]; then
     [[ $(grep -c '\["auth", "login"\]' "$scratch/calls") == 1 ]] || fail "repeated login starts only one CLI process"

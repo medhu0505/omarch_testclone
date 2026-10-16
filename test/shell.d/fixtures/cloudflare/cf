@@ -58,7 +58,12 @@ elif args == ['auth', 'login']:
           '\t\tand enter the code:\n\n\t\t  TESTCODE\n\n\t\tYou have 10 minutes to approve this request.\n', flush=True)
     time.sleep(0.6)
     emit({'success': True})
-elif args[:3] == ['observability', 'telemetry', 'query']:
+elif args[1:3] == ['telemetry', 'query']:
+    # cf 1.0 names it o11y; the old-cli scenario stands in for 0.15, which
+    # only knows observability. Either answers the other name with its usage.
+    if args[0] != ('observability' if os.environ['CF_TEST_SCENARIO'] == 'old-cli' else 'o11y'):
+        sys.stderr.write('cf <command> [options]\n\nThe Cloudflare CLI - manage your Cloudflare resources\n')
+        sys.exit(1)
     body = json.loads(option('--body'))
     worker = body['parameters']['filters'][0]['value']
     if worker == 'errorfail' and body['parameters']['calculations'][0]['alias'] == 'errors':

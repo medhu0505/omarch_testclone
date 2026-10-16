@@ -30,6 +30,12 @@ assertEqual(cloudflare.parseLoginCode(deviceLogin), 'nzcpYWwP', 'cloudflare read
 assertEqual(cloudflare.parseLoginCode('\u001b[1mand enter the code:\u001b[0m\n\n  \u001b[36mAB12cd34\u001b[0m\n'), 'AB12cd34', 'cloudflare reads a colored device sign-in code')
 assertEqual(cloudflare.parseLoginCode('To authorize Cloudflare CLI, please visit:\n'), '', 'cloudflare waits for the device sign-in code')
 
+// cf 0.15 answers an unknown command with its usage; 1.0 adds an error box.
+assert(cloudflare.isUnknownCommand('cf <command> [options]\n\nThe Cloudflare CLI - manage your Cloudflare resources\n'), 'cloudflare spots cf 0.15 not knowing a command')
+assert(cloudflare.isUnknownCommand('cf <command> [options]\n...\n\u250c Error\n\u2502 Unknown commands: observability, telemetry, query\n\u2514\n'), 'cloudflare spots cf 1.0 not knowing a command')
+assert(!cloudflare.isUnknownCommand('\u001b[31mError: Authentication error [code: 10000]\u001b[0m\n'), 'cloudflare does not mistake an API error for an unknown command')
+assert(!cloudflare.isUnknownCommand(''), 'cloudflare does not mistake a silent failure for an unknown command')
+
 const signedOut = cloudflare.parseWhoami('{\n  "authenticated": false,\n  "error": "Not logged in"\n}')
 assertEqual(signedOut.authenticated, false, 'cloudflare reads a signed-out whoami')
 assertEqual(signedOut.message, 'Not logged in', 'cloudflare surfaces the whoami error as status')

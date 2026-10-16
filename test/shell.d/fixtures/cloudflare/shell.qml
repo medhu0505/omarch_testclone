@@ -127,6 +127,18 @@ ShellRoot {
           harness.check(!service.versionsLoading && service.detailVersions[0] && service.detailVersions[0].id === "beta-version", "cancelled calls that ignore SIGTERM cannot block the next Worker")
           Qt.quit()
         }
+      } else if (harness.scenario === "old-cli") {
+        if (harness.tick === 4) service.openWorkerDetail({name: "beta", logsEnabled: true})
+        if (harness.tick === 18) {
+          harness.check(service.detailMetrics.invocations && service.detailMetrics.invocations.value === 42 && service.detailMetrics.errors, "an older cf still loads metrics")
+          harness.check(service.metricsError === "" && service.telemetryCommand === "observability", "an older cf switches to observability")
+          harness.check(service._detailCache.beta && service._detailCache.beta.metricsError === "", "the retried load is cached complete")
+          service.openWorkerDetail({name: "gamma", logsEnabled: true})
+        }
+        if (harness.tick === 28) {
+          harness.check(service.detailMetrics.invocations && service.metricsError === "", "the next Worker asks an older cf directly")
+          Qt.quit()
+        }
       } else if (harness.scenario === "errors-query") {
         if (harness.tick === 4) service.openWorkerDetail({name: "errorfail", logsEnabled: true})
         if (harness.tick === 18) {
