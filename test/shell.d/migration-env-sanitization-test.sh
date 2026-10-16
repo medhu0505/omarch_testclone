@@ -18,11 +18,13 @@ out=$(
   OMARCHY_FPRINTD_RESUME_DST=/attacker/controlled \
     OMARCHY_ZRAM_CONF=/attacker/zram \
     OMARCHY_UPGRADE_TO_QUATTRO_LIVE=1 \
+    OMARCHY_UPDATE_UNATTENDED=1 \
     OMARCHY_PATH=/sentinel/path \
     omarchy_security_run_migrations_sanitized bash -c '
       printf "seam_fprintd=%s\n" "${OMARCHY_FPRINTD_RESUME_DST:-<unset>}"
       printf "seam_zram=%s\n" "${OMARCHY_ZRAM_CONF:-<unset>}"
       printf "allow_quattro=%s\n" "${OMARCHY_UPGRADE_TO_QUATTRO_LIVE:-<unset>}"
+      printf "allow_unattended=%s\n" "${OMARCHY_UPDATE_UNATTENDED:-<unset>}"
       printf "allow_path=%s\n" "${OMARCHY_PATH:-<unset>}"
     '
 )
@@ -33,6 +35,11 @@ grep -qx 'seam_zram=<unset>' <<<"$out" ||
   fail "OMARCHY_ZRAM_CONF seam reached the migration: $(grep '^seam_zram=' <<<"$out")"
 grep -qx 'allow_quattro=1' <<<"$out" ||
   fail "OMARCHY_UPGRADE_TO_QUATTRO_LIVE was stripped (the quattro upgrade needs it)"
+# OMARCHY_UPDATE_UNATTENDED is a boolean `omarchy update -y` sets, not a path, so
+# it must survive: a migration's package step reads it to stay non-interactive on
+# a conflict, and scrubbing it would make an unattended update stop at a prompt.
+grep -qx 'allow_unattended=1' <<<"$out" ||
+  fail "OMARCHY_UPDATE_UNATTENDED was stripped (an unattended update would stall at a prompt)"
 grep -qx 'allow_path=/sentinel/path' <<<"$out" ||
   fail "OMARCHY_PATH was not preserved for the migration"
 
