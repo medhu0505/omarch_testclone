@@ -21,6 +21,10 @@ grep -Fq 'KERNEL_CMDLINE[default]+=" intel_iommu=on iommu=pt pm_async=off mem_sl
   fail "T2 setup leaves optional Touch Bar customization uninstalled"
 ! grep -qx 'tiny-dfr' "$other_packages" ||
   fail "the ISO no longer caches tiny-dfr"
+grep -Fq 'apple-bcm-firmware-fetcher' "$fix_t2" ||
+  fail "T2 setup installs the firmware fetcher"
+grep -Fq 'apple-bcm-firmware-fetcher' "$other_packages" ||
+  fail "the default package list installs the firmware fetcher"
 grep -Fq 'ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="8233", NAME="t2_ncm"' "$fix_t2" ||
   fail "T2 setup identifies only the internal Apple NCM interface"
 grep -Fq 'match-device=interface-name:t2_ncm' "$fix_t2" ||
