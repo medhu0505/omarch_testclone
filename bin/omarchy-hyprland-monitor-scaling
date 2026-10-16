@@ -71,6 +71,14 @@ normalize_scale() {
   awk 'NR == 1 { printf "%g\n", $0 }'
 }
 
+has_target_scale_rule() {
+  [[ -f $1 ]] || return 1
+  awk -v output="$2" '
+    /^[[:space:]]*hl[.]monitor\(\{/ && index($0, "output = \"" output "\"") && /scale = / { found = 1 }
+    END { exit !found }
+  ' "$1"
+}
+
 persist_target_scale() {
   local monitor_lua="$1" output="$2" scale="$3"
   local temporary
@@ -80,7 +88,7 @@ persist_target_scale() {
   temporary=$(mktemp "${monitor_lua}.XXXXXX") || return 1
   if awk -v output="$output" -v scale="$scale" '
     /^[[:space:]]*hl[.]monitor\(\{/ && index($0, "output = \"" output "\"") && /scale = / {
-      sub(/scale = [^,}]*[^,}[:space:]]/, "scale = " scale)
+      sub(/scale = [^,;}]*[^,;}[:space:]]/, "scale = " scale)
       found = 1
     }
     { print }
@@ -132,6 +140,12 @@ set_scale() {
   if [[ -n $target ]] || jq -e 'length > 1' <<<"$monitors_json" >/dev/null; then
     persist_target_scale "$monitor_lua" "$active_monitor" "$new_scale"
     return
+  fi
+
+  # A previously named output still wins over the catch-all after another
+  # display is unplugged. Update it as well as the single-display defaults.
+  if has_target_scale_rule "$monitor_lua" "$active_monitor"; then
+    persist_target_scale "$monitor_lua" "$active_monitor" "$new_scale" || return 1
   fi
 
   # Persist to monitors.lua if the user still has Omarchy's generic catch-all

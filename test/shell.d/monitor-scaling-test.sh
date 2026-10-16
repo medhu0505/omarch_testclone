@@ -19,7 +19,9 @@ cat >"$stub_bin/hyprctl" <<'SH'
 #!/bin/bash
 
 if [[ $1 == "monitors" && $2 == "-j" ]]; then
-  if [[ ${OMARCHY_TEST_TWO_MONITORS:-} == 1 ]]; then
+  if [[ ${OMARCHY_TEST_ONLY_EXTERNAL:-} == 1 ]]; then
+    printf '[{"name":"DP-1","focused":true,"scale":1.25,"width":2560,"height":1440,"refreshRate":60.0}]'
+  elif [[ ${OMARCHY_TEST_TWO_MONITORS:-} == 1 ]]; then
     printf '[{"name":"eDP-1","focused":true,"scale":2,"width":2880,"height":1800,"refreshRate":120.0},{"name":"DP-1","focused":false,"scale":1,"width":2560,"height":1440,"refreshRate":60.0}]'
   else
     printf '[{"name":"eDP-1","focused":true,"scale":%s,"width":%s,"height":%s,"refreshRate":120.0}]' \
@@ -47,6 +49,7 @@ run_scaling() {
     OMARCHY_TEST_HYPRCTL_EVAL_OUT="$eval_out" \
     OMARCHY_TEST_MONITOR_SCALE="${OMARCHY_TEST_MONITOR_SCALE:-2}" \
     OMARCHY_TEST_TWO_MONITORS="${OMARCHY_TEST_TWO_MONITORS:-}" \
+    OMARCHY_TEST_ONLY_EXTERNAL="${OMARCHY_TEST_ONLY_EXTERNAL:-}" \
     "$ROOT/bin/omarchy-hyprland-monitor-scaling" "$@"
 }
 
@@ -176,6 +179,20 @@ OMARCHY_TEST_TWO_MONITORS=1 run_scaling --monitor DP-1 1.25
 grep -Fx 'hl.monitor({ output = "DP-1", mode = "2560x1440@144", position = "2880x0", scale = 1.25, transform = 1 })' "$monitor_lua" >/dev/null ||
   fail "targeted scaling preserves custom mode, position, and transform"
 pass "targeted scaling preserves existing output settings"
+
+write_monitor_config
+printf '%s\n' 'hl.monitor({ output = "DP-1"; mode = "preferred"; position = "auto"; scale = 1.25; transform = 1 })' >>"$monitor_lua"
+OMARCHY_TEST_TWO_MONITORS=1 run_scaling --monitor DP-1 2
+grep -Fx 'hl.monitor({ output = "DP-1"; mode = "preferred"; position = "auto"; scale = 2; transform = 1 })' "$monitor_lua" >/dev/null ||
+  fail "targeted scaling preserves settings after a semicolon-separated scale"
+pass "targeted scaling leaves semicolon-separated settings intact"
+
+write_monitor_config
+OMARCHY_TEST_TWO_MONITORS=1 run_scaling --monitor DP-1 1.25
+OMARCHY_TEST_ONLY_EXTERNAL=1 run_scaling 1.6
+grep -Fx 'hl.monitor({ output = "DP-1", mode = "preferred", position = "auto", scale = 1.6 })' "$monitor_lua" >/dev/null ||
+  fail "the remaining display updates its existing output-specific rule"
+pass "single-display scaling updates a previously named output"
 
 write_monitor_config
 mv "$monitor_lua" "$home_dir/shared-monitors.lua"
