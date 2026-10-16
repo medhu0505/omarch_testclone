@@ -285,6 +285,11 @@ assertEqual(
   'file:///state/images/9-3-image',
   'notifications persist a copy of a bare image-path avatar'
 )
+assertEqual(
+  notifications.persistablePopup(notifications.snapshotOf({ id: 4, image: 'image://icon//tmp/a b/x%20y#z.png' }, 9), '/state/images/').copies[0].from,
+  '/tmp/a b/x%20y#z.png',
+  'notifications copy a bare image-path whose name reads as URL syntax from the file it names'
+)
 const snapshot = notifications.snapshotOf(notification, 12345)
 assertDeepEqual(
   {
