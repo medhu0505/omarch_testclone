@@ -27,6 +27,8 @@ Item {
   property string selfIp: ""
   property string selfUserId: ""
   property bool fileSharing: false
+  property bool receiverActive: false
+  property bool receiverAvailable: true
   property string authUrl: ""
   property var peers: []
   property var exitNodes: []
@@ -43,7 +45,11 @@ Item {
   property string lastError: ""
 
   readonly property int refreshIntervalSec: intSetting("refreshIntervalSec", 30, 5, 3600)
-  readonly property bool busy: whichProcess.running || statusProcess.running || mullvadExitNodesProcess.running || accountsProcess.running || actionProcess.running || loginProcess.running || switchProcess.running || operatorProcess.running || exitNodeProcess.running
+  readonly property bool busy: whichProcess.running || statusProcess.running || mullvadExitNodesProcess.running || accountsProcess.running || actionProcess.running || loginProcess.running || switchProcess.running || operatorProcess.running || exitNodeProcess.running || receiverToggleProcess.running
+  // Process.running only turns true once the event loop starts the process, so
+  // the pending flags close the gap for a second call in the same tick.
+  readonly property bool receiverBusy: _receiverStatusPending || _receiverTogglePending || receiverStatusProcess.running || receiverToggleProcess.running
+  readonly property bool receiverVisible: Model.receiverVisible(installed, receiverAvailable)
   readonly property string userName: Quickshell.env("USER") || Quickshell.env("LOGNAME")
 
   property string _statusOutput: ""
@@ -66,6 +72,13 @@ Item {
   property string _exitNodeError: ""
   property string _operatorOutput: ""
   property string _operatorError: ""
+  property string _receiverToggleOutput: ""
+  property string _receiverToggleError: ""
+  property bool _receiverStatusPending: false
+  property bool _receiverTogglePending: false
+  property bool _receiverTarget: false
+  // Set by a successful toggle until the status check after it lands.
+  property bool _receiverConfirming: false
 
   function setting(name, fallback) {
     var value = settings ? settings[name] : undefined
@@ -147,6 +160,7 @@ Item {
   }
 
   function refresh(forceAccounts) {
+    refreshReceiver()
     if (installed) {
       refreshStatusAndAccounts(forceAccounts === true)
       return
@@ -156,6 +170,58 @@ Item {
       whichProcess.command = ["which", "tailscale"]
       whichProcess.running = true
     }
+  }
+
+  function refreshReceiver() {
+    if (receiverBusy) return
+    _receiverStatusPending = true
+    receiverStatusProcess.command = Model.receiverStatusCommand()
+    receiverStatusProcess.running = true
+  }
+
+  // A status check still in flight would land after the toggle and overwrite
+  // it with the old state, so it blocks a toggle just as a running toggle does.
+  function toggleReceiver() {
+    if (!Model.canToggleReceiver(installed, receiverAvailable, receiverBusy)) return
+    _receiverToggleOutput = ""
+    _receiverToggleError = ""
+    _receiverConfirming = false
+    _receiverTarget = !receiverActive
+    actionStatusTimer.stop()
+    actionStatus = Model.receiverPendingStatus(_receiverTarget)
+    _receiverTogglePending = true
+    receiverToggleProcess.command = Model.receiverToggleCommand(receiverActive)
+    receiverToggleProcess.running = true
+  }
+
+  function applyReceiverStatus(exitCode) {
+    _receiverStatusPending = false
+    var state = Model.receiverState(exitCode)
+    receiverActive = state.active
+    receiverAvailable = state.available
+    if (!_receiverConfirming) return
+    _receiverConfirming = false
+    var mismatch = Model.receiverConfirmation(_receiverTarget, exitCode)
+    if (mismatch === "") return
+    lastError = mismatch
+    actionStatus = mismatch
+    actionStatusTimer.restart()
+  }
+
+  function finishReceiverToggle(exitCode, stdout, stderr) {
+    _receiverTogglePending = false
+    var result = Model.receiverToggleResult(exitCode, _receiverTarget, stdout, stderr)
+    if (result.ok) {
+      receiverActive = _receiverTarget
+      _receiverConfirming = true
+      lastError = ""
+      actionStatus = result.message
+    } else {
+      lastError = elideStatus(result.message)
+      actionStatus = lastError
+    }
+    actionStatusTimer.restart()
+    delayedReceiverRefresh.restart()
   }
 
   function refreshStatusAndAccounts(forceAccounts) {
@@ -420,6 +486,13 @@ Item {
   }
 
   Timer {
+    id: delayedReceiverRefresh
+    interval: 300
+    repeat: false
+    onTriggered: root.refreshReceiver()
+  }
+
+  Timer {
     // Every poll is skipped while its own process is still running, so one that
     // never exits — tailscale can hang on a network that is coming and going —
     // silently stops the panel refreshing at all, and it stays stopped. Reap
@@ -634,5 +707,28 @@ Item {
       }
       delayedRefresh.restart()
     }
+  }
+
+  Process {
+    id: receiverStatusProcess
+    running: false
+    command: []
+    onExited: function(exitCode) { root.applyReceiverStatus(exitCode) }
+    // A process that never started stops without exiting; it answered nothing.
+    onRunningChanged: if (!running && root._receiverStatusPending) root.applyReceiverStatus(-1)
+  }
+
+  Process {
+    id: receiverToggleProcess
+    running: false
+    command: []
+    stdout: StdioCollector { id: receiverToggleStdout; waitForEnd: true; onStreamFinished: root._receiverToggleOutput = text }
+    stderr: StdioCollector { id: receiverToggleStderr; waitForEnd: true; onStreamFinished: root._receiverToggleError = text }
+    onExited: function(exitCode) {
+      var stdout = String(receiverToggleStdout.text || root._receiverToggleOutput || "")
+      var stderr = String(receiverToggleStderr.text || root._receiverToggleError || "")
+      root.finishReceiverToggle(exitCode, stdout, stderr)
+    }
+    onRunningChanged: if (!running && root._receiverTogglePending) root.finishReceiverToggle(-1, "", "")
   }
 }

@@ -308,8 +308,76 @@ function parseAccounts(raw, tr) {
   }
 }
 
+var receiverUnit = "omarchy-tailscale-receive.service"
+
+function receiverStatusCommand() {
+  return ["systemctl", "--user", "is-active", receiverUnit]
+}
+
+// `is-active` exits 0 for a running unit and 3 for one that is loaded but not
+// running (inactive, failed, activating). 4 means systemd has no such unit, and
+// anything else is a user manager that could not answer; neither has a switch
+// worth showing.
+function receiverState(exitCode) {
+  return {
+    active: exitCode === 0,
+    available: exitCode === 0 || exitCode === 3
+  }
+}
+
+// The unit ships with every install, so it reports inactive even without the
+// CLI, and its ConditionPathExists makes `enable --now` succeed without
+// starting anything. Only offer the switch once the CLI itself is present.
+function receiverVisible(installed, available) {
+  return installed === true && available === true
+}
+
+function canToggleReceiver(installed, available, busy) {
+  return receiverVisible(installed, available) && busy !== true
+}
+
+function receiverToggleCommand(active) {
+  return active === true
+    ? ["systemctl", "--user", "disable", "--now", receiverUnit]
+    : ["systemctl", "--user", "enable", "--now", receiverUnit]
+}
+
+function receiverPendingStatus(target) {
+  return target === true ? "Turning automatic file receiving on..." : "Turning automatic file receiving off..."
+}
+
+function receiverToggleResult(exitCode, target, stdout, stderr) {
+  if (exitCode !== 0) {
+    var detail = String(stderr || "").trim() || String(stdout || "").trim()
+    return { ok: false, message: detail || "Could not change automatic file receiving" }
+  }
+  return {
+    ok: true,
+    message: target === true ? "Automatic file receiving turned on" : "Automatic file receiving turned off"
+  }
+}
+
+// The status check that follows a successful toggle is what proves it took: a
+// start skipped by the unit's condition still exits 0. A check that could not
+// answer proves nothing either way, including that a stop worked.
+function receiverConfirmation(target, exitCode) {
+  var state = receiverState(exitCode)
+  if (!state.available) return "Could not verify automatic file receiving"
+  if (target === state.active) return ""
+  return target === true ? "Automatic file receiving did not start" : "Automatic file receiving did not stop"
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
+    receiverUnit: receiverUnit,
+    receiverStatusCommand: receiverStatusCommand,
+    receiverState: receiverState,
+    receiverVisible: receiverVisible,
+    canToggleReceiver: canToggleReceiver,
+    receiverToggleCommand: receiverToggleCommand,
+    receiverPendingStatus: receiverPendingStatus,
+    receiverToggleResult: receiverToggleResult,
+    receiverConfirmation: receiverConfirmation,
     filterIPv4: filterIPv4,
     filterIPv6: filterIPv6,
     cleanDnsName: cleanDnsName,

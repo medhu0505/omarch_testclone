@@ -61,6 +61,8 @@ Panel {
   // Only claim the header cursor when the switch is actually on screen —
   // "header" stays navigable, but an absent CLI leaves nothing to highlight.
   readonly property bool headerHasCursor: cursorActive && focusSection === "header" && tailscale.installed
+  readonly property bool showReceiver: tailscale.receiverVisible
+  readonly property bool receiverHasCursor: cursorActive && focusSection === "receiver" && showReceiver
   readonly property color iconColor: tailscale.active ? foreground : dim
   readonly property string toggleHint: tailscale.active ? Commons.I18n.t("tailscale.turnOff") : (tailscale.needsLogin ? Commons.I18n.t("tailscale.authorizeDevice") : Commons.I18n.t("tailscale.turnOn"))
   readonly property color barIconColor: tailscale.active ? barForeground : Qt.darker(barForeground, 1.55)
@@ -187,17 +189,32 @@ Panel {
     return tailscale.accounts[Math.max(0, Math.min(accountIndex, tailscale.accounts.length - 1))]
   }
 
+  // The receiver row sits between the header and every other section, so
+  // moving up out of the top section lands on it whenever it is shown.
+  function sectionBelowHeader() {
+    return showReceiver ? "receiver" : "header"
+  }
+
+  function sectionBelowReceiver() {
+    if (tailscale.accountsAccessDenied) return "auth"
+    if (tailscale.accounts.length > 1) return "accounts"
+    if (showExitNodes) return "exitNodes"
+    if (showPeers) return "peers"
+    return ""
+  }
+
   function ensureCursor() {
     if (headerIndex < 0) headerIndex = 0
     if (headerIndex > 0) headerIndex = 0
+    if (focusSection === "receiver" && !showReceiver) focusSection = "header"
     if (accountIndex >= tailscale.accounts.length) accountIndex = Math.max(0, tailscale.accounts.length - 1)
     if (peerIndex >= tailscale.peers.length) peerIndex = Math.max(0, tailscale.peers.length - 1)
     if (exitNodeIndex >= exitNodes.length) exitNodeIndex = Math.max(0, exitNodes.length - 1)
     if (mullvadRegionIndex >= filteredMullvadRegions.length) mullvadRegionIndex = Math.max(0, filteredMullvadRegions.length - 1)
-    if (focusSection === "auth" && !tailscale.accountsAccessDenied) focusSection = tailscale.accounts.length > 1 ? "accounts" : (showExitNodes ? "exitNodes" : (showPeers ? "peers" : "header"))
-    if (focusSection === "accounts" && tailscale.accounts.length <= 1) focusSection = tailscale.accountsAccessDenied ? "auth" : (showExitNodes ? "exitNodes" : (showPeers ? "peers" : "header"))
-    if (focusSection === "peers" && !showPeers) focusSection = showExitNodes ? "exitNodes" : (tailscale.accountsAccessDenied ? "auth" : (tailscale.accounts.length > 1 ? "accounts" : "header"))
-    if (focusSection === "exitNodes" && !showExitNodes) focusSection = showPeers ? "peers" : (tailscale.accountsAccessDenied ? "auth" : (tailscale.accounts.length > 1 ? "accounts" : "header"))
+    if (focusSection === "auth" && !tailscale.accountsAccessDenied) focusSection = tailscale.accounts.length > 1 ? "accounts" : (showExitNodes ? "exitNodes" : (showPeers ? "peers" : sectionBelowHeader()))
+    if (focusSection === "accounts" && tailscale.accounts.length <= 1) focusSection = tailscale.accountsAccessDenied ? "auth" : (showExitNodes ? "exitNodes" : (showPeers ? "peers" : sectionBelowHeader()))
+    if (focusSection === "peers" && !showPeers) focusSection = showExitNodes ? "exitNodes" : (tailscale.accountsAccessDenied ? "auth" : (tailscale.accounts.length > 1 ? "accounts" : sectionBelowHeader()))
+    if (focusSection === "exitNodes" && !showExitNodes) focusSection = showPeers ? "peers" : (tailscale.accountsAccessDenied ? "auth" : (tailscale.accounts.length > 1 ? "accounts" : sectionBelowHeader()))
   }
 
   function moveCursor(dx, dy) {
@@ -206,19 +223,20 @@ Panel {
     if (dy !== 0) {
       if (focusSection === "header") {
         if (dy > 0) {
-          if (tailscale.accountsAccessDenied) focusSection = "auth"
-          else if (tailscale.accounts.length > 1) focusSection = "accounts"
-          else if (showExitNodes) focusSection = "exitNodes"
-          else if (showPeers) focusSection = "peers"
+          if (showReceiver) focusSection = "receiver"
+          else if (sectionBelowReceiver() !== "") focusSection = sectionBelowReceiver()
         }
-      } else if (focusSection === "auth") {
+      } else if (focusSection === "receiver") {
         if (dy < 0) focusSection = "header"
+        else if (sectionBelowReceiver() !== "") focusSection = sectionBelowReceiver()
+      } else if (focusSection === "auth") {
+        if (dy < 0) focusSection = sectionBelowHeader()
         else if (tailscale.accounts.length > 1) focusSection = "accounts"
         else if (showExitNodes) focusSection = "exitNodes"
         else if (showPeers) focusSection = "peers"
       } else if (focusSection === "accounts") {
         if (dy < 0) {
-          if (accountIndex <= 0) focusSection = tailscale.accountsAccessDenied ? "auth" : "header"
+          if (accountIndex <= 0) focusSection = tailscale.accountsAccessDenied ? "auth" : sectionBelowHeader()
           else accountIndex--
         } else {
           if (accountIndex < tailscale.accounts.length - 1) accountIndex++
@@ -227,14 +245,14 @@ Panel {
         }
       } else if (focusSection === "peers") {
         if (dy < 0) {
-          if (peerIndex <= 0) focusSection = showExitNodes ? "exitNodes" : (tailscale.accounts.length > 1 ? "accounts" : (tailscale.accountsAccessDenied ? "auth" : "header"))
+          if (peerIndex <= 0) focusSection = showExitNodes ? "exitNodes" : (tailscale.accounts.length > 1 ? "accounts" : (tailscale.accountsAccessDenied ? "auth" : sectionBelowHeader()))
           else peerIndex--
         } else if (peerIndex < tailscale.peers.length - 1) {
           peerIndex++
         }
       } else if (focusSection === "exitNodes") {
         if (dy < 0) {
-          if (exitNodeIndex <= 0) focusSection = tailscale.accounts.length > 1 ? "accounts" : (tailscale.accountsAccessDenied ? "auth" : "header")
+          if (exitNodeIndex <= 0) focusSection = tailscale.accounts.length > 1 ? "accounts" : (tailscale.accountsAccessDenied ? "auth" : sectionBelowHeader())
           else exitNodeIndex--
         } else if (exitNodeIndex < exitNodes.length - 1) {
           exitNodeIndex++
@@ -251,6 +269,8 @@ Panel {
     ensureCursor()
     if (focusSection === "header") {
       tailscale.toggleTailscale()
+    } else if (focusSection === "receiver") {
+      tailscale.toggleReceiver()
     } else if (focusSection === "auth") {
       tailscale.authorizeTailscaleOperator()
     } else if (focusSection === "accounts") {
@@ -292,7 +312,8 @@ Panel {
   }
 
   function scrollCursorIntoView() {
-    if (focusSection === "peers" && peerColumn && peerIndex >= 0 && peerIndex < peerColumn.children.length) scrollItemIntoView(peerColumn.children[peerIndex])
+    if (focusSection === "receiver" && receiverRow) scrollItemIntoView(receiverRow)
+    else if (focusSection === "peers" && peerColumn && peerIndex >= 0 && peerIndex < peerColumn.children.length) scrollItemIntoView(peerColumn.children[peerIndex])
     else if (focusSection === "exitNodes" && exitNodeColumn && exitNodeIndex >= 0 && exitNodeIndex < exitNodeColumn.children.length) scrollItemIntoView(exitNodeColumn.children[exitNodeIndex])
   }
 
@@ -344,6 +365,11 @@ Panel {
     headerIndex = 0
   }
 
+  function setReceiverCursor() {
+    cursorActive = true
+    focusSection = "receiver"
+  }
+
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
@@ -359,6 +385,7 @@ Panel {
   onShowConnectionsChanged: ensureCursor()
   onShowPeersChanged: ensureCursor()
   onShowExitNodesChanged: ensureCursor()
+  onShowReceiverChanged: ensureCursor()
   onFilteredMullvadRegionsChanged: ensureCursor()
 
   Service {
@@ -524,6 +551,50 @@ Panel {
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
             wrapMode: Text.WordWrap
+          }
+
+          PanelSeparator {
+            id: receiverSeparator
+            visible: root.showReceiver
+            foreground: root.foreground
+          }
+
+          RowLayout {
+            id: receiverRow
+            visible: root.showReceiver
+            width: parent.width
+            spacing: Style.space(12)
+
+            ColumnLayout {
+              Layout.fillWidth: true
+              spacing: Style.space(2)
+
+              Text {
+                text: "Receive files automatically"
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.body
+              }
+
+              Text {
+                textFormat: Text.PlainText
+                text: tailscale.receiverActive ? "New files are saved automatically" : "Files wait until you collect them"
+                color: root.dim
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.bodySmall
+              }
+            }
+
+            ToggleSwitch {
+              id: receiverSwitch
+              accessibleName: "Receive files automatically"
+              checked: tailscale.receiverActive
+              busy: tailscale.receiverBusy
+              hasCursor: root.receiverHasCursor
+              foreground: root.foreground
+              onHovered: function(on) { if (on) root.setReceiverCursor() }
+              onToggled: tailscale.toggleReceiver()
+            }
           }
 
           CursorSurface {
