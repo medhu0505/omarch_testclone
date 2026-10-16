@@ -6,6 +6,8 @@ source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
 test_tmp=$(mktemp -d)
 export TMUX_TMPDIR=$test_tmp
+# Inside tmux, $TMUX would point bare tmux commands at the caller's server instead of one under TMUX_TMPDIR.
+unset TMUX
 socket="omarchy-tmux-config-$$"
 trap 'for server in "$socket" "packaged-$$" "migrated-$$" default; do tmux -L "$server" kill-server 2>/dev/null || true; done; rm -rf "$test_tmp"' EXIT
 
@@ -131,19 +133,22 @@ pass "non-xterm clipboard overrides do not block the xterm mosh capability"
 ms_override_kept() {
   local config="$test_tmp/ms-case/.config/tmux/tmux.conf"
   mkdir -p "${config%/*}"
-  printf '%s\n' "$1" >"$config"
+  printf '%s' "$1" >"$config"
   HOME="$test_tmp/ms-case" TMUX_LOG="$tmux_log" PATH="$test_tmp/bin:$PATH" bash -euo pipefail "$migration" >/dev/null
   [[ $(<"$config") == "$1" ]]
 }
 
+# No final newline, so each case is also the last line of the config.
 for kept in \
   'set -ag terminal-overrides ",*term*:RGB:Ms=custom"' \
-  'set -as terminal-overrides "tmux*:RGB, *:Ms=\E]52;%p1%s;%p2%s\007"' \
-  "set-option -ga terminal-overrides 'xterm-256color:Ms@'"; do
+  "set-option -ga terminal-overrides 'xterm-256color:Ms@'" \
+  'set -g terminal-overrides[5] "xterm*:Ms@"' \
+  $'set -as terminal-overrides \\\n  \',xterm*:Ms@\''; do
   ms_override_kept "$kept" || fail "an Ms override that applies under mosh is kept" "$kept"
 done
 for replaced in \
   'set -ag terminal-overrides ",xterm-kitty:RGB:Ms=custom"' \
+  'set -as terminal-overrides "tmux*:RGB, *:Ms=\E]52;%p1%s;%p2%s\007"' \
   'set -ag terminal-overrides ",*:RGB" # no :Ms=custom here' \
   'set -g @terminal-overrides ",xterm*:Ms=custom"'; do
   ! ms_override_kept "$replaced" || fail "an Ms override that does not apply under mosh gets the fix" "$replaced"

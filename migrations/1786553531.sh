@@ -6,14 +6,17 @@ tmux_config="$HOME/.config/tmux/tmux.conf"
 custom_ms_override() {
   local line entry pattern entries
 
-  while IFS= read -r line; do
+  # Without -r, read joins a line continued with a trailing backslash, as tmux does.
+  while IFS= read line || [[ -n $line ]]; do
     [[ $line =~ ^[[:space:]]*set(-option)?[[:space:]].*[[:space:]]terminal-overrides ]] || continue
     line=${line#*terminal-overrides}
+    line=${line#\[*\]}
     line=${line%%[[:space:]]#*}
+    line=${line#"${line%%[![:space:]]*}"}
+    # tmux keeps a space after a comma as part of the next pattern, so entries are not trimmed.
     IFS=, read -ra entries <<<"${line//[\"\']/}"
 
     for entry in "${entries[@]}"; do
-      entry=${entry#"${entry%%[![:space:]]*}"}
       pattern=${entry%%:*}
       if [[ :${entry#*:}: =~ :Ms[=@] ]] && [[ xterm == $pattern || xterm-256color == $pattern ]]; then
         return 0
