@@ -92,6 +92,14 @@ ShellRoot {
           harness.check(!service.metricsLoading && service.metricsError === "", "repeated detail refresh completes")
           Qt.quit()
         }
+      } else if (harness.scenario === "login-race") {
+        // The startup whoami has finished; this one starts before the login
+        // saves its token and is still running when the login refresh asks.
+        if (harness.tick === 20) { service.login(); service.refresh() }
+        if (harness.tick === 60) {
+          harness.check(service.authenticated && service.selectedAccountId === "a", "a refresh asked for during an older whoami still sees the new login")
+          Qt.quit()
+        }
       } else if (harness.scenario === "login") {
         if (harness.tick === 4) { service.login(); service.login() }
         if (harness.tick === 8) harness.check(service.loginCode === "TESTCODE", "pending login shows the device code")

@@ -19,7 +19,13 @@ def emit(value):
 def option(name, default=None):
     return args[args.index(name) + 1] if name in args else default
 
-if args == ['auth', 'whoami']:
+if args == ['auth', 'whoami'] and os.environ['CF_TEST_SCENARIO'] == 'login-race':
+    # Signed in only once the login below has saved its token, read as the
+    # call starts, as cf reads its config.
+    signed_in = os.path.exists(os.environ['CF_TEST_CALLS'] + '.token')
+    time.sleep(1.5)
+    emit({'authenticated': True, 'tokenValid': True, 'accounts': [{'id': 'a', 'name': 'A'}]} if signed_in else {'authenticated': False})
+elif args == ['auth', 'whoami']:
     emit({'authenticated': True, 'tokenValid': True, 'accounts': [
         {'id': 'a', 'name': 'A'}, {'id': 'b', 'name': 'B'}]})
 elif args[:2] in [['workers', 'list'], ['zones', 'list']]:
@@ -57,6 +63,8 @@ elif args == ['auth', 'login']:
     print('\n\t\tTo authorize Cloudflare CLI, please visit:\n\n\t\t  https://dash.cloudflare.com/oauth/device\n\n'
           '\t\tand enter the code:\n\n\t\t  TESTCODE\n\n\t\tYou have 10 minutes to approve this request.\n', flush=True)
     time.sleep(0.6)
+    if os.environ['CF_TEST_SCENARIO'] == 'login-race':
+        open(os.environ['CF_TEST_CALLS'] + '.token', 'w').close()
     emit({'success': True})
 elif args[1:3] == ['telemetry', 'query']:
     # cf 1.0 names it o11y; the old-cli scenario stands in for 0.15, which

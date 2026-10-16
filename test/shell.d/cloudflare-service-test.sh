@@ -33,8 +33,9 @@ cp "$ROOT/shell/plugins/panels/cloudflare/"{Service.qml,Model.js} "$scratch/"
 cp "$ROOT/shell/Commons/"{Util.qml,I18n.qml,Plural.js,Numbers.js} "$scratch/Commons/"
 printf 'singleton Util 1.0 Util.qml\nsingleton I18n 1.0 I18n.qml\n' >"$scratch/Commons/qmldir"
 
-for scenario in ${CF_TEST_SCENARIOS:-account detail repeat-account repeat-detail signout offline pagination pagination-failure login detail-timeout stubborn-detail errors-query old-cli}; do
+for scenario in ${CF_TEST_SCENARIOS:-account detail repeat-account repeat-detail signout offline pagination pagination-failure login login-race detail-timeout stubborn-detail errors-query old-cli}; do
   : >"$scratch/calls"
+  rm -f "$scratch/calls.token"
   if ! OMARCHY_PATH="$ROOT" HOME="$scratch/home" XDG_CONFIG_HOME="$scratch/home/.config" XDG_RUNTIME_DIR="$scratch/runtime" \
     QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software PATH="$scratch/bin:$PATH" \
     CF_TEST_SCENARIO="$scenario" CF_TEST_INSTALLED="$scratch/cf" CF_TEST_CALLS="$scratch/calls" FORCE_COLOR=1 \

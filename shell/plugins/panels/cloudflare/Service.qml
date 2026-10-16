@@ -78,6 +78,9 @@ Item {
 
   property string _whoamiOutput: ""
   property string _whoamiError: ""
+  // A refresh asked for while whoami runs, such as the one after sign-in,
+  // may need state that call started too early to see.
+  property bool _whoamiAgain: false
   property string _loginOutput: ""
   property string _usageOutput: ""
   property string _errorsOutput: ""
@@ -121,7 +124,11 @@ Item {
       }
       return
     }
-    if (whoamiProcess.running) return
+    if (whoamiProcess.running) {
+      _whoamiAgain = true
+      return
+    }
+    _whoamiAgain = false
     _whoamiOutput = ""
     _whoamiError = ""
     refreshing = true
@@ -596,6 +603,10 @@ Item {
     stdout: StdioCollector { id: whoamiStdout; waitForEnd: true; onStreamFinished: root._whoamiOutput = text }
     stderr: StdioCollector { id: whoamiStderr; waitForEnd: true; onStreamFinished: root._whoamiError = text }
     onExited: function(exitCode) {
+      if (root._whoamiAgain) {
+        Qt.callLater(root.refresh)
+        return
+      }
       root.refreshing = false
       var stdout = String(whoamiStdout.text || root._whoamiOutput || "")
       var stderr = String(whoamiStderr.text || root._whoamiError || "")
