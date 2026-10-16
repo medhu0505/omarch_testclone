@@ -171,9 +171,15 @@ if [[ $1 == "show" ]]; then
   [[ -n ${2:-} && -f "$POWERED_FILE.$2" ]] && state="$POWERED_FILE.$2"
   printf '\tPowered: %s\n' "$(cat "$state")"
 fi
-# A failed pair must not still trust the address.
-[[ $1 == "pair" && -n ${PAIR_FAILS:-} ]] && exit 1
+# A failed pair must not still trust the address. PAIR_FAILS is its exit status.
+[[ $1 == "pair" && -n ${PAIR_FAILS:-} ]] && exit "$PAIR_FAILS"
 exit 0
+SH
+
+cat >"$mock_bin/omarchy-notification-send" <<'SH'
+#!/bin/bash
+
+printf 'notification %s\n' "$*" >>"$BLUETOOTHCTL_LOG"
 SH
 
 cat >"$mock_bin/rfkill" <<'SH'
@@ -188,7 +194,7 @@ printf 'rfkill %s\n' "$*" >>"$BLUETOOTHCTL_LOG"
 exit 0
 SH
 
-chmod +x "$mock_bin/bluetoothctl" "$mock_bin/rfkill"
+chmod +x "$mock_bin/bluetoothctl" "$mock_bin/rfkill" "$mock_bin/omarchy-notification-send"
 
 # $ROOT/bin so omarchy-bluetooth-device resolves the real omarchy-bluetooth-power.
 bluetooth_run() {
@@ -286,18 +292,41 @@ grep -qx "connect AA:BB:CC:DD:EE:FF" "$pair_log" ||
   fail "bluetooth connects after a successful pair" "$(cat "$pair_log")"
 pass "bluetooth connects after a successful pair"
 
-failed_pair_log=$(PAIR_FAILS=1 bluetooth_run yes "$ROOT/bin/omarchy-bluetooth-device" pair AA:BB:CC:DD:EE:FF)
-grep -qx "pair AA:BB:CC:DD:EE:FF" "$failed_pair_log" ||
-  fail "bluetooth still attempts the pair when it will fail" "$(cat "$failed_pair_log")"
-pass "bluetooth still attempts the pair when it will fail"
+grep -q "^notification " "$pair_log" &&
+  fail "bluetooth does not notify after a successful pair" "$(cat "$pair_log")"
+pass "bluetooth does not notify after a successful pair"
 
-grep -q "^trust " "$failed_pair_log" &&
-  fail "bluetooth does not trust after a failed pair" "$(cat "$failed_pair_log")"
-pass "bluetooth does not trust after a failed pair"
+# The panel launches the helper detached, so a failed pair has to say so itself.
+# 124 is timeout giving up on the 20 second pair.
+for status in 1 124; do
+  failed_pair_log="$device_tmp/log"
+  echo yes >"$POWERED_FILE"
+  : >"$failed_pair_log"
+  PATH="$mock_bin:$ROOT/bin:$PATH" BLUETOOTHCTL_LOG="$failed_pair_log" PAIR_FAILS=$status \
+    "$ROOT/bin/omarchy-bluetooth-device" pair AA:BB:CC:DD:EE:FF 2>"$device_tmp/stderr" &&
+    fail "bluetooth exits non-zero after a failed pair (status $status)"
+  pass "bluetooth exits non-zero after a failed pair (status $status)"
 
-grep -q "^connect " "$failed_pair_log" &&
-  fail "bluetooth does not connect after a failed pair" "$(cat "$failed_pair_log")"
-pass "bluetooth does not connect after a failed pair"
+  grep -qx "pair AA:BB:CC:DD:EE:FF" "$failed_pair_log" ||
+    fail "bluetooth still attempts the pair when it will fail (status $status)" "$(cat "$failed_pair_log")"
+  pass "bluetooth still attempts the pair when it will fail (status $status)"
+
+  grep -q "^trust " "$failed_pair_log" &&
+    fail "bluetooth does not trust after a failed pair (status $status)" "$(cat "$failed_pair_log")"
+  pass "bluetooth does not trust after a failed pair (status $status)"
+
+  grep -q "^connect " "$failed_pair_log" &&
+    fail "bluetooth does not connect after a failed pair (status $status)" "$(cat "$failed_pair_log")"
+  pass "bluetooth does not connect after a failed pair (status $status)"
+
+  grep -q "^notification .*Bluetooth pairing failed" "$failed_pair_log" ||
+    fail "bluetooth notifies after a failed pair (status $status)" "$(cat "$failed_pair_log")"
+  pass "bluetooth notifies after a failed pair (status $status)"
+done
+
+grep -q "timed out" "$device_tmp/stderr" ||
+  fail "bluetooth names a pairing timeout as one" "$(cat "$device_tmp/stderr")"
+pass "bluetooth names a pairing timeout as one"
 
 # Blocking hits every radio at once, so the read has to span them too. A bare
 # bluetoothctl show reports the default controller and misses a powered dongle.
