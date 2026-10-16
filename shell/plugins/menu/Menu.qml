@@ -1059,10 +1059,16 @@ Item {
       }
       // Rebuilding recreates every row, and a click pressed on one just
       // before is lost with it. The menu was already built from the previous
-      // results when it opened, so leave it alone unless one changed.
-      var changed = JSON.stringify(nextWhen) !== JSON.stringify(root.whenResults)
-          || JSON.stringify(nextChecked) !== JSON.stringify(root.checkedResults)
-          || JSON.stringify(nextDisabled) !== JSON.stringify(root.disabledResults)
+      // results when it opened, so leave it alone unless one changed. Guards
+      // report in whatever order they finish, so compare by id, not by order.
+      var differs = function(next, shown) {
+        var ids = Object.keys(next)
+        if (ids.length !== Object.keys(shown).length) return true
+        return ids.some(function(id) { return next[id] !== shown[id] })
+      }
+      var changed = differs(nextWhen, root.whenResults)
+          || differs(nextChecked, root.checkedResults)
+          || differs(nextDisabled, root.disabledResults)
       root.whenResults = nextWhen
       root.checkedResults = nextChecked
       root.disabledResults = nextDisabled

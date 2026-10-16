@@ -517,11 +517,11 @@ for (let depth = 1; depth > 0; guardExitBodyEnd++) {
 }
 const guardExited = new Function('root', 'guardProc', 'Qt',
   `return function(exitCode, exitStatus) {${menuQml.slice(guardExitBodyStart, guardExitBodyEnd - 1)}}`)
-function finishGuardBatch(output, { opened = true } = {}) {
+function finishGuardBatch(output, { opened = true, shownWhen = { 'system.lock': true } } = {}) {
   const root = {
     opened,
     guardsPending: false,
-    whenResults: { 'system.lock': true },
+    whenResults: shownWhen,
     checkedResults: { 'style.dark': false },
     disabledResults: { 'setup.wifi': false },
     rebuilds: 0,
@@ -543,6 +543,10 @@ for (const [output, name, results, expected] of [
   assertDeepEqual(root[results], expected, `menu keeps the changed ${name} result from a guard batch`)
 }
 assertEqual(finishGuardBatch('system.lock:w:0\n', { opened: false }).rebuilds, 0, 'menu does not rebuild rows while it is closed')
+// Guards run side by side and report in whatever order they finish.
+const twoShown = { 'system.lock': true, 'system.suspend': true }
+assertEqual(finishGuardBatch('system.suspend:w:1\nsystem.lock:w:1\nstyle.dark:c:0\nsetup.wifi:d:0\n', { shownWhen: twoShown }).rebuilds, 0, 'menu keeps its rows when a guard batch repeats its results in another order')
+assertEqual(finishGuardBatch('system.lock:w:1\nsystem.hibernate:w:1\nstyle.dark:c:0\nsetup.wifi:d:0\n', { shownWhen: twoShown }).rebuilds, 1, 'menu rebuilds its rows when a guard batch answers for a different row')
 // A menu with nothing selectable in it has no cursor, and Return must not
 // conjure one onto a disabled row just because rows exist.
 assert(
