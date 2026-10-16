@@ -75,4 +75,17 @@ assertDeepEqual(
 )
 
 assertDeepEqual(monitor.parseDisplays('{'), { displays: [], enabledDisplayCount: 0 }, 'monitor handles invalid display JSON')
+
+const twoDisplays = [
+  { name: 'eDP-1', enabled: true, focused: true, width: 2880, height: 1800, scale: 2 },
+  { name: 'DP-1', enabled: true, focused: false, width: 2560, height: 1440, scale: 1.25 }
+]
+assertEqual(monitor.scaleDisplay(twoDisplays, 'DP-1', 'eDP-1').scale, 1.25,
+  'monitor uses the selected, unfocused display scale')
+assertEqual(monitor.scaleDisplay(twoDisplays, '', 'eDP-1').name, 'eDP-1',
+  'monitor starts with the focused display')
+assertEqual(monitor.scaleDisplay(twoDisplays, 'DP-1', 'eDP-1').width, 2560,
+  'monitor uses the selected display mode for scale presets')
+assertEqual(monitor.scaleDisplay([twoDisplays[0], { ...twoDisplays[1], enabled: false }], 'DP-1', 'eDP-1').name, 'eDP-1',
+  'monitor falls back when the selected display is disabled')
 JS
