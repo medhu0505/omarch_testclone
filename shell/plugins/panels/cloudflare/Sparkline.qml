@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // A small line chart with a soft fill underneath, for a metric's recent
 // history. Scales to its own max, so the shape reads even when values are
@@ -9,7 +10,7 @@ Canvas {
   id: root
 
   property var values: []
-  property color color: Color.foreground
+  property color color: Commons.Color.foreground
   property real lineWidth: 1.25
   property real fillOpacity: 0.16
 

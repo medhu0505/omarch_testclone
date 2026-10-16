@@ -13,6 +13,12 @@ for (const method of ['open', 'close', 'toggle', 'refresh', 'login', 'status']) 
   assert(new RegExp(`function ${method}\\(\\)`).test(panelSource), `cloudflare exposes ${method} over IPC`)
 }
 
+// Qt 6.12's QtQuick Color type shadows the unqualified palette singleton.
+for (const file of ['Panel.qml', 'CloudflareIcon.qml', 'Sparkline.qml', 'Service.qml']) {
+  const source = fs.readFileSync(root + '/shell/plugins/panels/cloudflare/' + file, 'utf8')
+  assert(!/(^|[^.\w])Color\./m.test(source), `cloudflare ${file} reads the palette through Commons.Color`)
+}
+
 // Exercise the actual metrics-column binding with partial telemetry results.
 const metricsVisibility = panelSource.match(/visible: (cloudflare\.metricsError === ""[^\n]*)/)
 assert(metricsVisibility, 'cloudflare metrics column has a testable visibility binding')

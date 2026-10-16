@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "Model.js" as Model
 
@@ -35,8 +36,8 @@ Panel {
   property int listRowIndex: 0
   property bool cursorActive: false
 
-  readonly property color foreground: bar ? bar.foreground : Color.foreground
-  readonly property color urgent: bar ? bar.urgent : Color.urgent
+  readonly property color foreground: bar ? bar.foreground : Commons.Color.foreground
+  readonly property color urgent: bar ? bar.urgent : Commons.Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.55)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property bool signedIn: cloudflare.authenticated
@@ -941,7 +942,7 @@ Panel {
       width: Style.space(3)
       height: parent.height - Style.space(10)
       radius: width / 2
-      color: Color.accent
+      color: Commons.Color.accent
     }
 
     RowLayout {
