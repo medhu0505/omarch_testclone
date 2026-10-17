@@ -116,6 +116,8 @@ case ${1:-} in
 esac
 
 if [[ $theme_switch == false ]]; then
+  # The login's still starts its theme loop once any intro has handed it back.
+  trap 'omarchy-theme-bg-loop-apply 9>&- || true' EXIT
   mkdir -p "$(dirname "$marker")"
   exec 9>"$state_home/omarchy/background-intro.lock"
   flock 9

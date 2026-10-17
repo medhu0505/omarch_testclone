@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# omarchy:summary=Point the background at the current still's theme loop, or back at the still
+# omarchy:args=[--resolve-only [background]|--still background]
+# omarchy:hidden=true
+
+set -euo pipefail
+
+# A still at backgrounds/<stem>.<ext> moves with backgrounds/loops/<stem>.mp4,
+# the way it opens with backgrounds/intros/<stem>.mp4. While the loop plays the
+# background link names the loop, so OWE plays it like any video background;
+# theme memory, intros and the picker map it back to its still.
+current_background_link="$HOME/.local/state/omarchy/current/background"
+toggle="$HOME/.local/state/omarchy/toggles/background-loops-off"
+video_extensions=(mp4 m4v mov webm mkv avi)
+still_extensions=(jpg jpeg png bmp webp)
+
+still_for() {
+  local background="$1" stem extension still
+
+  if [[ ${background%/*} != */loops ]]; then
+    printf '%s\n' "$background"
+    return
+  fi
+  stem=${background##*/}
+  stem=${stem%.*}
+  for extension in "${still_extensions[@]}"; do
+    still="${background%/loops/*}/$stem.$extension"
+    if [[ -f $still ]]; then
+      printf '%s\n' "$still"
+      return
+    fi
+  done
+  printf '%s\n' "$background"
+}
+
+resolve_loop() {
+  local background stem extension loop
+
+  background=$(readlink -f "${1:-$current_background_link}" 2>/dev/null) || return 1
+  [[ -f $background ]] || return 1
+  case ${background,,} in
+    *.jpg | *.jpeg | *.png | *.bmp | *.webp) ;;
+    *) return 1 ;;
+  esac
+
+  stem=${background##*/}
+  stem=${stem%.*}
+  for extension in "${video_extensions[@]}"; do
+    loop="${background%/*}/loops/$stem.$extension"
+    if [[ -f $loop ]]; then
+      printf '%s\n' "$loop"
+      return 0
+    fi
+  done
+  return 1
+}
+
+animations_off() {
+  [[ $(hyprctl -j getoption animations:enabled 2>/dev/null | jq -r '.bool' 2>/dev/null) == "false" ]]
+}
+
+case ${1:-} in
+  --resolve-only)
+    resolve_loop "${2:-}" || true
+    exit 0
+    ;;
+  --still)
+    still_for "${2:-}"
+    exit 0
+    ;;
+esac
+
+current=$(readlink -f "$current_background_link" 2>/dev/null) || exit 0
+still=$(still_for "$current")
+target="$still"
+if [[ ! -f $toggle ]] && ! animations_off; then
+  target=$(resolve_loop "$still" || printf '%s\n' "$still")
+fi
+
+if [[ $target != "$current" ]]; then
+  ln -nsf "$target" "$current_background_link"
+  # Nothing watches the link for the shell; OWE follows it on its own.
+  omarchy-shell -q background set "$target" || true
+fi

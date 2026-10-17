@@ -22,6 +22,10 @@ else
   # Get current background from symlink
   if [[ -L $CURRENT_BACKGROUND_LINK ]]; then
     CURRENT_BACKGROUND=$(readlink "$CURRENT_BACKGROUND_LINK")
+    # A playing theme loop stands for its still.
+    if [[ ${CURRENT_BACKGROUND%/*} == */loops ]]; then
+      CURRENT_BACKGROUND=$(omarchy-theme-bg-loop-apply --still "$CURRENT_BACKGROUND")
+    fi
   else
     # Default to first background if no symlink exists
     CURRENT_BACKGROUND=""
