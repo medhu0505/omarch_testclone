@@ -15,6 +15,11 @@ magick -size 20x10 xc:red "$stage/still.gif"
 magick -size 20x10 xc:red "$stage/still.png"
 magick -size 20x10 xc:red "$stage/still.jpg"
 magick -size 20x10 xc:red "$stage/still.webp"
+# Brackets in a name must stay literal: a frame suffix would make ImageMagick
+# glob this to its siblings and print both their sizes.
+magick -size 20x10 xc:red "$stage/wallpaper[12].png"
+magick -size 40x30 xc:blue "$stage/wallpaper1.png"
+magick -size 50x40 xc:green "$stage/wallpaper2.png"
 
 run_node_test <<'JS'
 const fs = require('fs')
@@ -27,7 +32,7 @@ const probe = new Function('sizeProbe', 'sizeQueue', probeBody)
 const finished = new Function('root', 'sizeProbe', 'sizeProbeOut', 'exitCode', 'path', exitedBody)
 const decode = new Function('root', 'sized', 'decodeWidth', 'decodeHeight', 'Qt', 'path', decodeBody)
 
-for (const name of ['animated [wallpaper] ü.gif', 'still.gif', 'still.png', 'still.jpg', 'still.webp']) {
+for (const name of ['animated [wallpaper] ü.gif', 'still.gif', 'still.png', 'still.jpg', 'still.webp', 'wallpaper[12].png']) {
   const media = path.join(process.env.BACKGROUND_SIZE_TEST_DIR, name)
   const sizeProbe = { running: false }
   probe(sizeProbe, [media])

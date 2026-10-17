@@ -193,10 +193,10 @@ Item {
   function probeNextSize() {
     if (sizeProbe.running || sizeQueue.length === 0) return
     sizeProbe.path = sizeQueue[0]
-    // The shell draws the first frame of animated images. Probing every frame
-    // concatenates dimensions (20x10 twice becomes "20 1020 10"), which can
-    // make PreserveAspectCrop decode a tiny wallpaper at an enormous size.
-    sizeProbe.command = ["magick", "identify", "-ping", "-format", "%w %h", sizeProbe.path + "[0]"]
+    // Animated images print one line per frame and the parser reads the first,
+    // the frame the shell draws. Without the newline 20x10 twice reads
+    // "20 1020 10"; a "[0]" suffix would turn brackets in the name into a glob.
+    sizeProbe.command = ["magick", "identify", "-ping", "-format", "%w %h\n", sizeProbe.path]
     sizeProbe.running = true
   }
 
