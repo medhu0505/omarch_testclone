@@ -11,18 +11,74 @@ if [[ ${1:-} == "--no-osd" ]]; then
   shift
 fi
 
-detect_apple_display_devices() {
-  local devices=()
-  local path=""
+hid_nodes=()
+for path in "$device_root"/usb/hiddev* "$device_root"/hiddev*; do
+  [[ -e $path ]] && hid_nodes+=("$path")
+done
 
-  for path in "$device_root"/usb/hiddev* "$device_root"/hiddev*; do
-    [[ -e $path ]] && devices+=("$path")
+# Detection costs about half a second, so cache the result per set of HID
+# nodes. A display that connects or disconnects changes the set. A failed read
+# or write drops the cache and detects again.
+device_cache=""
+if [[ -n ${XDG_RUNTIME_DIR:-} ]]; then
+  device_cache="$XDG_RUNTIME_DIR/omarchy-brightness-display-apple.devices"
+fi
+
+detect_apple_display_devices() {
+  (( ${#hid_nodes[@]} > 0 )) || return 1
+
+  sudo asdcontrol --detect "${hid_nodes[@]}" 2>/dev/null |
+    awk -F: '/: USB Monitor - SUPPORTED\./{ print $1 }'
+}
+
+# Trust the cache only for the same node set, and only for devices in that set,
+# so asdcontrol never gets a path that detection did not see.
+cached_apple_display_devices() {
+  local cached=()
+  local device=""
+
+  [[ -n $device_cache && -r $device_cache ]] || return 1
+  mapfile -t cached <"$device_cache"
+  (( ${#cached[@]} > 1 )) || return 1
+  # Quoted on purpose: an unquoted right side is a glob pattern, not a string.
+  [[ ${cached[0]} == "${hid_nodes[*]}" ]] || return 1
+
+  for device in "${cached[@]:1}"; do
+    [[ " ${hid_nodes[*]} " == *" $device "* ]] || return 1
   done
 
-  (( ${#devices[@]} > 0 )) || return 1
+  printf '%s\n' "${cached[@]:1}"
+}
 
-  sudo asdcontrol --detect "${devices[@]}" 2>/dev/null |
-    awk -F: '/: USB Monitor - SUPPORTED\./{ print $1 }'
+find_apple_display_devices() {
+  local found=()
+
+  if cached_apple_display_devices; then
+    return 0
+  fi
+
+  mapfile -t found < <(detect_apple_display_devices)
+  (( ${#found[@]} > 0 )) || return 1
+  if [[ -n $device_cache ]]; then
+    printf '%s\n' "${hid_nodes[*]}" "${found[@]}" >"$device_cache.$$" &&
+      mv -f "$device_cache.$$" "$device_cache"
+  fi
+  printf '%s\n' "${found[@]}"
+}
+
+load_devices() {
+  mapfile -t devices < <(find_apple_display_devices)
+  if (( ${#devices[@]} == 0 )); then
+    echo "No Apple Display HID device found" >&2
+    exit 1
+  fi
+}
+
+retry_with_fresh_devices() {
+  if [[ -n $device_cache ]]; then
+    rm -f "$device_cache"
+  fi
+  load_devices
 }
 
 current_brightness() {
@@ -48,14 +104,27 @@ current_brightness() {
   printf '%s\n' "$(( total / count ))"
 }
 
-mapfile -t devices < <(detect_apple_display_devices)
-if (( ${#devices[@]} == 0 )); then
-  echo "No Apple Display HID device found" >&2
-  exit 1
-fi
+group_brightness() {
+  if ! current_brightness "${devices[@]}"; then
+    retry_with_fresh_devices
+    current_brightness "${devices[@]}"
+  fi
+}
+
+write_group_brightness() {
+  local device=""
+  local write_failed=0
+
+  for device in "${devices[@]}"; do
+    sudo asdcontrol "$device" -- "$1" >/dev/null || write_failed=1
+  done
+  (( write_failed == 0 ))
+}
+
+load_devices
 
 if (( $# == 0 )); then
-  current_brightness "${devices[@]}"
+  group_brightness
   exit
 fi
 
@@ -64,21 +133,32 @@ if [[ $step =~ ^([0-9]+)%-$ ]]; then
   step="-${BASH_REMATCH[1]}%"
 fi
 if [[ $step =~ ^([+-])([0-9]+)%$ ]]; then
-  brightness="$(current_brightness "${devices[@]}")" || exit 1
+  brightness="$(group_brightness)" || exit 1
   if [[ ${BASH_REMATCH[1]} == "+" ]]; then
     target=$(( brightness + BASH_REMATCH[2] ))
   else
     target=$(( brightness - BASH_REMATCH[2] ))
   fi
+  step="$target%"
+fi
+if [[ $step =~ ^(-?[0-9]+)%$ ]]; then
+  target="${BASH_REMATCH[1]}"
   (( target < 0 )) && target=0
   (( target > 100 )) && target=100
   step="$target%"
 fi
 
-write_failed=0
-for device in "${devices[@]}"; do
-  sudo asdcontrol "$device" -- "$step" >/dev/null || write_failed=1
-done
-(( write_failed == 0 )) || exit 1
+if ! write_group_brightness "$step"; then
+  retry_with_fresh_devices
+  write_group_brightness "$step" || exit 1
+fi
 
-(( no_osd )) || omarchy-osd -i brightness -p "$(current_brightness "${devices[@]}")"
+# The OSD shows the written percentage, which saves a read of every display.
+# Input in another form is passed through to asdcontrol, so read it back.
+if (( ! no_osd )); then
+  if [[ $step =~ ^([0-9]+)%$ ]]; then
+    omarchy-osd -i brightness -p "${BASH_REMATCH[1]}"
+  else
+    omarchy-osd -i brightness -p "$(group_brightness)"
+  fi
+fi

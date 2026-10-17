@@ -106,6 +106,24 @@ if grep -F "asdcontrol $test_tmp/dev/usb/hiddev7 -- 55%" "$call_log" >/dev/null;
 fi
 pass "Apple displays share one brightness"
 
+(( $(grep -c '^asdcontrol --detect ' "$call_log") == 1 )) || fail "Apple display detection is cached"
+pass "Apple display detection is cached"
+
+apple_cache="$runtime_dir/omarchy-brightness-display-apple.devices"
+printf '%s\n' "$test_tmp/dev/usb/hiddev10 $test_tmp/dev/usb/hiddev5 $test_tmp/dev/usb/hiddev7" \
+  "$test_tmp/dev/usb/hiddev7" >"$apple_cache"
+brightness=$(APPLE_MONITOR=1 run_brightness --monitor DP-1) || fail "a stale Apple display cache is detected again"
+[[ $brightness == "50" ]] || fail "a stale Apple display cache is detected again" "actual: $brightness"
+grep -Fx "$test_tmp/dev/usb/hiddev7" "$apple_cache" >/dev/null && fail "a stale Apple display cache is replaced"
+pass "a stale Apple display cache is detected again"
+
+printf '%s\n' "$test_tmp/dev/usb/hiddev10 $test_tmp/dev/usb/hiddev5 $test_tmp/dev/usb/hiddev7" \
+  "$test_tmp/dev/sda" >"$apple_cache"
+: >"$call_log"
+APPLE_MONITOR=1 run_brightness --monitor DP-1 >/dev/null
+grep -F "asdcontrol $test_tmp/dev/sda" "$call_log" >/dev/null && fail "a cached path outside the HID nodes is not trusted"
+pass "a cached path outside the HID nodes is not trusted"
+
 if APPLE_MONITOR=1 ASD_WRITE_FAIL_DEVICE="$test_tmp/dev/usb/hiddev10" \
   run_brightness --no-osd --monitor DP-1 55%; then
   fail "Apple group brightness reports a partial write failure"
