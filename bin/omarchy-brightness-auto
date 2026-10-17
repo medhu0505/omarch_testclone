@@ -162,16 +162,22 @@ smooth_lux() {
 
 # Sensor readings jitter by a fraction of a percent in steady light. A change
 # under 1% moves the curve by about 0.1 brightness points, so it counts as no
-# change. Fractions are dropped, and a value that is not a number always counts.
+# change. Readings compare in millionths, so a fractional reading in dim light
+# keeps its precision. A value that is not a number always counts.
 reading_changed() {
-  local old="${1%%.*}"
-  local new="${2%%.*}"
+  local reading=""
+  local fraction=""
+  local values=()
   local difference=0
 
-  [[ $old =~ ^[0-9]+$ && $new =~ ^[0-9]+$ ]] || return 0
-  difference=$(( new - old ))
+  for reading in "$1" "$2"; do
+    [[ $reading =~ ^([0-9]+)(\.([0-9]*))?$ ]] || return 0
+    fraction="${BASH_REMATCH[3]}000000"
+    values+=("$(( 10#${BASH_REMATCH[1]} * 1000000 + 10#${fraction:0:6} ))")
+  done
+  difference=$(( values[1] - values[0] ))
   (( difference < 0 )) && difference=$(( -difference ))
-  (( difference * 100 > old ))
+  (( difference * 100 > values[0] ))
 }
 
 target_with_offset() {
@@ -187,10 +193,6 @@ needs_adjustment() {
 
   (( difference < 0 )) && difference=$(( -difference ))
   (( difference >= change_threshold ))
-}
-
-adopt_manual_offset() {
-  printf '%s\n' "$(( $1 + $3 - $2 ))"
 }
 
 step_toward() {
@@ -328,6 +330,7 @@ control_session() {
   }
   offset=$(( current - base_target ))
   last_auto="$current"
+  target="$current"
   log_state "controlling $monitor from $sensor at $current%"
 
   monitors_changed=0
@@ -348,8 +351,10 @@ control_session() {
       log_state "lost sensor $sensor"
       return 1
     }
-    # Steady light: the reading is about the same and the smoothing has settled.
-    if [[ $smoothed_lux == $lux ]] && ! reading_changed "$last_raw" "$raw"; then
+    # Steady light: the reading is about the same, the smoothing has settled,
+    # and no write is still pending.
+    if [[ $smoothed_lux == $lux ]] && ! reading_changed "$last_raw" "$raw" &&
+      ! needs_adjustment "$target" "$last_auto"; then
       continue
     fi
     last_raw="$raw"
@@ -366,11 +371,15 @@ control_session() {
       log_state "lost brightness control for $monitor"
       return 1
     }
+    # A manual change is the new baseline for the light at this moment, so no
+    # unfinished ramp or smoothing moves the display away from it.
     if (( current != last_auto )); then
-      offset="$(adopt_manual_offset "$offset" "$last_auto" "$current")"
+      smoothed_lux="$lux"
+      base_target="$(curve_brightness "$lux")" || return 1
+      offset=$(( current - base_target ))
       last_auto="$current"
-      target="$(target_with_offset "$base_target" "$offset")"
-      needs_adjustment "$target" "$last_auto" || continue
+      target="$current"
+      continue
     fi
 
     next="$(step_toward "$target" "$last_auto")"

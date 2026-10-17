@@ -23,6 +23,9 @@ Panel {
   property bool automaticBrightnessEnabled: false
   property bool automaticBrightnessActive: false
   property bool automaticBrightnessBusy: false
+  // Stay visible while enabled, so the switch can turn it off when the sensor
+  // or its display is gone.
+  readonly property bool automaticBrightnessShown: automaticBrightnessSupported || automaticBrightnessEnabled
   property string internalMonitor: ""
   property string externalMonitor: ""
   property string focusedMonitor: ""
@@ -80,7 +83,7 @@ Panel {
   readonly property var visibleSections: {
     var list = []
     if (brightnessAvailable) list.push("brightness")
-    if (automaticBrightnessSupported) list.push("automatic-brightness")
+    if (automaticBrightnessShown) list.push("automatic-brightness")
     list.push("textsize")
     list.push("scale")
     if (displays.length > 1) list.push("monitors")
@@ -255,7 +258,7 @@ Panel {
   }
 
   function toggleAutomaticBrightness() {
-    if (!root.automaticBrightnessSupported || root.automaticBrightnessBusy) return
+    if (!root.automaticBrightnessShown || root.automaticBrightnessBusy) return
 
     root.automaticBrightnessEnabled = !root.automaticBrightnessEnabled
     root.automaticBrightnessBusy = true
@@ -408,7 +411,6 @@ Panel {
   }
 
   onBrightnessAvailableChanged: clampCursor()
-  onAutomaticBrightnessSupportedChanged: clampCursor()
   onDisplaysChanged: clampCursor()
   onScaleValuesChanged: clampCursor()
   onVisibleSectionsChanged: clampCursor()
@@ -717,13 +719,13 @@ Panel {
           }
 
           PanelSeparator {
-            visible: root.automaticBrightnessSupported
+            visible: root.automaticBrightnessShown
             foreground: root.bar.foreground
           }
 
           Toggle {
             id: automaticBrightnessToggle
-            visible: root.automaticBrightnessSupported
+            visible: root.automaticBrightnessShown
             width: parent.width
             label: "Automatic brightness"
             description: root.automaticBrightnessActive ? "Following ambient light" : "Adjust to ambient light"

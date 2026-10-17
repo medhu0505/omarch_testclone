@@ -38,6 +38,8 @@ reading_changed 172800 172900 && fail "sensor jitter under 1% is no change"
 reading_changed 172800 175000 || fail "a light change over 1% is a change"
 reading_changed 5 6 || fail "a small change in dim light is a change"
 reading_changed 12.5 bad || fail "a reading that is not a number is a change"
+reading_changed 0.1 0.9 || fail "a fractional change in dark light is a change"
+reading_changed 12.5 12.55 && fail "fractional jitter under 1% is no change"
 pass "automatic brightness sensor and curve behavior"
 
 (
@@ -83,6 +85,78 @@ pass "automatic brightness sensor and curve behavior"
     fail "a contended automatic write retries without advancing its brightness state"
 )
 pass "automatic brightness retries a contended write"
+
+(
+  sleep_count="$test_tmp/steady-retry-sleep-count"
+  steady_channel="$test_tmp/steady-retry-channel"
+  write_count="$test_tmp/steady-retry-write-count"
+  steady_writes="$test_tmp/steady-retry-writes"
+  printf '0\n' >"$sleep_count"
+  printf '200\n' >"$steady_channel"
+  printf '0\n' >"$write_count"
+  : >"$steady_writes"
+  smoothing_new_weight=1
+
+  read_lux() { cat "$steady_channel"; }
+  read_brightness() { printf '30\n'; }
+  select_monitor() { printf 'eDP-1\n'; }
+  find_illuminance_channel() { printf '%s\n' "$steady_channel"; }
+  log_state() { :; }
+  wait_for_tick() {
+    local count=""
+    read -r count <"$sleep_count"
+    (( count < 2 )) || return 1
+    printf '%s\n' "$(( count + 1 ))" >"$sleep_count"
+    printf '240\n' >"$steady_channel"
+  }
+  write_brightness() {
+    local count=""
+    read -r count <"$write_count"
+    printf '%s\n' "$2" >>"$steady_writes"
+    printf '%s\n' "$(( count + 1 ))" >"$write_count"
+    (( count > 0 )) || return 75
+  }
+
+  control_session ignored generic eDP-1
+  [[ $(cat "$steady_writes") == $'32\n32' ]] ||
+    fail "a contended automatic write retries after the light settles"
+)
+pass "automatic brightness retries a contended write after the light settles"
+
+(
+  sleep_count="$test_tmp/manual-sleep-count"
+  manual_channel="$test_tmp/manual-channel"
+  manual_brightness="$test_tmp/manual-brightness"
+  manual_writes="$test_tmp/manual-writes"
+  printf '0\n' >"$sleep_count"
+  printf '200\n' >"$manual_channel"
+  printf '30\n' >"$manual_brightness"
+  : >"$manual_writes"
+
+  read_lux() { cat "$manual_channel"; }
+  read_brightness() { cat "$manual_brightness"; }
+  select_monitor() { printf 'eDP-1\n'; }
+  find_illuminance_channel() { printf '%s\n' "$manual_channel"; }
+  log_state() { :; }
+  wait_for_tick() {
+    local count=""
+    read -r count <"$sleep_count"
+    (( count < 8 )) || return 1
+    printf '%s\n' "$(( count + 1 ))" >"$sleep_count"
+    (( count == 0 )) && printf '3200\n' >"$manual_channel"
+    (( count == 1 )) && printf '40\n' >"$manual_brightness"
+    true
+  }
+  write_brightness() {
+    printf '%s\n' "$2" >>"$manual_writes"
+    printf '%s\n' "$2" >"$manual_brightness"
+  }
+
+  control_session ignored generic eDP-1
+  [[ $(cat "$manual_brightness") == "40" ]] ||
+    fail "a manual change during a ramp is the new baseline" "writes: $(paste -sd ' ' "$manual_writes")"
+)
+pass "a manual change during a ramp is the new baseline"
 
 indexed_sensor="$test_tmp/iio-indexed/iio:device0"
 mkdir -p "$indexed_sensor"
