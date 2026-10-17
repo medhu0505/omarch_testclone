@@ -97,7 +97,7 @@ jobs:
               pacman -Syu --noconfirm --needed \
                 desktop-file-utils diffutils expac ffmpeg gcc git gum imagemagick inetutils jq less \
                 libxkbcommon lua mise nodejs openssh plocate python python-gobject ripgrep socat sudo \
-                tmux which >/dev/null &&
+                tmux which xdg-utils >/dev/null &&
                 pacman -S --noconfirm shadow >/dev/null && break
               [ "$attempt" -lt 3 ] || { echo "::error::the test container could not install its tools"; exit 1; }
               sleep 15
