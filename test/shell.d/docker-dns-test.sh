@@ -132,13 +132,21 @@ old_rules=$(printf '%s\n' \
   "ufw allow from 172.16.0.0/12 to 172.17.0.1 port 53 proto udp comment 'allow-docker-dns'" \
   "ufw allow from 192.168.0.0/16 to 172.17.0.1 port 53 proto udp comment 'allow-docker-dns'")
 
-run() { # starting rules; prints what the migration printed
-  printf '%s\n' "$1" >"$test_dir/rules"
-  : >"$test_dir/sudo"
-  : >"$test_dir/systemctl"
+migrate() {
   PATH="$stub_bin:$PATH" UFW_RULES="$test_dir/rules" SUDO_CALLS="$test_dir/sudo" \
     SYSTEMCTL_CALLS="$test_dir/systemctl" OMARCHY_DOCKER_DNS_MARKER="$test_dir/marker" \
+    OMARCHY_DOCKER_DNS_DAEMON_JSON="$test_dir/daemon.json" \
+    OMARCHY_DOCKER_DNS_RESOLVED_DROPIN="$test_dir/20-docker-dns.conf" \
     bash -euo pipefail "$migration"
+}
+
+run() { # starting rules, then optionally the installed daemon.json and drop-in; prints what the migration printed
+  printf '%s\n' "$1" >"$test_dir/rules"
+  cp "${2:-$ROOT/etc/docker/daemon.json}" "$test_dir/daemon.json"
+  cp "${3:-$ROOT/etc/systemd/resolved.conf.d/20-docker-dns.conf}" "$test_dir/20-docker-dns.conf"
+  : >"$test_dir/sudo"
+  : >"$test_dir/systemctl"
+  migrate
 }
 
 # What a fresh install's firewall.sh adds, run through the same stub.
@@ -161,8 +169,7 @@ if UFW_FAILS_ON=allow run "$old_rules" >/dev/null 2>&1; then
 fi
 [[ ! -e $test_dir/marker ]] || fail "a failed rule move was marked as done"
 grep -qF "to 172.17.0.1 " "$test_dir/rules" || fail "an interrupted run lost the old rule it still had to move"
-UFW_RULES="$test_dir/rules" SUDO_CALLS="$test_dir/sudo" SYSTEMCTL_CALLS="$test_dir/systemctl" \
-  OMARCHY_DOCKER_DNS_MARKER="$test_dir/marker" PATH="$stub_bin:$PATH" bash -euo pipefail "$migration" >/dev/null
+migrate >/dev/null
 grep -qF "to 172.17.0.1 " "$test_dir/rules" && fail "a rerun after an interrupted move left the old rule"
 [[ $(grep -v "$localsend" "$test_dir/rules") == "$fresh_rules" ]] ||
   fail "a rerun after an interrupted move did not finish it" "$(cat "$test_dir/rules")"
@@ -207,3 +214,29 @@ DOCKER_ACTIVE=1 run "$old_rules" >"$test_dir/out"
 grep -qF "sudo systemctl restart docker" "$test_dir/out" || fail "a running Docker was not flagged for a restart"
 ! grep -q "restart docker" "$test_dir/systemctl" || fail "a running Docker was restarted, stopping its containers"
 pass "a running Docker is flagged for a restart, not restarted"
+
+rm "$test_dir/marker"
+run "$old_rules" >/dev/null
+[[ $(<"$test_dir/daemon.json") == "$(<"$ROOT/etc/docker/daemon.json")" ]] ||
+  fail "the migration rewrote a daemon.json the package had already moved"
+pass "a daemon.json the package moved is left alone"
+
+# pacman keeps an edited copy and writes the new defaults to a .pacnew beside it.
+jq '. + {"data-root": "/srv/docker", "dns": ["172.17.0.1", "9.9.9.9"], "bip": "172.17.0.1/16"}' \
+  "$ROOT/etc/docker/daemon.json" >"$test_dir/edited-daemon.json"
+printf '[Resolve]\nDNSStubListenerExtra = 172.17.0.1\nDNSStubListenerExtra=10.0.0.1\n' >"$test_dir/edited-dropin.conf"
+rm "$test_dir/marker"
+run "$old_rules" "$test_dir/edited-daemon.json" "$test_dir/edited-dropin.conf" >/dev/null
+[[ $(jq -c '[.dns, .bip, ."data-root"]' "$test_dir/daemon.json") == "[[\"$gateway\",\"9.9.9.9\"],\"$bip\",\"/srv/docker\"]" ]] ||
+  fail "an edited daemon.json was not moved onto $gateway with the owner's settings kept" "$(cat "$test_dir/daemon.json")"
+[[ $(<"$test_dir/20-docker-dns.conf") == $'[Resolve]\nDNSStubListenerExtra='"$gateway"$'\nDNSStubListenerExtra=10.0.0.1' ]] ||
+  fail "an edited resolved drop-in was not moved onto $gateway with the owner's settings kept" "$(cat "$test_dir/20-docker-dns.conf")"
+pass "edited copies of daemon.json and the drop-in are moved, keeping the owner's settings"
+
+echo '{ "dns": ["172.17.0.1"], ' >"$test_dir/broken-daemon.json"
+rm "$test_dir/marker"
+run "$old_rules" "$test_dir/broken-daemon.json" >"$test_dir/out" 2>&1
+grep -qF "point its dns and bip at $gateway by hand" "$test_dir/out" || fail "a daemon.json jq could not read was not reported"
+[[ $(<"$test_dir/daemon.json") == "$(<"$test_dir/broken-daemon.json")" && -e $test_dir/marker ]] ||
+  fail "a daemon.json jq could not read was changed, or held up the migration"
+pass "a daemon.json that is not JSON is reported and left alone"
