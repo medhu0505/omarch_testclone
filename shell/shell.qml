@@ -414,7 +414,7 @@ ShellRoot {
     if (typeof mutator !== "function") return false
     return shell.mutateShellConfig(function(config) {
       var scoped = { bar: JSON.parse(JSON.stringify(config.bar || {})) }
-      mutator(scoped)
+      if (mutator(scoped) === false) return false
       if (Util.isPlainObject(scoped.bar)) config.bar = JSON.parse(JSON.stringify(scoped.bar))
     })
   }
