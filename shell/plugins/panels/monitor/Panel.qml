@@ -39,9 +39,11 @@ Panel {
   //                  horizontal row from j/k's perspective. h/l moves
   //                  between presets, identical to bluetooth's header.
   //   "monitors"   - vertical display row list; each display row carries a
-  //                  row of 0/90/180/270-degree rotation pills (left, one
-  //                  click to any degree) and right-click enables or
-  //                  disables the display; j/k walks each row.
+  //                  row of 0/90/180/270-degree rotation pills. Mouse: click a
+  //                  degree, right-click enables or disables the display.
+  //                  Keyboard: j/k walks rows, h/l points a degree (starting
+  //                  at the row's current one), Enter applies the pointed
+  //                  degree (a disabled row toggles on and off instead).
   // Mouse hover on a target updates root state via the components' `hovered`
   // signal so keyboard cursor and pointer share one highlight.
   readonly property var scalePresets: ["1", "1.25", "1.6", "2", "3", "4"]
@@ -59,6 +61,9 @@ Panel {
   }
   property string focusSection: "scale"
   property int selectedIndex: 0
+  // Degree the h/l cursor points at while a display row is selected; it is
+  // independent of selectedIndex, which keeps pointing the row's pill.
+  property int rotationPointer: 0
   property bool cursorActive: false
 
   // Text size slider — curated macOS-style notches (px). The panel snaps to
@@ -113,38 +118,62 @@ Panel {
     if (sIdx < 0) {
       focusSection = sections[0]
       selectedIndex = sectionFirstIndex(focusSection)
-      return
-    }
-    var inSingleRow = sectionIsSingleRow(focusSection)
-    var max = inSingleRow ? 0 : sectionCount(focusSection) - 1
-
-    if (delta > 0) {
-      if (!inSingleRow && selectedIndex < max) { selectedIndex = selectedIndex + 1; return }
-      if (sIdx < sections.length - 1) {
-        focusSection = sections[sIdx + 1]
-        selectedIndex = sectionFirstIndex(focusSection)
-      }
     } else {
-      if (!inSingleRow && selectedIndex > 0) { selectedIndex = selectedIndex - 1; return }
-      if (sIdx > 0) {
-        var prev = sections[sIdx - 1]
-        focusSection = prev
-        // Coming up from below — land on the last navigable row of the prev
-        // section, or its sentinel for single-row sections.
-        selectedIndex = sectionIsSingleRow(prev) ? sectionFirstIndex(prev) : sectionCount(prev) - 1
+      var inSingleRow = sectionIsSingleRow(focusSection)
+      var max = inSingleRow ? 0 : sectionCount(focusSection) - 1
+
+      if (delta > 0) {
+        if (!inSingleRow && selectedIndex < max) {
+          selectedIndex = selectedIndex + 1
+        } else if (sIdx < sections.length - 1) {
+          focusSection = sections[sIdx + 1]
+          selectedIndex = sectionFirstIndex(focusSection)
+        }
+      } else {
+        if (!inSingleRow && selectedIndex > 0) {
+          selectedIndex = selectedIndex - 1
+        } else if (sIdx > 0) {
+          var prev = sections[sIdx - 1]
+          focusSection = prev
+          // Coming up from below — land on the last navigable row of the prev
+          // section, or its sentinel for single-row sections.
+          selectedIndex = sectionIsSingleRow(prev) ? sectionFirstIndex(prev) : sectionCount(prev) - 1
+        }
       }
     }
+    if (focusedDisplaysRowValid()) syncRotationPointer()
+  }
+
+  function focusedDisplaysRowValid() {
+    return focusSection === "monitors" && selectedIndex >= 0 && selectedIndex < displays.length
   }
 
   // h/l: in scale section, walks the preset row; everywhere else, no-op
   // because adjustBrightness handles horizontal motion on the brightness
   // slider.
   function moveCursorH(delta) {
-    if (focusSection !== "scale") return
-    var next = selectedIndex + delta
-    if (next < 0) next = 0
-    if (next > scaleValues.length - 1) next = scaleValues.length - 1
-    selectedIndex = next
+    if (focusSection === "scale") {
+      var next = selectedIndex + delta
+      if (next < 0) next = 0
+      if (next > scaleValues.length - 1) next = scaleValues.length - 1
+      selectedIndex = next
+      return
+    }
+    if (focusSection === "monitors" && selectedIndex >= 0 && selectedIndex < displays.length) {
+      rotationPointer = (rotationPointer + delta + rotationValues.length) % rotationValues.length
+    }
+  }
+
+  // Land the h/l pointer on the row's currently applied degree so the first
+  // Enter at a new row is a no-op, not a surprise flip.
+  function syncRotationPointer() {
+    if (focusSection !== "monitors" || selectedIndex < 0 || selectedIndex >= displays.length) return
+    var display = displays[selectedIndex]
+    var degree = display ? Model.transformToDegrees(display.transform || 0) : 0
+    for (var i = 0; i < rotationValues.length; i++) {
+      if (rotationValues[i] === degree) { rotationPointer = i; return }
+    }
+    rotationPointer = 0
   }
 
   function adjustBrightness(delta) {
@@ -160,7 +189,15 @@ Panel {
     }
     if (focusSection === "monitors" && selectedIndex >= 0 && selectedIndex < displays.length) {
       var d = displays[selectedIndex]
-      if (d) toggleDisplay(d.name, d.enabled)
+      if (!d) return
+      if (d.enabled) {
+        // Enter applies the pointed degree (usually equal to the row's
+        // current one, since syncRotationPointer starts there).
+        setRotation(d.name, rotationValues[rotationPointer])
+        syncRotationPointer()
+      } else {
+        toggleDisplay(d.name, d.enabled)
+      }
     }
     // brightness: no separate action; the slider value is the action.
   }
@@ -397,6 +434,7 @@ Panel {
         selectedIndex = 0
       }
       cursorActive = false
+      syncRotationPointer()
     }
   }
 
@@ -857,6 +895,7 @@ Panel {
               model: root.displays
 
               Item {
+                id: rotationBlock
                 required property var modelData
                 required property int index
 
@@ -961,6 +1000,8 @@ Panel {
     opacity: (display && display.enabled) ? 1.0 : 0.4
 
     active: display && root.displayRotation(display) === degree
+    hasCursor: root.cursorActive && root.focusSection === "monitors"
+      && root.selectedIndex === rotationBlock.index && root.rotationPointer === degreeIndex
     onClicked: if (display && display.enabled)
       root.setRotation(display.name, degree)
   }
