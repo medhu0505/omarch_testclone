@@ -253,15 +253,48 @@ grep -q "transform" "$monitor_lua" && fail "a failed apply must not persist" "$(
 ! grep -q "transform" "$monitor_lua" || fail "a failed apply leaves the config untouched" "$(cat "$monitor_lua")"
 pass "a failed live apply does not persist"
 
-# A persist the system cannot complete is never reported as success: with the
-# config directory read-only, the apply goes through but the command must fail
-# so a panel (or caller) can revert the live change.
+# A persist the system cannot complete is never reported as success. The
+# failed-apply test above left a failing hyprctl stub behind, so the first
+# thing to do is put a successful apply back - the point of this test is the
+# persist leg, not the apply leg.
+cat >"$stub_bin/hyprctl" <<'SH'
+#!/bin/bash
+
+if [[ $1 == "monitors" && $2 == "all" && $3 == "-j" ]]; then
+  printf '%s' "$(cat "$FAKE_MONITORS")"
+elif [[ $1 == "eval" ]]; then
+  printf '%s\n' "$2" >"$OMARCHY_TEST_HYPRCTL_EVAL_OUT"
+else
+  exit 1
+fi
+SH
+chmod +x "$stub_bin/hyprctl"
+monitors_with 0
+
+# (a) Updating the transform of an existing rule needs sed to complete its
+# in-place rewrite; a read-only config directory makes that impossible.
+cat >"$monitor_lua" <<'LUA'
+hl.monitor({ output = "HDMI-A-1", scale = 1, position = auto, mode = preferred })
+LUA
 chmod a-w "$home_dir/.config/hypr"
 set +e
 out=$(run_rotation HDMI-A-1 180 2>&1); rc=$?
-chmod u+w "$home_dir/.config/hypr"
 set -e
-[[ $rc -ne 0 ]] || fail "a failed persist is reported as failure" "$out"
-[[ $out == *"Could not"* ]] || fail "a failed persist names the trouble" "$out"
+chmod u+w "$home_dir/.config/hypr"
+[[ $rc -ne 0 ]] || fail "a failed in-place update reports failure" "$out"
+[[ $out == *"Could not"* ]] || fail "a failed in-place update names the trouble" "$out"
+
+# (b) Appending a brand-new rule (no rule for the output yet) needs the file
+# itself to accept writes; a read-only file makes that impossible.
+cat >"$monitor_lua" <<'LUA'
+hl.monitor({ output = "eDP-1", scale = 1, position = 0x0, mode = preferred })
+LUA
+chmod a-w "$monitor_lua"
+set +e
+out=$(run_rotation HDMI-A-1 180 2>&1); rc=$?
+set -e
+chmod u+w "$monitor_lua"
+[[ $rc -ne 0 ]] || fail "a failed append reports failure" "$out"
+[[ $out == *"Could not"* ]] || fail "a failed append names the trouble" "$out"
 pass "a persist the system cannot complete is reported as failure"
 

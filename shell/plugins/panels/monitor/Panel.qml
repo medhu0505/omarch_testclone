@@ -55,9 +55,13 @@ Panel {
   // Process does not search PATH for bare program names.
   property string rotationBin: ""
   // Rotation action bookkeeping: if the action exits failed, the panel reverts
-  // the live change so state and config never disagree.
+  // the live change so state and config never disagree. The prev value is the
+  // RAW wl_output_transform (0-7), because the degree vocabulary cannot express
+  // flipped orientations (4-7) and a failed save must restore exactly what was
+  // there.
   property string rotationActionName: ""
-  property int rotationActionPrev: -1
+  property int rotationActionPrevRaw: 0
+  property bool rotationActionValid: false
   readonly property var scaleValues: {
     for (var i = 0; i < displays.length; i++) {
       var display = displays[i]
@@ -304,12 +308,20 @@ Panel {
     if (!name || !rotationBin) return
     // Absolute argv, no shell: the display name is untrusted input (it comes
     // from hyprctl state), so it must never be spliced into a command line.
-    var prev = -1
+    // A panel action already in flight owns the onExited bookkeeping, so a
+    // second rotation request is rejected instead of overwriting it.
+    if (actionProc.running) {
+      console.log("[monitor] ignoring rotation for " + name + " while a panel action is in flight")
+      return
+    }
+    var prevRaw = 0
+    var found = false
     for (var i = 0; i < displays.length; i++) {
-      if (displays[i] && displays[i].name === name) { prev = root.displayRotation(displays[i]); break }
+      if (displays[i] && displays[i].name === name) { prevRaw = Number(displays[i].transform) || 0; found = true; break }
     }
     rotationActionName = name
-    rotationActionPrev = prev >= 0 ? prev : 0
+    rotationActionPrevRaw = prevRaw
+    rotationActionValid = found
     actionProc.command = [rotationBin, name, String(degrees)]
     if (!actionProc.running) actionProc.running = true
   }
@@ -539,13 +551,17 @@ Panel {
       if (!rotationActionName) return
       if (exitCode === 0) { rotationActionName = ""; return }
       var name = rotationActionName
-      var prev = rotationActionPrev
+      var prevRaw = rotationActionPrevRaw
+      var valid = rotationActionValid
       rotationActionName = ""
       // A failed action leaves no live change behind: put the display back.
-      console.log("[monitor] rotation action exited", exitCode, "- reverting", name, "to", prev)
-      if (rotationBin) {
-        actionProc.command = [rotationBin, name, String(prev)]
-        if (!actionProc.running) actionProc.running = true
+      // Restore the raw wl_output_transform (flipped values 4-7 included) via
+      // a live-only eval - the config already holds the pre-action rule.
+      console.log("[monitor] rotation action exited", exitCode, "- restoring raw transform", prevRaw, "on", name)
+      if (valid) {
+        var output = '"' + String(name).replace(/[\\"]/g, "\\$&") + '"'
+        actionProc.command = ["hyprctl", "eval", "hl.monitor({ output = " + output + ", transform = " + prevRaw + " })"]
+        actionProc.running = true
       }
     }
   }
