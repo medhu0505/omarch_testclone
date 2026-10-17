@@ -15,9 +15,10 @@
 // resolved once, at load.
 //
 // Nor may it take much stack. Qt 6.12 runs a QProcess child on a stack carved
-// out of the parent's own, about 8KB above the parent's frame in clone(), and
-// a line buffer there runs over the return address the parent resumes on. The
-// line is built in pages mapped for the one call instead.
+// out of the parent's own, SIGSTKSZ bytes above the parent's frame in clone():
+// glibc sizes that for the CPU at run time, 8KB on many, and a line buffer there
+// runs over the return address the parent resumes on. The line is built in
+// pages mapped for the one call instead.
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <errno.h>
