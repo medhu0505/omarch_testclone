@@ -24,17 +24,21 @@ cat >"$stub/curl" <<'SH'
 #!/bin/bash
 for argument in "$@"; do
   case "$argument" in
-    file=@*) cp "${argument#file=@}" "$UPLOAD_CAPTURE" ;;
+    file=@*) cat "${argument#file=@}" >"$UPLOAD_CAPTURE" ;;
   esac
 done
 printf 'https://logs.omarchy.org/example\n'
 SH
 chmod +x "$stub"/*
 
-# A PATH with the tools the script uses and nothing from the checkout: this is the live ISO's
-# situation, where omarchy-cmd-present does not exist.
+# Only the tools the install upload uses, not /usr/bin: an installed Omarchy has omarchy-cmd-present
+# there, which would hide exactly the live ISO's situation this test is about.
+for command in cat cmp date stat uname; do
+  ln -s "$(command -v "$command")" "$stub/$command"
+done
+
 run_without_omarchy_helpers() {
-  UPLOAD_CAPTURE="$tmpdir/uploaded" PATH="$stub:/usr/bin:/bin" bash "$ROOT/bin/omarchy-upload-log" install
+  UPLOAD_CAPTURE="$tmpdir/uploaded" PATH="$stub" "$BASH" "$ROOT/bin/omarchy-upload-log" install
 }
 
 status=0
