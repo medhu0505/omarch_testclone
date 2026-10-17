@@ -38,11 +38,16 @@ Panel {
   //   "scale"      - 6 Button scale presets; treated as a single
   //                  horizontal row from j/k's perspective. h/l moves
   //                  between presets, identical to bluetooth's header.
-  //   "monitors"   - vertical display row list for enabling/disabling displays;
-  //                  j/k walks each row.
+  //   "monitors"   - vertical display row list; left-click rotates a display
+  //                  through 0/90/180/270 degrees, right-click enables or
+  //                  disables it; j/k walks each row.
   // Mouse hover on a target updates root state via the components' `hovered`
   // signal so keyboard cursor and pointer share one highlight.
   readonly property var scalePresets: ["1", "1.25", "1.6", "2", "3", "4"]
+  // Per-display rotation in degrees. Hyprland's wl_output_transform maps
+  // 0 -> 0, 90 -> 1, 180 -> 2, 270 -> 3 (omarchy-hyprland-monitor-rotation
+  // applies and persists it).
+  readonly property var rotationValues: [0, 90, 180, 270]
   readonly property var scaleValues: {
     for (var i = 0; i < displays.length; i++) {
       var display = displays[i]
@@ -248,6 +253,24 @@ Panel {
     root.brightnessSetQueued = false
     setBrightnessProc.command = ["omarchy-brightness-display", "--no-osd", "--monitor", root.focusedMonitor, percent + "%"]
     setBrightnessProc.running = true
+  }
+
+  function setRotation(name, degrees) {
+    if (!name) return
+    actionProc.command = ["bash", "-c", "omarchy-hyprland-monitor-rotation " + name + " " + degrees]
+    if (!actionProc.running) actionProc.running = true
+  }
+
+  function displayRotation(display) {
+    return Model.transformToDegrees(display ? display.transform : 0)
+  }
+
+  function nextRotation(display) {
+    var current = root.displayRotation(display)
+    for (var i = 0; i < root.rotationValues.length; i++) {
+      if (root.rotationValues[i] === current) return root.rotationValues[(i + 1) % root.rotationValues.length]
+    }
+    return 90
   }
 
   function previewBrightness(value) {
@@ -818,6 +841,17 @@ Panel {
               fontFamily: root.bar.fontFamily
             }
 
+            Text {
+              textFormat: Text.PlainText
+              text: Commons.I18n.t("monitor.displaysHint")
+              color: root.bar.foreground
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.caption
+              font.bold: true
+              letterSpacing: 1.2
+              opacity: 0.7
+            }
+
             Repeater {
               model: root.displays
 
@@ -873,6 +907,7 @@ Panel {
 
     readonly property bool isFocused: display && display.focused
     readonly property bool canToggle: display && (!display.enabled || root.enabledDisplayCount > 1)
+    readonly property int rotation: Model.transformToDegrees(display ? display.transform : 0)
 
     hasCursor: root.cursorActive && root.focusSection === "monitors" && root.selectedIndex === rowIndex
     onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(monitorRow)
@@ -911,7 +946,19 @@ Panel {
         font.family: root.bar.fontFamily
         font.pixelSize: Style.font.body
         elide: Text.ElideRight
-        width: parent.width - Style.space(22) - Style.space(14) - Style.space(16)
+        width: parent.width - Style.space(22) - Style.space(26) - Style.space(14) - Style.space(16)
+        anchors.verticalCenter: parent.verticalCenter
+      }
+
+      Text {
+        textFormat: Text.PlainText
+        text: monitorRow.rotation !== 0 ? Commons.I18n.formatNumber(monitorRow.rotation) + "°" : ""
+        color: Style.color.accent
+        font.family: root.bar.fontFamily
+        font.pixelSize: Style.font.body
+        font.bold: true
+        width: Style.space(26)
+        horizontalAlignment: Text.AlignRight
         anchors.verticalCenter: parent.verticalCenter
       }
 
@@ -930,13 +977,21 @@ Panel {
     MouseArea {
       anchors.fill: parent
       hoverEnabled: true
-      cursorShape: monitorRow.canToggle ? Qt.PointingHandCursor : Qt.ArrowCursor
+      cursorShape: monitorRow.display ? Qt.PointingHandCursor : Qt.ArrowCursor
       onContainsMouseChanged: if (containsMouse && !root.reflowingText) {
         root.cursorActive = true
         root.focusSection = "monitors"
         root.selectedIndex = monitorRow.rowIndex
       }
-      onClicked: if (monitorRow.canToggle) root.toggleDisplay(monitorRow.display.name, monitorRow.display.enabled)
+      onClicked: function(mouse) {
+        if (mouse.button === Qt.RightButton) {
+          if (monitorRow.canToggle) root.toggleDisplay(monitorRow.display.name, monitorRow.display.enabled)
+          return
+        }
+        if (monitorRow.display && monitorRow.display.enabled) {
+          root.setRotation(monitorRow.display.name, root.nextRotation(monitorRow.display))
+        }
+      }
     }
   }
 }
