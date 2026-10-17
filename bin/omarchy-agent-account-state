@@ -439,7 +439,7 @@ def recover_home(provider: str, home: Path) -> dict[str, Any] | None:
   # A surviving CLI may still be writing credentials after its parent died.
   if home_in_use(provider, home):
     return None
-  if not identity(provider, home)["accountId"]:
+  if not identity(provider, home).get("accountId"):
     return None
   # Claude writes its identity and credentials separately. An identity
   # alone does not mean the OAuth exchange finished.
@@ -460,7 +460,7 @@ def recover_home(provider: str, home: Path) -> dict[str, Any] | None:
     # Another recovery or removal may have changed the home while we waited.
     receipt = read_json(home / LOGIN_RECEIPT)
     found = identity(provider, home)
-    if not home.is_dir() or not isinstance(receipt, dict) or not found["accountId"]:
+    if not home.is_dir() or not isinstance(receipt, dict) or not found.get("accountId"):
       return None
     if home_in_use(provider, home):
       return None
@@ -471,7 +471,7 @@ def recover_home(provider: str, home: Path) -> dict[str, Any] | None:
     entry = receipt.get("entry")
     if not isinstance(entry, dict) or entry.get("home") != str(home) or entry.get("id") != home.name:
       return None
-    if any(identity(provider, account_home(provider, a))["accountId"] == found["accountId"] for a in registry["accounts"]):
+    if any(identity(provider, account_home(provider, a)).get("accountId") == found["accountId"] for a in registry["accounts"]):
       # A retry may already have registered this login under another home.
       shutil.rmtree(home)
       return None
