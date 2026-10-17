@@ -102,8 +102,9 @@ persist_rotation() {
   local monitor_lua output_re
   monitor_lua="$(monitor_lua_path)"
   if [[ -z $monitor_lua ]]; then
-    echo "Applied; no $HOME/.config/hypr/monitors.lua to persist to"
-    return 0
+    echo "Applied; no $HOME/.config/hypr/monitors.lua to persist to" >&2
+    # 2 = applied, runtime-only (no config). Supported, not an error.
+    return 2
   fi
 
   # Serialize writes; two rapid panel clicks would otherwise both decide to
@@ -128,16 +129,16 @@ persist_rotation() {
         -e "/^[[:space:]]*hl\.monitor[[:space:]]*\([[:space:]]*\{/!b" \
         -e "/output[[:space:]]*=[[:space:]]*\"${output_re}\"/!b" \
         -e "s/(transform[[:space:]]*=[[:space:]]*)[0-9]+/\\1${transform}/" \
-        "$monitor_lua"
+        "$monitor_lua" || { echo "Could not update the rotation rule in $monitor_lua" >&2; return 1; }
     else
       sed -i -E \
         -e "/^[[:space:]]*hl\.monitor[[:space:]]*\([[:space:]]*\{/!b" \
         -e "/output[[:space:]]*=[[:space:]]*\"${output_re}\"/!b" \
         -e "s/[[:space:]]\}[[:space:]]*\)$/, transform = ${transform} })/" \
-        "$monitor_lua"
+        "$monitor_lua" || { echo "Could not update the rotation rule in $monitor_lua" >&2; return 1; }
     fi
   else
-    printf '\nhl.monitor({ output = "%s", transform = %s })\n' "$name" "$transform" >>"$monitor_lua"
+    printf '\nhl.monitor({ output = "%s", transform = %s })\n' "$name" "$transform" >>"$monitor_lua" || { echo "Could not write the rotation rule to $monitor_lua" >&2; return 1; }
   fi
 
   if (( locked )); then
@@ -153,8 +154,14 @@ set_rotation() {
   }
 
   # Apply first; only persist what actually took effect.
+  # Persist exit 1 = hard failure (reported); exit 2 = no config, a supported
+  # runtime-only mode (noted on stderr, still a success).
   apply_rotation "$name" "$transform" || return 1
-  persist_rotation "$name" "$transform"
+  local rc=0
+  persist_rotation "$name" "$transform" || rc=$?
+  if [[ $rc -eq 1 ]]; then
+    return 1
+  fi
   echo "Rotation $(rotation_for "$transform") degrees for $name"
 }
 

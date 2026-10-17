@@ -54,6 +54,10 @@ Panel {
   // Absolute path of the rotation CLI, resolved once at start-up; QuickShell's
   // Process does not search PATH for bare program names.
   property string rotationBin: ""
+  // Rotation action bookkeeping: if the action exits failed, the panel reverts
+  // the live change so state and config never disagree.
+  property string rotationActionName: ""
+  property int rotationActionPrev: -1
   readonly property var scaleValues: {
     for (var i = 0; i < displays.length; i++) {
       var display = displays[i]
@@ -300,6 +304,12 @@ Panel {
     if (!name || !rotationBin) return
     // Absolute argv, no shell: the display name is untrusted input (it comes
     // from hyprctl state), so it must never be spliced into a command line.
+    var prev = -1
+    for (var i = 0; i < displays.length; i++) {
+      if (displays[i] && displays[i].name === name) { prev = root.displayRotation(displays[i]); break }
+    }
+    rotationActionName = name
+    rotationActionPrev = prev >= 0 ? prev : 0
     actionProc.command = [rotationBin, name, String(degrees)]
     if (!actionProc.running) actionProc.running = true
   }
@@ -525,6 +535,19 @@ Panel {
     id: actionProc
     stdout: StdioCollector { waitForEnd: true }
     onRunningChanged: if (!running) root.refresh()
+    onExited: function(exitCode) {
+      if (!rotationActionName) return
+      if (exitCode === 0) { rotationActionName = ""; return }
+      var name = rotationActionName
+      var prev = rotationActionPrev
+      rotationActionName = ""
+      // A failed action leaves no live change behind: put the display back.
+      console.log("[monitor] rotation action exited", exitCode, "- reverting", name, "to", prev)
+      if (rotationBin) {
+        actionProc.command = [rotationBin, name, String(prev)]
+        if (!actionProc.running) actionProc.running = true
+      }
+    }
   }
 
   // Applies text size via the CLI, which rewrites the shell override file;

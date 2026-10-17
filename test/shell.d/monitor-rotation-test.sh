@@ -253,3 +253,15 @@ grep -q "transform" "$monitor_lua" && fail "a failed apply must not persist" "$(
 ! grep -q "transform" "$monitor_lua" || fail "a failed apply leaves the config untouched" "$(cat "$monitor_lua")"
 pass "a failed live apply does not persist"
 
+# A persist the system cannot complete is never reported as success: with the
+# config directory read-only, the apply goes through but the command must fail
+# so a panel (or caller) can revert the live change.
+chmod a-w "$home_dir/.config/hypr"
+set +e
+out=$(run_rotation HDMI-A-1 180 2>&1); rc=$?
+chmod u+w "$home_dir/.config/hypr"
+set -e
+[[ $rc -ne 0 ]] || fail "a failed persist is reported as failure" "$out"
+[[ $out == *"Could not"* ]] || fail "a failed persist names the trouble" "$out"
+pass "a persist the system cannot complete is reported as failure"
+
