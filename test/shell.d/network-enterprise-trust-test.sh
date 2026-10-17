@@ -51,6 +51,8 @@ if [[ $2 == "edit" ]]; then cat >"$TEST_NM_LOG.stdin"; fi
         TEST_NM_LOG: log, TEST_NM_FAIL: failAction || '',
         TEST_NM_HANG: hangAction || '', TEST_NM_IGNORE_TERM: ignoreTerm ? '1' : '0'}
     })
+    // Rejected trust exits before the password is read, so writing it can race into EPIPE.
+    if (result.error && result.error.code === 'EPIPE') delete result.error
     const count = fs.existsSync(log + '.count') ? Number(fs.readFileSync(log + '.count', 'utf8')) : 0
     const calls = []
     for (let i = 1; i <= count; i++) calls.push(fs.readFileSync(log + '.' + i, 'utf8').split('\0').slice(0, -1))
