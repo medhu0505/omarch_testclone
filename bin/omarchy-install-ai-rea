@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# omarchy:summary=Install REA, the reverse-engineering CLI and MCP server for agents
+
+set -e
+
+echo "Installing REA..."
+mise use -g rea
+version=$(rea --version)
+
+# Setup registers the command it was launched from, and mise's shim launches
+# REA from inside one version's directory, which an update removes from under
+# the agents (https://github.com/morluto/rea/issues/4847). Run through npx,
+# setup registers `npx -y rea-agents@<version> mcp` instead, pinned to the
+# release mise just installed. It asks which agents to register with, and
+# backs up each configuration it changes.
+if npx -y "rea-agents@$version" setup; then
+  echo ""
+  echo "REA has been installed."
+else
+  echo ""
+  echo "REA has been installed, but no agent was set up."
+  echo "Run 'npx -y rea-agents@$version setup' to register it with your agents."
+fi
