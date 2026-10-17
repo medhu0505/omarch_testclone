@@ -232,12 +232,23 @@ pass "Omarchy 4 upgrade reports an aborted run instead of exiting silently"
 # can answer, which the check above still pins in the source.
 cleanup_dir=$(mktemp -d)
 mkdir -p "$cleanup_dir/bin"
+# The stub's refresh marks its start and holds until cleanup revokes, or for a
+# second if cleanup is waiting on it, so an orphaned refresh always logs last.
 cat >"$cleanup_dir/bin/sudo" <<'EOF'
 #!/bin/bash
+if [[ $* == "-n true" ]]; then
+  : >"$CLEANUP_LOG.refreshing"
+  for _ in {1..20}; do
+    ! grep -qx 'sudo -k' "$CLEANUP_LOG" 2>/dev/null || break
+    sleep 0.05
+  done
+fi
 printf 'sudo %s\n' "$*" >>"$CLEANUP_LOG"
 EOF
 chmod +x "$cleanup_dir/bin/sudo"
+keepalive_block=$(awk '$0 == "trap cleanup_on_exit EXIT" { inside = 1; next } inside { print } inside && $0 == "fi" { exit }' "$upgrade_to_quattro")
 {
+  printf 'set -euo pipefail\n'
   printf 'cleanup_on_exit() {\n'
   sed 's|/usr/bin/sudo|sudo|g' <<<"$cleanup_body"
   printf '}\n'
@@ -246,6 +257,8 @@ chmod +x "$cleanup_dir/bin/sudo"
   printf 'upgrade_started=0\n'
   printf 'upgrade_completed=0\n'
   printf 'restore_hyprland_config_reload() { :; }\n'
+  printf '%s\n' "$keepalive_block"
+  printf '(( EUID == 0 )) || for _ in {1..100}; do [[ ! -e $CLEANUP_LOG.refreshing ]] || break; sleep 0.05; done\n'
   printf 'false || cleanup_on_exit\n'
   printf 'echo "cleanup returned instead of exiting"\n'
 } >"$cleanup_dir/run.sh"
@@ -259,8 +272,13 @@ CLEANUP_LOG="$cleanup_dir/calls" PATH="$cleanup_dir/bin:$PATH" \
 if (( EUID == 0 )); then
   skip "cleanup invalidates the cached credential on exit (root clears nothing)"
 else
-  grep -qx 'sudo -k' "$cleanup_dir/calls" ||
-    fail "cleanup invalidates the cached credential on exit" "$(cat "$cleanup_dir/out")"
+  # A refresh that outlived the keepalive would log after the revoke.
+  for _ in {1..100}; do
+    ! grep -qx 'sudo -n true' "$cleanup_dir/calls" || break
+    sleep 0.05
+  done
+  grep -qx 'sudo -n true' "$cleanup_dir/calls" && [[ $(tail -n 1 "$cleanup_dir/calls") == "sudo -k" ]] ||
+    fail "cleanup invalidates the cached credential after the last refresh" "$(cat "$cleanup_dir/calls" "$cleanup_dir/out")"
 fi
 if grep -q 'cleanup returned instead of exiting' "$cleanup_dir/out"; then
   fail "cleanup exits rather than returning"
