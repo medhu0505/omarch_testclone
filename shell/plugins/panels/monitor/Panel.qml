@@ -51,6 +51,9 @@ Panel {
   // 0 -> 0, 90 -> 1, 180 -> 2, 270 -> 3 (omarchy-hyprland-monitor-rotation
   // applies and persists it).
   readonly property var rotationValues: [0, 90, 180, 270]
+  // Absolute path of the rotation CLI, resolved once at start-up; QuickShell's
+  // Process does not search PATH for bare program names.
+  property string rotationBin: ""
   readonly property var scaleValues: {
     for (var i = 0; i < displays.length; i++) {
       var display = displays[i]
@@ -294,10 +297,10 @@ Panel {
   }
 
   function setRotation(name, degrees) {
-    if (!name) return
-    // Direct argv, no shell: the display name is untrusted input (it comes
+    if (!name || !rotationBin) return
+    // Absolute argv, no shell: the display name is untrusted input (it comes
     // from hyprctl state), so it must never be spliced into a command line.
-    actionProc.command = ["omarchy-hyprland-monitor-rotation", name, String(degrees)]
+    actionProc.command = [rotationBin, name, String(degrees)]
     if (!actionProc.running) actionProc.running = true
   }
 
@@ -420,7 +423,10 @@ Panel {
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
-  Component.onCompleted: refresh()
+  Component.onCompleted: {
+    refresh()
+    if (!rotationBinProc.running) rotationBinProc.running = true
+  }
 
   // KeyboardPanel primes focus at open-time, so SUPER-bound IPC summons land
   // with j/k ready to navigate. Keep a default landing point, but don't paint
@@ -497,6 +503,20 @@ Panel {
       if (running) return
       if (root.brightnessSetQueued) {
         root.setBrightness(root.pendingBrightnessPercent)
+      }
+    }
+  }
+
+  // Resolve the rotation CLI to an absolute path once, up front.
+  Process {
+    id: rotationBinProc
+    command: ["/bin/bash", "-c",
+      "p=$(command -v omarchy-hyprland-monitor-rotation 2>/dev/null); if [ -n \"$p\" ]; then printf %s \"$p\"; elif [ -x /usr/share/omarchy/bin/omarchy-hyprland-monitor-rotation ]; then printf %s /usr/share/omarchy/bin/omarchy-hyprland-monitor-rotation; fi"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var line = String(text || "").trim()
+        if (line) root.rotationBin = line
       }
     }
   }
