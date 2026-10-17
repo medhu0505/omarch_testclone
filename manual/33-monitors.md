@@ -48,7 +48,7 @@ Monitor brightness is controlled by the dedicated function keys for brightness u
 
 ### Rotating a screen
 
-If a monitor sits vertically (portrait) or upside down, rotate it from the _Display_ panel: open the panel, hover the DISPLAYS list, and click a display to step it through 0°, 90°, 180°, and 270° (right-click still turns a display on or off). The current rotation shows next to the display name. The rotation is saved to `~/.config/hypr/monitors.lua` as a `transform` rule for that display, so it comes back after a reboot.
+If a monitor sits vertically (portrait) or upside down, rotate it from the _Display_ panel: under each display name in the DISPLAYS section, pick a degree — 0°, 90°, 180°, or 270° — and it applies immediately (right-click a display's name to turn it on or off). The picked degree is highlighted on the display, and because the buttons stay put while the screen rotates, correcting a wrong pick is a single click on a new degree. The rotation is saved to `~/.config/hypr/monitors.lua` as a `transform` rule for that display, so it comes back after a reboot.
 
 From the terminal:
 

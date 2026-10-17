@@ -38,9 +38,10 @@ Panel {
   //   "scale"      - 6 Button scale presets; treated as a single
   //                  horizontal row from j/k's perspective. h/l moves
   //                  between presets, identical to bluetooth's header.
-  //   "monitors"   - vertical display row list; left-click rotates a display
-  //                  through 0/90/180/270 degrees, right-click enables or
-  //                  disables it; j/k walks each row.
+  //   "monitors"   - vertical display row list; each display row carries a
+  //                  row of 0/90/180/270-degree rotation pills (left, one
+  //                  click to any degree) and right-click enables or
+  //                  disables the display; j/k walks each row.
   // Mouse hover on a target updates root state via the components' `hovered`
   // signal so keyboard cursor and pointer share one highlight.
   readonly property var scalePresets: ["1", "1.25", "1.6", "2", "3", "4"]
@@ -855,13 +856,56 @@ Panel {
             Repeater {
               model: root.displays
 
-              MonitorRow {
+              Item {
                 required property var modelData
                 required property int index
 
+                // The display this block describes. Named to survive the
+                // inner Repeater's `display` binding without self-reference.
+                readonly property var columnDisplay: modelData
+
                 width: panelColumn.width
-                display: modelData
-                rowIndex: index
+                implicitHeight: monitorHeader.implicitHeight + (
+                  columnDisplay && columnDisplay.enabled
+                  ? Style.space(4) + rotationPills.implicitHeight
+                  : 0
+                )
+
+                MonitorRow {
+                  id: monitorHeader
+                  width: parent.width
+                  anchors.left: parent.left
+                  anchors.top: parent.top
+                  display: columnDisplay
+                  rowIndex: index
+                }
+
+                Grid {
+                  id: rotationPills
+                  anchors.left: parent.left
+                  anchors.leftMargin: Style.space(6) + Style.space(22)
+                  anchors.top: monitorHeader.bottom
+                  anchors.topMargin: Style.space(4)
+                  width: parent.width - Style.space(6) - Style.space(22)
+                  visible: columnDisplay && columnDisplay.enabled
+                  columns: root.rotationValues.length
+                  spacing: Style.spacing.xs
+
+                  Repeater {
+                    model: root.rotationValues
+
+                    RotationPill {
+                      required property int modelData
+                      required property int index
+
+                      display: columnDisplay
+                      degree: modelData
+                      degreeIndex: index
+                      width: (parent.width - parent.spacing * (root.rotationValues.length - 1))
+                              / root.rotationValues.length
+                    }
+                  }
+                }
               }
             }
           }
@@ -900,6 +944,27 @@ Panel {
     }
   }
 
+  component RotationPill: Button {
+    id: pill
+    required property var display
+    required property int degree
+    required property int degreeIndex
+
+    text: Commons.I18n.formatNumber(degree) + "°"
+    fontSize: Style.font.caption
+    foreground: root.bar.foreground
+    fontFamily: root.bar.fontFamily
+    horizontalPadding: Style.spacing.sm
+    verticalPadding: Style.spacing.controlPaddingY
+    bordered: true
+    enabled: display && display.enabled
+    opacity: (display && display.enabled) ? 1.0 : 0.4
+
+    active: display && root.displayRotation(display) === degree
+    onClicked: if (display && display.enabled)
+      root.setRotation(display.name, degree)
+  }
+
   component MonitorRow: CursorSurface {
     id: monitorRow
     required property var display
@@ -907,7 +972,6 @@ Panel {
 
     readonly property bool isFocused: display && display.focused
     readonly property bool canToggle: display && (!display.enabled || root.enabledDisplayCount > 1)
-    readonly property int rotation: Model.transformToDegrees(display ? display.transform : 0)
 
     hasCursor: root.cursorActive && root.focusSection === "monitors" && root.selectedIndex === rowIndex
     onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(monitorRow)
@@ -946,19 +1010,7 @@ Panel {
         font.family: root.bar.fontFamily
         font.pixelSize: Style.font.body
         elide: Text.ElideRight
-        width: parent.width - Style.space(22) - Style.space(26) - Style.space(14) - Style.space(16)
-        anchors.verticalCenter: parent.verticalCenter
-      }
-
-      Text {
-        textFormat: Text.PlainText
-        text: monitorRow.rotation !== 0 ? Commons.I18n.formatNumber(monitorRow.rotation) + "°" : ""
-        color: Style.color.accent
-        font.family: root.bar.fontFamily
-        font.pixelSize: Style.font.body
-        font.bold: true
-        width: Style.space(26)
-        horizontalAlignment: Text.AlignRight
+        width: parent.width - Style.space(22) - Style.space(14) - Style.space(16)
         anchors.verticalCenter: parent.verticalCenter
       }
 
