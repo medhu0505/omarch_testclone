@@ -233,6 +233,22 @@ select_monitor() {
   ' <<<"$monitors"
 }
 
+# A closed lid covers a built-in sensor, and a blanked panel can read darker
+# than the room (seen on T1 Macs), so either would drive a wrong target. The
+# lid is only asked about when no internal panel is lit (clamshell disables it).
+sensor_obscured() {
+  local monitors="${1:-}"
+  local internal=""
+
+  [[ -n $monitors ]] || monitors="$(hyprctl monitors -j 2>/dev/null)" || return 1
+  internal="$(jq -r '[.[] | select(.name | test("^(eDP|LVDS|DSI)-"))] | if length == 0 then "none" elif any(.dpmsStatus == false) then "off" else "on" end' <<<"$monitors" 2>/dev/null)"
+  case "$internal" in
+  on) return 1 ;;
+  off) return 0 ;;
+  esac
+  omarchy-hw-laptop-closed
+}
+
 read_brightness() {
   local brightness=""
 
@@ -311,6 +327,7 @@ control_session() {
   local channel=""
   local raw=""
   local last_raw=""
+  local paused=0
 
   channel="$(find_illuminance_channel "$sensor")" || {
     log_state "unable to read sensor $sensor"
@@ -350,6 +367,24 @@ control_session() {
       log_state "lost sensor $sensor"
       return 1
     }
+    # Hyprland sends no event for DPMS, and a lid can close on a panel that is
+    # already off. Both make a built-in sensor read darker, so the check runs
+    # when the reading moves, and steady light still starts no process.
+    # ponytail: a pause ends only on the next reading change, so wake in a room
+    # that went dark at the same level stays paused until the light moves.
+    if [[ $kind == generic ]] && reading_changed "$last_raw" "$raw"; then
+      if sensor_obscured; then
+        paused=1
+      elif (( paused )); then
+        paused=0
+        log_state "resumed on $monitor"
+      fi
+    fi
+    if (( paused )); then
+      last_raw="$raw"
+      log_state "paused: lid closed or internal panel off"
+      continue
+    fi
     # Steady light: the reading is about the same, the smoothing has settled,
     # and no write is still pending.
     if [[ $smoothed_lux == $lux ]] && ! reading_changed "$last_raw" "$raw" &&
@@ -408,7 +443,10 @@ controller_pass() {
     log_state "no Hyprland event socket"
     return 1
   }
-  if monitor="$(select_monitor "$kind")"; then
+  if [[ $kind == generic ]] && sensor_obscured; then
+    log_state "paused: lid closed or internal panel off"
+    status=1
+  elif monitor="$(select_monitor "$kind")"; then
     control_session "$sensor" "$kind" "$monitor" || status=$?
   else
     log_state "no unambiguous active monitor for $sensor"
