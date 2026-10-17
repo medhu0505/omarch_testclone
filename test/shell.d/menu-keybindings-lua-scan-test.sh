@@ -44,7 +44,7 @@ hl.bind("SUPER + code:20", hl.dsp.workspace({ name = "special" }), { description
 LUA
 
 start=$(date +%s)
-output=$(HOME="$TMPDIR/home" DEBUG=1 timeout 10 lua - <<<"$scan" 2>&1) || fail "Lua bind scan exits cleanly on a config that iterates and compares compositor state (output: $output)"
+output=$(HOME="$TMPDIR/home" DEBUG=1 timeout 10 lua -E - <<<"$scan" 2>&1) || fail "Lua bind scan exits cleanly on a config that iterates and compares compositor state (output: $output)"
 (( $(date +%s) - start < 5 )) || fail "Lua bind scan terminates promptly"
 pass "Lua bind scan survives load-time loops, comparisons, and arithmetic over stub state"
 
@@ -64,7 +64,7 @@ while true do end
 LUA
 
 start=$(date +%s)
-output=$(HOME="$TMPDIR/home" DEBUG=1 timeout 10 lua - <<<"$scan" 2>&1) || fail "Lua bind scan exits cleanly on a config that never finishes (output: $output)"
+output=$(HOME="$TMPDIR/home" DEBUG=1 timeout 10 lua -E - <<<"$scan" 2>&1) || fail "Lua bind scan exits cleanly on a config that never finishes (output: $output)"
 (( $(date +%s) - start < 5 )) || fail "Lua bind scan stops a runaway config before the timeout"
 grep -qF $'64\tKeybindings menu\tK\texec\tomarchy-menu keybindings' <<<"$output" || fail "Lua bind scan keeps binds declared before a runaway loop (got: $output)"
 pass "Lua bind scan stops a runaway config and keeps the binds declared before it"
