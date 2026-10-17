@@ -660,8 +660,9 @@ Item {
       return
     }
 
+    var rows = []
     if (root.dmenuMultiple && root.dmenuOnChange.length === 0) {
-      displayModel.append({
+      rows.push({
         itemId: "dmenu.apply", disabled: false, kind: "dmenu", icon: "", iconFont: "",
         appIcon: "", appId: "", label: Commons.I18n.t("common.apply"), target: "",
         detail: Commons.I18n.tn("menu.selectedCount", root.dmenuSelected.length).arg(Commons.I18n.formatNumber(root.dmenuSelected.length)), path: "", childCount: 0,
@@ -680,7 +681,7 @@ Item {
       var detail = parts.join("\t")
       if (query && label.toLowerCase().indexOf(query) < 0
           && detail.toLowerCase().indexOf(query) < 0) continue
-      displayModel.append({
+      rows.push({
         itemId: "dmenu." + i,
         disabled: false,
         kind: "dmenu",
@@ -699,6 +700,10 @@ Item {
         section: ""
       })
     }
+    // One append for the whole list: the rows' height follows the model's
+    // count and measures every row, so appending rows one at a time made
+    // opening a long list quadratic.
+    if (rows.length > 0) displayModel.append(rows)
 
     layoutSerial += 1
 

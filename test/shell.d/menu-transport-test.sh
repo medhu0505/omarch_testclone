@@ -35,6 +35,16 @@ assert(
     && open[0].indexOf('writeRequestFile') < open[0].indexOf('requestSerial += 1'),
   'menu cancels a request whose rows cannot be read, before touching the menu on screen'
 )
+
+// The rows' height follows the model's count and measures every row, so a
+// long list appended row by row took seconds to open, past omarchy-shell's
+// IPC timeout.
+const rebuild = menuQml.match(/  function rebuildDmenuDisplay\(\) \{[\s\S]*?\n  \}/)
+assert(rebuild, 'menu rebuildDmenuDisplay function exists')
+assert(
+  (rebuild[0].match(/displayModel\.append\(/g) || []).length === 1 && /displayModel\.append\(rows\)/.test(rebuild[0]),
+  'menu appends a select list to its model in one call'
+)
 JS
 
 # omarchy-menu-select against a stand-in shell that answers the way the real
