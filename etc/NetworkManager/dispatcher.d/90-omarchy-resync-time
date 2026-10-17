@@ -11,8 +11,12 @@ action=$2
 stamp=${OMARCHY_RESYNC_TIME_STAMP:-/run/omarchy-resync-time}
 
 # Only connections with a gateway: loopback, container bridges and other
-# local-only links come up without one.
-if [[ $action == "up" && -n ${IP4_GATEWAY:-}${IP6_GATEWAY:-} ]]; then
+# local-only links come up without one, which NetworkManager passes as 0.0.0.0.
+has_gateway() {
+  [[ -n $1 && $1 != "0.0.0.0" && $1 != "::" ]]
+}
+
+if [[ $action == "up" ]] && { has_gateway "${IP4_GATEWAY:-}" || has_gateway "${IP6_GATEWAY:-}"; }; then
   read -r uptime _ </proc/uptime
   uptime=${uptime%.*}
   last=$(cat "$stamp" 2>/dev/null)

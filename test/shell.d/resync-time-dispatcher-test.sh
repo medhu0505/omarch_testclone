@@ -80,17 +80,21 @@ run_hook wlan0 up IP4_GATEWAY=192.168.1.1
   fail "an unreadable stamp does not block the resync" "calls: $(<"$call_log")"
 pass "an unreadable stamp does not block the resync"
 
-# Local-only links (loopback, container bridges) come up without a gateway.
-rm -f "$stamp"
-run_hook lo up
-run_hook docker0 up
-[[ -z $(<"$call_log") ]] ||
-  fail "a link without a gateway leaves timesyncd alone" "calls: $(<"$call_log")"
+# Local-only links (loopback, container bridges) come up without a gateway,
+# which NetworkManager passes as 0.0.0.0 once the link has an address. Each
+# case starts without a stamp, so an earlier restart cannot hide this one.
+for gateways in "" "IP4_GATEWAY=0.0.0.0" "IP4_GATEWAY=0.0.0.0 IP6_GATEWAY=0.0.0.0" "IP6_GATEWAY=::"; do
+  rm -f "$stamp"
+  run_hook docker0 up $gateways
+  [[ -z $(<"$call_log") ]] ||
+    fail "a link without a gateway leaves timesyncd alone" "gateways: ${gateways:-none}; calls: $(<"$call_log")"
+done
 pass "a link without a gateway leaves timesyncd alone"
 
 # Only "up": going down, DHCP renewals and VPNs do not change whether the
 # clock can be reached.
 for action in down pre-up dhcp4-change vpn-up connectivity-change hostname; do
+  rm -f "$stamp"
   run_hook wlan0 "$action" IP4_GATEWAY=192.168.1.1
   [[ -z $(<"$call_log") ]] ||
     fail "the $action event leaves timesyncd alone" "calls: $(<"$call_log")"
