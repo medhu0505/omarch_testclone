@@ -16,7 +16,7 @@ const a = { pluginApiScope: '1', centerRevealState: { centerSectionRevealHeld: t
 const b = { pluginApiScope: '2', centerRevealState: { centerSectionRevealHeld: false } }
 const calls = []
 const host = {
-  pluginBarApis: {}, moduleSlots: [], shell: null,
+  pluginBarApis: {}, widgetHosts: [], shell: null,
   targetWindow: target => target.surface,
   syncPluginBarApiObjects: () => {},
   releasePluginObjects: (id, scope) => calls.push(['release', id, scope]),
@@ -37,14 +37,14 @@ apiA._registerClickTarget('button')
 assertDeepEqual(calls.pop(), ['register', 'clone.indicators', 'button'], 'scoping preserves original plugin ownership')
 apiB._setCenterHoverRevealSuppressed(true)
 assertEqual(host.centerHoverRevealSuppressed, true, 'scoped facade preserves shared suppression callback')
-host.moduleSlots = [{pluginApiId: 'clone.indicators', pluginApiKey: 'clone.indicators@2'}]
+host.widgetHosts = [{pluginApiId: 'clone.indicators', pluginApiKey: 'clone.indicators@2'}]
 host.prunePluginBarApis()
 assert(apiA.destroyed && !apiB.destroyed, 'removing a surface destroys only its cached facade')
 assertDeepEqual(calls.pop(), ['release', 'clone.indicators', 'clone.indicators@1'], 'removing one surface cleans only that facade ownership scope')
 const replacement = {pluginApiScope: '3', centerRevealState: {centerSectionRevealHeld: false}}
 const apiReplacement = host.pluginBarApiFor('clone.indicators', 'omarchy.indicators', true, {surface: replacement})
 assert(apiReplacement !== apiA, 'recreated surfaces receive fresh reveal bindings')
-host.moduleSlots = []
+host.widgetHosts = []
 host.prunePluginBarApis()
 assert(apiB.destroyed && apiReplacement.destroyed, 'last-surface teardown destroys remaining facades')
 assert(calls.every(call => call[1] === 'clone.indicators'), 'facade teardown preserves original ownership ID')

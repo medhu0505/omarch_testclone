@@ -65,7 +65,7 @@ for _ in {1..50}; do
   sleep 0.1
 done
 [[ -S $fixture_dir/runtime/wayland-0 ]] || fail "isolated compositor publishes private socket"
-export WAYLAND_DISPLAY=wayland-0 QT_QPA_PLATFORM=wayland
+export WAYLAND_DISPLAY=wayland-0 QT_QPA_PLATFORM=wayland QT_QPA_PLATFORMTHEME=basic
 OMARCHY_PATH="$ROOT" OMARCHY_QML_TEST_RESULT="$fixture_dir/result.json" \
   quickshell -p "$fixture_dir" --no-color >"$fixture_dir/log" 2>&1 &
 qs_pid=$!
@@ -83,4 +83,4 @@ if [[ ! -s $fixture_dir/result.json ]] || ! jq -e '.ok' "$fixture_dir/result.jso
   [[ ! -s $fixture_dir/result.json ]] || cat "$fixture_dir/result.json" >&2
   fail "production bar surface integration"
 fi
-pass "production BarPanels resolve windows, initialize scopes, reinject facades, reveal locally and clean removed surfaces"
+pass "production BarPanels resolve windows, initialize scopes, reinject facades, reveal locally, preserve pooled moves and clean removed surfaces"

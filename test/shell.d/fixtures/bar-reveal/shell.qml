@@ -61,13 +61,12 @@ ShellRoot {
       _centerHoverRevealSuppressed: root.suppressed
       _setCenterHoverRevealSuppressed: function(value) { root.suppressed = value }
     }
-    Text { x: 8; y: 8; color: "white"; text: surface.label + " — empty space holds this reveal" }
+    Text { x: 8; y: 8; color: "white"; text: surface.label + " — hover anywhere to reveal this surface" }
     Rectangle {
       anchors.centerIn: parent
       width: 180
       height: 34
       color: "#505050"
-      HoverHandler { onHoveredChanged: state.setCenterSectionHovered(hovered) }
       Loader {
         id: trayLoader
         anchors.centerIn: parent
@@ -88,11 +87,9 @@ ShellRoot {
         root.check(left.tray && right.tray, "production indicator widgets load")
         root.check(left.tray.implicitWidth === 0 && right.tray.implicitWidth === 0, "both surfaces start collapsed")
         left.state.setBarHovered(true)
-        left.state.setCenterSectionHovered(true)
         break
       case 1:
-        root.check(left.tray.implicitWidth > 0 && right.tray.implicitWidth === 0, "center hover reveals only its surface")
-        left.state.setCenterSectionHovered(false)
+        root.check(left.tray.implicitWidth > 0 && right.tray.implicitWidth === 0, "whole-bar hover reveals only its surface")
         break
       case 2:
         root.check(left.tray.implicitWidth > 0, "empty-area bar hover holds its own reveal")
@@ -101,9 +98,7 @@ ShellRoot {
         left.state.setBarHovered(false)
         break
       case 3:
-        root.check(left.tray.implicitWidth === 0 && right.tray.implicitWidth === 0, "unrelated bar hover cannot hold or open another reveal")
-        right.state.setCenterSectionHovered(true)
-        right.state.setCenterSectionHovered(false)
+        root.check(left.tray.implicitWidth === 0 && right.tray.implicitWidth > 0, "crossing monitors closes the old peek and opens only the new one")
         right.state.setBarHovered(false)
         right.state.setBarHovered(true)
         break
@@ -120,23 +115,22 @@ ShellRoot {
         root.check(right.tray.implicitWidth === 0, "local reveal collapses after leaving")
         // Leave-before-enter order and overlapping handlers on one surface.
         left.state.setBarHovered(true)
-        left.state.setCenterSectionHovered(true)
-        left.state.setCenterSectionHovered(true)
-        left.state.setCenterSectionHovered(false)
+        left.state.setBarHovered(true)
         left.state.setBarHovered(false)
         right.state.setBarHovered(true)
         break
       case 7:
-        root.check(left.state.centerSectionRevealHeld, "overlapping center handlers cannot clear an active center hover")
-        left.state.setCenterSectionHovered(false)
+        root.check(left.state.centerSectionRevealHeld, "overlapping bar handlers cannot clear an active hover")
+        left.state.setBarHovered(false)
+        right.state.setBarHovered(false)
         break
       case 8:
         root.check(!left.state.centerSectionRevealHeld, "leave-before-enter on another surface still collapses locally")
         // Destroy a revealed instance with its timer pending.
         var component = Qt.createComponent("file://" + Quickshell.env("OMARCHY_PATH") + "/shell/plugins/bar/BarRevealState.qml")
         var removed = component.createObject(root)
-        removed.setCenterSectionHovered(true)
-        removed.setCenterSectionHovered(false)
+        removed.setBarHovered(true)
+        removed.setBarHovered(false)
         removed.destroy()
         break
       case 9:

@@ -13,6 +13,8 @@ ShellRoot {
   property var survivorTarget: null
   property var removedSurface: null
   property var sharedTarget: null
+  property var movedHosts: []
+  property var movedApis: []
   readonly property string resultPath: Quickshell.env("OMARCHY_QML_TEST_RESULT")
 
   function check(condition, message) {
@@ -94,10 +96,9 @@ ShellRoot {
           surfaces = third.map(function(slot) { return host.targetWindow(slot) })
           root.check(surfaces[0] !== surfaces[1], "production lookup resolves separate actual PanelWindows")
           root.check(surfaces[0].pluginApiScope && surfaces[1].pluginApiScope && surfaces[0].pluginApiScope !== surfaces[1].pluginApiScope, "actual BarPanel initializes independent lifetime scopes")
-          root.check(third[0].activeItem.bar && third[1].activeItem.bar && third[0].activeItem.bar !== third[1].activeItem.bar, "actual ModuleSlot reinjects independent facades after scope initialization")
+          root.check(third[0].activeItem.bar && third[1].activeItem.bar && third[0].activeItem.bar !== third[1].activeItem.bar, "actual WidgetHost reinjects independent facades after scope initialization")
           root.check(third[0].activeItem.bar.pluginId === "test.third-party", "actual facade preserves plugin ownership ID")
           surfaces[0].centerRevealState.setBarHovered(true)
-          surfaces[0].centerRevealState.setCenterSectionHovered(true)
           break
         case 1:
           for (var i = 0; i < third.length; i++) {
@@ -107,19 +108,32 @@ ShellRoot {
           for (var j = 0; j < first.length; j++) {
             root.check(first[j].activeItem.revealed === (host.targetWindow(first[j]) === surfaces[0]), "actual first-party lookup binds local reveal")
           }
-          surfaces[0].centerRevealState.setCenterSectionHovered(false)
           surfaces[1].centerRevealState.setBarHovered(true)
           surfaces[0].centerRevealState.setBarHovered(false)
           break
         case 2:
           root.check(!surfaces[0].centerRevealState.centerSectionRevealHeld, "production surface collapses despite unrelated surface hover")
-          // Reinjection uses the real ModuleSlot method and its live window.
+          // Reinjection uses the real WidgetHost method and its live window.
           var priorApi = third[0].activeItem.bar
           third[0].activeItem.bar = null
-          third[0].injectProps()
-          root.check(third[0].activeItem.bar === priorApi, "actual ModuleSlot reinjection keeps its correctly scoped facade")
+          third[0].host.injectProps()
+          root.check(third[0].activeItem.bar === priorApi, "actual WidgetHost reinjection keeps its correctly scoped facade")
+          movedHosts = third.map(function(slot) { return slot.host })
+          movedApis = third.map(function(slot) { return slot.activeItem.bar })
+          host.barConfig = {position: "top", transparent: false, layout: {
+            left: [], center: ["test.first-party"], centerEnd: ["test.third-party"], right: []
+          }}
           break
         case 3:
+          root.check(third.length === 2, "moved widgets remain present on both surfaces")
+          for (var m = 0; m < third.length; m++) {
+            var movedIndex = movedHosts.indexOf(third[m].host)
+            root.check(movedIndex !== -1 && third[m].activeItem.bar === movedApis[movedIndex], "moving between sections keeps the pooled host and its facade")
+            root.check(third[m].region === "centerEnd", "pooled widget reaches the new section")
+          }
+          root.check(Object.keys(host.pluginBarApis).length === 2, "moves neither leak nor retire surface facades")
+          break
+        case 4:
           removedSurface = host.targetWindow(third[0])
           removedApi = third[0].activeItem.bar
           survivorApi = third[1].activeItem.bar
@@ -145,11 +159,11 @@ ShellRoot {
           if (!barVariants) { root.writeResult(); stop(); return }
           barVariants.model = [host.targetWindow(third[1]).screen]
           break
-        case 4:
+        case 5:
           root.check(third.length === 1 && third[0].activeItem.bar === survivorApi, "removing an actual BarPanel keeps the other facade live")
           root.check(host.clickTargets.length === 2 && host.clickTargets.indexOf(survivorTarget) !== -1 && host.clickTargets.indexOf(sharedTarget) !== -1, "removed PanelWindow registrations are pruned without widget unregister")
           root.check(host.activePopout === null, "removed PanelWindow popout ownership is released")
-          root.check(Array.from(host.pluginObjectOwners.values()).reduce(function(all, records) { return all.concat(records) }, []).every(function(record) { return (record.target === survivorTarget || record.target === sharedTarget) && record.scopeKey === third[0].pluginApiKey }), "only surviving surface ownership records remain")
+          root.check(Array.from(host.pluginObjectOwners.values()).reduce(function(all, records) { return all.concat(records) }, []).every(function(record) { return (record.target === survivorTarget || record.target === sharedTarget) && record.scopeKey === third[0].host.pluginApiKey }), "only surviving surface ownership records remain")
           root.writeResult()
           stop()
           break
