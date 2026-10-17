@@ -3,6 +3,7 @@
 set -euo pipefail
 
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
+export PATH="$ROOT/bin:$PATH"
 
 test_tmp=$(mktemp -d)
 trap 'rm -rf "$test_tmp"' EXIT
@@ -39,6 +40,14 @@ still=$("$ROOT/bin/omarchy-theme-bg-loop-apply" --still "$loop")
 still=$("$ROOT/bin/omarchy-theme-bg-loop-apply" --still "$other")
 [[ $still == "$other" ]] || fail "a still maps to itself" "$still"
 pass "a loop maps back to its still"
+
+user_loop="$loop_home/Videos/loops/rain.mp4"
+mkdir -p "${user_loop%/*}"
+printf 'user video\n' >"$user_loop"
+printf 'user still\n' >"$loop_home/Videos/rain.jpg"
+still=$("$ROOT/bin/omarchy-theme-bg-loop-apply" --still "$user_loop")
+[[ $still == "$user_loop" ]] || fail "a user video in a loops folder stays a video background" "$still"
+pass "a user video in a loops folder stays a video background"
 
 command_bin="$test_tmp/bin"
 command_log="$test_tmp/command-log"
@@ -83,6 +92,38 @@ ln -nsf "$other" "$link"
 apply env
 [[ $(readlink "$link") == "$other" && -z $(<"$command_log") ]] || fail "a still without a loop stays" "$(readlink "$link")"
 pass "a still without a loop stays"
+
+# Picking a still with a loop tells the shell once, with the loop.
+: >"$command_log"
+HOME="$loop_home" PATH="$command_bin:$PATH" COMMAND_LOG="$command_log" "$ROOT/bin/omarchy-theme-bg-set" "$background"
+[[ $(readlink "$link") == "$loop" ]] || fail "picking a still with a loop starts the loop" "$(readlink "$link")"
+[[ $(<"$command_log") == "shell: -q background set $loop" ]] || fail "picking a still with a loop tells the shell once" "$(<"$command_log")"
+pass "picking a still with a loop tells the shell once"
+
+# The first shell start of a session plays the intro, then starts the loop.
+mkdir -p "$backgrounds/intros"
+printf 'intro video\n' >"$backgrounds/intros/1-totoro.mp4"
+cat >"$command_bin/owe" <<'SH'
+#!/bin/bash
+printf 'owe: %s\n' "$*" >>"$COMMAND_LOG"
+[[ $1 != "status" ]] || printf '{"status":"ok"}\n'
+SH
+chmod +x "$command_bin/owe"
+rm -f "$loop_home/.local/state/omarchy/background-intro.session-id"
+ln -nsf "$background" "$link"
+: >"$command_log"
+HOME="$loop_home" PATH="$command_bin:$PATH" COMMAND_LOG="$command_log" HYPRLAND_INSTANCE_SIGNATURE=first-session OMARCHY_SESSION_ID="" \
+  "$ROOT/bin/omarchy-theme-bg-boot-intro"
+grep -qx "owe: intro --start first-frame $backgrounds/intros/1-totoro.mp4" "$command_log" || fail "the first start plays the intro" "$(<"$command_log")"
+[[ $(readlink "$link") == "$loop" ]] || fail "the first start hands the intro over to the loop" "$(readlink "$link")"
+pass "the first start hands the intro over to the loop"
+
+# A later shell restart in the same session skips the intro and keeps the loop.
+ln -nsf "$background" "$link"
+HOME="$loop_home" PATH="$command_bin:$PATH" COMMAND_LOG="$command_log" HYPRLAND_INSTANCE_SIGNATURE=first-session OMARCHY_SESSION_ID="" \
+  "$ROOT/bin/omarchy-theme-bg-boot-intro"
+[[ $(readlink "$link") == "$loop" ]] || fail "a shell restart brings the loop back" "$(readlink "$link")"
+pass "a shell restart brings the loop back"
 
 # Cycling from a playing loop moves on from its still, not back to the first.
 cat >"$command_bin/omarchy-theme-bg-set" <<'SH'
