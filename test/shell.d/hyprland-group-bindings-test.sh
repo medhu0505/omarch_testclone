@@ -58,6 +58,11 @@ assert(dispatched_index == nil, "an out-of-range group window is ignored")
 active_window = nil
 bindings["SUPER + ALT + code:10"]()
 assert(dispatched_index == nil, "a group window shortcut outside a group is ignored")
+
+assert(
+  o.bind_commands[bindings["SUPER + ALT + code:12"]] == "hyprctl eval 'o.switch_group_window(3)'",
+  "the keybindings menu can run a group window shortcut"
+)
 LUA
 
 pass "group number bindings dispatch only available group windows"
