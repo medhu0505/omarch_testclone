@@ -5,7 +5,7 @@ set -euo pipefail
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
 script="$ROOT/bin/omarchy-brightness-auto"
-unit="$ROOT/default/systemd/user/omarchy-brightness-auto.service"
+shipped_unit="$ROOT/default/systemd/user/omarchy-brightness-auto.service"
 
 [[ -x $script ]] || fail "automatic brightness command is installed"
 source "$script"
@@ -128,6 +128,7 @@ cat >"$mock_bin/systemctl" <<'SH'
 #!/bin/bash
 read -r enabled active <"$SYSTEMCTL_STATE"
 case "$*" in
+  "--user daemon-reload") ;;
   "--user is-enabled --quiet omarchy-brightness-auto.service") [[ $enabled == "enabled" ]] ;;
   "--user is-active --quiet omarchy-brightness-auto.service") [[ $active == "active" ]] ;;
   "--user enable --now omarchy-brightness-auto.service")
@@ -153,7 +154,8 @@ grep -Fx -- '--no-osd --monitor eDP-1 31% --nonblocking' "$brightness_writes" >/
 pass "automatic brightness keeps silent writes compatible with older display commands"
 
 run_auto() {
-  OMARCHY_AUTO_BRIGHTNESS_IIO_ROOT="${AUTO_IIO_ROOT:-$test_tmp/iio-generic}" \
+  XDG_CONFIG_HOME="$test_tmp/config" OMARCHY_PATH="$ROOT" \
+    OMARCHY_AUTO_BRIGHTNESS_IIO_ROOT="${AUTO_IIO_ROOT:-$test_tmp/iio-generic}" \
     SYSTEMCTL_STATE="$systemctl_state" SYSTEMCTL_CALLS="$systemctl_calls" \
     MONITORS_FILE="$monitors_file" BRIGHTNESS_WRITES="$test_tmp/brightness-writes" \
     PATH="$mock_bin:$PATH" "$script" "$@"
@@ -177,8 +179,11 @@ status=$(AUTO_IIO_ROOT="$test_tmp/iio" run_auto status)
 jq -e '.supported == true' <<<"$status" >/dev/null ||
   fail "automatic brightness supports a group of Apple displays" "$status"
 
+installed_unit="$test_tmp/config/systemd/user/omarchy-brightness-auto.service"
 run_auto on
+cmp -s "$shipped_unit" "$installed_unit" || fail "turning automatic brightness on installs its unit"
 run_auto toggle
+[[ ! -e $installed_unit ]] || fail "turning automatic brightness off removes its unit"
 grep -Fx -- '--user enable --now omarchy-brightness-auto.service' "$systemctl_calls" >/dev/null ||
   fail "automatic brightness can be enabled"
 grep -Fx -- '--user disable --now omarchy-brightness-auto.service' "$systemctl_calls" >/dev/null ||
@@ -248,9 +253,9 @@ pass "steady light reads only the raw sensor value on each poll"
 )
 pass "automatic brightness waits on Hyprland events between polls"
 
-grep -Fx 'ExecStart=/usr/bin/omarchy-brightness-auto' "$unit" >/dev/null ||
+grep -Fx 'ExecStart=/usr/bin/omarchy-brightness-auto' "$shipped_unit" >/dev/null ||
   fail "automatic brightness unit runs the package command"
-grep -Fx 'WantedBy=graphical-session.target' "$unit" >/dev/null ||
+grep -Fx 'WantedBy=graphical-session.target' "$shipped_unit" >/dev/null ||
   fail "automatic brightness unit follows the graphical session"
 grep -F 'omarchy-brightness-auto.service' "$ROOT/install/user/first-run/enable-user-units.sh" >/dev/null &&
   fail "automatic brightness must remain opt-in"

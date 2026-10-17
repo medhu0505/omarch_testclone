@@ -13,6 +13,8 @@ poll_seconds=1
 retry_seconds=5
 iio_root=${OMARCHY_AUTO_BRIGHTNESS_IIO_ROOT:-/sys/bus/iio/devices}
 service=omarchy-brightness-auto.service
+unit="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/$service"
+unit_source="$OMARCHY_PATH/default/systemd/user/$service"
 last_status=""
 events=""
 next_tick=0
@@ -425,6 +427,20 @@ automatic_brightness_supported() {
   read_brightness "$monitor" >/dev/null
 }
 
+# The service is opt-in, so the command installs its unit instead of the
+# package, and removes it again when the service is turned off.
+enable_service() {
+  install -Dm644 "$unit_source" "$unit" || return 1
+  systemctl --user daemon-reload
+  systemctl --user enable --now "$service"
+}
+
+disable_service() {
+  systemctl --user disable --now "$service"
+  rm -f "$unit"
+  systemctl --user daemon-reload
+}
+
 service_enabled() {
   systemctl --user is-enabled --quiet "$service" 2>/dev/null
 }
@@ -457,16 +473,16 @@ main() {
 
   case "$1" in
   on)
-    systemctl --user enable --now "$service"
+    enable_service
     ;;
   off)
-    systemctl --user disable --now "$service"
+    disable_service
     ;;
   toggle)
     if service_enabled; then
-      systemctl --user disable --now "$service"
+      disable_service
     else
-      systemctl --user enable --now "$service"
+      enable_service
     fi
     ;;
   status)

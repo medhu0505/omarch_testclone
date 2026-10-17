@@ -139,14 +139,12 @@ from pathlib import Path
 root = Path(os.environ["ROOT"])
 pkgs_root = Path(os.environ["OMARCHY_PKGS_ROOT"])
 settings_pkgbuild_path = pkgs_root / "omarchy-settings/PKGBUILD"
-settings_dev_pkgbuild_path = pkgs_root / "omarchy-settings-dev/PKGBUILD"
 omarchy_pkgbuild_path = pkgs_root / "omarchy/PKGBUILD"
 if not settings_pkgbuild_path.exists():
   settings_pkgbuild_path = pkgs_root / "omarchy-settings-dev/PKGBUILD"
 if not omarchy_pkgbuild_path.exists():
   omarchy_pkgbuild_path = pkgs_root / "omarchy-dev/PKGBUILD"
 pkgbuild = settings_pkgbuild_path.read_text()
-settings_dev_pkgbuild = settings_dev_pkgbuild_path.read_text() if settings_dev_pkgbuild_path.exists() else ""
 omarchy_pkgbuild = omarchy_pkgbuild_path.read_text()
 errors = []
 package_defaults = [
@@ -178,14 +176,6 @@ for source, destination, legacy in package_defaults:
     errors.append(f"legacy path still in config/: {legacy}")
   if destination and (source not in pkgbuild or destination not in pkgbuild):
     errors.append(f"PKGBUILD does not explicitly install {source} -> {destination}")
-
-auto_brightness_source = "default/systemd/user/omarchy-brightness-auto.service"
-auto_brightness_destination = "/usr/lib/systemd/user/omarchy-brightness-auto.service"
-if auto_brightness_source not in settings_dev_pkgbuild or auto_brightness_destination not in settings_dev_pkgbuild:
-  errors.append(
-    "omarchy-settings-dev PKGBUILD does not explicitly install "
-    f"{auto_brightness_source} -> {auto_brightness_destination}"
-  )
 
 # A user unit has to be on the machine before anything turns it on: shipped in
 # /usr/lib/systemd/user, or copied out of default/ by the command enabling it.
