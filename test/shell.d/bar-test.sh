@@ -47,12 +47,12 @@ pass "bar coalesces plugin api resyncs and looks ownership up by target"
 
 # A custom command widget whose JSON text is empty used to fall back to the raw
 # output, so the whole JSON line was painted on the bar. The parsed JSON now
-# decides on its own; only plain output keeps the raw line.
-if ! rg -q 'outputText = data\.plain === true \? String\(raw \|\| ""\)\.trim\(\) : String\(data\.text \|\| ""\)' "$ROOT/shell/plugins/bar/Bar.qml"; then
+# decides on its own, and a text of 0 still shows.
+if ! rg -q 'outputText = data\.text === undefined \|\| data\.text === null \? "" : String\(data\.text\)' "$ROOT/shell/plugins/bar/Bar.qml"; then
   fail "custom command modules must not show the raw JSON when its text is empty"
 fi
-if ! rg -q 'return \{ text: text, plain: true \}' "$ROOT/shell/Commons/Util.qml"; then
-  fail "module JSON parsing must keep plain output distinguishable from parsed JSON"
+if ! rg -q 'return \{ text: text \}' "$ROOT/shell/Commons/Util.qml"; then
+  fail "module JSON parsing must hand plain output back as its text"
 fi
 pass "custom command modules hide on an empty JSON text"
 
