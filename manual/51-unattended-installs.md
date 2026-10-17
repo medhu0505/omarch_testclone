@@ -11,7 +11,7 @@ The files are exactly what the installer's own wizard writes, so the easiest way
 | File | Required | Purpose |
 |------|----------|---------|
 | `user_configuration.json` | Yes | Disk, hostname, timezone, keyboard |
-| `user_credentials.json` | Yes | Username and password hash |
+| `user_credentials.json` | Yes | Username and password hash, and the LUKS passphrase for an encrypted install |
 | `user_full_name.txt` | No | Git full name |
 | `user_email_address.txt` | No | Git email |
 | `user_encrypt_installation.txt` | No | `true` when the configuration carries a `disk_encryption` block |
