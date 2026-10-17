@@ -139,6 +139,7 @@ Item {
   // The keys each section showed as the drag started (layoutWidgets). They
   // hold while no widget moves about.
   property string barDragKeys: ""
+  property string barDragLayout: ""
   // The spacers a drag has put in the sections, where a released widget can
   // land (DragSpacer).
   property var dragSpacers: []
@@ -538,6 +539,7 @@ Item {
     barDragRoom = null
     barDragExtent = 0
     barDragKeys = ""
+    barDragLayout = ""
     barDragRegrab.stop()
     barSettle = null
     barSettleAnimation.stop()
@@ -1102,6 +1104,7 @@ Item {
   // the room moves away.
   function startDragRoom(sourceSlot) {
     barDragKeys = JSON.stringify(layoutWidgets.sections)
+    barDragLayout = JSON.stringify(layoutConfig)
     barDragRoom = BarModel.dropRoom(null, { key: sourceSlot.widgetKey, region: sourceSlot.region }, layoutWidgets.sections, drawnKeys(barDragWindow))
     barDragHome = dragShareKey(barDragRoom)
     var shares = {}
@@ -1201,7 +1204,8 @@ Item {
       key: source.widgetKey,
       from: { region: source.region, index: (sections[source.region] || []).indexOf(source.widgetKey), id: entryId(source.entry) },
       to: { region: room.region, index: room.index < count ? room.index : -1 },
-      keys: barDragKeys
+      keys: barDragKeys,
+      layout: barDragLayout
     }
   }
 
@@ -1277,6 +1281,7 @@ Item {
     widgetMemo.expected = expected
     try {
       return root.shell.mutateShellConfig(function(config) {
+        if (JSON.stringify(normalizeLayout(config.bar ? config.bar.layout : null)) !== move.layout) return false
         return BarModel.moveEntry(config, move, function(entry) { return Util.normalizeLayoutEntry(entry) })
       })
     } finally {

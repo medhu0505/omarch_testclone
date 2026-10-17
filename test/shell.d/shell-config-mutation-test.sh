@@ -29,6 +29,7 @@ const bar = {
     shell: { mutateShellConfig: () => false }
   },
   normalizePosition: value => value,
+  normalizeLayout: value => value,
   clearBarDrag: () => {},
   layoutWidgets: { sections: { left: ['widget'], right: [] } },
   widgetMemo: {}
@@ -48,6 +49,19 @@ bar.root.shell.mutateShellConfig = mutator => mutator(fresh)
 assertEqual(bar.landBarDrag(move), false, 'bar drop cancels when the dragged entry changed on disk')
 assertEqual(fresh.bar.layout.left[0].id, 'different.widget', 'bar drop preserves the external replacement')
 assertEqual(fresh.bar.layout.right.length, 0, 'refused drag does not move the replacement')
+const originalLayout = {left: [{id: 'example.widget', value: 'one'}, {id: 'example.widget', value: 'two'}], right: []}
+move.layout = JSON.stringify(originalLayout)
+fresh.bar.layout = JSON.parse(move.layout)
+fresh.bar.layout.left.reverse()
+assertEqual(bar.landBarDrag(move), false, 'same-id widgets swapped on disk cancel the drag')
+assertEqual(fresh.bar.layout.left[0].value, 'two', 'same-id replacement remains in place')
+fresh.bar.layout = JSON.parse(move.layout)
+fresh.bar.layout.right.push({id: 'destination.widget'})
+assertEqual(bar.landBarDrag(move), false, 'destination edit before watcher refresh cancels the drag')
+fresh.bar.layout = JSON.parse(move.layout)
+assertEqual(bar.landBarDrag(move), true, 'unchanged fresh layout still accepts the drag')
+assertEqual(fresh.bar.layout.right[0].value, 'one', 'the captured source widget moves')
+
 JS
 
 require_command python3
