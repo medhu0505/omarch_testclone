@@ -295,7 +295,9 @@ Panel {
 
   function setRotation(name, degrees) {
     if (!name) return
-    actionProc.command = ["bash", "-c", "omarchy-hyprland-monitor-rotation " + name + " " + degrees]
+    // Direct argv, no shell: the display name is untrusted input (it comes
+    // from hyprctl state), so it must never be spliced into a command line.
+    actionProc.command = ["omarchy-hyprland-monitor-rotation", name, String(degrees)]
     if (!actionProc.running) actionProc.running = true
   }
 
