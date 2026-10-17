@@ -4,24 +4,71 @@ set -euo pipefail
 
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
-run_node_test <<'JS'
-const fs = require('fs')
-const lockView = fs.readFileSync(path.join(root, 'shell/plugins/lock/LockView.qml'), 'utf8')
+TMPDIR=""
+QS_PID=""
 
-// Suspending drops focus from the field while the lock is still up. Focus is
-// otherwise only taken in Component.onCompleted and when inputEnabled changes,
-// and inputEnabled follows lockRequested, which is already true by then, so
-// without this handler the machine wakes to a lock screen that ignores the
-// keyboard until it is clicked.
-assert(
-  /onActiveFocusChanged: \{\s*if \(!activeFocus && root\.inputEnabled\) Qt\.callLater\(root\.forcePasswordFocus\)/.test(lockView),
-  'the password field reclaims focus when it loses it while the lock is up'
-)
+cleanup() {
+  if [[ -n $QS_PID ]] && kill -0 "$QS_PID" 2>/dev/null; then
+    kill "$QS_PID" 2>/dev/null || true
+    wait "$QS_PID" 2>/dev/null || true
+  fi
+  if [[ -n $TMPDIR && -d $TMPDIR ]]; then
+    rm -rf "$TMPDIR"
+  fi
+}
+trap cleanup EXIT
 
-// Gating on inputEnabled keeps the unlocked preview surface, which builds the
-// same view with inputEnabled false, from fighting the compositor for focus.
-assert(
-  !/onActiveFocusChanged: \{\s*if \(!activeFocus\) /.test(lockView),
-  'focus recovery only runs while the lock is accepting input'
-)
-JS
+require_compositor "lock focus recovery test"
+
+if ! command -v quickshell >/dev/null 2>&1; then
+  pass "quickshell not installed; skipping lock focus recovery test"
+  exit 0
+fi
+
+require_command jq
+
+TMPDIR=$(mktemp -d)
+result="$TMPDIR/result.json"
+log="$TMPDIR/quickshell.log"
+config_dir="$TMPDIR/lock-focus-recovery"
+mkdir -p "$config_dir" "$TMPDIR/home"
+cp "$SHELL_TEST_DIR/fixtures/lock-focus-recovery/shell.qml" "$config_dir/shell.qml"
+ln -s "$ROOT/shell/Ui" "$config_dir/Ui"
+ln -s "$ROOT/shell/Commons" "$config_dir/Commons"
+
+OMARCHY_PATH="$ROOT" \
+OMARCHY_QML_TEST_RESULT="$result" \
+HOME="$TMPDIR/home" \
+XDG_CONFIG_HOME="$TMPDIR/home/.config" \
+XDG_CACHE_HOME="$TMPDIR/home/.cache" \
+XDG_STATE_HOME="$TMPDIR/home/.local/state" \
+QML2_IMPORT_PATH="$ROOT/shell${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}" \
+QML_IMPORT_PATH="$ROOT/shell${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}" \
+PATH="$ROOT/bin:$PATH" \
+  quickshell -p "$config_dir" --no-color >"$log" 2>&1 &
+QS_PID=$!
+
+# The fixture waits up to five seconds for its window to take the keyboard.
+for _ in {1..150}; do
+  [[ -s $result ]] && break
+  if ! kill -0 "$QS_PID" 2>/dev/null; then
+    sed -n '1,220p' "$log" >&2
+    fail "lock focus recovery quickshell exited before writing result"
+  fi
+  sleep 0.1
+done
+
+[[ -s $result ]] || {
+  sed -n '1,220p' "$log" >&2
+  fail "lock focus recovery test timed out"
+}
+
+if ! jq -e '.ok == true' "$result" >/dev/null; then
+  printf 'Lock focus recovery result:\n' >&2
+  jq . "$result" >&2
+  printf 'Lock focus recovery log:\n' >&2
+  sed -n '1,220p' "$log" >&2
+  fail "lock password field takes keyboard focus back on its own"
+fi
+
+pass "lock password field takes keyboard focus back on its own"
