@@ -135,15 +135,14 @@ terraform)
   # One provider cache shared across projects, instead of a fresh download per init
   plugin_cache_dir="$HOME/.terraform.d/plugin-cache"
   mkdir -p "$plugin_cache_dir"
-  if ! grep -qs plugin_cache_dir "$HOME/.terraformrc"; then
-    echo "plugin_cache_dir = \"$plugin_cache_dir\"" >>"$HOME/.terraformrc"
+  terraformrc="$HOME/.terraformrc"
+  if ! grep -Eqs '^[[:space:]]*plugin_cache_dir[[:space:]]*=' "$terraformrc"; then
+    # Start on a fresh line so the setting can't run into an unterminated last line
+    if [[ -s $terraformrc && -n $(tail -c 1 "$terraformrc") ]]; then
+      echo >>"$terraformrc"
+    fi
+    echo "plugin_cache_dir = \"$plugin_cache_dir\"" >>"$terraformrc"
     echo "Enabled the shared provider plugin cache."
-  fi
-
-  if grep -qs 'complete -C .* terraform' "$HOME/.bashrc"; then
-    echo "Terraform autocompletion already installed."
-  else
-    mise x terraform -- terraform -install-autocomplete
   fi
 
   echo -e "\nYou can now run: terraform init"
