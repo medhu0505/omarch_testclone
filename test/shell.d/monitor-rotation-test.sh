@@ -210,3 +210,46 @@ set -e
 [[ $bad -ne 0 ]] || fail "bad degrees are rejected"
 [[ ! -e $eval_out ]] || fail "bad degrees must not reach hyprctl" "$(cat "$eval_out")"
 pass "bad degrees are rejected"
+
+# With no readable Hyprland state, show and the up/down steps fail cleanly
+# instead of guessing a degree or running arithmetic on nothing.
+rm -f "$test_tmp/monitors.json" "$eval_out"
+set +e
+out=$(run_rotation 2>&1); rc=$?
+set -e
+[[ $rc -ne 0 ]] || fail "show fails without display state" "$out"
+[[ $out == *"No Hyprland display state"* ]] || fail "show names the missing state" "$out"
+set +e
+run_rotation up; up_rc=$?
+set -e
+[[ $up_rc -ne 0 ]] || fail "up fails without display state"
+[[ ! -e $eval_out ]] || fail "up without state must not reach hyprctl" "$(cat "$eval_out")"
+pass "unavailable display state fails cleanly instead of guessing"
+
+# A failed live apply must not be written into the config: the state and
+# the persistence have to agree.
+cat >"$stub_bin/hyprctl" <<'SH'
+#!/bin/bash
+
+if [[ $1 == "monitors" && $2 == "all" && $3 == "-j" ]]; then
+  printf '%s' "$(cat "$FAKE_MONITORS")"
+elif [[ $1 == "eval" ]]; then
+  exit 1
+else
+  exit 1
+fi
+SH
+chmod +x "$stub_bin/hyprctl"
+monitors_with 0
+cat >"$monitor_lua" <<'LUA'
+hl.monitor({ output = "eDP-1", scale = 1.6, position = 0x0, mode = "preferred" })
+LUA
+set +e
+out=$(run_rotation eDP-1 90 2>&1); rc=$?
+set -e
+[[ $rc -ne 0 ]] || fail "a failed apply reports failure" "$out"
+[[ $out == *"Could not apply rotation"* ]] || fail "a failed apply names the trouble" "$out"
+grep -q "transform" "$monitor_lua" && fail "a failed apply must not persist" "$(cat "$monitor_lua")"
+! grep -q "transform" "$monitor_lua" || fail "a failed apply leaves the config untouched" "$(cat "$monitor_lua")"
+pass "a failed live apply does not persist"
+

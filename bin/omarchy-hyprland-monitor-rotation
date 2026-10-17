@@ -66,14 +66,22 @@ transform_of() {
 }
 
 show() {
-  rotation_for "$(transform_of "${1:-}")"
+  local transform
+  if ! transform="$(transform_of "${1:-}")" || [[ -z $transform ]]; then
+    echo "No Hyprland display state available" >&2
+    return 1
+  fi
+  rotation_for "$transform"
 }
 
 apply_rotation() {
   local name="$1" transform="$2" expression
   require_name "$name"
   expression="hl.monitor({ output = \"$name\", transform = $transform })"
-  hyprctl eval "$expression" >/dev/null
+  if ! hyprctl eval "$expression" 2>/dev/null; then
+    echo "Could not apply rotation to $name" >&2
+    return 1
+  fi
 }
 
 monitor_lua_path() {
@@ -144,7 +152,8 @@ set_rotation() {
     return 1
   }
 
-  apply_rotation "$name" "$transform"
+  # Apply first; only persist what actually took effect.
+  apply_rotation "$name" "$transform" || return 1
   persist_rotation "$name" "$transform"
   echo "Rotation $(rotation_for "$transform") degrees for $name"
 }
@@ -157,9 +166,11 @@ case "${1:-}" in
   usage
   ;;
 up)
+  show >/dev/null || exit 1
   set_rotation "$(focused_name)" "$(( ( $(show) + 90) % 360 ))"
   ;;
 down)
+  show >/dev/null || exit 1
   set_rotation "$(focused_name)" "$(( ( $(show) + 270) % 360 ))"
   ;;
 0 | 90 | 180 | 270)
