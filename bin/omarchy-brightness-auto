@@ -14,7 +14,6 @@ retry_seconds=5
 iio_root=${OMARCHY_AUTO_BRIGHTNESS_IIO_ROOT:-/sys/bus/iio/devices}
 service=omarchy-brightness-auto.service
 unit="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/$service"
-unit_source="$OMARCHY_PATH/default/systemd/user/$service"
 last_status=""
 events=""
 next_tick=0
@@ -439,7 +438,7 @@ automatic_brightness_supported() {
 # The service is opt-in, so the command installs its unit instead of the
 # package, and removes it again when the service is turned off.
 enable_service() {
-  install -Dm644 "$unit_source" "$unit" || return 1
+  install -Dm644 "$OMARCHY_PATH/default/systemd/user/$service" "$unit" || return 1
   systemctl --user daemon-reload
   systemctl --user enable --now "$service"
 }
