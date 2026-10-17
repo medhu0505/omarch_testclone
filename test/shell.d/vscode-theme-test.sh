@@ -152,6 +152,8 @@ mkdir -p "$(dirname "$WHITEBOARD_SETTINGS")"
 printf '{\n  "window.autoDetectColorScheme": true,\n  "workbench.preferredDarkColorTheme": "Review Dark",\n  "workbench.preferredLightColorTheme": "Review Light"\n}\n' >"$WHITEBOARD_SETTINGS"
 
 PATH="$WHITEBOARD_BIN:$ROOT/bin:$PATH" HOME="$TEST_HOME" "$ROOT/bin/omarchy-theme-set-vscode" || fail "VS Code theme sync themes Whiteboard"
-jq -e '."workbench.colorTheme" == "Omarchy Light" and ."workbench.preferredDarkColorTheme" == "Omarchy Dark" and ."workbench.preferredLightColorTheme" == "Omarchy Light"' "$WHITEBOARD_SETTINGS" >/dev/null || fail "VS Code theme sync selects the generated labels in Whiteboard" "$(cat "$WHITEBOARD_SETTINGS")"
+# Both preferred themes get the palette's label: a dark desktop color scheme
+# that lags behind this light palette must not pick the dark base.
+jq -e '."workbench.colorTheme" == "Omarchy Light" and ."workbench.preferredDarkColorTheme" == "Omarchy Light" and ."workbench.preferredLightColorTheme" == "Omarchy Light"' "$WHITEBOARD_SETTINGS" >/dev/null || fail "VS Code theme sync selects the palette's label in Whiteboard" "$(cat "$WHITEBOARD_SETTINGS")"
 jq -e '.[] | select(.identifier.id == "local.omarchy-theme")' "$TEST_HOME/.dev-fast-review/extensions/extensions.json" >/dev/null || fail "VS Code theme sync installs the generated theme for Whiteboard"
 pass "VS Code theme sync gives Whiteboard the generated theme"

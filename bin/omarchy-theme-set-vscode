@@ -212,9 +212,12 @@ set_theme() {
 # Whiteboard is a Code - OSS fork without an extension marketplace, so a theme's
 # preferred extension can't be installed there and it always gets the generated
 # theme. Its System appearance setting picks the preferred dark or light theme
-# over colorTheme, so those are set too.
+# by the desktop color scheme, over colorTheme. Both get the current palette's
+# label, so the base always follows the palette, even while the color scheme
+# lags behind a theme switch.
 set_whiteboard_theme() {
   local settings_path="$HOME/.config/Whiteboard/User/settings.json"
+  local label
 
   omarchy-cmd-present whiteboard-desktop || return 0
   [[ -f $GENERATED_THEME ]] || return 0
@@ -223,9 +226,10 @@ set_whiteboard_theme() {
   [[ -d $(dirname "$settings_path") ]] || return 0
 
   install_generated_extension "$HOME/.dev-fast-review/extensions/$GENERATED_EXTENSION_NAME"
-  write_setting "$settings_path" colorTheme "$(generated_theme_label)"
-  write_setting "$settings_path" preferredDarkColorTheme "Omarchy Dark"
-  write_setting "$settings_path" preferredLightColorTheme "Omarchy Light"
+  label=$(generated_theme_label)
+  write_setting "$settings_path" colorTheme "$label"
+  write_setting "$settings_path" preferredDarkColorTheme "$label"
+  write_setting "$settings_path" preferredLightColorTheme "$label"
 }
 
 if ! omarchy-toggle-enabled skip-vscode-theme-changes; then
