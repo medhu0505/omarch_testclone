@@ -1,6 +1,6 @@
 # Gaming
 
-Omarchy isn't just for _pRoDUcTiVItY_, it's also for having fun, and what's more fun than gaming? Omarchy ships with a whole suite of gaming options — Steam and RetroArch for native and retro play, Battle.net, Lutris, and Heroic for non-Steam stores, Moonlight for PC streaming, Xbox Cloud Gaming + NVIDIA GeForce NOW for cloud, plus the evergreen Minecraft.
+Omarchy isn't just for _pRoDUcTiVItY_, it's also for having fun, and what's more fun than gaming? Omarchy ships with a whole suite of gaming options — Steam and RetroArch for native and retro play, Battle.net, Lutris, and Epic Games for non-Steam stores, Moonlight for PC streaming, Xbox Cloud Gaming + NVIDIA GeForce NOW for cloud, plus the evergreen Minecraft.
 
 Thanks to Valve's incredible work on [the proton compatibility layer](https://en.wikipedia.org/wiki/Proton_(software)), there are now tens of thousands of playable modern games on Linux. Oh, and did you know that the [Steam Deck](https://store.steampowered.com/steamdeck/) actually runs Arch!
 
@@ -68,7 +68,7 @@ You can also turn an Omarchy machine into the host by running `omarchy install s
 
 ## Battle.net
 
-Install [Battle.net](https://eu.shop.battle.net/en-us) by selecting _Install > Gaming > Battle.net_ from the Omarchy menu (`Super + Space`). This gives you titles like Diablo, Starcraft, and World of Warcraft as a standalone install running under GE-Proton — no Steam, Lutris, or Heroic needed.
+Install [Battle.net](https://eu.shop.battle.net/en-us) by selecting _Install > Gaming > Battle.net_ from the Omarchy menu (`Super + Space`). This gives you titles like Diablo, Starcraft, and World of Warcraft as a standalone install running under GE-Proton — no Steam, Lutris, or Epic Games Launcher needed.
 
  ![gaming-starcraft](images/gaming-starcraft.webp)
 
@@ -78,8 +78,8 @@ Install [Lutris](https://lutris.net/) by selecting _Install > Gaming > Lutris_ f
 
 Installation is a little janky and looks like nothing is happening at times — just be patient, it's working in the background.
 
-## Heroic Launcher (Epic Games)
+## Epic Games
 
-Install the [Heroic Launcher](https://heroicgameslauncher.com/) by selecting _Install > Gaming > Heroic (Epic Games)_ from the Omarchy menu (`Super + Space`). Heroic lets you run Epic Games titles, like OddSparks, that don't rely on anti-cheat — plus games from GOG and Amazon Prime Gaming. Sadly, that means no Fortnite and no Rocket League — until Tim Sweeney comes to Linux, this is as close as it gets.
+Install the [Epic Games Launcher](https://launcher.epicgames.com/) by selecting _Install > Gaming > Epic Games_ from the Omarchy menu (`Super + Space`). Epic's official Linux launcher runs natively, while Windows-only titles in your library may still need a compatibility layer.
 
-Like Lutris, it can feel slow and janky while installing games. Give it time.
+For competitive titles whose Linux anti-cheat integration is still rolling out, keep cloud gaming or Moonlight in mind.
