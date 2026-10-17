@@ -113,6 +113,10 @@ fi
 grep -qx enroll "$CALL_LOG" || fail "a rerun with everything installed reaches enrollment"
 pass "a rerun with everything installed goes straight to enrollment"
 
+INSTALLED=$'libfprint-git\nfprintd\nusbutils' run_setup
+grep -q 'Please try again' "$scratch/output" || fail "a failed scan on a driven reader asks for a retry"
+pass "a failed scan on a driven reader asks for a retry"
+
 INSTALL_STATUS=1 run_setup
 if grep -qx enroll "$CALL_LOG"; then
   fail "a failed package transaction prevents enrollment"
@@ -128,12 +132,12 @@ grep -qx list "$CALL_LOG" || fail "a reader with no libfprint driver is checked 
 if grep -qx enroll "$CALL_LOG"; then
   fail "a reader with no libfprint driver does not attempt enrollment"
 fi
-grep -q 'libfprint has no driver' "$scratch/output" || fail "a reader with no libfprint driver is told why"
+grep -q 'libfprint most likely has no driver' "$scratch/output" || fail "a reader with no libfprint driver is told why"
 pass "a reader with no libfprint driver stops before enrollment with a clear message"
 
 LIST_STATUS=1 LIST_OUTPUT="ListEnrolledFingers failed: Not Authorized" run_setup
 grep -qx enroll "$CALL_LOG" || fail "an fprintd-list error other than no devices still reaches enrollment"
-if grep -q 'libfprint has no driver' "$scratch/output"; then
+if grep -q 'libfprint most likely has no driver' "$scratch/output"; then
   fail "an fprintd-list error other than no devices is not diagnosed as a missing driver"
 fi
 pass "an fprintd-list error other than no devices is not diagnosed as a missing driver"
