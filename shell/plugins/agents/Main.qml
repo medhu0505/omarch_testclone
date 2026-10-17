@@ -417,7 +417,7 @@ Item {
     onRunningChanged: root.updateSyncRunning()
     onExited: function(exitCode) {
       if (exitCode !== 0) {
-        if (root.syncConfigured()) root.syncStatusText = "Usage sync mkdir failed"
+        if (root.syncConfigured()) root.syncStatusText = I18n.t("agents.syncMkdirFailed")
         root.finishSyncRun()
         return
       }
@@ -430,7 +430,7 @@ Item {
     running: false
     onRunningChanged: root.updateSyncRunning()
     onExited: function(exitCode) {
-      if (exitCode !== 0 && root.syncConfigured()) root.syncStatusText = "Usage sync scan failed"
+      if (exitCode !== 0 && root.syncConfigured()) root.syncStatusText = I18n.t("agents.syncScanFailed")
       root.finishSyncRun()
     }
 
@@ -807,11 +807,11 @@ Item {
   // ---------------------------------------------------------------- format
 
   function formatTokenCount(n) {
-    if (n === undefined || n === null) return "0"
-    if (n >= 1e9) return (n / 1e9).toFixed(1) + "B"
-    if (n >= 1e6) return (n / 1e6).toFixed(1) + "M"
-    if (n >= 1e3) return (n / 1e3).toFixed(1) + "K"
-    return String(n)
+    if (n === undefined || n === null) return I18n.formatNumber(0)
+    if (n >= 1e9) return I18n.formatNumber(n / 1e9, 1) + "B"
+    if (n >= 1e6) return I18n.formatNumber(n / 1e6, 1) + "M"
+    if (n >= 1e3) return I18n.formatNumber(n / 1e3, 1) + "K"
+    return I18n.formatNumber(n)
   }
 
   function modelWordCase(word) {
@@ -824,7 +824,7 @@ Item {
   // (`claude-opus-4-8`, `gpt-5.6-sol`). Rejoin the numeric run into one
   // version and title-case the words around it.
   function friendlyModelName(id) {
-    if (!id) return "Unknown"
+    if (!id) return I18n.t("agents.unknownModel")
     var name = String(id).replace(/^claude-/, "").replace(/-\d{8}$/, "")
     var parts = name.split("-")
     var words = []
@@ -843,6 +843,6 @@ Item {
       words.push(modelWordCase(part))
     }
     if (version.length > 0) words.push(version.join("."))
-    return words.length > 0 ? words.join(" ") : "Unknown"
+    return words.length > 0 ? words.join(" ") : I18n.t("agents.unknownModel")
   }
 }
