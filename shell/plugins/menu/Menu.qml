@@ -157,6 +157,9 @@ Item {
   }
 
   function remeasureLabels() {
+    // Search, providers, dmenu, and the fixed wide cards never read this,
+    // and search would otherwise measure every matching row per keystroke.
+    if (!root.cardUsesLabelWidth()) return
     var widest = 0
     var count = displayModel.count
     for (var i = 0; i < count; i++) {
@@ -173,6 +176,13 @@ Item {
       || root.activeMenu === "style.font.cjk"
   }
 
+  // cardWidth grows from the measured labels only for a closed authored menu.
+  function cardUsesLabelWidth() {
+    if (root.dmenuActive || root.menuUsesWideCard()) return false
+    var entry = root.item(root.activeMenu)
+    return !String(root.filterText || "").trim() && !(entry && entry.provider)
+  }
+
   // Static submenus grow from the 300 floor to the 520 cap the wide menus
   // already use, so "Reboot to Boot Menu" stays whole. Two pixels past the
   // advance keep ElideRight from spending the last word on the ellipsis
@@ -183,12 +193,8 @@ Item {
       return Math.min(Style.space(root.dmenuWidth), screenCap)
     var floor = Style.space(300)
     var cap = Style.space(520)
-    if (root.menuUsesWideCard())
-      return Math.min(cap, screenCap)
-    var entry = root.item(root.activeMenu)
-    var authored = !String(root.filterText || "").trim() && !(entry && entry.provider)
-    if (!authored)
-      return Math.min(floor, screenCap)
+    if (!root.cardUsesLabelWidth())
+      return Math.min(root.menuUsesWideCard() ? cap : floor, screenCap)
     var wanted = Math.max(floor, root.fittedLabelWidth + root.labelSlotChrome() + 2)
     return Math.min(wanted, cap, screenCap)
   }
