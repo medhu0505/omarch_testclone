@@ -73,7 +73,7 @@ jobs:
       # XDG_RUNTIME_DIR, as a session's /run/user/<uid> allows. The image
       # ships newuidmap and newgidmap without their file capabilities, so
       # shadow is reinstalled to give them back.
-      - name: Run ./test/all in an Arch container
+      - name: Start an Arch container
         run: |
           docker run -d --name tests --privileged --cgroupns=host \
             -v /sys/fs/cgroup:/sys/fs/cgroup:rw --tmpfs /run:exec --tmpfs /tmp:exec \
@@ -110,6 +110,29 @@ jobs:
             setpriv --reuid=tester --regid=tester --init-groups \
               unshare --user --map-auto --map-root-user true ||
               { echo "::error::user namespaces are unavailable; the root-helper tests would skip"; exit 1; }
+          '
+
+      # pacman -Syu brings the container to what the mirror has on the day,
+      # so a run also depends on that day's packages. The summary lists the
+      # versions installed, for a red run to be traced to a package that moved.
+      # It is written before the tests, so a run that hangs still has it.
+      - name: Record the packages under test
+        run: |
+          packages=$(docker exec tests pacman -Q)
+          count=$(wc -l <<<"$packages")
+          echo "$count packages, listed in the run summary"
+          {
+            echo "<details><summary>$count packages under test</summary>"
+            echo
+            echo '```'
+            echo "$packages"
+            echo '```'
+            echo '</details>'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Run ./test/all
+        run: |
+          docker exec tests bash -euo pipefail -c '
             # What a session gives a workstation: its runtime directory,
             # OMARCHY_PATH, and the omarchy commands on PATH.
             runtime=/run/user/$(id -u tester)
