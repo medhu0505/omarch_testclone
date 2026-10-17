@@ -12,7 +12,10 @@ CALLS="$TMPDIR/calls"
 cat >"$TMPDIR/bin/omarchy-shell" <<'SH'
 #!/bin/bash
 if [[ $* == *"listShellConfig"* ]]; then
-  if [[ -n ${FAKE_SHELL_CONFIG:-} ]]; then
+  if [[ ${FAKE_SHELL_CONFIG_FAILS:-0} == "1" ]]; then
+    echo "omarchy-shell is not responding" >&2
+    exit 1
+  elif [[ -n ${FAKE_SHELL_CONFIG:-} ]]; then
     printf '%s\n' "$FAKE_SHELL_CONFIG"
   else
     printf '{}\n'
@@ -137,6 +140,29 @@ fi
 grep -q 'omarchy plugin enable omarchy.idle' <<<"$remove_output" ||
   fail "removing a clone does not say how to enable a source that is still disabled"
 pass "removing a clone reports a source that is still disabled"
+
+clone_plugin omarchy.menu >/dev/null
+remove_output=$(HOME="$TMPDIR/home" OMARCHY_PATH="$ROOT" PATH="$TMPDIR/bin:$ROOT/bin:$PATH" \
+  FAKE_CALLS="$CALLS" OMARCHY_TEST_ROOT="$ROOT" FAKE_BUILTIN_PLUGINS='[{"id": "omarchy.menu", "enabled": true}]' \
+  FAKE_SHELL_CONFIG='{"disabledPlugins": ["omarchy.menu"]}' \
+  omarchy-plugin-remove tester.menu --yes)
+if grep -q 'Restored omarchy.menu.' <<<"$remove_output"; then
+  fail "removing a clone reports restoring a source back in the bar but still disabled"
+fi
+grep -q 'omarchy plugin enable omarchy.menu' <<<"$remove_output" ||
+  fail "removing a clone does not say how to enable a source back in the bar but still disabled"
+pass "removing a clone checks the source is not disabled as well as placed"
+
+clone_plugin omarchy.menu >/dev/null
+remove_output=$(HOME="$TMPDIR/home" OMARCHY_PATH="$ROOT" PATH="$TMPDIR/bin:$ROOT/bin:$PATH" \
+  FAKE_CALLS="$CALLS" OMARCHY_TEST_ROOT="$ROOT" FAKE_BUILTIN_PLUGINS='[{"id": "omarchy.menu", "enabled": true}]' \
+  FAKE_SHELL_CONFIG_FAILS=1 \
+  omarchy-plugin-remove tester.menu --yes 2>&1) ||
+  fail "removing a clone fails when the shell config cannot be read"
+if grep -Eq 'Restored omarchy.menu.|omarchy plugin enable omarchy.menu' <<<"$remove_output"; then
+  fail "removing a clone reports on a source whose shell config cannot be read"
+fi
+pass "removing a clone says nothing about a source whose shell config cannot be read"
 
 clone_plugin omarchy.idle >/dev/null
 remove_output=$(HOME="$TMPDIR/home" OMARCHY_PATH="$ROOT" PATH="$TMPDIR/bin:$ROOT/bin:$PATH" \
