@@ -169,6 +169,25 @@ Item {
     writer.destroy()
   }
 
+  // omarchy-menu-select hands its rows over in a private file the payload
+  // names as optionsFile: inline, they would meet Linux's 128 KiB limit on a
+  // single argument and be readable by every user on the machine. A fresh
+  // reader per request never serves the previous request's rows.
+  function readOptionsFile(path) {
+    var reader = optionsFileReader.createObject(root, { path: path })
+    reader.waitForJob()
+    var text = reader.text()
+    var loaded = reader.loaded
+    reader.destroy()
+    if (!loaded) return null
+    try {
+      var options = JSON.parse(text)
+      return Array.isArray(options) ? options : null
+    } catch (error) {
+      return null
+    }
+  }
+
   function runAction(action) {
     var command = String(action || "")
     if (!command) return
@@ -973,10 +992,20 @@ Item {
   }
 
   function openDmenu(payload) {
+    var options = Array.isArray(payload.options) ? payload.options : []
+    if (payload.optionsFile) {
+      options = root.readOptionsFile(String(payload.optionsFile))
+      // Rows that can't be read cancel this request rather than open an empty
+      // menu, and leave whatever the menu shows now alone.
+      if (options === null) {
+        root.writeRequestFile(String(payload.doneFile || ""), "\n")
+        return
+      }
+    }
     requestSerial += 1
     mode = payload.mode === "input" ? "input" : "select"
     dmenuPrompt = String(payload.prompt || (mode === "input" ? Commons.I18n.t("menu.inputPrompt") : Commons.I18n.t("menu.selectPrompt")))
-    dmenuOptions = Array.isArray(payload.options) ? payload.options : []
+    dmenuOptions = options
     dmenuMultiple = mode === "select" && payload.multiple === true
     dmenuOnChange = dmenuMultiple && Array.isArray(payload.onChange)
       && payload.onChange.every(function(arg) { return typeof arg === "string" }) ? payload.onChange : []
@@ -1127,6 +1156,14 @@ Item {
       atomicWrites: false
       blockWrites: true
       preload: false
+    }
+  }
+
+  Component {
+    id: optionsFileReader
+    FileView {
+      blockLoading: true
+      printErrors: false
     }
   }
 
