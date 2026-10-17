@@ -6,8 +6,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/base-test.sh"
 
 require_command lua
 
-# Helium raises one classless "Profile error occurred" dialog per failed profile
-# database. They have to float, or half a dozen of them tile the workspace.
+# Chromium-based browsers raise one classless "Profile error occurred" dialog per failed profile
+# database, and they must float. No class: "^$" would exempt every classless window from floating workspaces.
 rules=$(OMARCHY_PATH="$ROOT" lua <<'LUA'
 package.path = os.getenv("OMARCHY_PATH") .. "/?.lua;" .. package.path
 hl = setmetatable({
@@ -22,6 +22,6 @@ require("default.hypr.apps.browser")
 LUA
 )
 
-[[ $rules == $'^$\t^Profile error occurred$' ]] ||
-  fail "Helium profile error dialogs float" "floating-window rules: ${rules:-none}"
-pass "Helium profile error dialogs float"
+[[ $rules == $'\t^Profile error occurred$' ]] ||
+  fail "browser profile error dialogs float by title alone" "floating-window rules: ${rules:-none}"
+pass "browser profile error dialogs float by title alone"
