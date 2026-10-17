@@ -129,6 +129,10 @@ remember_current_theme_background() {
   state_file=$(theme_background_state_file "$PREVIOUS_THEME_NAME") || return
   current_background=$(readlink -f "$CURRENT_BACKGROUND_LINK" 2>/dev/null || true)
   [[ -f $current_background ]] || return
+  # A playing theme loop stands for its still.
+  if [[ ${current_background%/*} == */loops ]]; then
+    current_background=$(omarchy-theme-bg-loop-apply --still "$current_background")
+  fi
 
   mkdir -p "$THEME_BACKGROUND_STATE_PATH"
   printf '%s\n' "$current_background" >"$state_file"
@@ -160,6 +164,9 @@ choose_theme_background() {
 
   if [[ $PREVIOUS_THEME_NAME == "$THEME_NAME" ]]; then
     current_background=$(readlink "$CURRENT_BACKGROUND_LINK" 2>/dev/null || true)
+    if [[ ${current_background%/*} == */loops ]]; then
+      current_background=$(omarchy-theme-bg-loop-apply --still "$current_background")
+    fi
     if [[ $theme_path != $CURRENT_THEME_PATH && ${current_background%/*} == $current_theme_backgrounds ]]; then
       current_background="$theme_path/backgrounds/${current_background##*/}"
     fi
@@ -242,6 +249,10 @@ set_theme_background() {
         shell_ipc background setInstant "$new_background" || true
       fi
       shell_ipc shell finishThemeIntro "$theme_id" || true
+      # The intro ends on the still, which is where the theme's loop begins.
+      if [[ $(stat -Lc '%d:%i' "$CURRENT_THEME_PATH" 2>/dev/null) == "$theme_id" ]]; then
+        omarchy-theme-bg-loop-apply
+      fi
       wait_for_theme_intro themeIntroStatus "$theme_id" "pending"
       # Reloading Hyprland interrupts video presentation. Wait for playback,
       # then serialize with theme selection so an old intro cannot reload
@@ -283,6 +294,7 @@ set_theme_background() {
   fi
 
   ln -nsf "$new_background" "$CURRENT_BACKGROUND_LINK"
+  omarchy-theme-bg-loop-apply 9>&- &
 }
 
 is_denied_installed_file() {

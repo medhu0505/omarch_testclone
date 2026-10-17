@@ -23,3 +23,6 @@ ln -nsf "$BACKGROUND" "$CURRENT_BACKGROUND_LINK"
 # Update the live shell background when it is running. Nothing watches the
 # symlink, so this is how the shell learns of the new background.
 omarchy-shell -q background set "$BACKGROUND"
+
+# A still with a theme loop moves; any other background ends the loop.
+omarchy-theme-bg-loop-apply
