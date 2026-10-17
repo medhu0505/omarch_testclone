@@ -55,3 +55,16 @@ pass "Lua bind scan reports binds declared after load-time compositor reads"
 
 grep -q "timeout 10 lua -E - <<'LUA'" "$script" || fail "Lua bind scan is time-boxed"
 pass "Lua bind scan is time-boxed"
+
+# A loop nothing in the stub can end is stopped inside the scan, well before
+# the timeout, and the binds declared ahead of it are still reported.
+cat >"$TMPDIR/home/.config/hypr/hyprland.lua" <<'LUA'
+hl.bind("SUPER + K", hl.dsp.exec_cmd("omarchy-menu keybindings"), { description = "Keybindings menu" })
+while true do end
+LUA
+
+start=$(date +%s)
+output=$(HOME="$TMPDIR/home" DEBUG=1 timeout 10 lua - <<<"$scan" 2>&1) || fail "Lua bind scan exits cleanly on a config that never finishes (output: $output)"
+(( $(date +%s) - start < 5 )) || fail "Lua bind scan stops a runaway config before the timeout"
+grep -qF $'64\tKeybindings menu\tK\texec\tomarchy-menu keybindings' <<<"$output" || fail "Lua bind scan keeps binds declared before a runaway loop (got: $output)"
+pass "Lua bind scan stops a runaway config and keeps the binds declared before it"
