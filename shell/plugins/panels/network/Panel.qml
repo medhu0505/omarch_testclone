@@ -933,9 +933,9 @@ Panel {
       }
       actionTimeout.stop()
       root.failureSsid = ssid
-      root.failureReason = exitCode === 64 ? "CA certificate must be a readable file"
-        : (exitCode === 65 ? "Invalid authentication server name"
-          : (exitCode === 124 || exitCode === 137 || exitStatus !== 0 ? "Timed out connecting" : "Check credentials or certificates"))
+      root.failureReason = exitCode === 64 ? Commons.I18n.t("network.caCertificateUnreadable")
+        : (exitCode === 65 ? Commons.I18n.t("network.invalidAuthServerName")
+          : (exitCode === 124 || exitCode === 137 || exitStatus !== 0 ? Commons.I18n.t("network.timedOutConnecting") : Commons.I18n.t("network.checkCredentialsOrCertificates")))
       root.actionSsid = ""
       root.actionKind = ""
     }
@@ -2107,7 +2107,7 @@ Panel {
         anchors.top: idField.bottom
         anchors.topMargin: Style.space(4)
         anchors.rightMargin: Style.space(6)
-        placeholderText: "Absolute CA certificate path"
+        placeholderText: Commons.I18n.t("network.caCertificatePath")
         font.family: Style.font.family
         font.pixelSize: Style.font.body
         foreground: root.bar.foreground
@@ -2120,7 +2120,7 @@ Panel {
 
         PanelToolTip {
           visible: caField.hovered
-          text: "Use the absolute path to your administrator's CA certificate.\nSystem CA certificates are not used."
+          text: Commons.I18n.t("network.caCertificatePathHint")
           fontFamily: root.bar.fontFamily
         }
       }
@@ -2133,7 +2133,7 @@ Panel {
         anchors.top: caField.bottom
         anchors.topMargin: Style.space(4)
         anchors.rightMargin: Style.space(6)
-        placeholderText: "Authentication server name"
+        placeholderText: Commons.I18n.t("network.authServerName")
         font.family: Style.font.family
         font.pixelSize: Style.font.body
         foreground: root.bar.foreground
@@ -2146,7 +2146,7 @@ Panel {
 
         PanelToolTip {
           visible: serverField.hovered
-          text: "Use the exact authentication server name provided by your network administrator"
+          text: Commons.I18n.t("network.authServerNameHint")
           fontFamily: root.bar.fontFamily
         }
       }

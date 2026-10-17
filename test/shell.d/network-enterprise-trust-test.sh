@@ -185,7 +185,9 @@ if [[ $2 == "edit" ]]; then cat >"$TEST_NM_LOG.stdin"; fi
 
   const exitHandler = panel.match(/onExited: function\(exitCode, exitStatus\) \{([\s\S]*?)\n {4}\}/)
   assert(exitHandler, 'enterprise has an exit handler')
-  const onExited = new Function('exitCode', 'exitStatus', 'root', 'actionRevision', 'ssid', 'actionTimeout', 'secret', 'cancelling', 'Qt', exitHandler[1])
+  const english = JSON.parse(fs.readFileSync(root + '/default/i18n/en/shell.json', 'utf8'))
+  const Commons = {I18n: {t: function(key) { return english[key] }}}
+  const onExited = new Function('Commons', 'return function(exitCode, exitStatus, root, actionRevision, ssid, actionTimeout, secret, cancelling, Qt) {' + exitHandler[1] + '\n}')(Commons)
   var stopped = 0
   const timer = {stop: function() { stopped++ }}
   const retry = {actionRevision: firstRevision + 1, actionKind: 'connect', actionSsid: 'Enterprise WiFi', failureSsid: '', failureReason: '', enterpriseRetry: null}
