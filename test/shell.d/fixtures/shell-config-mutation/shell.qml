@@ -11,6 +11,7 @@ ShellRoot {
   property var shellConfig: builtinShellConfig
   property var pluginRegistry: fixtureRegistry
   property var util: ({
+    barSections: ["left", "centerBegin", "center", "centerEnd", "right", "tray"],
     isPlainObject: function(value) { return value && typeof value === "object" && !Array.isArray(value) },
     canonicalWidgetId: function(value) { return value }
   })

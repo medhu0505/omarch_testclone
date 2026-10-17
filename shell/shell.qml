@@ -48,10 +48,11 @@ ShellRoot {
     bar: {
       position: "top",
       background: "opaque",
-      centerAnchor: "omarchy.clock",
       layout: {
         left: [{ id: "omarchy.menu" }, { id: "omarchy.workspaces" }],
+        centerBegin: [],
         center: [{ id: "omarchy.clock", format: "dddd HH:mm" }],
+        centerEnd: [],
         right: [{ id: "omarchy.audio" }]
       }
     },
@@ -1097,11 +1098,11 @@ ShellRoot {
   function updateEntryInline(moduleName, settings) {
     var stripped = Util.canonicalWidgetId(moduleName)
     return mutateShellConfig(function(copy) {
-      if (!Util.isPlainObject(copy.bar)) copy.bar = { layout: { left: [], center: [], right: [] } }
-      if (!Util.isPlainObject(copy.bar.layout)) copy.bar.layout = { left: [], center: [], right: [] }
+      if (!Util.isPlainObject(copy.bar)) copy.bar = { layout: {} }
+      if (!Util.isPlainObject(copy.bar.layout)) copy.bar.layout = {}
       if (!Array.isArray(copy.plugins)) copy.plugins = []
 
-      var sections = ["left", "center", "right", "tray"]
+      var sections = Util.barSections
       var foundInLayout = false
       var dirty = false
       for (var s = 0; s < sections.length; s++) {

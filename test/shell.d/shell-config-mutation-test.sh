@@ -28,14 +28,26 @@ const bar = {
   root: {
     shell: { mutateShellConfig: () => false }
   },
-  normalizePosition: value => value
+  normalizePosition: value => value,
+  clearBarDrag: () => {},
+  layoutWidgets: { sections: { left: ['widget'], right: [] } },
+  widgetMemo: {}
 }
 vm.createContext(bar)
-for (const name of ['setBarPosition', 'dropBarModule']) {
+for (const name of ['setBarPosition', 'landBarDrag']) {
   vm.runInContext(barSource.match(new RegExp('  function ' + name + '\\([^\\n]*\\) \\{[\\s\\S]*?\\n  \\}'))[0], bar)
 }
 assertEqual(bar.setBarPosition('bottom'), false, 'bar position returns persistence failure')
-assertEqual(bar.dropBarModule({ region: 'left', moduleName: 'example.widget' }, 'right', ''), false, 'bar drop returns persistence failure')
+const move = { key: 'widget', keys: JSON.stringify(bar.layoutWidgets.sections), from: {region: 'left', index: 0, id: 'example.widget'}, to: {region: 'right', index: -1} }
+assertEqual(bar.landBarDrag(move), false, 'bar drop returns persistence failure')
+assertEqual(bar.widgetMemo.expected, null, 'failed drop retires its expected layout')
+const fresh = {bar: {layout: {left: [{id: 'different.widget'}], right: []}}, external: true}
+bar.BarModel = requireFromRoot('shell/plugins/bar/BarModel.js')
+bar.Util = {normalizeLayoutEntry: entry => entry}
+bar.root.shell.mutateShellConfig = mutator => mutator(fresh)
+assertEqual(bar.landBarDrag(move), false, 'bar drop cancels when the dragged entry changed on disk')
+assertEqual(fresh.bar.layout.left[0].id, 'different.widget', 'bar drop preserves the external replacement')
+assertEqual(fresh.bar.layout.right.length, 0, 'refused drag does not move the replacement')
 JS
 
 require_command python3
@@ -81,7 +93,7 @@ printf '%s\n' '{"version":1,"plugins":[]}' > "$config"
 qs_env=(env
   HOME="$fixture/home" XDG_RUNTIME_DIR="$config_runtime" XDG_CONFIG_HOME="$fixture/home/.config"
   XDG_CACHE_HOME="$fixture/home/.cache" XDG_STATE_HOME="$fixture/home/.local/state"
-  QT_QPA_PLATFORM=offscreen)
+  QT_QPA_PLATFORM=offscreen QT_QPA_PLATFORMTHEME=basic)
 qs() {
   "${qs_env[@]}" quickshell "$@"
 }
@@ -133,6 +145,21 @@ assert json.load(open(sys.argv[1]))['ok'] is False
 PY
 cmp "$config" "$fixture/before"
 pass "unchanged inline settings do not write"
+
+# Every current bar section must use the fresh on-disk entry, including the
+# sections added by the bar rework and the tray drawer.
+for section in left centerBegin center centerEnd right tray; do
+  printf '{"version":1,"bar":{"layout":{"%s":[{"id":"example.service","before":true}]}},"external":"keep"}\n' "$section" > "$config"
+  qs -p "$fixture" ipc call config-test inline > "$fixture/result"
+  python3 - "$config" "$fixture/result" "$section" <<'CHECK'
+import json, sys
+config, result = [json.load(open(p)) for p in sys.argv[1:3]]
+assert result['ok'] is True, result
+assert config['bar']['layout'][sys.argv[3]] == [{'id': 'example.service', 'enabled': True}], config
+assert config['external'] == 'keep', config
+CHECK
+  pass "fresh inline settings update the $section section"
+done
 qs -p "$fixture" ipc call config-test noop > "$fixture/result"
 python3 - "$fixture/result" "$fixture/expected-memory" <<'PY'
 import json, sys
