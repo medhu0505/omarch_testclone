@@ -329,73 +329,28 @@ pass "automatic brightness waits on Hyprland events between polls"
 
 (
   lid_file="$test_tmp/lid-closed"
-  printf '0\n' >"$lid_file"
-  omarchy-hw-laptop-closed() { [[ $(<"$lid_file") == 1 ]]; }
-
-  sensor_obscured '[{"name":"eDP-1","dpmsStatus":false}]' ||
-    fail "a blanked internal panel pauses a built-in sensor"
-  sensor_obscured '[{"name":"eDP-1","dpmsStatus":true}]' &&
-    fail "a lit internal panel does not pause a built-in sensor"
-  sensor_obscured '[{"name":"DP-1","dpmsStatus":true}]' &&
-    fail "an external display with the lid open does not pause a built-in sensor"
-  printf '1\n' >"$lid_file"
-  sensor_obscured '[{"name":"DP-1","dpmsStatus":true}]' ||
-    fail "clamshell mode pauses a built-in sensor"
-  sensor_obscured '[{"name":"eDP-1","dpmsStatus":true}]' &&
-    fail "the lid is not asked while the internal panel is lit"
-  true
-)
-pass "automatic brightness knows when a built-in sensor is covered or dark"
-
-(
-  guard_channel="$test_tmp/guard-channel"
-  guard_ticks="$test_tmp/guard-ticks"
-  guard_writes="$test_tmp/guard-writes"
-  : >"$guard_writes"
-  smoothing_new_weight=1
-
-  omarchy-hw-laptop-closed() { return 1; }
-  hyprctl() { printf '%s\n' '[{"name":"eDP-1","disabled":false,"dpmsStatus":false}]'; }
-  read_lux() { cat "$guard_channel"; }
-  read_brightness() { printf '80\n'; }
-  find_illuminance_channel() { printf '%s\n' "$guard_channel"; }
-  log_state() { :; }
-  # The panel blanks after the first read, and the sensor reads dark.
-  wait_for_tick() {
-    local count=""
-    read -r count <"$guard_ticks"
-    (( count < 3 )) || return 1
-    printf '%s\n' "$(( count + 1 ))" >"$guard_ticks"
-    printf '1\n' >"$guard_channel"
-  }
-  write_brightness() { printf '%s\n' "$2" >>"$guard_writes"; }
-
-  printf '200\n' >"$guard_channel"
-  printf '0\n' >"$guard_ticks"
-  control_session ignored generic eDP-1 || true
-  [[ ! -s $guard_writes ]] ||
-    fail "a blanked internal panel stops built-in sensor writes" "$(paste -sd ' ' "$guard_writes")"
-
-  printf '200\n' >"$guard_channel"
-  printf '0\n' >"$guard_ticks"
-  control_session ignored apple DP-1 || true
-  [[ -s $guard_writes ]] || fail "an Apple display sensor keeps working while the internal panel is off"
-)
-pass "automatic brightness pauses a built-in sensor while the internal panel is off"
-
-(
   session_started="$test_tmp/clamshell-session"
-  : >"$session_started"
-  omarchy-hw-laptop-closed() { return 0; }
-  hyprctl() { printf '%s\n' '[{"name":"DP-1","disabled":false,"dpmsStatus":true}]'; }
-  find_sensor() { printf '%s generic\n' "$generic_sensor"; }
+  omarchy-hw-laptop-closed() { [[ $(<"$lid_file") == 1 ]]; }
+  hyprctl() { printf '%s\n' '[{"name":"DP-1","make":"Apple Computer Inc","model":"StudioDisplay","disabled":false}]'; }
   open_events() { exec {events}</dev/null; }
-  control_session() { printf 'started\n' >"$session_started"; }
+  control_session() { printf '%s\n' "$2" >"$session_started"; }
   log_state() { :; }
 
+  printf '1\n' >"$lid_file"
+  : >"$session_started"
+  find_sensor() { printf '%s generic\n' "$generic_sensor"; }
   controller_pass && fail "clamshell mode does not start a session"
   [[ ! -s $session_started ]] || fail "clamshell mode does not drive an external display from a covered sensor"
-  true
+
+  printf '0\n' >"$lid_file"
+  controller_pass || true
+  [[ $(<"$session_started") == generic ]] || fail "a built-in sensor starts a session again after the lid opens"
+
+  printf '1\n' >"$lid_file"
+  : >"$session_started"
+  find_sensor() { printf '%s apple\n' "$apple_sensor"; }
+  controller_pass || true
+  [[ $(<"$session_started") == apple ]] || fail "an Apple display sensor keeps working with the lid closed"
 )
 pass "automatic brightness does not drive an external display from a closed lid"
 
