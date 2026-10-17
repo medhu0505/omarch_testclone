@@ -14,6 +14,9 @@ retry_seconds=5
 iio_root=${OMARCHY_AUTO_BRIGHTNESS_IIO_ROOT:-/sys/bus/iio/devices}
 service=omarchy-brightness-auto.service
 last_status=""
+events=""
+next_tick=0
+monitors_changed=0
 
 is_apple_sensor() {
   local path=""
@@ -143,10 +146,30 @@ curve_brightness() {
     '
 }
 
+# Snap to the reading once the difference is too small to change the curve,
+# so steady light stops the work on each poll.
 smooth_lux() {
   awk -v old="$1" -v new="$2" -v new_weight="$smoothing_new_weight" '
-    BEGIN { printf "%.10g\n", old * (1 - new_weight) + new * new_weight }
+    BEGIN {
+      smoothed = old * (1 - new_weight) + new * new_weight
+      if (smoothed - new < 0.01 && new - smoothed < 0.01) smoothed = new
+      printf "%.10g\n", smoothed
+    }
   '
+}
+
+# Sensor readings jitter by a fraction of a percent in steady light. A change
+# under 1% moves the curve by about 0.1 brightness points, so it counts as no
+# change. Fractions are dropped, and a value that is not a number always counts.
+reading_changed() {
+  local old="${1%%.*}"
+  local new="${2%%.*}"
+  local difference=0
+
+  [[ $old =~ ^[0-9]+$ && $new =~ ^[0-9]+$ ]] || return 0
+  difference=$(( new - old ))
+  (( difference < 0 )) && difference=$(( -difference ))
+  (( difference * 100 > old ))
 }
 
 target_with_offset() {
@@ -225,6 +248,37 @@ write_brightness() {
   omarchy-brightness-display --no-osd --monitor "$monitor" "$brightness%" --nonblocking >/dev/null
 }
 
+# Wait for the next poll on the Hyprland event stream instead of with sleep,
+# so an idle poll starts no process. A monitor event sets monitors_changed.
+# Returns 1 when the stream ends, because Hyprland stopped.
+wait_for_tick() {
+  local line=""
+  local now=0
+  local remaining=0
+
+  while true; do
+    now=${EPOCHREALTIME//[!0-9]/}
+    remaining=$(( next_tick - now ))
+    if (( remaining <= 0 )); then
+      next_tick=$(( now + poll_seconds * 1000000 ))
+      return 0
+    fi
+    printf -v remaining '%d.%06d' $(( remaining / 1000000 )) $(( remaining % 1000000 ))
+    if IFS= read -r -t "$remaining" -u "$events" line; then
+      [[ $line == monitoradded* || $line == monitorremoved* ]] && monitors_changed=1
+    elif (( $? <= 128 )); then
+      return 1
+    fi
+  done
+}
+
+open_events() {
+  local socket="${XDG_RUNTIME_DIR:-}/hypr/${HYPRLAND_INSTANCE_SIGNATURE:-}/.socket2.sock"
+
+  [[ -S $socket ]] || return 1
+  exec {events}< <(socat -U - "UNIX-CONNECT:$socket")
+}
+
 log_message() {
   printf 'omarchy-brightness-auto: %s\n' "$*" >&2
 }
@@ -251,7 +305,15 @@ control_session() {
   local next=""
   local mapped_monitor=""
   local write_status=0
+  local channel=""
+  local raw=""
+  local last_raw=""
 
+  channel="$(find_illuminance_channel "$sensor")" || {
+    log_state "unable to read sensor $sensor"
+    return 1
+  }
+  read -r last_raw <"$channel"
   lux="$(read_lux "$sensor")" || {
     log_state "unable to read sensor $sensor"
     return 1
@@ -266,15 +328,29 @@ control_session() {
   last_auto="$current"
   log_state "controlling $monitor from $sensor at $current%"
 
-  while sleep "$poll_seconds"; do
-    mapped_monitor="$(select_monitor "$kind")" || {
-      log_state "lost display $monitor"
+  monitors_changed=0
+  next_tick=0
+  while wait_for_tick; do
+    if (( monitors_changed )); then
+      monitors_changed=0
+      mapped_monitor="$(select_monitor "$kind")" || {
+        log_state "lost display $monitor"
+        return 1
+      }
+      if [[ $mapped_monitor != $monitor ]]; then
+        log_state "display mapping changed from $monitor to $mapped_monitor"
+        return 1
+      fi
+    fi
+    read -r raw <"$channel" || {
+      log_state "lost sensor $sensor"
       return 1
     }
-    if [[ $mapped_monitor != $monitor ]]; then
-      log_state "display mapping changed from $monitor to $mapped_monitor"
-      return 1
+    # Steady light: the reading is about the same and the smoothing has settled.
+    if [[ $smoothed_lux == $lux ]] && ! reading_changed "$last_raw" "$raw"; then
+      continue
     fi
+    last_raw="$raw"
     lux="$(read_lux "$sensor")" || {
       log_state "lost sensor $sensor"
       return 1
@@ -311,16 +387,25 @@ controller_pass() {
   local sensor=""
   local kind=""
   local monitor=""
+  local status=0
 
   if ! read -r sensor kind < <(find_sensor); then
     log_state "no ambient light sensor found"
     return 1
   fi
-  monitor="$(select_monitor "$kind")" || {
-    log_state "no unambiguous active monitor for $sensor"
+  # Listen before the monitor query, so no monitor change falls between them.
+  open_events || {
+    log_state "no Hyprland event socket"
     return 1
   }
-  control_session "$sensor" "$kind" "$monitor"
+  if monitor="$(select_monitor "$kind")"; then
+    control_session "$sensor" "$kind" "$monitor" || status=$?
+  else
+    log_state "no unambiguous active monitor for $sensor"
+    status=1
+  fi
+  exec {events}<&-
+  return "$status"
 }
 
 run_controller() {

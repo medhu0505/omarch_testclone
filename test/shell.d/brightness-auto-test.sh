@@ -32,16 +32,23 @@ read -r sensor kind < <(find_sensor "$test_tmp/iio")
 [[ $(target_with_offset "$(curve_brightness 3276800)" -46) == "89" ]] ||
   fail "a manual baseline does not cap bright-light headroom"
 [[ $(smooth_lux 100 200) == "125" ]] || fail "ambient readings are smoothed"
+[[ $(smooth_lux 200.005 200) == "200" ]] || fail "smoothing settles on a steady reading"
 [[ $(step_toward 45 35) == "38" ]] || fail "brightness changes are capped per poll"
+reading_changed 172800 172900 && fail "sensor jitter under 1% is no change"
+reading_changed 172800 175000 || fail "a light change over 1% is a change"
+reading_changed 5 6 || fail "a small change in dim light is a change"
+reading_changed 12.5 bad || fail "a reading that is not a number is a change"
 pass "automatic brightness sensor and curve behavior"
 
 (
   lux_read_count="$test_tmp/lux-read-count"
   sleep_count="$test_tmp/contention-sleep-count"
+  contention_channel="$test_tmp/contention-channel"
   write_count="$test_tmp/contention-write-count"
   contention_writes="$test_tmp/contention-writes"
   printf '0\n' >"$lux_read_count"
   printf '0\n' >"$sleep_count"
+  printf '0\n' >"$contention_channel"
   printf '0\n' >"$write_count"
   : >"$contention_writes"
   smoothing_new_weight=1
@@ -54,12 +61,14 @@ pass "automatic brightness sensor and curve behavior"
   }
   read_brightness() { printf '30\n'; }
   select_monitor() { printf 'eDP-1\n'; }
+  find_illuminance_channel() { printf '%s\n' "$contention_channel"; }
   log_state() { :; }
-  sleep() {
+  wait_for_tick() {
     local count=""
     read -r count <"$sleep_count"
     (( count < 2 )) || return 1
     printf '%s\n' "$(( count + 1 ))" >"$sleep_count"
+    printf '%s\n' "$(( count + 1 ))" >"$contention_channel"
   }
   write_brightness() {
     local count=""
@@ -177,29 +186,67 @@ grep -Fx -- '--user disable --now omarchy-brightness-auto.service' "$systemctl_c
 pass "automatic brightness exposes persistent service controls"
 
 session_sensor="$test_tmp/session-sensor"
-sleep_count="$test_tmp/sleep-count"
+tick_count="$test_tmp/tick-count"
 mkdir -p "$session_sensor"
 printf '200\n' >"$session_sensor/in_illuminance_input"
-printf '0\n' >"$sleep_count"
+printf '0\n' >"$tick_count"
 : >"$brightness_writes"
-cat >"$mock_bin/sleep" <<'SH'
-#!/bin/bash
-read -r count <"$SLEEP_COUNT"
-if (( count == 0 )); then
-  printf '[]\n' >"$MONITORS_FILE"
-  printf '1\n' >"$SLEEP_COUNT"
-  exit 0
-fi
-exit 1
-SH
-chmod +x "$mock_bin/sleep"
+(
+  wait_for_tick() {
+    local count=""
+    read -r count <"$tick_count"
+    (( count == 0 )) || return 1
+    printf '1\n' >"$tick_count"
+    printf '[]\n' >"$monitors_file"
+    monitors_changed=1
+  }
 
-if MONITORS_FILE="$monitors_file" SLEEP_COUNT="$sleep_count" BRIGHTNESS_WRITES="$brightness_writes" \
-  PATH="$mock_bin:$PATH" control_session "$session_sensor" generic eDP-1 2>/dev/null; then
-  fail "automatic brightness detects display loss under steady light"
-fi
+  if MONITORS_FILE="$monitors_file" BRIGHTNESS_WRITES="$brightness_writes" \
+    PATH="$mock_bin:$PATH" control_session "$session_sensor" generic eDP-1 2>/dev/null; then
+    fail "automatic brightness detects display loss under steady light"
+  fi
+)
 [[ ! -s $brightness_writes ]] || fail "display loss does not write a stale brightness target"
 pass "automatic brightness remaps after display loss under steady light"
+
+printf '0\n' >"$tick_count"
+lux_reads="$test_tmp/steady-lux-reads"
+: >"$lux_reads"
+(
+  wait_for_tick() {
+    local count=""
+    read -r count <"$tick_count"
+    (( count < 3 )) || return 1
+    printf '%s\n' "$(( count + 1 ))" >"$tick_count"
+  }
+  read_lux() {
+    printf 'read\n' >>"$lux_reads"
+    printf '200\n'
+  }
+  read_brightness() { printf '30\n'; }
+  select_monitor() { printf 'eDP-1\n'; }
+  log_state() { :; }
+
+  control_session "$session_sensor" generic eDP-1 || true
+)
+(( $(wc -l <"$lux_reads") == 1 )) || fail "steady light reads only the raw sensor value on each poll"
+pass "steady light reads only the raw sensor value on each poll"
+
+(
+  exec {events}< <(printf 'workspace>>2\nmonitoraddedv2>>1,DP-2,Apple\n')
+  monitors_changed=0
+  next_tick=$(( ${EPOCHREALTIME//[!0-9]/} + 500000 ))
+  wait_for_tick && fail "the poll stops when the Hyprland event stream ends"
+  (( monitors_changed == 1 )) || fail "a monitor event asks for a monitor check"
+
+  exec {events}< <(sleep 2)
+  monitors_changed=0
+  next_tick=$(( ${EPOCHREALTIME//[!0-9]/} + 100000 ))
+  wait_for_tick || fail "the poll returns at its deadline without events"
+  (( monitors_changed == 0 )) || fail "a poll without events asks for no monitor check"
+  true
+)
+pass "automatic brightness waits on Hyprland events between polls"
 
 grep -Fx 'ExecStart=/usr/bin/omarchy-brightness-auto' "$unit" >/dev/null ||
   fail "automatic brightness unit runs the package command"
