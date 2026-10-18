@@ -6,6 +6,10 @@ set -e
 
 PREFIX="$HOME/Games/battlenet"
 
+if ! gum confirm --default=false --affirmative "$(omarchy-i18n common.yes)" --negative "$(omarchy-i18n common.no)" "$(omarchy-i18n battlenet.confirmRemove)"; then
+  exit 0
+fi
+
 # Stop any running Battle.net / wine processes tied to this prefix.
 pkill -f "$PREFIX" 2>/dev/null || true
 sleep 1
