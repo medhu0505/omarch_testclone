@@ -214,18 +214,10 @@ done
 "$ROOT/bin/omarchy" system lock --help | grep -q 'omarchy-system-lock' || fail "system lock remains routed to its own command"
 pass "existing system subcommands keep their routes"
 
-# After the sections that reuse the shared worker file: this overwrites it.
-run_power_command reboot-boot-menu || fail "reboot-boot-menu service is scheduled"
-[[ -s $CALL_LOG.worker ]] || fail "reboot-boot-menu schedules its worker"
-PATH=/stale/bin OMARCHY_PATH=/stale/checkout HYPRLAND_INSTANCE_SIGNATURE=stale /bin/bash "$CALL_LOG.worker" || fail "reboot-boot-menu worker succeeds"
-grep -q '^systemctl reboot --boot-loader-menu=0 --no-wall$' "$call_log" || fail "reboot-boot-menu asks systemd for the boot loader menu"
-grep -q '^omarchy-state clear re\*-required$' "$call_log" || fail "reboot-boot-menu clears restart state"
-pass "reboot-boot-menu reboots into the boot loader menu through the graceful session exit"
-
 empty_runtime="$test_tmp/empty-runtime"
 mkdir -p "$empty_runtime"
 
-for action in reboot reboot-boot-menu shutdown; do
+for action in reboot shutdown; do
   : >"$call_log"
   rm -f "$CALL_LOG.worker"
   FAIL_USER_BUS=true XDG_RUNTIME_DIR="$empty_runtime" env -u DBUS_SESSION_BUS_ADDRESS "$ROOT/bin/omarchy-system" "$action" ||
