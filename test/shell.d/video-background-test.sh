@@ -73,9 +73,31 @@ assert(
   /instant \|\| !displayedBackground \|\| leavingVideo \|\| isVideo\(path\) \|\| isVideo\(displayedBackground\)[\s\S]*displayedBackground = finalPath/.test(backgroundQml),
   'video switches bypass the image-only reveal stack and use the durable background path'
 )
+// Run transitionBackground itself for still -> video -> another still.
+const transitionMatch = backgroundQml.match(/function transitionBackground\(([^)]*)\) \{([\s\S]*?)\n  \}\n/)
+assert(transitionMatch, 'transitionBackground is defined')
+const background = {
+  currentBackground: '', displayedBackground: '', oldBackground: '', incomingBackground: '',
+  preparedBackground: '', lastTransitionPath: '', backgroundVersion: 0, failedBackground: '',
+  revealStartedVersion: -1, revealProgress: 1, finishingTransition: false,
+  isVideo: path => /\.(mp4|m4v|mov|webm|mkv|avi)$/i.test(String(path || '')),
+  requestNativeSize: () => {},
+  preparedBackgroundTimer: { stop: () => {} },
+  revealAnimation: { stop: () => {} },
+}
+const transitionBackground = new Function('state', ...transitionMatch[1].split(',').map(name => name.trim()),
+  `with (state) {${transitionMatch[2]}\n}`).bind(null, background)
+transitionBackground('', '/bg/totoro.webp', '/bg/totoro.webp', true, true)
+assert(background.displayedBackground === '/bg/totoro.webp', 'the first still is on screen')
+transitionBackground('', '/bg/loops/totoro.mp4', '/bg/loops/totoro.mp4', false, false)
 assert(
-  /if \(isVideo\(path\) && displayedBackground && !isVideo\(displayedBackground\)\) \{[^}]*return\s*\}/.test(backgroundQml),
+  background.displayedBackground === '/bg/totoro.webp' && background.currentBackground === '/bg/loops/totoro.mp4',
   'a video replacing a still keeps the still on screen until OWE hides this layer'
+)
+transitionBackground('', '/bg/waves.webp', '/bg/waves.webp', false, false)
+assert(
+  background.displayedBackground === '/bg/waves.webp' && background.revealProgress === 1 && background.oldBackground === '',
+  'a still replacing a video shows at once, with no fade from the image before the video'
 )
 assert(backgroundQml.includes('BackgroundMedia {') && lockQml.includes('BackgroundMedia {'), 'desktop and lock screen share still rendering')
 assert(
