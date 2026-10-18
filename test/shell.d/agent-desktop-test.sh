@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/base-test.sh"
+if (( EUID == 0 )); then
+  skip "agent desktop integration requires a desktop user; installers refuse root"
+  exit 0
+fi
 require_command python3
 python3 - "$ROOT" <<'PY'
 from pathlib import Path
