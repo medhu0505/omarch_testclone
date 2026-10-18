@@ -30,6 +30,10 @@ const gestureAreaSource = barSource.slice(barSource.indexOf('component CenterGes
 assert(gestureAreaSource.includes('acceptedButtons: Qt.LeftButton') && gestureAreaSource.includes('enabled: root.editGestures'), 'the center gesture area goes idle with the gestures off')
 assert(/canReorder: root\.editGestures &&/.test(barSource), 'widget reorder drags run only while the gestures are on')
 
+const workspacesSource = fs.readFileSync(root + '/shell/plugins/bar/widgets/Workspaces.qml', 'utf8')
+assert(/onPressed: function\(button\) \{[\s\S]*?if \(shown && button === Qt\.LeftButton\) root\.cycleLayout\(\)/.test(workspacesSource), 'the workspaces widget cycles the layout on a left-click only')
+assert(/else if \(!shown\) root\.focusWorkspace/.test(workspacesSource), 'a press on another workspace still focuses it')
+
 const readmeSource = fs.readFileSync(root + '/shell/plugins/bar/README.md', 'utf8')
 assert(/editGestures/.test(readmeSource), 'the bar README documents the gestures opt-out')
 

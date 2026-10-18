@@ -130,8 +130,8 @@ BarWidget {
   }
 
   // The workspace each monitor shows carries its layout: a square tiles, a
-  // circle scrolls, and a triangle floats. Clicking it cycles to the next one,
-  // as Super + L does.
+  // circle scrolls, and a triangle floats. Left-clicking it cycles to the
+  // next one, as Super + L does; the other buttons leave the layout alone.
   property string activeMode: "dwindle"
   property bool modeStale: false
 
@@ -276,9 +276,9 @@ BarWidget {
         verticalPadding: 6
         fixedWidth: root.vertical ? root.barSize : Style.space(20)
         fixedHeight: root.barSize
-        onPressed: function() {
-          if (shown) root.cycleLayout()
-          else root.focusWorkspace(modelData)
+        onPressed: function(button) {
+          if (shown && button === Qt.LeftButton) root.cycleLayout()
+          else if (!shown) root.focusWorkspace(modelData)
         }
         onWheelMoved: function(delta) { root.scrollWorkspaces(delta) }
       }
