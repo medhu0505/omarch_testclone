@@ -104,6 +104,21 @@ ShellRoot {
           root.view.authenticatingPassword = false
         } else if (root.step === 4) {
           root.assertTrue(root.passwordInput.activeFocus, "password field has focus after a password check")
+          root.view.authenticatingPassword = true
+        } else if (root.step === 5) {
+          // Focus moves once the check is under way, as when resume lands during it.
+          host.forceActiveFocus()
+        } else if (root.step === 6) {
+          root.view.authenticatingPassword = false
+        } else if (root.step === 7) {
+          root.assertTrue(root.passwordInput.activeFocus, "password field takes focus back after it was dropped during a password check")
+          root.view.authenticatingPassword = true
+        } else if (root.step === 8) {
+          decoy.forceActiveFocus()
+        } else if (root.step === 9) {
+          root.view.authenticatingPassword = false
+        } else if (root.step === 10) {
+          root.assertTrue(root.passwordInput.activeFocus, "password field takes focus back after another item took it during a password check")
           // The preview surface builds the same view with input disabled.
           root.view.inputEnabled = false
           decoy.forceActiveFocus()

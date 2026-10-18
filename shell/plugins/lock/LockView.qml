@@ -71,6 +71,11 @@ Item {
   onInputEnabledChanged: {
     if (inputEnabled) Qt.callLater(forcePasswordFocus)
   }
+  // Qt hands focus back to a re-enabled field only if nothing took it during
+  // the password check, so take it back once the check is over.
+  onAuthenticatingPasswordChanged: {
+    if (inputEnabled && !authenticatingPassword) Qt.callLater(forcePasswordFocus)
+  }
   Component.onCompleted: {
     syncPasswordText()
     if (inputEnabled) Qt.callLater(forcePasswordFocus)
