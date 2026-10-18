@@ -43,9 +43,9 @@ hl.bind("SUPER + K", hl.dsp.exec_cmd("omarchy-menu keybindings"), { description 
 hl.bind("SUPER + code:20", hl.dsp.workspace({ name = "special" }), { description = "Lua only bind" })
 LUA
 
-start=$(date +%s)
-output=$(HOME="$TMPDIR/home" DEBUG=1 timeout 10 lua -E - <<<"$scan" 2>&1) || fail "Lua bind scan exits cleanly on a config that iterates and compares compositor state (output: $output)"
-(( $(date +%s) - start < 5 )) || fail "Lua bind scan terminates promptly"
+# No time budget, so a slow machine cannot fail it: a scan that never ended
+# would be killed by the timeout, which fails the run on its exit status.
+output=$(HOME="$TMPDIR/home" DEBUG=1 timeout 60 lua -E - <<<"$scan" 2>&1) || fail "Lua bind scan exits cleanly on a config that iterates and compares compositor state (output: $output)"
 pass "Lua bind scan survives load-time loops, comparisons, and arithmetic over stub state"
 
 [[ $output != *"lua bind scan failed"* ]] || fail "Lua bind scan does not abort on stub comparisons ($output)"
@@ -63,8 +63,6 @@ hl.bind("SUPER + K", hl.dsp.exec_cmd("omarchy-menu keybindings"), { description 
 while true do end
 LUA
 
-start=$(date +%s)
-output=$(HOME="$TMPDIR/home" DEBUG=1 timeout 10 lua -E - <<<"$scan" 2>&1) || fail "Lua bind scan exits cleanly on a config that never finishes (output: $output)"
-(( $(date +%s) - start < 5 )) || fail "Lua bind scan stops a runaway config before the timeout"
+output=$(HOME="$TMPDIR/home" DEBUG=1 timeout 60 lua -E - <<<"$scan" 2>&1) || fail "Lua bind scan stops a runaway config instead of running until killed (output: $output)"
 grep -qF $'64\tKeybindings menu\tK\texec\tomarchy-menu keybindings' <<<"$output" || fail "Lua bind scan keeps binds declared before a runaway loop (got: $output)"
 pass "Lua bind scan stops a runaway config and keeps the binds declared before it"

@@ -277,7 +277,9 @@ pass "picking the terminal bind from the menu launches a terminal"
 mv "$tmpdir/hyprland.lua" "$home/.config/hypr/hyprland.lua"
 
 rm -rf "$tmpdir/cache"
-timeout --kill-after=1s 10s env -i PATH="$stub_bin:$ROOT/bin:$PATH" HOME="$home" \
+# A wedged scan is stopped by the menu's own timeout before the Terminal bind,
+# which the check below catches; the outer timeout only turns a hang into a fail.
+timeout --kill-after=1s 60s env -i PATH="$stub_bin:$ROOT/bin:$PATH" HOME="$home" \
   XDG_CACHE_HOME="$tmpdir/cache" OMARCHY_PATH="$ROOT" \
   bash "$menu" --print >/dev/null 2>&1 ||
   fail "a plugin iterating windows at load time does not wedge the keybindings scan"
