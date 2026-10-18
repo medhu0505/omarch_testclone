@@ -103,6 +103,13 @@ check '{"bar":{"centerAnchor":"omarchy.clock","layout":{"center":["acme.clock","
   "a stale anchor with two clones in the center leaves the center whole"
 
 rm -rf "$test_dir/home/.config/omarchy/plugins"
+clone dhh.clock omarchy.clock
+clone dhh.clock-alt omarchy.clock
+check '{"bar":{"centerAnchor":"omarchy.clock","layout":{"center":["dhh.clock-alt","dhh.clock","omarchy.weather"]}}}' \
+  '{"layout":{"center":["dhh.clock-alt","dhh.clock","omarchy.weather"]}}' \
+  "a stale anchor with two clones in the center leaves it whole, even when only one shares its kind"
+
+rm -rf "$test_dir/home/.config/omarchy/plugins"
 mkdir -p "$test_dir/home/.config/omarchy/plugins/"{broken,empty,doubled}
 echo '{' >"$test_dir/home/.config/omarchy/plugins/broken/manifest.json"
 : >"$test_dir/home/.config/omarchy/plugins/empty/manifest.json"
