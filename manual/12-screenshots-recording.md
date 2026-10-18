@@ -78,6 +78,8 @@ Pictures go to jpg or png at high, medium, or low, which cap the width at 3160, 
 
 It works from the terminal too, if you already know what you want: `omarchy transcode ~/Videos/demo.mov mp4 1080p`. There's also `omarchy transcode ascii`, which turns an image into ASCII art — that one's mostly for [branding](41-branding.md).
 
+When transcoding several selected files in Files, the resolution menu offers an unchecked **Apply to all [type] files** checkbox if more files of that source type remain. Click it (or press `Tab`) before choosing the resolution to reuse both the format and resolution for those files. Other types still prompt separately. The choice lasts only for that selection; leave it unchecked to choose settings for each file. Press `Esc` with an empty search to cancel the remaining batch. You can also start a batch with `omarchy transcode --batch -- photo.heic another.heic clip.mov`. Existing output files are skipped during a batch.
+
 ## Sending it somewhere
 
 Once you've got the file, `Super + Ctrl + S` opens the Share menu and sends it to another device on your network via LocalSend. See [GUIs](22-guis.md) for that.
