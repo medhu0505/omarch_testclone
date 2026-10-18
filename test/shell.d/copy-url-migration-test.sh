@@ -384,6 +384,38 @@ grep -q "Singleton" "$give_up_stderr" || fail "migration says how to clear a lef
 pass "migration gives up instead of asking forever about a profile that stays open"
 close_browser
 
+# omarchy update -y exports OMARCHY_UPDATE_UNATTENDED=1. gum confirm still waits
+# for a key when a terminal is attached, so the unattended path must not reach
+# it: report, leave the repair pending, and let the update continue to fail
+# the same way a declined prompt does.
+write_stale_preferences
+open_browser
+cat >"$stub_bin/gum" <<'STUB'
+#!/bin/bash
+echo asked >>"${GUM_CALLS:?}"
+sleep 30
+exit 0
+STUB
+chmod +x "$stub_bin/gum"
+unattended_stderr="$test_dir/unattended-stderr"
+unattended_gum_calls="$test_dir/unattended-gum-calls"
+: >"$unattended_gum_calls"
+status=0
+HOME="$home" PATH="$stub_bin:$PATH" GUM_CALLS="$unattended_gum_calls" \
+  OMARCHY_UPDATE_UNATTENDED=1 timeout 10 bash -euo pipefail "$migration" \
+  >/dev/null 2>"$unattended_stderr" || status=$?
+(( status != 124 )) || fail "an unattended update does not wait on gum confirm"
+(( status != 0 )) || fail "an unattended update leaves the repair pending while a profile is open"
+[[ ! -s $unattended_gum_calls ]] || fail "an unattended update never calls gum confirm"
+grep -q "A running browser would undo the Copy URL shortcut repair" "$unattended_stderr" ||
+  fail "an unattended update explains why the repair is deferred" "$(cat "$unattended_stderr")"
+grep -q "omarchy-migrate" "$unattended_stderr" ||
+  fail "an unattended update says how to retry the repair"
+[[ $(jq -r '.extensions.commands["linux:Alt+Shift+L"].extension' "$preferences") == "$ghost_id" ]] ||
+  fail "an unattended update leaves preferences alone while a profile is open"
+pass "omarchy update -y does not wait on gum confirm"
+close_browser
+
 # Working through open profiles one prompt at a time is progress, not a stuck
 # wait: the budget for a profile that never closes must not run out on someone
 # closing four of them in a row.

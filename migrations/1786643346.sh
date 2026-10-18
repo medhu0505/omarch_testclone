@@ -286,6 +286,16 @@ while affected_profile_open; do
     exit 1
   fi
 
+  # omarchy update -y exports OMARCHY_UPDATE_UNATTENDED=1 and promises not to
+  # ask. gum confirm still waits for a key when a terminal is attached, so the
+  # three-round cap never runs; report and leave the repair pending, as when
+  # the prompt is declined.
+  if [[ ${OMARCHY_UPDATE_UNATTENDED:-} == 1 ]]; then
+    echo "A running browser would undo the Copy URL shortcut repair." >&2
+    echo "Close the browser windows, then run: omarchy-migrate" >&2
+    exit 1
+  fi
+
   if ! gum confirm "Close the browser windows to repair the Copy URL shortcut, then continue"; then
     echo "A running browser would undo the Copy URL shortcut repair." >&2
     echo "Close the browser windows, then run: omarchy-migrate" >&2
