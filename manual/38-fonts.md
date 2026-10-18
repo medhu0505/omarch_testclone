@@ -8,6 +8,10 @@ You can change this through the _Style > Font_ menu in the Omarchy menu (`Super 
 
 You can install other popular programming fonts via _Install > Style > Font_ in the Omarchy menu: Cascadia Mono, Meslo LG Mono, Fira Code, Victor Code, Bitstream Vera Mono, and Iosevka are all one click away, in their Nerd Font versions so the glyphs in the bar and terminal keep working. After installing one, pick it under _Style > Font_.
 
+## Persian
+
+Text marked as Persian uses [Vazirmatn](https://github.com/rastikerdar/vazirmatn), a free and open source Persian/Arabic typeface. The Non-Latin variant keeps English letters and Western digits in your chosen interface and terminal fonts. It also covers Arabic-script fallback when an app supplies no language; text explicitly marked as Arabic or Urdu keeps its existing font preference.
+
 ## Chinese, Japanese, and Korean
 
 Chinese, Japanese, and Korean share many characters but draw some of them differently, so the same character looks right to one reader and foreign to another. Picking one of these languages under _Setup > Language_, or its input method, sets the matching forms. To choose them yourself, use _Style > Font > Chinese, Japanese, Korean_, or `omarchy font cjk jp`, `kr`, `sc`, `tc` (Taiwan), or `hk` (Hong Kong) from a terminal; `omarchy font cjk default` goes back to the system's choice, which is Japanese forms. Text a web page or document marks with its own language, and the whole desktop while it is in one of these languages, keeps that language's forms.
