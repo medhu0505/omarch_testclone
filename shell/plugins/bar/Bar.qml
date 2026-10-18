@@ -72,6 +72,11 @@ Item {
   property bool centerHoverRevealSuppressed: false
   property int barConfigSerial: 0
   property string position: "top"
+  // Direct manipulation on the bar itself: drag empty space (or hold a press)
+  // to move the bar to an edge, double-click empty space to cycle the bar
+  // background, drag a widget to reorder it. The user turns the gestures off
+  // with bar.editGestures in shell.json; widgets keep their own clicks.
+  property bool editGestures: true
   // Resolves through fontconfig at paint time (Style.font.family defaults
   // to "monospace"), so changing the system font (via `omarchy-font-set`)
   // updates the bar without a reload.
@@ -737,6 +742,9 @@ Item {
     var config = Util.isPlainObject(barConfig) ? barConfig : fallbackBarConfig
 
     position = normalizePosition(config.position)
+    // Gestures stay on unless the user's shell.json turns them off; a config
+    // from before the field without it keeps them.
+    editGestures = config.editGestures !== false
     // opaque, glassy or none; a config from before background says
     // transparent instead.
     var look = config.background || (config.transparent === true ? "none" : "opaque")
@@ -2062,6 +2070,9 @@ Item {
     readonly property real dragThreshold: Style.space(4)
 
     acceptedButtons: Qt.LeftButton
+    // With the gestures off the empty bar is inert under press, drag and
+    // double-click; only the widgets drawn over it answer the pointer.
+    enabled: root.editGestures
     cursorShape: dragging ? Qt.ClosedHandCursor : Qt.ArrowCursor
     pressAndHoldInterval: 200
 
@@ -2620,7 +2631,7 @@ Item {
       property bool suppressClick: false
       property real pressedX: 0
       property real pressedY: 0
-      readonly property bool canReorder: root.shell && typeof root.shell.mutateShellConfig === "function"
+      readonly property bool canReorder: root.editGestures && root.shell && typeof root.shell.mutateShellConfig === "function"
       readonly property real dragThreshold: Style.space(4)
 
       anchors.fill: parent
