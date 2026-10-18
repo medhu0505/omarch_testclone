@@ -71,12 +71,13 @@ transcode_picture() {
     ;;
   esac
 
+  # JPG and PNG are still images: retain the first frame/page of a sequence.
   case "$format" in
   jpg)
-    magick "$input" -resize "$resize" -quality 85 -strip "$output"
+    magick "$input" -delete '1--1' -resize "$resize" -quality 85 -strip "$output"
     ;;
   png)
-    magick "$input" -resize "$resize" -strip -define png:compression-filter=5 \
+    magick "$input" -delete '1--1' -resize "$resize" -strip -define png:compression-filter=5 \
       -define png:compression-level=9 \
       -define png:compression-strategy=1 \
       -define png:exclude-chunk=all \
