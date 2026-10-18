@@ -497,6 +497,9 @@
   "setup.default.agent.cursor-agent": {
     "label": "Cursor CLI"
   },
+  "setup.default.agent.goose": {
+    "label": "Goose"
+  },
   "setup.default.agent.grok": {
     "label": "Grok"
   },
