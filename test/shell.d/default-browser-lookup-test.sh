@@ -70,3 +70,39 @@ printf '[Default Applications]\nx-scheme-handler/http=missing.desktop\n' >"$XDG_
   fail "default browser unsets BROWSER before asking xdg-settings"
 
 pass "default browser reads mimeapps.list and falls back to xdg-settings"
+
+# When xdg-settings returns the routing entry and mimeapps.list has no installed handler,
+# fall back to the first installed supported browser.
+cat >"$mock_bin/xdg-settings" <<'SH'
+#!/bin/bash
+echo omarchy-browser.desktop
+SH
+
+# Install brave-origin as an installed browser
+printf '#!/bin/bash\n' >"$mock_bin/brave-origin"
+chmod +x "$mock_bin/brave-origin"
+echo "Exec=brave-origin %U" >"$XDG_DATA_HOME/applications/brave-origin.desktop"
+
+rm -f "$XDG_DATA_HOME/applications/chromium.desktop" "$XDG_DATA_HOME/applications/firefox.desktop" "$XDG_DATA_DIRS/applications/brave-browser.desktop"
+
+[[ $(omarchy-cmd-default-browser) == "brave-origin.desktop" ]] ||
+  fail "default browser falls back to installed browser when xdg-settings returns the routing entry"
+pass "default browser falls back to installed browser when xdg-settings returns the routing entry"
+
+# When no browser is installed at all, omarchy-launch-browser warns and exits 1 without invoking uwsm-app
+rm -f "$XDG_DATA_HOME/applications/brave-origin.desktop" "$mock_bin/brave-origin"
+cat >"$mock_bin/omarchy-notification-send" <<'SH'
+#!/bin/bash
+printf 'omarchy-notification-send %s\n' "$*" >>"$OMARCHY_TEST_XDG_SETTINGS_LOG"
+SH
+cat >"$mock_bin/uwsm-app" <<'SH'
+#!/bin/bash
+echo "UWSM CALLED WITH: $*" >&2
+exit 1
+SH
+chmod +x "$mock_bin/omarchy-notification-send" "$mock_bin/uwsm-app"
+
+err_out=$(OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-launch-browser" 2>&1) && fail "launch browser must fail when no browser is installed" || true
+grep -q "No default browser found" <<<"$err_out" || fail "launch browser outputs actionable error message"
+! grep -q "UWSM CALLED" <<<"$err_out" || fail "launch browser must never pass empty command to uwsm-app"
+pass "omarchy-launch-browser fails gracefully with notification when no browser is available"
