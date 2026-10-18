@@ -160,7 +160,7 @@ ALACRITTY_PRESENT=0 run_migration
 pass "migration restores from the newest upgrade backup"
 
 # Refresh is what the upgrade tells a user to rerun, and it must put the same
-# referenced PNGs back. A fixture tree keeps mise.sh from running for real.
+# referenced PNGs back. A fixture tree stands in for the packaged launchers.
 refresh_root="$test_dir/omarchy"
 mkdir -p "$refresh_root/applications" "$refresh_root/install/helpers"
 ln -s "$ROOT/install/helpers/quattro-app-icons.sh" "$refresh_root/install/helpers/quattro-app-icons.sh"

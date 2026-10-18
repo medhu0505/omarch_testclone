@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# omarchy:summary=Ensure default application launchers and mise wrappers are installed.
+# omarchy:summary=Ensure default application launchers are installed.
 
 # Copy .desktop declarations
 mkdir -p ~/.local/share/applications
@@ -14,9 +14,5 @@ fi
 # not pull parked PNGs back. Leftover custom launchers still name the old path.
 source "$OMARCHY_PATH/install/helpers/quattro-app-icons.sh"
 restore_quattro_app_menu_icons
-
-if [[ -f "$OMARCHY_PATH/install/user/mise.sh" ]]; then
-  bash "$OMARCHY_PATH/install/user/mise.sh"
-fi
 
 update-desktop-database ~/.local/share/applications
