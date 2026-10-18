@@ -41,6 +41,12 @@ run_migration
 [[ $(cat "$flags") == $'--force-device-scale-factor=1.5\n--ozone-platform=wayland' ]] || fail "migration appends the Wayland switch to the user's flags" "$(cat "$flags")"
 pass "migration appends the Wayland switch to the user's flags"
 
+printf -- '--force-device-scale-factor=1.5' >"$flags"
+run_migration
+printf -- '--force-device-scale-factor=1.5\n--ozone-platform=wayland\n' >"$test_dir/expected"
+cmp -s "$test_dir/expected" "$flags" || fail "migration adds a missing newline before appending" "$(cat "$flags")"
+pass "migration adds a missing newline before appending"
+
 printf -- '--ozone-platform=x11\n' >"$flags"
 run_migration
 [[ $(cat "$flags") == '--ozone-platform=x11' ]] || fail "migration keeps a platform the user chose" "$(cat "$flags")"
@@ -77,6 +83,12 @@ printf -- '--force-device-scale-factor=1.5\n' >"$flags"
 run_installer
 [[ $(cat "$flags") == $'--force-device-scale-factor=1.5\n--ozone-platform=wayland' ]] || fail "installer appends the Wayland switch to the user's flags" "$(cat "$flags")"
 pass "installer appends the Wayland switch to the user's flags"
+
+printf -- '--force-device-scale-factor=1.5' >"$flags"
+run_installer
+printf -- '--force-device-scale-factor=1.5\n--ozone-platform=wayland\n' >"$test_dir/expected"
+cmp -s "$test_dir/expected" "$flags" || fail "installer adds a missing newline before appending" "$(cat "$flags")"
+pass "installer adds a missing newline before appending"
 
 run_installer
 [[ $(grep -cx -- '--ozone-platform=wayland' "$flags") == 1 ]] || fail "installer does not duplicate the Wayland switch" "$(cat "$flags")"
