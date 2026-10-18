@@ -171,7 +171,8 @@ The same plugin doubles as the system's dmenu. `omarchy-menu-select` and
 `omarchy-menu-input` summon it with a `mode: select` or `mode: input`
 payload, then block on a tempfile handshake: the shell writes the selection
 to `selectionFile` and then creates `doneFile`, and cancellation (empty
-selection) exits 1. A select option is `label`, `glyph\tlabel`, or
+selection) exits 1, as does a picker that another summon replaces before it
+is answered. A select option is `label`, `glyph\tlabel`, or
 `glyph\tlabel\tsubtext` — the glyph shows but never returns, the subtext
 renders under the label, filters with it, and comes back as
 `label\tsubtext` so callers with same-named rows get a stable key. This is

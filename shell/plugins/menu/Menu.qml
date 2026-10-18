@@ -993,6 +993,9 @@ Item {
   function openExistingMenu(initialMenu) {
     requestSerial += 1
     mode = "menu"
+    // A menu summoned over a waiting picker answers it as canceled, as
+    // openDmenu does.
+    if (requestActive) root.finishRequest(null)
     requestActive = false
     selectionFile = ""
     doneFile = ""
@@ -1025,6 +1028,10 @@ Item {
         return
       }
     }
+    // A picker still waiting is answered as canceled first, the way the image
+    // picker answers one it replaces: its caller waits on the done file with
+    // no timeout, so a picker replaced without an answer never returns.
+    if (root.requestActive && root.doneFile !== String(payload.doneFile || "")) root.finishRequest(null)
     requestSerial += 1
     mode = payload.mode === "input" ? "input" : "select"
     dmenuPrompt = String(payload.prompt || (mode === "input" ? Commons.I18n.t("menu.inputPrompt") : Commons.I18n.t("menu.selectPrompt")))
