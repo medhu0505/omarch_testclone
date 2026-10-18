@@ -50,9 +50,6 @@
   "system.reboot": {
     "label": "Reboot"
   },
-  "system.reboot-boot-menu": {
-    "label": "Reboot to Boot Menu"
-  },
   "system.shutdown": {
     "label": "Shutdown"
   },
@@ -383,6 +380,28 @@
   },
   "style.font": {
     "label": "Font"
+  },
+  "style.font.cjk": {
+    "label": "Chinese, Japanese, Korean",
+    "title": "Chinese, Japanese, and Korean Glyphs"
+  },
+  "style.font.cjk.auto": {
+    "label": "Automatic"
+  },
+  "style.font.cjk.jp": {
+    "label": "Japanese"
+  },
+  "style.font.cjk.kr": {
+    "label": "Korean"
+  },
+  "style.font.cjk.sc": {
+    "label": "Simplified Chinese"
+  },
+  "style.font.cjk.tc": {
+    "label": "Taiwan"
+  },
+  "style.font.cjk.hk": {
+    "label": "Hong Kong"
   },
   "style.hyprland": {
     "label": "Hyprland"

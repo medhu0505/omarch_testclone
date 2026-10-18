@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# omarchy:summary=Ensure default application launchers and mise wrappers are installed.
+# omarchy:summary=Ensure default application launchers are installed.
 
 # Copy .desktop declarations
 mkdir -p ~/.local/share/applications
@@ -13,10 +13,6 @@ fi
 ghostty_desktop="com.mitchellh.ghostty.desktop"
 if omarchy-cmd-present ghostty && [[ ! -e ~/.local/share/applications/$ghostty_desktop && ! -L ~/.local/share/applications/$ghostty_desktop ]]; then
   cp "$OMARCHY_PATH/default/ghostty/$ghostty_desktop" ~/.local/share/applications/
-fi
-
-if [[ -f "$OMARCHY_PATH/install/user/mise.sh" ]]; then
-  bash "$OMARCHY_PATH/install/user/mise.sh"
 fi
 
 update-desktop-database ~/.local/share/applications
