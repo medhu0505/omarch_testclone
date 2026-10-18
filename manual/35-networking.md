@@ -18,6 +18,8 @@ Give the hotspot a name and a password by pressing the gear next to the toggle. 
 
 A hotspot runs on the Wi-Fi radio, so the internet it shares has to come from somewhere else — plug in ethernet or share your phone's connection. The panel warns when there's no such upstream, but a LAN-only hotspot still works.
 
+If you're passing along your phone's data, you don't want a joining laptop to start a 2GB update over it. The gear also has _Ask joining devices to save data_. On _Auto_, the hotspot asks only when your own connection is metered, like a phone hotspot, and Android phones and Linux machines then treat it as limited data. _Always_ and _Never_ override that. The hotspot picks this up when it starts, so a change made while it's running applies the next time you turn it on. From the terminal, pass `--save-data=auto`, `--save-data=always` or `--save-data=never` to `omarchy hotspot start` or `apply`.
+
 From the terminal it's `omarchy hotspot toggle`, or `omarchy hotspot start <ssid> <band>` with the password typed in after. `omarchy hotspot qr` prints a scannable join code, and _Trigger > Wi-Fi Hotspot_ in the menu toggles it too.
 
 ## DNS

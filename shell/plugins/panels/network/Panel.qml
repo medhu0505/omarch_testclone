@@ -186,6 +186,9 @@ Panel {
   // support, so this is a best-effort hint. The selector only appears when
   // there is more than one.
   property var hotspotBands: []
+  // auto | always | never: whether joining devices are told to save data
+  // (Model.hotspotSaveData). Prefilled from the profile like the band.
+  property string hotspotSaveData: "auto"
   property string hotspotError: ""
   property string hotspotStatusError: ""
   readonly property string hotspotMessage: hotspotError !== "" ? hotspotError : hotspotStatusError
@@ -1014,6 +1017,7 @@ Panel {
       if (next.ssid) hotspotSsid = next.ssid
       if (next.password) hotspotPassword = next.password
       hotspotBand = Model.hotspotDefaultBand(next)
+      hotspotSaveData = Model.hotspotSaveData(next)
     }
     if ((next.active === "1") !== wasActive) syncWifiNetworks()
   }
@@ -1026,7 +1030,7 @@ Panel {
     hotspotBusy = true
     hotspotError = ""
     hotspotActionProc.secret = hotspotPassword
-    hotspotActionProc.command = [hotspotCommand, "start", hotspotSsid.trim(), hotspotBand]
+    hotspotActionProc.command = [hotspotCommand, "start", hotspotSsid.trim(), hotspotBand, "--save-data=" + hotspotSaveData]
     hotspotActionProc.running = true
   }
 
@@ -1067,7 +1071,7 @@ Panel {
     hotspotBusy = true
     hotspotError = ""
     hotspotActionProc.secret = hotspotPassword
-    hotspotActionProc.command = [hotspotCommand, "apply", hotspotSsid.trim(), hotspotBand]
+    hotspotActionProc.command = [hotspotCommand, "apply", hotspotSsid.trim(), hotspotBand, "--save-data=" + hotspotSaveData]
     hotspotActionProc.running = true
   }
 
@@ -2221,6 +2225,30 @@ Panel {
               onClicked: root.applyHotspot()
             }
           }
+
+          // Whether joining phones are told to save data. Saved with the
+          // credentials by the checkmark or the next start. Mouse-only, like
+          // the band row.
+          Text {
+            textFormat: Text.PlainText
+            width: parent.width
+            text: "Ask joining devices to save data"
+            color: Qt.darker(root.bar.foreground, 1.35)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.caption
+          }
+
+          Row {
+            width: parent.width
+            spacing: Style.space(6)
+
+            Repeater {
+              model: Model.hotspotSaveDataChoices
+              delegate: HotspotSaveDataPill {
+                choice: modelData
+              }
+            }
+          }
         }
 
         Text {
@@ -2379,6 +2407,27 @@ Panel {
     selected: root.hotspotBand === band
 
     onClicked: root.hotspotBand = band
+  }
+
+  // One save-data choice. `selected` is what the next apply or start writes;
+  // `active` (fill) is what the saved profile holds.
+  component HotspotSaveDataPill: Button {
+    required property string choice
+
+    text: Model.hotspotSaveDataLabel(choice)
+    tooltipText: Model.hotspotSaveDataTooltip(choice, root.hotspotActive, Model.hotspotSaveData(root.hotspot))
+    fontSize: Style.font.bodySmall
+    foreground: root.bar.foreground
+    fontFamily: root.bar.fontFamily
+    horizontalPadding: Style.spacing.controlPaddingX
+    verticalPadding: Style.spacing.controlPaddingY + Style.space(2)
+    bordered: true
+
+    active: root.hotspot.configured === "1" && Model.hotspotSaveData(root.hotspot) === choice
+    selected: root.hotspotSaveData === choice
+    enabled: !root.hotspotBusy
+
+    onClicked: root.hotspotSaveData = choice
   }
 
   // One DNS provider pill. The cursor + current visuals come entirely from

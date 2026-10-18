@@ -423,6 +423,32 @@ function hotspotDefaultBand(status) {
   return bands[0]
 }
 
+// Whether devices joining the hotspot are told to save data (NetworkManager
+// sends DHCP option 43 ANDROID_METERED; see omarchy-hotspot). Auto follows
+// this machine's own connection when the hotspot starts.
+var hotspotSaveDataChoices = ["auto", "always", "never"]
+
+function hotspotSaveData(status) {
+  var value = (status && status.save_data) || ""
+  return hotspotSaveDataChoices.indexOf(value) !== -1 ? value : "auto"
+}
+
+function hotspotSaveDataLabel(choice) {
+  if (choice === "always") return "Always"
+  if (choice === "never") return "Never"
+  return "Auto"
+}
+
+// dnsmasq reads the choice when the hotspot starts, so while it is on air a
+// different pick waits for the next start.
+function hotspotSaveDataTooltip(choice, active, saved) {
+  var text = "Tell joining devices to save data only when this computer's connection is metered"
+  if (choice === "always") text = "Always tell joining devices to save data"
+  else if (choice === "never") text = "Never tell joining devices to save data"
+  if (active && choice !== saved) text += " (from the next start)"
+  return text
+}
+
 function hotspotClients(status) {
   var value = (status && status.clients) || "[]"
   try {
@@ -486,6 +512,10 @@ if (typeof module !== "undefined") {
     parseHotspotStatus: parseHotspotStatus,
     hotspotBands: hotspotBands,
     hotspotDefaultBand: hotspotDefaultBand,
+    hotspotSaveDataChoices: hotspotSaveDataChoices,
+    hotspotSaveData: hotspotSaveData,
+    hotspotSaveDataLabel: hotspotSaveDataLabel,
+    hotspotSaveDataTooltip: hotspotSaveDataTooltip,
     hotspotClients: hotspotClients,
     hotspotClientLabel: hotspotClientLabel,
     hotspotCredentialsError: hotspotCredentialsError

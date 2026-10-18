@@ -2,8 +2,8 @@
 
 # omarchy:summary=Share this machine's internet as a Wi-Fi access point (hotspot)
 # omarchy:group=network
-# omarchy:args=<status|start|stop|toggle|qr|apply|setup|teardown|diagnose|generate-password> [ssid] [band]
-# omarchy:examples=omarchy hotspot status | omarchy hotspot toggle | omarchy hotspot apply MyWifi 2.4 | omarchy hotspot diagnose
+# omarchy:args=<status|start|stop|toggle|qr|apply|setup|teardown|diagnose|generate-password> [ssid] [band] [--save-data=auto|always|never]
+# omarchy:examples=omarchy hotspot status | omarchy hotspot toggle | omarchy hotspot apply MyWifi 2.4 | omarchy hotspot apply MyWifi 2.4 --save-data=always | omarchy hotspot diagnose
 
 # Drives NetworkManager's shared-mode AP profile so other devices can join
 # this machine and route through its upstream connection. The NM profile is
@@ -215,6 +215,29 @@ profile_band() {
   band_from_nm "$(nm_get 802-11-wireless.band connection show "$PROFILE")"
 }
 
+# Whether joining devices are told to save data. NetworkManager's shared mode
+# sends DHCP option 43 ANDROID_METERED from the profile's own
+# connection.metered: yes always, no never, and unknown only while this
+# machine's default route is metered when the hotspot starts. Android phones
+# and NetworkManager clients then treat the hotspot as metered. dnsmasq reads
+# it at start, so a change takes effect the next time the hotspot comes up.
+save_data_for() {
+  case $1 in
+    auto) echo "unknown" ;;
+    always) echo "yes" ;;
+    never) echo "no" ;;
+    *) return 1 ;;
+  esac
+}
+
+profile_save_data() {
+  case $(nm_get connection.metered connection show "$PROFILE") in
+    yes) echo "always" ;;
+    no) echo "never" ;;
+    *) echo "auto" ;;
+  esac
+}
+
 profile_secret() {
   nmcli --show-secrets --escape no --get-values 802-11-wireless-security.psk \
     connection show "$PROFILE" 2>/dev/null | head -n 1 || true
@@ -250,7 +273,7 @@ station_list() {
 
 status() {
   local capable=0 active=0 configured=0 iface ssid band password freq ip clients upstream
-  local client_list client_count bands
+  local client_list client_count bands save_data="auto"
 
   iface=$(ap_iface)
   if [[ -n $iface ]] && ap_capable "$iface"; then capable=1; fi
@@ -275,6 +298,7 @@ status() {
     ssid=$(profile_ssid)
     band=$(profile_band)
     password=$(profile_secret)
+    if ((configured)); then save_data=$(profile_save_data); fi
 
     if ((active)); then
       freq=$(iw dev "$iface" link 2>/dev/null | awk '/freq:/ { print $2; exit }' || true)
@@ -303,6 +327,7 @@ status() {
   printf 'client_count\t%d\n' "$client_count"
   printf 'clients\t%s\n' "$clients"
   printf 'upstream\t%s\n' "$upstream"
+  printf 'save_data\t%s\n' "$save_data"
 }
 
 nft_firewall_active() {
@@ -919,17 +944,61 @@ generate_password() {
   echo
 }
 
-# Password arrives on stdin (never argv). band is optional, default 2.4.
+# Splits start/apply arguments into positional operands (SSID, band, and any
+# later operands) and the --save-data option (auto|always|never), so an option
+# can never be read as an operand and later operands keep their slots. Sets
+# HOTSPOT_OPERANDS (array) and HOTSPOT_SAVE_DATA.
+parse_hotspot_args() {
+  HOTSPOT_OPERANDS=()
+  HOTSPOT_SAVE_DATA=""
+  while (($#)); do
+    case $1 in
+      --save-data=*)
+        HOTSPOT_SAVE_DATA=${1#--save-data=}
+        shift
+        ;;
+      --save-data)
+        (($# >= 2)) || fail "--save-data needs a value (auto, always or never)"
+        HOTSPOT_SAVE_DATA=$2
+        shift 2
+        ;;
+      --)
+        shift
+        HOTSPOT_OPERANDS+=("$@")
+        break
+        ;;
+      -*)
+        fail "unknown option: $1"
+        ;;
+      *)
+        HOTSPOT_OPERANDS+=("$1")
+        shift
+        ;;
+    esac
+  done
+}
+
+# Password arrives on stdin (never argv). band is optional, default 2.4;
+# --save-data (auto|always|never) is optional and keeps the saved choice.
 # apply() writes the profile; start() writes it the same way, then brings the AP up.
 start() {
-  local ssid=$1 band=${2:-2.4}
+  local ssid band save_data
+  local -a apply_args
+  parse_hotspot_args "$@"
+  ssid=${HOTSPOT_OPERANDS[0]:-}
+  band=${HOTSPOT_OPERANDS[1]:-2.4}
+  save_data=$HOTSPOT_SAVE_DATA
   hotspot_lock
 
   if omarchy-cmd-missing dnsmasq; then
     fail "dnsmasq is missing; run 'omarchy migrate' to install the hotspot dependency"
   fi
 
-  apply "$ssid" "$band"
+  apply_args=("${HOTSPOT_OPERANDS[@]}")
+  if [[ -n $save_data ]]; then
+    apply_args+=("--save-data=$save_data")
+  fi
+  apply "${apply_args[@]}"
   firewall_ensure
   if ! forwarding_ensure; then
     rollback_start "could not enable IPv4 forwarding for hotspot" 0
@@ -1062,7 +1131,11 @@ qr() {
 # when the user never turns the hotspot on. `apply` is idempotent: it creates
 # the profile on first use, then updates it. start() reuses this path.
 apply() {
-  local ssid=$1 band=${2:-2.4} password device nm_band nm_channel
+  local ssid band save_data password device nm_band nm_channel metered=""
+  parse_hotspot_args "$@"
+  ssid=${HOTSPOT_OPERANDS[0]:-}
+  band=${HOTSPOT_OPERANDS[1]:-2.4}
+  save_data=$HOTSPOT_SAVE_DATA
   hotspot_lock
 
   device=$(ap_iface)
@@ -1076,6 +1149,9 @@ apply() {
   [[ ${#password} -ge 8 && ${#password} -le 63 ]] ||
     fail "password must be 8-63 characters"
   nm_band=$(nm_band_for "$band") || fail "unknown band '$band' (use 2.4, 5 or 6)"
+  if [[ -n $save_data ]]; then
+    metered=$(save_data_for "$save_data") || fail "unknown save-data choice '$save_data' (use auto, always or never)"
+  fi
   nm_channel=$(nm_channel_for "$band")
 
   if profile_configured; then
@@ -1103,6 +1179,11 @@ apply() {
     printf 'set wifi-sec.psk %s\nsave\nquit\n' "$password" |
       nmcli connection edit "$PROFILE" >/dev/null 2>&1 ||
       fail "could not set hotspot password"
+  fi
+
+  if [[ -n $metered ]]; then
+    nmcli connection modify "$PROFILE" connection.metered "$metered" >/dev/null 2>&1 ||
+      fail "could not apply the hotspot's save-data choice"
   fi
 }
 
@@ -1208,7 +1289,7 @@ diagnose() {
 }
 
 usage() {
-  echo "Usage: omarchy-hotspot <status|start|stop|toggle|qr|apply|setup|teardown|diagnose|generate-password> [ssid] [band]" >&2
+  echo "Usage: omarchy-hotspot <status|start|stop|toggle|qr|apply|setup|teardown|diagnose|generate-password> [ssid] [band] [--save-data=auto|always|never]" >&2
 }
 
 case "${1:-}" in

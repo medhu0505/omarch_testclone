@@ -36,6 +36,7 @@ case "$*" in
   '-e no -g 802-11-wireless.ssid connection show omarchy-hotspot') printf '%s\n' 'Saved Hotspot' ;;
   '-e no -g 802-11-wireless.band connection show omarchy-hotspot') printf '%s\n' 'bg' ;;
   '--show-secrets --escape no --get-values 802-11-wireless-security.psk connection show omarchy-hotspot') printf '%s\n' 'savedpassword' ;;
+  '-e no -g connection.metered connection show omarchy-hotspot') printf '%s\n' 'yes' ;;
   *) exit 1 ;;
 esac
 STUB
@@ -80,7 +81,7 @@ stderr: $(<"$TEST_TMP/status.err")"
 
 declare -A values=()
 declare -A seen=()
-expected=(ap_capable ap_bands active configured iface ssid band password freq ip client_count clients upstream)
+expected=(ap_capable ap_bands active configured iface ssid band password freq ip client_count clients upstream save_data)
 index=0
 while IFS=$'\t' read -r key value; do
   [[ -n $key ]] || continue
@@ -106,6 +107,7 @@ done <"$TEST_TMP/status.out"
 (( seen[clients] == 1 )) || fail "no-route status reports clients"
 (( seen[upstream] == 1 )) || fail "no-route status reports upstream"
 [[ ${values[upstream]} == "none" ]] || fail "no-route status reports upstream none" "${values[upstream]}"
+[[ ${values[save_data]} == "always" ]] || fail "status reads the save-data choice from connection.metered" "${values[save_data]}"
 [[ ${values[ap_capable]} == "1" ]] || fail "no-route status remains AP-capable" "${values[ap_capable]}"
 [[ ${values[active]} == "0" ]] || fail "no-route status remains inactive" "${values[active]}"
 [[ ${values[configured]} == "1" ]] || fail "no-route status remains configured" "${values[configured]}"
@@ -373,3 +375,64 @@ if (clients.length !== 2) fail('the panel renders a row for every connected clie
 if (clients[0].mac !== 'aa:bb:cc:dd:ee:01' || clients[1].signal !== -67) fail('client rows keep their MAC and signal', JSON.stringify(clients))
 pass('connected clients reach the panel model through real status output')
 JS
+# apply writes the save-data choice into the profile's connection.metered, which
+# NetworkManager turns into DHCP option 43 ANDROID_METERED for joining devices.
+# The choice rides a --save-data option, so an operand slot (SSID, band, and a
+# later participant limit) can never be read as the choice.
+APPLY_BIN="$TEST_TMP/apply-bin"
+mkdir -p "$APPLY_BIN"
+cat >"$APPLY_BIN/iw" <<'STUB'
+#!/bin/bash
+case "$*" in
+  "dev wlan1 info") printf '%s\n' 'Interface wlan1' '  wiphy 0' ;;
+  "phy phy0 info") printf '%s\n' 'Wiphy phy0' '  Band 1:' '    * AP' ;;
+esac
+STUB
+cat >"$APPLY_BIN/nmcli" <<'STUB'
+#!/bin/bash
+printf '%s\n' "$*" >>"$NMCLI_LOG"
+case "$*" in
+  '-t -f DEVICE,TYPE device status') printf '%s\n' 'wlan1:wifi' ;;
+  '-e no -g NAME connection show') printf '%s\n' 'omarchy-hotspot' ;;
+  '-e no -g GENERAL.DEVICE connection show omarchy-hotspot') printf '%s\n' 'wlan1' ;;
+  '-e no -g ipv4.addresses connection show omarchy-hotspot') printf '%s\n' '10.42.0.1/24' ;;
+esac
+exit 0
+STUB
+chmod +x "$APPLY_BIN/iw" "$APPLY_BIN/nmcli"
+
+hotspot_apply() {
+  : >"$TEST_TMP/nmcli.log"
+  printf '%s\n' 'hotspotpass' |
+    NMCLI_LOG="$TEST_TMP/nmcli.log" PATH="$APPLY_BIN:$PATH" OMARCHY_PATH="$ROOT" \
+      bash "$ROOT/bin/omarchy-hotspot" apply "Laptop" 2.4 "$@" >"$TEST_TMP/apply.out" 2>&1
+}
+
+for pair in auto:unknown always:yes never:no; do
+  hotspot_apply "--save-data=${pair%%:*}" || fail "apply accepts save-data ${pair%%:*}" "$(<"$TEST_TMP/apply.out")"
+  grep -qx "connection modify omarchy-hotspot connection.metered ${pair##*:}" "$TEST_TMP/nmcli.log" ||
+    fail "apply writes connection.metered ${pair##*:} for ${pair%%:*}" "$(<"$TEST_TMP/nmcli.log")"
+done
+pass "apply maps auto, always and never onto connection.metered"
+
+hotspot_apply --save-data never || fail "apply accepts --save-data with a separate value" "$(<"$TEST_TMP/apply.out")"
+grep -qx "connection modify omarchy-hotspot connection.metered no" "$TEST_TMP/nmcli.log" ||
+  fail "apply reads a separate --save-data value" "$(<"$TEST_TMP/nmcli.log")"
+pass "apply takes --save-data after its operands"
+
+hotspot_apply || fail "apply without a save-data choice still succeeds" "$(<"$TEST_TMP/apply.out")"
+! grep -q "connection.metered" "$TEST_TMP/nmcli.log" || fail "apply without a choice overwrites the saved one"
+pass "apply without a save-data choice keeps the saved one"
+
+if hotspot_apply --save-data=sometimes; then
+  fail "apply accepts an unknown save-data choice"
+fi
+grep -q "unknown save-data choice 'sometimes'" "$TEST_TMP/apply.out" || fail "apply names the bad save-data choice" "$(<"$TEST_TMP/apply.out")"
+! grep -q "connection modify" "$TEST_TMP/nmcli.log" || fail "a bad save-data choice still modifies the profile"
+pass "apply rejects an unknown save-data choice before touching the profile"
+
+if hotspot_apply --bogus; then
+  fail "apply accepts an unknown option"
+fi
+grep -q "unknown option: --bogus" "$TEST_TMP/apply.out" || fail "apply rejects an unknown option by name" "$(<"$TEST_TMP/apply.out")"
+pass "apply rejects an unknown option"

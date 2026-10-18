@@ -329,6 +329,18 @@ assertDeepEqual(network.hotspotBands({}), [], 'network reports no hotspot bands 
 assertEqual(network.hotspotDefaultBand({ ap_bands: '2.4,5', band: '5' }), '5', 'network prefers the profile band when supported')
 assertEqual(network.hotspotDefaultBand({ ap_bands: '2.4,5', band: '6' }), '2.4', 'network falls back to 2.4 when the profile band is unsupported')
 assertEqual(network.hotspotDefaultBand({ ap_bands: '5' }), '5', 'network uses the only available hotspot band')
+
+assertDeepEqual(network.hotspotSaveDataChoices, ['auto', 'always', 'never'], 'network offers auto, always and never for hotspot data saving')
+assertEqual(network.hotspotSaveData({ save_data: 'always' }), 'always', 'network reads the saved hotspot data choice')
+assertEqual(network.hotspotSaveData({ save_data: 'bogus' }), 'auto', 'network falls back to auto for an unknown data choice')
+assertEqual(network.hotspotSaveData({}), 'auto', 'network treats a status without a data choice as auto')
+assertEqual(network.hotspotSaveDataLabel('never'), 'Never', 'network labels the hotspot data choices')
+assert(/only when this computer's connection is metered/.test(network.hotspotSaveDataTooltip('auto', false, 'auto')), 'network explains what auto follows')
+assert(!/next start/.test(network.hotspotSaveDataTooltip('always', true, 'always')), 'network does not defer the choice the running hotspot already uses')
+assert(/\(from the next start\)$/.test(network.hotspotSaveDataTooltip('never', true, 'always')), 'network says a new choice waits for the next start while on air')
+assert(!/next start/.test(network.hotspotSaveDataTooltip('never', false, 'always')), 'network does not defer a choice while the hotspot is off')
+assert(/"start", hotspotSsid\.trim\(\), hotspotBand, "--save-data=" \+ hotspotSaveData\]/.test(panelSource), 'network starts the hotspot with the data choice')
+assert(/"apply", hotspotSsid\.trim\(\), hotspotBand, "--save-data=" \+ hotspotSaveData\]/.test(panelSource), 'network saves the data choice with the credentials')
 assertEqual(network.hotspotDefaultBand({}), '', 'network returns no hotspot band when none exist')
 assertDeepEqual(
   network.hotspotClients({ clients: '[{"mac":"aa:bb:cc","signal":-42}]' }),
@@ -504,5 +516,6 @@ assert(/readonly property int hotspotFocusMax: hotspotActive \? 2 : 1/.test(pane
 assert(!/hotspotQrButton\.containsMouse|hotspotCogButton\.containsMouse/.test(panelSource), 'network does not bind a hover state Button does not expose')
 assert(/id: hotspotCogButton[\s\S]*?tooltipText: root\.hotspotSetupOpen \? "Hide hotspot settings" : "Hotspot settings"/.test(panelSource), 'network labels the hotspot settings button through the button tooltip')
 assert(!/wifi-sec\.psk "\$password"/.test(hotspotSource), 'hotspot never puts the PSK on nmcli argv')
-assert(/apply "\$ssid" "\$band"/.test(hotspotSource), 'hotspot start writes the profile through apply')
+assert(/apply "\$\{apply_args\[@\]\}"/.test(hotspotSource), 'hotspot start writes the profile through apply')
+assert(/apply_args\+=\("--save-data=\$save_data"\)/.test(hotspotSource), 'hotspot start forwards the data choice to apply')
 JS
