@@ -129,14 +129,25 @@ copy_to_clipboard() {
   printf '%s\n' "$uri" | wl-copy --type text/uri-list
 }
 
-# The batch caller reads these only after a successful conversion.
+select_setting() {
+  local status=0
+  omarchy-menu-select "$@" || status=$?
+  # The menu uses 1 for cancellation and 2 for a shell/IPC failure.
+  if (( status == 1 )); then
+    return 130
+  else
+    return "$status"
+  fi
+}
+
+# Keep the chosen settings even if the encoder fails for the current file.
 selected_format=""
 selected_resolution=""
 apply_to_type=false
 
 transcode_file() {
   local input="$1" format="$2" resolution="$3" mime="$4" reuse_label="${5:-}" batch="${6:-0}"
-  local type output selection
+  local type output selection status=0 output_existed=0 glyph=
   local -a menu_args=()
   apply_to_type=false
 
@@ -145,9 +156,9 @@ transcode_file() {
 
   if [[ -z $format ]]; then
     if [[ $type == "picture" ]]; then
-      format=$(omarchy-menu-select "$(omarchy-i18n transcode.selectFormat)" jpg png) || return 130
+      format=$(select_setting "$(omarchy-i18n transcode.selectFormat)" jpg png) || return $?
     else
-      format=$(omarchy-menu-select "$(omarchy-i18n transcode.selectFormat)" mp4 gif) || return 130
+      format=$(select_setting "$(omarchy-i18n transcode.selectFormat)" mp4 gif) || return $?
     fi
   fi
 
@@ -160,7 +171,7 @@ transcode_file() {
 
   if [[ -z $resolution ]]; then
     if [[ $type == "picture" ]]; then
-      choice=$(omarchy-menu-select "$(omarchy-i18n transcode.selectResolution)" "$high" "$medium" "$low" "${menu_args[@]}") || return 130
+      choice=$(select_setting "$(omarchy-i18n transcode.selectResolution)" "$high" "$medium" "$low" "${menu_args[@]}") || return $?
       if [[ -n $reuse_label ]]; then
         apply_to_type=$(jq -r '.checked' <<< "$choice")
         choice=$(jq -r '.value' <<< "$choice")
@@ -171,7 +182,7 @@ transcode_file() {
         "$low") resolution=low ;;
       esac
     else
-      selection=$(omarchy-menu-select "$(omarchy-i18n transcode.selectResolution)" 4k 1080p 720p "${menu_args[@]}") || return 130
+      selection=$(select_setting "$(omarchy-i18n transcode.selectResolution)" 4k 1080p 720p "${menu_args[@]}") || return $?
       if [[ -n $reuse_label ]]; then
         apply_to_type=$(jq -r '.checked' <<< "$selection")
         resolution=$(jq -r '.value' <<< "$selection")
@@ -184,7 +195,10 @@ transcode_file() {
   selected_format=$format
   selected_resolution=$resolution
   output=$(output_path "$input" "$format" "$resolution")
-  if (( batch )) && [[ -e $output ]]; then
+  if [[ -e $output || -L $output ]]; then
+    output_existed=1
+  fi
+  if (( batch && output_existed )); then
     printf 'Output already exists, skipping: %s\n' "$output" >&2
     return 1
   fi
@@ -197,15 +211,24 @@ transcode_file() {
   esac
 
   if [[ $type == "video" ]]; then
+    glyph=
     omarchy-notification-send -g  "$(omarchy-i18n transcode.working)" "$(omarchy-i18n transcode.workingBody "$(basename -- "$input")" "$format" "$resolution")"
-    transcode_video "$input" "$format" "$resolution" "$output" || return $?
-    copy_to_clipboard "$output" || return $?
-    omarchy-notification-send -g  "$(omarchy-i18n transcode.done "$resolution" "$format")" "$(omarchy-i18n transcode.saved)"
+    transcode_video "$input" "$format" "$resolution" "$output" || status=$?
   else
-    transcode_picture "$input" "$format" "$resolution" "$output" || return $?
-    copy_to_clipboard "$output" || return $?
-    omarchy-notification-send -g  "$(omarchy-i18n transcode.done "$resolution_label" "$format")" "$(omarchy-i18n transcode.saved)"
+    transcode_picture "$input" "$format" "$resolution" "$output" || status=$?
   fi
+
+  if (( status != 0 )); then
+    # A partial output must not make the next batch skip this file forever.
+    # Never delete an output (including a dangling symlink) that was already there.
+    if (( !output_existed )); then
+      rm -f -- "$output"
+    fi
+    return "$status"
+  fi
+
+  copy_to_clipboard "$output" || return $?
+  omarchy-notification-send -g "$glyph" "$(omarchy-i18n transcode.done "$resolution_label" "$format")" "$(omarchy-i18n transcode.saved)"
 }
 
 transcode_batch() {
@@ -243,7 +266,9 @@ transcode_batch() {
       return 130
     elif (( status != 0 )); then
       printf 'Failed to transcode: %s\n' "$input" >&2
-      failed=1
+      if (( failed == 0 )); then
+        failed=$status
+      fi
     fi
     if [[ $apply_to_type == "true" ]]; then
       formats[$mime]=$selected_format

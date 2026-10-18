@@ -25,12 +25,16 @@ elif name == 'omarchy-menu-select':
   answer = answers.pop(0)
   (root / 'answers').write_text(json.dumps(answers))
   if answer is None: sys.exit(1)
+  if isinstance(answer, int): sys.exit(answer)
   print(json.dumps(answer) if isinstance(answer, dict) else answer)
 elif name in ('magick', 'ffmpeg'):
-  if os.environ.get('FAIL_INPUT') in args: sys.exit(1)
+  if os.environ.get('FAIL_INPUT') in args:
+    pathlib.Path(args[-1]).write_text('incomplete output')
+    sys.exit(int(os.environ.get('FAIL_CODE', '1')))
   pathlib.Path(args[-1]).touch()
 elif name == 'wl-copy':
   sys.stdin.read()
+  sys.exit(int(os.environ.get('CLIPBOARD_STATUS', '0')))
 '''
 
 
@@ -50,12 +54,12 @@ with tempfile.TemporaryDirectory() as tmp:
   env = {**os.environ, 'HOME': tmp, 'OMARCHY_PATH': str(ROOT), 'TRANSCODE_TEST': tmp,
          'PATH': f'{stub}:{ROOT / "bin"}:' + os.environ['PATH']}
 
-  def run(files, answers, *, single=None, failed=None, existing=None):
+  def run(files, answers, *, single=None, failed=None, existing=None, reset=True, fail_code=1, clipboard_status=0):
     media = work / 'media'
-    if media.exists():
+    if reset and media.exists():
       import shutil
       shutil.rmtree(media)
-    media.mkdir()
+    media.mkdir(exist_ok=True)
     paths = [str(media / name) for name, mime in files]
     for path in paths:
       Path(path).touch()
@@ -65,7 +69,7 @@ with tempfile.TemporaryDirectory() as tmp:
     (work / 'answers').write_text(json.dumps(answers))
     (work / 'calls').write_text('')
     args = ['--batch', '--', *paths] if single is None else [paths[0], *single]
-    result = subprocess.run([ROOT / 'bin/omarchy-transcode', *args], env={**env, 'FAIL_INPUT': paths[failed] if failed is not None else ''}, capture_output=True, text=True, timeout=15)
+    result = subprocess.run([ROOT / 'bin/omarchy-transcode', *args], env={**env, 'FAIL_INPUT': paths[failed] if failed is not None else '', 'FAIL_CODE': str(fail_code), 'CLIPBOARD_STATUS': str(clipboard_status)}, capture_output=True, text=True, timeout=15)
     calls = [json.loads(line) for line in (work / 'calls').read_text().splitlines()]
     menus = [args for name, args in calls if name == 'omarchy-menu-select']
     encodes = [(name, args) for name, args in calls if name in ('magick', 'ffmpeg')]
@@ -93,6 +97,43 @@ with tempfile.TemporaryDirectory() as tmp:
 
   r, menus, encodes, calls = run(heics, ['jpg', {'value': 'medium', 'checked': True}], failed=0)
   check('encoder failure is reported, later files still reuse settings', r.returncode == 1 and len(encodes) == 3 and len(menus) == 2 and sum(name == 'wl-copy' for name, _ in calls) == 2)
+
+  check('failed image output is removed while successful outputs and originals remain', not (work / 'media/one-medium.jpg').exists() and all((work / 'media' / name).exists() for name in ('two-medium.jpg', 'three-medium.jpg', 'one.heic', 'two.HEIC', 'three.heic')))
+  r, _, encodes, _ = run(heics, ['jpg', {'value': 'medium', 'checked': True}], reset=False)
+  check('retry converts the failed image and preserves completed outputs', r.returncode == 1 and len(encodes) == 1 and encodes[0][1][-1].endswith('one-medium.jpg') and (work / 'media/one-medium.jpg').exists())
+
+  videos = [('one.mov', 'video/quicktime'), ('two.mov', 'video/quicktime')]
+  r, _, encodes, _ = run(videos, ['mp4', {'value': '720p', 'checked': True}], failed=0, fail_code=7)
+  check('failed video output is removed and its error code survives the batch', r.returncode == 7 and not (work / 'media/one-720p.mp4').exists() and (work / 'media/two-720p.mp4').exists())
+  r, _, encodes, _ = run(videos, ['mp4', {'value': '720p', 'checked': True}], reset=False)
+  check('retry converts only the failed video', r.returncode == 1 and len(encodes) == 1 and encodes[0][1][-1].endswith('one-720p.mp4') and (work / 'media/one-720p.mp4').exists())
+
+  r, _, _, _ = run(heics[:1], [], single=['jpg', 'medium'], failed=0)
+  check('single-file encoder failure also removes only newly created output', r.returncode == 1 and not (work / 'media/one-medium.jpg').exists())
+  dangling = work / 'media/one-medium.jpg'
+  dangling.symlink_to('missing.jpg')
+  r, _, encodes, _ = run(heics[:1], ['jpg', 'medium'], reset=False)
+  check('batch preserves dangling output symlinks without following them', r.returncode == 1 and not encodes and dangling.is_symlink() and not (work / 'media/missing.jpg').exists())
+  r, _, _, _ = run(heics[:1], [], single=['jpg', 'medium'], failed=0, existing='one-medium.jpg')
+  check('cleanup never deletes output that existed before single-file conversion', r.returncode == 1 and (work / 'media/one-medium.jpg').exists())
+  r, _, _, _ = run(heics[:1], [], single=['jpg', 'medium'], clipboard_status=3)
+  check('clipboard failure preserves successfully encoded output', r.returncode == 3 and (work / 'media/one-medium.jpg').exists())
+
+  for files, fmt in ((heics[:1], 'jpg'), (videos[:1], 'mp4')):
+    for stage, answers in (('format', [None]), ('resolution', [fmt, None])):
+      r, _, encodes, _ = run(files, answers, single=[])
+      check(f'{fmt} {stage} cancellation maps to 130', r.returncode == 130 and not encodes)
+    for code in (2, 127):
+      for stage, answers in (('format', [code]), ('resolution', [fmt, code])):
+        r, _, encodes, _ = run(files, answers, single=[])
+        check(f'{fmt} {stage} menu failure preserves exit {code}', r.returncode == code and not encodes)
+
+  r, menus, encodes, _ = run(heics[:2], [2, 'jpg', 'medium'])
+  check('batch reports a format-menu error and still converts the next file', r.returncode == 2 and len(encodes) == 1 and 'Failed to transcode:' in r.stderr)
+  r, menus, encodes, _ = run(videos, ['mp4', 2, 'mp4', '720p'])
+  check('batch reports a resolution-menu error and still converts the next video', r.returncode == 2 and len(encodes) == 1 and 'Failed to transcode:' in r.stderr)
+  r, _, _, _ = run(heics[:2], [2, 127])
+  check('batch retains its first failure code', r.returncode == 2)
 
   r, menus, encodes, _ = run(heics[:2], ['jpg', {'value': 'medium', 'checked': True}], existing='one-medium.jpg')
   check('batch skips existing output without overwriting it', r.returncode == 1 and len(encodes) == 1 and (work / 'media/one-medium.jpg').read_text() == 'keep existing output')
