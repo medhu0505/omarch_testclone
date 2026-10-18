@@ -152,8 +152,10 @@ as a `busctl` option; the summary/body themselves are never parsed as options.)
   shell restart uses it, or the toast is sent into the void.
 - `omarchy-notification-dismiss <summary>` — dismiss by summary substring,
   used by the first-run toasts once their action has been clicked.
-- `omarchy-notification-time` / `-battery` — the hotkey notices: one-line
-  low-urgency glyph toasts wrapping `date` and `omarchy-battery-status`.
+- `omarchy-notification-time` / `-battery` — the hotkey notices: low-urgency
+  glyph toasts wrapping `date` and `omarchy-battery-status`. The battery one
+  titles itself with the charge level and puts the time and power reading in
+  the description.
 - `omarchy-notification-weather` — despite the name, not a sender: it toggles
   the `omarchy.weather` shell panel.
 

@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # omarchy:summary=Returns a formatted battery status string with percentage and power draw/charge.
-# omarchy:args=[--shell]
+# omarchy:args=[--shell|--notification]
 
 shell_output=false
+notification_output=false
 power_supply_path="${OMARCHY_POWER_SUPPLY_PATH:-/sys/class/power_supply}"
 
 case "${1:-}" in
@@ -12,8 +13,11 @@ case "${1:-}" in
   --shell)
     shell_output=true
     ;;
+  --notification)
+    notification_output=true
+    ;;
   *)
-    echo "Usage: omarchy-battery-status [--shell]" >&2
+    echo "Usage: omarchy-battery-status [--shell|--notification]" >&2
     exit 2
     ;;
 esac
@@ -176,9 +180,18 @@ if [[ $charge_holding == "true" ]]; then
     threshold_label="$(omarchy-i18n --number "$threshold_end")%"
   fi
 
-  echo "$(omarchy-i18n battery.statusLabel "$percentage")  ·  $(omarchy-i18n battery.holdingAt "$threshold_label")  ·  ${power_reading}"
+  details="$(omarchy-i18n battery.holdingAt "$threshold_label")  ·  ${power_reading}"
 elif [[ $state == "charging" ]]; then
-  echo "$(omarchy-i18n battery.statusLabel "$percentage")  ·  $(omarchy-i18n battery.toFull "$time_remaining")  ·   ${power_reading}"
+  details="$(omarchy-i18n battery.toFull "$time_remaining")  ·   ${power_reading}"
 else
-  echo "$(omarchy-i18n battery.statusLabel "$percentage")  ·  $(omarchy-i18n battery.timeLeft "$time_remaining")  ·   ${power_reading}"
+  details="$(omarchy-i18n battery.timeLeft "$time_remaining")  ·   ${power_reading}"
+fi
+
+headline=$(omarchy-i18n battery.statusLabel "$percentage")
+
+# A notification shows the headline as its title and the rest beneath it.
+if [[ $notification_output == "true" ]]; then
+  printf '%s\n%s\n' "$headline" "$details"
+else
+  echo "$headline  ·  $details"
 fi
