@@ -31,6 +31,9 @@ SH
 cat >"$test_tmp/bin/limine-mkinitcpio" <<'SH'
 #!/bin/bash
 printf 'limine-mkinitcpio\n' >>"$CALL_LOG"
+if [[ ${TEST_REBUILD_BUILDS:-1} == 1 ]]; then
+  printf '    cmdline: root=/dev/mapper/omarchy_root rw nvme_core.default_ps_max_latency_us=0\n' >"$BOOT_MENU"
+fi
 exit "${TEST_REBUILD_STATUS:-0}"
 SH
 
@@ -51,6 +54,8 @@ dropin_dir="$test_tmp/limine-entry-tool.d"
 limine_conf="$test_tmp/limine"
 running_cmdline="$test_tmp/cmdline"
 rebuild_marker="$test_tmp/rebuild-marker"
+boot_menu="$test_tmp/esp/limine.conf"
+mkdir -p "$test_tmp/esp"
 call_log="$test_tmp/calls.log"
 
 # An empty model stands for a machine without an NVMe controller.
@@ -96,12 +101,13 @@ run_leaf "$other" || fail "the leaf no-ops on another drive"
 pass "the leaf no-ops on another drive"
 
 # Fresh state unless a case seeds it: no drop-in, an empty /etc/default/limine,
-# a kernel booted without the parameter, no rebuild marker.
+# a kernel booted and a boot menu built without the parameter, no rebuild marker.
 reset_machine() {
   : >"$call_log"
   rm -rf "$dropin_dir" "$rebuild_marker"
   : >"$limine_conf"
   printf 'root=/dev/mapper/omarchy_root rw\n' >"$running_cmdline"
+  printf '    cmdline: root=/dev/mapper/omarchy_root rw\n' >"$boot_menu"
 }
 
 run_migration() {
@@ -114,6 +120,9 @@ run_migration() {
     OMARCHY_KERNEL_LIMINE_CONF="$limine_conf" \
     OMARCHY_RUNNING_CMDLINE="$running_cmdline" \
     OMARCHY_LIMINE_REBUILD_MARKER="$rebuild_marker" \
+    OMARCHY_LIMINE_CONF="${TEST_MENU_OVERRIDE-$boot_menu}" \
+    BOOT_MENU="$boot_menu" \
+    TEST_REBUILD_BUILDS="${TEST_REBUILD_BUILDS:-1}" \
     TEST_REBUILD_STATUS="${2:-0}" \
     TEST_MISSING_CMD="${3:-}" \
     bash -euo pipefail "$migration" >/dev/null
@@ -153,6 +162,30 @@ run_migration || fail "the retry rebuilds even though the drop-in already exists
 grep -q '^limine-mkinitcpio$' "$call_log" ||
   fail "the retry rebuilds even though the drop-in already exists"
 pass "the retry rebuilds even though the drop-in already exists"
+
+# limine-mkinitcpio exits 0 past a kernel it could not build.
+reset_machine
+TEST_REBUILD_BUILDS=0 run_migration &&
+  fail "a rebuild that leaves the parameter out of the boot menu leaves the migration pending"
+[[ -e $rebuild_marker ]] && fail "a rebuild that leaves the parameter out is not recorded"
+grep -q 'state set reboot-required' "$call_log" &&
+  fail "a rebuild that leaves the parameter out does not mark reboot-required"
+: >"$call_log"
+run_migration || fail "the retry rebuilds after a rebuild that left the parameter out"
+grep -q '^limine-mkinitcpio$' "$call_log" ||
+  fail "the retry rebuilds after a rebuild that left the parameter out"
+[[ -e $rebuild_marker ]] || fail "the retry records the rebuild once the boot menu has the parameter"
+pass "a rebuild that exits 0 without the parameter in the boot menu leaves the migration pending"
+
+# Without an override the menu is found on the ESP that /etc/default/limine names.
+reset_machine
+printf 'ESP_PATH="%s"\n' "$test_tmp/esp" >"$limine_conf"
+TEST_MENU_OVERRIDE="" TEST_REBUILD_BUILDS=0 run_migration &&
+  fail "the migration checks the boot menu on the ESP /etc/default/limine names"
+TEST_MENU_OVERRIDE="" run_migration ||
+  fail "the migration checks the boot menu on the ESP /etc/default/limine names"
+[[ -e $rebuild_marker ]] || fail "the migration checks the boot menu on the ESP /etc/default/limine names"
+pass "the migration checks the boot menu on the ESP /etc/default/limine names"
 
 # A machine that already boots the parameter from its own drop-in must not
 # get a second copy, a boot image rebuild, or a reboot prompt.

@@ -22,6 +22,23 @@ fi
 if [[ ! -e $rebuild_marker ]] &&
   { [[ -e $dropin_dir/micron-2400-apst.conf ]] || ! grep -qs "nvme_core.default_ps_max_latency_us=" "$running_cmdline"; }; then
   sudo limine-mkinitcpio
+
+  # limine-mkinitcpio carries on past a kernel it could not build and still
+  # exits 0, so done means a boot entry has the parameter, as 1791581004 checks.
+  boot_menu="${OMARCHY_LIMINE_CONF:-}"
+  if [[ -z $boot_menu ]]; then
+    esp=""
+    if [[ -r $limine_conf ]]; then
+      esp=$(sed -n 's/^ESP_PATH=["'\'']\?\([^"'\'']*\).*/\1/p' "$limine_conf" | tail -n 1)
+    fi
+    boot_menu="${esp:-/boot}/limine.conf"
+  fi
+  if sudo grep -Eq '^[[:space:]]*cmdline:' "$boot_menu" 2>/dev/null &&
+    ! sudo grep -Eq '^[[:space:]]*cmdline:.*[[:space:]]nvme_core\.default_ps_max_latency_us=' "$boot_menu"; then
+    echo "The boot menu still has no entry with nvme_core.default_ps_max_latency_us after the rebuild" >&2
+    exit 1
+  fi
+
   sudo install -Dm644 /dev/null "$rebuild_marker"
   omarchy-state set reboot-required
 fi
