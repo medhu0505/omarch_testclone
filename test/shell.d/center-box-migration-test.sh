@@ -118,6 +118,11 @@ check '{"bar":{"centerAnchor":"omarchy.clock","layout":{"center":["omarchy.indic
   '{"layout":{"centerBegin":["omarchy.indicators"],"center":["dhh.clock"],"centerEnd":[]}}' \
   "an unreadable plugin manifest does not stop the migration"
 
+echo '{"id":"dhh.clock","omarchy":{"clonedFrom":"omarchy.clock"}}{"id":"b"}' >"$test_dir/home/.config/omarchy/plugins/doubled/manifest.json"
+check '{"bar":{"centerAnchor":"omarchy.clock","layout":{"center":["acme.clock","dhh.clock"]}}}' \
+  '{"layout":{"center":["acme.clock","dhh.clock"]}}' \
+  "a manifest the shell cannot parse records no clone"
+
 check '{"bar":{"centerAnchor":"omarchy.clock","layout":{"center":["omarchy.media","omarchy.weather"]}}}' \
   '{"layout":{"center":["omarchy.media","omarchy.weather"]}}' \
   "a stale anchor with nothing of its kind in the center leaves the center whole"
