@@ -129,6 +129,7 @@ payload=$(perl -MEncode=decode -MJSON::PP=encode_json,decode_json -e '
     onChange => decode_json($ARGV[8]),
     changeKey => $ARGV[9],
     selectionFile => decode("UTF-8", $ARGV[2]),
+    selectionFileCreated => JSON::PP::true,
     doneFile => decode("UTF-8", $ARGV[3])
   };
   $payload->{width} = int($ARGV[4]) if length($ARGV[4] // "");
