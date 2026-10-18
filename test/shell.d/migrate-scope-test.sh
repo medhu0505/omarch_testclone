@@ -120,6 +120,7 @@ cat >"$scrub_root/migrations/100-env.sh" <<'SH'
   printf 'zram:%s\n' "${OMARCHY_ZRAM_CONF-<unset>}"
   printf 'omarchy_path:%s\n' "${OMARCHY_PATH-<unset>}"
   printf 'quattro_live:%s\n' "${OMARCHY_UPGRADE_TO_QUATTRO_LIVE-<unset>}"
+  printf 'unattended:%s\n' "${OMARCHY_UPDATE_UNATTENDED-<unset>}"
 } >>"$TEST_CALLS"
 SH
 
@@ -129,6 +130,7 @@ OMARCHY_SUDOERS_DIR="/tmp/attacker-sudoers" \
 OMARCHY_RETIRED_INSTALLER_ARTIFACTS_MARKER="/tmp/attacker-marker" \
 OMARCHY_ZRAM_CONF="/tmp/attacker-zram" \
 OMARCHY_UPGRADE_TO_QUATTRO_LIVE=1 \
+OMARCHY_UPDATE_UNATTENDED=1 \
 TEST_CALLS="$scrub_calls" \
   "$ROOT/bin/omarchy-migrate" >"$test_tmp/scrub.out"
 
@@ -142,5 +144,7 @@ grep -qx "omarchy_path:$scrub_root" "$scrub_calls" ||
   fail "OMARCHY_PATH still reaches a migration" "$(cat "$scrub_calls")"
 grep -qx 'quattro_live:1' "$scrub_calls" ||
   fail "the Quattro upgrade flag still reaches a migration" "$(cat "$scrub_calls")"
+grep -qx 'unattended:1' "$scrub_calls" ||
+  fail "omarchy update -y still reaches a migration's package upgrade" "$(cat "$scrub_calls")"
 
 pass "migration path overrides cannot be inherited from the caller's environment"

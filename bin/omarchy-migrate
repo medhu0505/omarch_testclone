@@ -93,13 +93,14 @@ wait_for_pacman_transaction
 # The suite is unaffected: it invokes each migration directly rather than through
 # here. Only the few names that are genuinely passed *to* omarchy-migrate are
 # kept -- OMARCHY_PATH, the state directory, the flag
-# omarchy-upgrade-to-quattro sets, and the documented direct-pacman escape.
+# omarchy-upgrade-to-quattro sets, the documented direct-pacman escape, and the
+# `omarchy update -y` promise that a migration's package upgrade asks nothing.
 clear_migration_overrides() {
   local var
 
   for var in $(compgen -v OMARCHY_ 2>/dev/null); do
     case "$var" in
-    OMARCHY_PATH | OMARCHY_MIGRATION_STATE | OMARCHY_UPGRADE_TO_QUATTRO_LIVE | OMARCHY_ALLOW_DIRECT_PACMAN) ;;
+    OMARCHY_PATH | OMARCHY_MIGRATION_STATE | OMARCHY_UPGRADE_TO_QUATTRO_LIVE | OMARCHY_ALLOW_DIRECT_PACMAN | OMARCHY_UPDATE_UNATTENDED) ;;
     *) unset "$var" ;;
     esac
   done
