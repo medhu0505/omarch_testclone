@@ -46,7 +46,8 @@ assertEqual(
   'power shows battery icon when unplugged before battery state refreshes'
 )
 
-assert(/if \(b === Qt\.RightButton && root\.batteryPresent\) root\.togglePercentage\(\)/.test(panelSource), 'power right click toggles the bar percentage when there is a battery')
+assert(/if \(b === Qt\.RightButton\) \{\n\s*if \(root\.batteryPresent\) root\.togglePercentage\(\)\n\s*\} else \{\n\s*root\.toggle\(\)/.test(panelSource), 'power right click toggles the bar percentage, and does nothing without a battery')
+assert(/if \(batteryPresent && !systemProc\.running\)/.test(panelSource), 'power reads system stats only with a battery, where the panel shows them')
 assert(/Object\.assign\([^\n]+showPercentage: !root\.showPercentage[^\n]+\)[\s\S]*updateEntryInline/.test(panelSource), 'power persists the bar percentage setting')
 // BarIconButton lays its label out before the icon; bar-icon-geometry-test.sh checks the order.
 assert(/text: root\.batteryPresent \? root\.batteryIcon\(\) : root\.profileIcon\(root\.liveProfile \|\| root\.activeProfile\)\n\s*labelText: root\.batteryPresent && root\.showPercentage && !vertical \? Commons\.I18n\.formatNumber\(Math\.round\(root\.batteryFraction \* 100\)\) \+ "%" : ""/.test(panelSource), 'power shows the percentage as the bar button label beside the battery icon, and the power profile without a battery')

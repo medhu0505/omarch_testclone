@@ -142,7 +142,7 @@ Panel {
   function refresh() {
     if (batteryPresent && !batteryProc.running) batteryProc.running = true
     if (!profilesProc.running) profilesProc.running = true
-    if (!systemProc.running) systemProc.running = true
+    if (batteryPresent && !systemProc.running) systemProc.running = true
   }
 
   function updateKeyValue(raw, targetName) {
@@ -291,8 +291,11 @@ Panel {
     slotSize: Style.bar.iconSlot * (root.batteryPresent && root.showPercentage && !vertical ? 2 : 1)
     tooltipText: ""
     onPressed: function(b) {
-      if (b === Qt.RightButton && root.batteryPresent) root.togglePercentage()
-      else root.toggle()
+      if (b === Qt.RightButton) {
+        if (root.batteryPresent) root.togglePercentage()
+      } else {
+        root.toggle()
+      }
     }
   }
 
