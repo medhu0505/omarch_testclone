@@ -76,8 +76,10 @@ get_string = bind("FcPatternGetString", c.c_int, p, c.c_char_p, c.c_int, c.POINT
 destroy = bind("FcPatternDestroy", None, p)
 destroy_fonts = bind("FcFontSetDestroy", None, c.POINTER(FontSet))
 
-def resolve(family, tags, char, kind):
+def resolve(family, tags, char, kind, prgname=None):
   pattern = create()
+  if prgname:
+    add(pattern, b"prgname", prgname.encode())
   if family:
     add(pattern, b"family", family.encode())
   if tags:
@@ -109,10 +111,10 @@ def resolve(family, tags, char, kind):
   return found
 
 checks = 0
-def expect(family, tags, char, expected, kind):
+def expect(family, tags, char, expected, kind, prgname=None):
   global checks
-  actual = resolve(family, tags, char, kind)
-  assert actual == expected, (kind, family, tags, hex(char), expected, actual)
+  actual = resolve(family, tags, char, kind, prgname)
+  assert actual == expected, (kind, family, tags, prgname, hex(char), expected, actual)
   checks += 1
 
 for kind in ("string", "langset"):
@@ -136,5 +138,15 @@ for kind in ("string", "langset"):
       expect(family, tag, 0x1F600, "Noto Color Emoji", kind)
     expect("monospace", tag, 0xE0B0, "JetBrainsMono Nerd Font", kind)
 
-print(f"ok - {checks} Persian, Arabic, Urdu, Latin, digit, emoji and Nerd Font fallback checks")
+  # Match the working Nautilus preference even when Pango labels Persian ar.
+  # This app-wide exception also changes actual Arabic and Urdu text there.
+  for family in (None, "sans-serif", "monospace"):
+    for tag in (None, "fa", "ar", "ur"):
+      expect(family, tag, 0x067E, "Vazirmatn NL", kind, "org.gnome.Nautilus")
+  for family, expected in (("sans-serif", "Liberation Sans"), ("monospace", "JetBrainsMono Nerd Font")):
+    expect(family, "ar", 0x0041, expected, kind, "org.gnome.Nautilus")
+  for tag, expected in (("ar", "Noto Naskh Arabic"), ("ur", "Noto Nastaliq Urdu")):
+    expect("sans-serif", tag, 0x067E, expected, kind, "org.example.OtherApp")
+
+print(f"ok - {checks} Persian, Nautilus, Arabic, Urdu, Latin, digit, emoji and Nerd Font fallback checks")
 PY

@@ -10,7 +10,7 @@ You can install other popular programming fonts via _Install > Style > Font_ in 
 
 ## Persian
 
-Text marked as Persian uses [Vazirmatn](https://github.com/rastikerdar/vazirmatn), a free and open source Persian/Arabic typeface. The Non-Latin variant keeps English letters and Western digits in your chosen interface and terminal fonts. It also covers Arabic-script fallback when an app supplies no language; text explicitly marked as Arabic or Urdu keeps its existing font preference.
+Text marked as Persian uses [Vazirmatn](https://github.com/rastikerdar/vazirmatn), a free and open source Persian/Arabic typeface. The Non-Latin variant keeps English letters and Western digits in your chosen interface and terminal fonts. It also covers Arabic-script fallback when an app supplies no language. Nautilus uses Vazirmatn for Persian, Arabic, and Urdu text so Persian filenames display consistently even when identified as Arabic. Other applications retain their existing preferences for explicitly marked Arabic and Urdu text.
 
 ## Chinese, Japanese, and Korean
 
