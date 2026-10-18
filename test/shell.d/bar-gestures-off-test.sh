@@ -7,6 +7,8 @@ source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 TMPDIR=""
 QS_PID=""
 GESTURE_LOG=""
+CLI_HOME=""
+CLI_STUBS=""
 
 cleanup() {
   if [[ -n $QS_PID ]] && kill -0 "$QS_PID" 2>/dev/null; then
@@ -15,6 +17,12 @@ cleanup() {
   fi
   if [[ -n $TMPDIR && -d $TMPDIR ]]; then
     rm -rf "$TMPDIR"
+  fi
+  if [[ -n $CLI_HOME && -d $CLI_HOME ]]; then
+    rm -rf "$CLI_HOME"
+  fi
+  if [[ -n $CLI_STUBS && -d $CLI_STUBS ]]; then
+    rm -rf "$CLI_STUBS"
   fi
 }
 trap cleanup EXIT
@@ -41,14 +49,64 @@ const manualSource = fs.readFileSync(root + '/manual/05-the-top-bar.md', 'utf8')
 assert(/editGestures/.test(manualSource), 'the manual documents the gestures opt-out')
 JS
 
+# The gestures command reads and writes bar.editGestures through the shared
+# shell.json plumbing, with a logged omarchy-shell so the shell refresh never
+# reaches a real session.
+require_command jq
+
+CLI_HOME=$(mktemp -d)
+CLI_STUBS=$(mktemp -d)
+mkdir -p "$CLI_HOME/.config/omarchy"
+printf '#!/bin/bash\nexit 0\n' >"$CLI_STUBS/omarchy-shell"
+chmod +x "$CLI_STUBS/omarchy-shell"
+
+run_bar_cli() {
+  (
+    export HOME="$CLI_HOME"
+    export XDG_CONFIG_HOME="$CLI_HOME/.config"
+    export OMARCHY_PATH="$ROOT"
+    export PATH="$CLI_STUBS:$ROOT/bin:$PATH"
+    bash "$ROOT/bin/omarchy-bar" "$@"
+  )
+}
+
+# No user shell.json yet: the default reads on.
+current=$(run_bar_cli gestures)
+[[ $current == on ]] || fail "bar gestures defaults to on with no user config, got: $current"
+pass "bar gestures prints on while the user config carries nothing"
+
+# Turning them off writes the config and keeps the user's other keys.
+printf '%s\n' '{"version":1,"idle":{"screensaver":10,"lock":20},"bar":{"position":"top","background":"glassy"}}' >"$CLI_HOME/.config/omarchy/shell.json"
+run_bar_cli gestures off >/dev/null
+config=$(cat "$CLI_HOME/.config/omarchy/shell.json")
+echo "$config" | jq -e '.bar.editGestures == false' >/dev/null || fail "gestures off writes bar.editGestures false"
+echo "$config" | jq -e '.bar.position == "top"' >/dev/null || fail "gestures off keeps the bar position"
+echo "$config" | jq -e '.bar.background == "glassy"' >/dev/null || fail "gestures off keeps the bar background"
+echo "$config" | jq -e '.idle.lock == 20' >/dev/null || fail "gestures off keeps the idle block"
+pass "bar gestures off writes bar.editGestures and keeps the rest of shell.json"
+
+current=$(run_bar_cli gestures)
+[[ $current == off ]] || fail "bar gestures reads off after turning it off, got: $current"
+
+run_bar_cli gestures on >/dev/null
+config=$(cat "$CLI_HOME/.config/omarchy/shell.json")
+echo "$config" | jq -e '.bar.editGestures == true' >/dev/null || fail "gestures on writes bar.editGestures true"
+pass "bar gestures on writes bar.editGestures true"
+
+if run_bar_cli gestures banana >/dev/null 2>&1; then
+  fail "bar gestures rejects a value that is neither on nor off"
+fi
+if run_bar_cli gestures on extra >/dev/null 2>&1; then
+  fail "bar gestures takes a single value"
+fi
+pass "bar gestures validates its arguments"
+
 require_compositor "bar gestures off test"
 
 if ! command -v quickshell >/dev/null 2>&1; then
   skip "quickshell not installed; skipping bar gestures off test"
   exit 0
 fi
-
-require_command jq
 
 TMPDIR=$(mktemp -d)
 result="$TMPDIR/result.json"

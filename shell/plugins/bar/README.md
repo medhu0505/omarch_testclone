@@ -18,7 +18,7 @@ The bar config lives under the `bar:` key of [`~/.config/omarchy/shell.json`](..
 
 The bar is configured directly on the bar itself: drag empty bar space (or click-and-hold) to move the bar to another screen edge, double-left-click empty center-bar space to cycle the bar background from clear to glassy to opaque, and drag widgets to reorder them. The `omarchy bar position`, `omarchy bar background`, `omarchy bar move`, and `omarchy bar set` commands do the same from scripts. Enable or disable widgets with `omarchy plugin enable` and `omarchy plugin disable` (widget ids come from `omarchy plugin list`).
 
-The gestures suit some hands and not others. Set `"bar": { "editGestures": false }` in the user shell.json to turn the direct manipulation off: the bar stays at `omarchy bar position`'s edge, the background stays at the `omarchy bar background` setting, and the lineup moves only through `omarchy bar move`. The widgets' own clicks keep working either way.
+The gestures suit some hands and not others. `omarchy bar gestures off` turns the direct manipulation off, and `omarchy bar gestures on` turns it back on — or set `"bar": { "editGestures": false }` in the user shell.json by hand, which is the same setting. With them off, the bar stays at `omarchy bar position`'s edge, the background stays at the `omarchy bar background` setting, and the lineup moves only through `omarchy bar move`. The widgets' own clicks keep working either way.
 
 Example `shell.json` (bar subtree only shown):
 

@@ -2,7 +2,7 @@
 
 # omarchy:summary=Configure the bar and its widget layout
 # omarchy:group=bar
-# omarchy:args=use <id> | reset | defaults | position [top|bottom|left|right] | background [opaque|glassy|none|cycle] | put <id> [placement] | move <id> [placement] | set <id> <key> <value> [--json] [placement] | get <id> <key>
+# omarchy:args=use <id> | reset | defaults | position [top|bottom|left|right] | background [opaque|glassy|none|cycle] | gestures [on|off] | put <id> [placement] | move <id> [placement] | set <id> <key> <value> [--json] [placement] | get <id> <key>
 # omarchy:examples=omarchy bar use local.neon-bar | omarchy bar put omarchy.keyboard-layout --after omarchy.clock | omarchy bar move omarchy.weather --section centerBegin --index 0 | omarchy bar set omarchy.clock format HH:mm
 
 set -euo pipefail
@@ -22,6 +22,11 @@ Usage: omarchy bar <command> [args...]
                                        Bar background: glassy shows what is
                                        behind the bar blurred, cycle steps
                                        none, glassy, opaque; prints the
+                                       current one when given none
+  gestures [on|off]                    The bar's direct-edit gestures: drag
+                                       empty bar space to move the bar,
+                                       double-click to cycle the background,
+                                       drag widgets to reorder; prints the
                                        current one when given none
   put <id> [placement]                 Put a widget on the bar, leaving one
                                        that is already there where it is
@@ -219,6 +224,31 @@ cmd_position() {
   echo "Bar position set to $position"
 }
 
+# The bar's direct-edit gestures: drag or click-and-hold empty bar space moves
+# the bar to another edge, double-clicking empty space cycles its background,
+# and dragging a widget reorders it. Off, the bar keeps to what the commands
+# set; widgets keep their own clicks.
+cmd_gestures() {
+  if (( $# == 0 )); then
+    if [[ $(jq -r '.bar.editGestures == false' "$(source_file)") == true ]]; then
+      echo off
+    else
+      echo on
+    fi
+    return
+  fi
+
+  local gestures="$1"
+  (( $# == 1 )) || fail "gestures takes a single value"
+  [[ $gestures =~ ^(on|off)$ ]] || fail "gestures must be on or off"
+  if [[ $gestures == on ]]; then
+    commit "$NORMALIZE | .bar.editGestures = true"
+  else
+    commit "$NORMALIZE | .bar.editGestures = false"
+  fi
+  echo "Bar gestures turned $gestures"
+}
+
 # The bar background is opaque, glassy, or none. A shell.json from before it
 # had one says transparent instead, which is none, and setting a background
 # drops it.
@@ -226,8 +256,7 @@ current_background() {
   jq -r '.bar.background // (if .bar.transparent == true then "none" else "opaque" end)' "$(source_file)"
 }
 
-cmd_background() {
-  if (( $# == 0 )); then
+cmd_background() {  if (( $# == 0 )); then
     current_background
     return
   fi
@@ -475,6 +504,9 @@ case "$command" in
     ;;
   background)
     cmd_background "$@"
+    ;;
+  gestures)
+    cmd_gestures "$@"
     ;;
   # Internal: the shell runs this when it loads a bar background, so one set
   # by editing shell.json gets its blur too.

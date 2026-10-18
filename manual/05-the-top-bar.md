@@ -83,7 +83,7 @@ The bar configures itself. You don't have to open a config file to move things.
 
 Grab an empty patch of the bar around the center and drag it toward another screen edge, and the bar moves there — left, right, top, or bottom all work, and every widget adapts (vertical bars fall back to compact icon-only forms). A click-and-hold starts the same drag. Double-left-click that same empty space to cycle the bar background from clear to glassy to opaque. And drag any widget to reorder it or throw it into another section; the other widgets slide apart to make room where it will land.
 
-Rather the gestures out of the way? `"bar": { "editGestures": false }` in the `bar:` subtree of `~/.config/omarchy/shell.json` turns them off: the bar holds the edge `omarchy bar position` gives it, the background sticks to what `omarchy bar background` set, and the lineup moves only through `omarchy bar move`. The widgets' own clicks keep working either way.
+Rather the gestures out of the way? `omarchy bar gestures off` turns them off, and `omarchy bar gestures on` turns them back on. The same key does it by hand: `"bar": { "editGestures": false }` in the `bar:` subtree of `~/.config/omarchy/shell.json`. With them off, the bar holds the edge `omarchy bar position` gives it, the background sticks to what `omarchy bar background` set, and the lineup moves only through `omarchy bar move`. The widgets' own clicks keep working either way.
 
 The middle of the bar is a box: whatever is in it stays centered as one group, and the widgets either side of it hang off its edges. While you drag a widget the box shows as an outline, or a line across the bar when it's empty, and you can drop into it or beside it. When a drop would land in the box, the box grows to take the widget in.
 
@@ -96,6 +96,7 @@ The same things have commands, which is what you want for a [dotfiles](31-dotfil
 ```bash
 omarchy bar position bottom
 omarchy bar background glassy  # opaque, glassy, none, or cycle
+omarchy bar gestures off       # or on; the direct-edit gestures
 omarchy bar move omarchy.weather --section centerBegin --index 0
 omarchy bar move omarchy.bluetooth --section tray  # into the tray's drawer
 omarchy bar set omarchy.clock format "HH:mm"
