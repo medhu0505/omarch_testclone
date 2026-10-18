@@ -121,6 +121,28 @@ transcode_video() {
   esac
 }
 
+# Keep encoder output private until it is complete. The subshell owns its
+# temporary directory; cleanup must never remove the shared destination.
+encode_output() (
+  local type="$1" input="$2" format="$3" resolution="$4" output="$5"
+  local temporary_dir temporary_output
+  temporary_dir=$(mktemp -d -- "$(dirname -- "$output")/.omarchy-transcode.XXXXXX") || return $?
+  trap 'rm -rf -- "$temporary_dir"' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  temporary_output="$temporary_dir/$(basename -- "$output")"
+
+  if [[ $type == "video" ]]; then
+    transcode_video "$input" "$format" "$resolution" "$temporary_output" || return $?
+  else
+    transcode_picture "$input" "$format" "$resolution" "$temporary_output" || return $?
+  fi
+
+  # Stage beside the destination for a same-filesystem rename. Never replace a
+  # concurrent winner, and never fall back to copying a partial file into place.
+  mv --no-copy --update=none-fail -T -- "$temporary_output" "$output"
+)
+
 copy_to_clipboard() {
   local output="$1"
   local uri
@@ -146,8 +168,8 @@ selected_resolution=""
 apply_to_type=false
 
 transcode_file() {
-  local input="$1" format="$2" resolution="$3" mime="$4" reuse_label="${5:-}" batch="${6:-0}"
-  local type output selection status=0 output_existed=0 glyph=
+  local input="$1" format="$2" resolution="$3" mime="$4" reuse_label="${5:-}"
+  local type output selection glyph=
   local -a menu_args=()
   apply_to_type=false
 
@@ -196,9 +218,6 @@ transcode_file() {
   selected_resolution=$resolution
   output=$(output_path "$input" "$format" "$resolution")
   if [[ -e $output || -L $output ]]; then
-    output_existed=1
-  fi
-  if (( batch && output_existed )); then
     printf 'Output already exists, skipping: %s\n' "$output" >&2
     return 1
   fi
@@ -213,20 +232,9 @@ transcode_file() {
   if [[ $type == "video" ]]; then
     glyph=
     omarchy-notification-send -g  "$(omarchy-i18n transcode.working)" "$(omarchy-i18n transcode.workingBody "$(basename -- "$input")" "$format" "$resolution")"
-    transcode_video "$input" "$format" "$resolution" "$output" || status=$?
-  else
-    transcode_picture "$input" "$format" "$resolution" "$output" || status=$?
   fi
 
-  if (( status != 0 )); then
-    # A partial output must not make the next batch skip this file forever.
-    # Never delete an output (including a dangling symlink) that was already there.
-    if (( !output_existed )); then
-      rm -f -- "$output"
-    fi
-    return "$status"
-  fi
-
+  encode_output "$type" "$input" "$format" "$resolution" "$output" || return $?
   copy_to_clipboard "$output" || return $?
   omarchy-notification-send -g "$glyph" "$(omarchy-i18n transcode.done "$resolution_label" "$format")" "$(omarchy-i18n transcode.saved)"
 }
@@ -260,7 +268,7 @@ transcode_batch() {
     fi
     printf 'Transcoding %s\n' "$input"
     status=0
-    transcode_file "$input" "${formats[$mime]:-}" "${resolutions[$mime]:-}" "$mime" "$label" 1 || status=$?
+    transcode_file "$input" "${formats[$mime]:-}" "${resolutions[$mime]:-}" "$mime" "$label" || status=$?
     # Cancel means cancel the selection, not open the next file's prompts.
     if (( status == 130 )); then
       return 130

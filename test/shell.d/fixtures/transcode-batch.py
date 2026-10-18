@@ -6,12 +6,14 @@ from pathlib import Path
 import shlex
 import subprocess
 import sys
+import signal
+import time
 import tempfile
 import types
 
 ROOT = Path(os.environ['ROOT'])
 STUB = '''#!/usr/bin/python3
-import json, os, pathlib, sys
+import json, os, pathlib, sys, time
 root = pathlib.Path(os.environ['TRANSCODE_TEST'])
 name = pathlib.Path(sys.argv[0]).name
 args = sys.argv[1:]
@@ -20,6 +22,9 @@ with (root / 'calls').open('a') as f:
 if name == 'file':
   print(json.loads((root / 'mimes').read_text())[args[-1]])
 elif name == 'omarchy-menu-select':
+  if os.environ.get('RACE_DIR'):
+    print(next(value for value in ('jpg', 'mp4', 'medium', '720p') if value in args))
+    sys.exit(0)
   answers = json.loads((root / 'answers').read_text())
   if not answers: sys.exit(99)
   answer = answers.pop(0)
@@ -28,6 +33,19 @@ elif name == 'omarchy-menu-select':
   if isinstance(answer, int): sys.exit(answer)
   print(json.dumps(answer) if isinstance(answer, dict) else answer)
 elif name in ('magick', 'ffmpeg'):
+  if os.environ.get('RACE_DIR'):
+    race = pathlib.Path(os.environ['RACE_DIR'])
+    role = os.environ['RACE_ROLE']
+    if os.environ.get('PAUSE_AFTER_WRITE'):
+      pathlib.Path(args[-1]).write_text('partial')
+    (race / (role + '.ready')).write_text(args[-1])
+    deadline = time.monotonic() + 15
+    while not (race / (role + '.release')).exists():
+      if time.monotonic() > deadline: sys.exit(98)
+      time.sleep(0.01)
+    if os.environ.get('RACE_FAIL'): sys.exit(7)
+    pathlib.Path(args[-1]).write_text(role)
+    sys.exit(0)
   if os.environ.get('FAIL_INPUT') in args:
     pathlib.Path(args[-1]).write_text('incomplete output')
     sys.exit(int(os.environ.get('FAIL_CODE', '1')))
@@ -70,6 +88,7 @@ with tempfile.TemporaryDirectory() as tmp:
     (work / 'calls').write_text('')
     args = ['--batch', '--', *paths] if single is None else [paths[0], *single]
     result = subprocess.run([ROOT / 'bin/omarchy-transcode', *args], env={**env, 'FAIL_INPUT': paths[failed] if failed is not None else '', 'FAIL_CODE': str(fail_code), 'CLIPBOARD_STATUS': str(clipboard_status)}, capture_output=True, text=True, timeout=15)
+    assert not list(media.glob('.omarchy-transcode.*')), 'temporary outputs leaked'
     calls = [json.loads(line) for line in (work / 'calls').read_text().splitlines()]
     menus = [args for name, args in calls if name == 'omarchy-menu-select']
     encodes = [(name, args) for name, args in calls if name in ('magick', 'ffmpeg')]
@@ -114,8 +133,8 @@ with tempfile.TemporaryDirectory() as tmp:
   dangling.symlink_to('missing.jpg')
   r, _, encodes, _ = run(heics[:1], ['jpg', 'medium'], reset=False)
   check('batch preserves dangling output symlinks without following them', r.returncode == 1 and not encodes and dangling.is_symlink() and not (work / 'media/missing.jpg').exists())
-  r, _, _, _ = run(heics[:1], [], single=['jpg', 'medium'], failed=0, existing='one-medium.jpg')
-  check('cleanup never deletes output that existed before single-file conversion', r.returncode == 1 and (work / 'media/one-medium.jpg').exists())
+  r, _, encodes, _ = run(heics[:1], [], single=['jpg', 'medium'], failed=0, existing='one-medium.jpg')
+  check('single-file conversion preserves existing output without encoding', r.returncode == 1 and not encodes and (work / 'media/one-medium.jpg').read_text() == 'keep existing output')
   r, _, _, _ = run(heics[:1], [], single=['jpg', 'medium'], clipboard_status=3)
   check('clipboard failure preserves successfully encoded output', r.returncode == 3 and (work / 'media/one-medium.jpg').exists())
 
@@ -152,6 +171,61 @@ with tempfile.TemporaryDirectory() as tmp:
 
   r = subprocess.run([ROOT / 'bin/omarchy-transcode', '--batch'], env=env, capture_output=True)
   check('empty batch is a usage error', r.returncode == 2)
+
+
+  # Release actual CLI processes in a fixed order, after both encoders have
+  # reached the output path. No timing assumption decides which run wins.
+  def wait_ready(path):
+    deadline = time.monotonic() + 10
+    while not path.exists():
+      if time.monotonic() > deadline:
+        raise AssertionError(f'encoder did not reach barrier: {path}')
+      time.sleep(0.01)
+
+  for video in (False, True):
+    for fail_loser in (True, False):
+      with tempfile.TemporaryDirectory(dir=work) as tmp_race:
+        race = Path(tmp_race)
+        source = race / ('clip.mov' if video else 'photo.heic')
+        source.write_text('original')
+        fmt, resolution = ('mp4', '720p') if video else ('jpg', 'medium')
+        output = race / f'{source.stem}-{resolution}.{fmt}'
+        (work / 'mimes').write_text(json.dumps({str(source): 'video/quicktime' if video else 'image/heic'}))
+        args = ['--batch', '--', str(source)] if video else [str(source), fmt, resolution]
+        processes = []
+        try:
+          for role in ('winner', 'loser'):
+            processes.append(subprocess.Popen([ROOT / 'bin/omarchy-transcode', *args], env={**env, 'RACE_DIR': str(race), 'RACE_ROLE': role, 'RACE_FAIL': '1' if role == 'loser' and fail_loser else ''}, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True))
+          wait_ready(race / 'winner.ready')
+          wait_ready(race / 'loser.ready')
+          (race / 'winner.release').touch()
+          processes[0].communicate(timeout=10)
+          assert processes[0].returncode == 0
+          (race / 'loser.release').touch()
+          processes[1].communicate(timeout=10)
+          check(f'{fmt}: overlapping {"failed" if fail_loser else "successful"} encoder preserves the winning output', processes[1].returncode == (7 if fail_loser else 1) and output.exists() and output.read_text() == 'winner' and source.read_text() == 'original')
+          check(f'{fmt}: both overlapping runs clean up their private outputs', not list(race.glob('.omarchy-transcode.*')))
+        finally:
+          for process in processes:
+            if process.poll() is None:
+              process.kill()
+            process.communicate()
+
+  with tempfile.TemporaryDirectory(dir=work) as tmp_race:
+    race = Path(tmp_race)
+    source = race / 'clip.mov'
+    source.write_text('original')
+    (work / 'mimes').write_text(json.dumps({str(source): 'video/quicktime'}))
+    process = subprocess.Popen([ROOT / 'bin/omarchy-transcode', str(source), 'mp4', '720p'], env={**env, 'RACE_DIR': str(race), 'RACE_ROLE': 'interrupted', 'PAUSE_AFTER_WRITE': '1'}, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+    try:
+      wait_ready(race / 'interrupted.ready')
+      os.killpg(process.pid, signal.SIGTERM)
+      process.communicate(timeout=10)
+      check('termination removes only private partial output', process.returncode != 0 and not (race / 'clip-720p.mp4').exists() and not list(race.glob('.omarchy-transcode.*')) and source.read_text() == 'original')
+    finally:
+      if process.poll() is None:
+        os.killpg(process.pid, signal.SIGKILL)
+      process.communicate()
 
 # Import the Nautilus extension against minimal GI doubles, then inspect what
 # it actually launches rather than matching the source text.
