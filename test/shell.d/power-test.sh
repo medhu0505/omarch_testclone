@@ -46,10 +46,11 @@ assertEqual(
   'power shows battery icon when unplugged before battery state refreshes'
 )
 
-assert(/if \(b === Qt\.RightButton\) root\.togglePercentage\(\)/.test(panelSource), 'power right click toggles the bar percentage')
+assert(/if \(b === Qt\.RightButton && root\.batteryPresent\) root\.togglePercentage\(\)/.test(panelSource), 'power right click toggles the bar percentage when there is a battery')
 assert(/Object\.assign\([^\n]+showPercentage: !root\.showPercentage[^\n]+\)[\s\S]*updateEntryInline/.test(panelSource), 'power persists the bar percentage setting')
 // BarIconButton lays its label out before the icon; bar-icon-geometry-test.sh checks the order.
-assert(/text: root\.batteryIcon\(\)\n\s*labelText: root\.showPercentage && !vertical \? Commons\.I18n\.formatNumber\(Math\.round\(root\.batteryFraction \* 100\)\) \+ "%" : ""/.test(panelSource), 'power shows the percentage as the bar button label beside the battery icon')
+assert(/text: root\.batteryPresent \? root\.batteryIcon\(\) : root\.profileIcon\(root\.liveProfile \|\| root\.activeProfile\)\n\s*labelText: root\.batteryPresent && root\.showPercentage && !vertical \? Commons\.I18n\.formatNumber\(Math\.round\(root\.batteryFraction \* 100\)\) \+ "%" : ""/.test(panelSource), 'power shows the percentage as the bar button label beside the battery icon, and the power profile without a battery')
+assert(/readonly property string liveProfile: \{\n\s*var profile = PowerProfiles\.profile/.test(panelSource), 'power follows the active profile through PowerProfiles for the bar icon')
 assert(/openPanelIndicatorWidth:.*showPercentage.*button\.glyphPaintedWidth : 0/.test(panelSource), 'power spans the open-panel mark across the painted percentage block')
 assert(/IpcHandler[\s\S]*?function togglePercentage\(\) \{ root\.togglePercentage\(\) \}/.test(panelSource), 'power exposes togglePercentage over IPC')
 assert(/manageIpc: false/.test(panelSource), 'power owns its IPC handler so it can extend the target methods')
