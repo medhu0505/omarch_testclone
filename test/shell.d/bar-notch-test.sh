@@ -105,10 +105,24 @@ assert(
   'bar takes its screen\'s physical mode from Hyprland'
 )
 assert(
-  /function thicknessFor\(screen\) \{\s*if \(root\.vertical \|\| !screen\) return root\.barSize\s*return Math\.max\(root\.barSize, BarModel\.notchFloor\(/.test(barSource) &&
+  /function thicknessFor\(screen\) \{\s*if \(root\.vertical \|\| !screen\) return root\.barSize\s*return Math\.max\(root\.barSize, root\.notchReachFor\(screen\)\)/.test(barSource) &&
     /readonly property int thickness: root\.thicknessFor\(screen\)/.test(barSource) &&
     /implicitHeight: root\.vertical \? 0 : thickness/.test(barSource),
   'bar height is floored at the cutout, never shrunk to it'
+)
+
+// A detached top bar sits its top margin below the edge, so the cutout reaches
+// only the rest of the floor into it, and nothing once the margin clears it.
+assertEqual(bar.notchReach(32, 0), 32, 'a flush top bar meets the whole cutout')
+assertEqual(bar.notchReach(32, 10), 22, 'a top margin shortens how far the cutout reaches into the bar')
+assertEqual(bar.notchReach(32, 32), 0, 'a top margin as tall as the cutout clears it')
+assertEqual(bar.notchReach(32, 40), 0, 'a top margin past the cutout clears it')
+assertEqual(bar.notchReach(0, 10), 0, 'a screen without a cutout has nothing to reach')
+assertEqual(bar.notchReach(32, -4), 32, 'a negative margin counts as none')
+assertEqual(bar.notchReach(32, 'x'), 32, 'an unreadable margin counts as none')
+assert(
+  /function notchReachFor\(screen\) \{\s*if \(root\.vertical \|\| !screen\) return 0\s*return BarModel\.notchReach\(BarModel\.notchFloor\([^\n]*\), root\.barMargins\.top\)/.test(barSource),
+  'the floor a top bar takes is what the cutout reaches past its top margin'
 )
 // A hidden bar parks by that same thickness (bar-test.sh), so a floored top
 // bar leaves no strip of itself on screen.
@@ -135,6 +149,10 @@ for (const position of ['bottom', 'left', 'right'])
 assert(
   /centerBesideRight: BarModel\.centerBesideRight\(root\.displayCutouts, root\.position, screen\.name, screen\.width, screen\.height, screen\.devicePixelRatio, panelMode\)/.test(barSource),
   'each bar surface decides the move from its own screen'
+)
+assert(
+  /centerBesideRight: BarModel\.centerBesideRight\([^\n]*\) && root\.notchReachFor\(screen\) > 0/.test(barSource),
+  'a top bar whose margin clears the cutout keeps the center section in the middle'
 )
 assert(
   /CenterModules \{\s*anchors\.fill: parent\s*window: barWindow\s*pool: horizontalPool\s*drawn: !barWindow\.centerBesideRight\s*\}/.test(barSource),

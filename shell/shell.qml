@@ -454,6 +454,18 @@ ShellRoot {
     return copy
   }
 
+  // A bar plugin's edge margins as plain numbers, all 0 for a bar that has
+  // none, so a plugin holds a copy rather than the bar's own object.
+  function detachedBarMargins(margins) {
+    var m = Util.isPlainObject(margins) ? margins : ({})
+    return {
+      top: Math.max(0, Number(m.top) || 0),
+      right: Math.max(0, Number(m.right) || 0),
+      bottom: Math.max(0, Number(m.bottom) || 0),
+      left: Math.max(0, Number(m.left) || 0)
+    }
+  }
+
   function pluginBarStateFor(cacheKey, pluginId) {
     if (_pluginBarStateApis[cacheKey]) return _pluginBarStateApis[cacheKey]
     var api = pluginBarStateApiComponent.createObject(null, { ownerPluginId: pluginId })
@@ -461,6 +473,7 @@ ShellRoot {
     api.barHidden = Qt.binding(function() { return shell.bar ? shell.bar.barHidden === true : false })
     api.barSize = Qt.binding(function() { return shell.bar ? Math.max(0, shell.bar.barSize || 0) : 0 })
     api.barSizes = Qt.binding(function() { return shell.bar ? shell.detachedBarSizes(shell.bar.screenBarSizes) : ({}) })
+    api.barMargins = Qt.binding(function() { return shell.detachedBarMargins(shell.bar ? shell.bar.barMargins : null) })
     api.fontFamily = Qt.binding(function() { return shell.bar ? String(shell.bar.fontFamily || "") : "" })
     api.position = Qt.binding(function() { return shell.bar ? String(shell.bar.position || "top") : "top" })
     var next = ({})

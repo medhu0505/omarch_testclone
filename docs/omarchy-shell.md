@@ -413,6 +413,25 @@ A panel matches a screen whose connector name starts with `connector` and whose 
 
 Until Hyprland reports a screen's mode, a top bar there waits to appear if a description names the screen's connector, unless the logical size times Qt's whole-number scale already matches a panel. It then appears at its floor rather than growing once windows are laid out, and never guesses a floor for a panel nothing describes. After two seconds without a mode it appears without a floor. Notifications clear the bar as thick as it is on their screen. A plugin's `shell.bar` gives the same through `barSizeFor(screenName)` and the `barSizes` map (screen name to thickness); its `barSize` stays the configured size, which the widgets are drawn at.
 
+### Floating bar
+
+`[bar] margin` lifts the bar off its screen edge: it is the gap between the bar and every edge the bar touches, the one it is anchored to and the two it spans. `[bar] radius` rounds the corners of the bar surface. A theme sets them in its own `shell.toml`, and `~/.config/omarchy/shell.toml` overrides it and survives theme switches.
+
+```toml
+[bar]
+margin = 10   # gap between the bar and the screen edges; 0 = flush
+radius = 12   # corner rounding of the bar surface; 0 = square
+```
+
+`margin` accepts the same CSS-style list as the border widths — `N`, `"Y X"`, `"T X B"`, or `"T R B L"` — so the gap can differ per edge. A top bar set further off the sides than off the edge it hangs from:
+
+```toml
+[bar]
+margin = "4 8"   # 4 top and bottom, 8 left and right: a top bar sits 4 below the edge and 8 in from each side
+```
+
+Both default to `0`, a bar sitting flush against its edge with square corners, and both follow `scale-with-font` like the sizes above. The gap is reserved along with the bar itself, so maximized and tiled windows stop clear of it instead of sliding underneath. Hiding the bar still parks it fully off screen. On a panel with a camera cutout, a top margin counts toward clearing it: the bar is floored only at what the cutout reaches past the margin, and a margin that clears the cutout leaves the center sections in the middle. Panels opened from the bar and notifications place themselves from the bar's outer face, so they follow it. Widgets read the gap as `bar.barMargins`, and plugins that position their own windows as `shell.bar.barMargins`, both an object with `top`, `right`, `bottom` and `left`.
+
 ## Custom bar modules
 
 If a full plugin is overkill, declare a one-off module inline in
@@ -434,7 +453,7 @@ For a custom QML widget:
 Then `~/.config/omarchy/bar/modules/gpu.qml` (or set `source` to point
 elsewhere). The module is an `Item` and receives `bar`, `moduleName`,
 `settings` properties. `bar` exposes `foreground` / `background` /
-`urgent` / `fontFamily` / `position` / `vertical` / `barSize`, plus
+`urgent` / `fontFamily` / `position` / `vertical` / `barSize` / `barMargins`, plus
 `run(cmd)`, `showTooltip(t, s)` / `hideTooltip(t)`,
 `requestPopout(o)` / `releasePopout(o)`. To shell-quote arguments for
 `run`, use `Util.shellQuote(v)` from `qs.Commons`.

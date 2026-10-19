@@ -19,6 +19,9 @@ QtObject {
   property string position: "top"
   property bool vertical: false
   property int barSize: 0
+  // Gap between a detached bar and the screen edges it touches, all 0 for a
+  // flush bar. A copy, so a widget can't change the bar's own.
+  property var barMargins: ({ top: 0, right: 0, bottom: 0, left: 0 })
   property bool transparent: false
   property bool foregroundAnimationEnabled: true
   property bool centerSectionRevealHeld: false

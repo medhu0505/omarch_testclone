@@ -107,6 +107,18 @@ omarchy plugin enable omarchy.media --section centerEnd
 omarchy plugin disable omarchy.weather
 ```
 
+## Floating the bar
+
+To lift the bar off the screen edge, give it a margin in `~/.config/omarchy/shell.toml`, and a radius to round its corners:
+
+```toml
+[bar]
+margin = 8
+radius = 10
+```
+
+The margin is the gap the bar keeps from every screen edge it touches. It can differ per edge the way CSS margins do: `margin = "4 8"` keeps a top bar 4 pixels below the screen edge and 8 in from each side. Both default to `0`, a bar flush against its edge with square corners, and both grow with the font size. Windows, panels and notifications stay clear of the bar and its gap. The file is yours, so it survives theme switches, and the bar picks up changes as soon as you save.
+
 ## Hiding the bar
 
 `Super + Shift + Space` toggles the bar off and back on without killing the shell — panels and hotkeys keep working, you just get the pixels back. It's also in the menu under **Trigger → Appearance → Menu Bar → Hide Bar**.

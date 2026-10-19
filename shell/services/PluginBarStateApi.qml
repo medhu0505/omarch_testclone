@@ -10,6 +10,10 @@ QtObject {
   // screen; barSizes holds each screen's thickness by screen name.
   property int barSize: 0
   property var barSizes: ({})
+  // Gap between a detached bar and the screen edges it touches, all 0 for a
+  // flush bar: the bar's outer face is its thickness plus
+  // barMargins[position] from its edge.
+  property var barMargins: ({ top: 0, right: 0, bottom: 0, left: 0 })
   property string fontFamily: ""
   property string position: "top"
 
