@@ -120,6 +120,20 @@ apply env
 [[ $(readlink "$link") == "$other" && -z $(<"$command_log") ]] || fail "a still without a loop stays" "$(readlink "$link")"
 pass "a still without a loop stays"
 
+# Toggling animations stops a playing loop, and starts it again.
+for command in omarchy-hyprland-toggle omarchy-hyprland-toggle-enabled omarchy-notification-send; do
+  printf '#!/bin/bash\nexit 0\n' >"$command_bin/$command"
+  chmod +x "$command_bin/$command"
+done
+ln -nsf "$loop" "$link"
+: >"$command_log"
+HOME="$loop_home" PATH="$command_bin:$PATH" COMMAND_LOG="$command_log" ANIMATIONS=off "$ROOT/bin/omarchy-toggle-animations" off
+[[ $(readlink "$link") == "$background" && $(<"$command_log") == "shell: -q background set $background" ]] ||
+  fail "turning animations off returns a playing loop to its still" "$(readlink "$link")"
+HOME="$loop_home" PATH="$command_bin:$PATH" COMMAND_LOG="$command_log" ANIMATIONS=on "$ROOT/bin/omarchy-toggle-animations" on
+[[ $(readlink "$link") == "$loop" ]] || fail "turning animations on starts the loop again" "$(readlink "$link")"
+pass "toggling animations stops a playing loop, and starts it again"
+
 # A shell starting up begins from the still, with nothing to tell yet.
 ln -nsf "$loop" "$link"
 : >"$command_log"
