@@ -17,12 +17,18 @@ printf 'pkg:%s\n' "$*" >>"$OMARCHY_TEST_LOG"
 exit "${OMARCHY_TEST_PKG_STATUS:-0}"
 SH
 
+cat >"$mock_bin/omarchy-pkg-aur-add" <<'SH'
+#!/bin/bash
+printf 'aur:%s
+' "$*" >>"$OMARCHY_TEST_LOG"
+SH
+
 cat >"$mock_bin/omarchy-font-set" <<'SH'
 #!/bin/bash
 printf 'font:%s\n' "$*" >>"$OMARCHY_TEST_LOG"
 SH
 
-for command in omarchy-pkg-aur-add omarchy-install-emacs omazed omarchy-theme-set-vscode omarchy-install-gaming-gpu-lib32 omarchy-lifecycle-dispatch; do
+for command in omarchy-install-emacs omazed omarchy-theme-set-vscode omarchy-install-gaming-gpu-lib32 omarchy-lifecycle-dispatch; do
   cat >"$mock_bin/$command" <<'SH'
 #!/bin/bash
 exit 0
@@ -178,6 +184,18 @@ fi
 grep -Fxq 'pkg:alpha' "$OMARCHY_TEST_LOG" ||
   fail "install-font still installs after quoting a hostile display name"
 pass "install-font does not run extra commands from a quote in the name or family"
+
+bash "$ROOT/bin/omarchy-install-font" --aur "Maple Mono CN" "maplemono-nf-cn" "Maple Mono NF CN"
+: >"$OMARCHY_TEST_LOG"
+run_presentation
+grep -Fxq 'aur:maplemono-nf-cn' "$OMARCHY_TEST_LOG" ||
+  fail "install-font --aur installs the font package from the AUR" "$(<"$OMARCHY_TEST_LOG")"
+if grep -q '^pkg:' "$OMARCHY_TEST_LOG"; then
+  fail "install-font --aur does not ask pacman for the font package" "$(<"$OMARCHY_TEST_LOG")"
+fi
+grep -Fxq 'font:Maple Mono NF CN' "$OMARCHY_TEST_LOG" ||
+  fail "install-font --aur still sets the family"
+pass "install-font --aur installs from the AUR and sets the family"
 
 bash "$ROOT/bin/omarchy-install-app" "Example App" "alpha; echo PWNED"
 : >"$OMARCHY_TEST_LOG"
