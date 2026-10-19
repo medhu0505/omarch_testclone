@@ -48,10 +48,11 @@ ShellRoot {
     bar: {
       position: "top",
       background: "opaque",
-      centerAnchor: "omarchy.clock",
       layout: {
         left: [{ id: "omarchy.menu" }, { id: "omarchy.workspaces" }],
+        centerBegin: [],
         center: [{ id: "omarchy.clock", format: "dddd HH:mm" }],
+        centerEnd: [],
         right: [{ id: "omarchy.audio" }]
       }
     },
@@ -1099,11 +1100,11 @@ ShellRoot {
   function updateEntryInline(moduleName, settings) {
     var stripped = Util.canonicalWidgetId(moduleName)
     var copy = JSON.parse(JSON.stringify(shellConfig || builtinShellConfig))
-    if (!Util.isPlainObject(copy.bar)) copy.bar = { layout: { left: [], center: [], right: [] } }
-    if (!Util.isPlainObject(copy.bar.layout)) copy.bar.layout = { left: [], center: [], right: [] }
+    if (!Util.isPlainObject(copy.bar)) copy.bar = { layout: {} }
+    if (!Util.isPlainObject(copy.bar.layout)) copy.bar.layout = {}
     if (!Array.isArray(copy.plugins)) copy.plugins = []
 
-    var sections = ["left", "center", "right"]
+    var sections = Util.barSections
     var foundInLayout = false
     var dirty = false
     for (var s = 0; s < sections.length; s++) {
@@ -1299,11 +1300,20 @@ ShellRoot {
 
   function callIfLoaded(pluginId, method, arg) {
     var id = shell.pluginRegistry.resolveEnabledId(pluginId)
-    var loader = panelLoaders[id]
-    if (!loader || !loader.item) return "unknown"
-    if (typeof loader.item[method] !== "function") return "unknown"
+    var item = null
+    if (shell.isBarWidgetPanelPlugin(id)) {
+      // Bar-widget panels (e.g. the network panel) live inside the bar's
+      // module slots rather than a panel Loader, so they need the bar's
+      // lookup. A bar widget is always mounted while on the bar.
+      item = shell.bar && typeof shell.bar.findPanelWidget === "function"
+        ? shell.bar.findPanelWidget(id) : null
+    } else {
+      var loader = panelLoaders[id]
+      item = loader ? loader.item : null
+    }
+    if (!item || typeof item[method] !== "function") return "unknown"
     try {
-      var result = loader.item[method](arg)
+      var result = item[method](arg)
       return result === undefined || result === null ? "ok" : String(result)
     } catch (e) {
       console.warn("plugin " + id + " " + method + "() threw:", e)

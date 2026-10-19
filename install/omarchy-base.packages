@@ -21,6 +21,7 @@ cups-filters
 cups-pk-helper
 ddcutil
 disktree-bin
+dnsmasq
 docker
 docker-buildx
 docker-compose
@@ -39,6 +40,7 @@ fcitx5-gtk
 fcitx5-hangul
 fcitx5-mozc
 fcitx5-qt
+fcitx5-table-extra
 fd
 ffmpeg
 ffmpegthumbnailer

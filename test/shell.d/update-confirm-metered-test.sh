@@ -45,8 +45,8 @@ chmod +x "$stub_bin"/*
 remembered="$test_tmp/home/.local/state/omarchy/update-metered-networks"
 
 confirm() {
-  HOME="${TEST_HOME:-$test_tmp/home}" PATH="$stub_bin:$PATH" \
-    TEST_METERED="$1" TEST_UUID="$2" TEST_NAME="$3" GUM_ANSWER="$4" \
+  HOME="${TEST_HOME:-$test_tmp/home}" PATH="$stub_bin:$ROOT/bin:$PATH" \
+    OMARCHY_PATH="$ROOT" TEST_METERED="$1" TEST_UUID="$2" TEST_NAME="$3" GUM_ANSWER="$4" \
     bash "$ROOT/bin/omarchy-update-confirm" >"$test_tmp/out" 2>&1
 }
 

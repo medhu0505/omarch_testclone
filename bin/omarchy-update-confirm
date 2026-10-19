@@ -36,29 +36,29 @@ for device in "$route_device" "$default_device"; do
 done
 
 lines=(
-  "Ready to update?"
+  "$(omarchy-i18n update.ready)"
   ""
-  "• You cannot stop the update once you start!"
-  "• Make sure you're connected to power or have a full battery"
+  "• $(omarchy-i18n update.cannotStop)"
+  "• $(omarchy-i18n update.connectPower)"
 )
 
 if [[ -n $metered_uuid ]]; then
   lines+=(
-    "• ${metered_name:-This network} is a mobile hotspot or limited data plan."
-    "  Updates can use a lot of data. You won't be asked about this network again."
+    "• $(omarchy-i18n update.meteredNetwork "${metered_name:-$(omarchy-i18n update.meteredFallback)}")"
+    "  $(omarchy-i18n update.meteredHint)"
   )
 fi
 
 lines+=(
   ""
-  "What's new: https://github.com/omacom/omarchy/releases/latest"
+  "$(omarchy-i18n update.whatsNew "https://github.com/omacom/omarchy/releases/latest")"
 )
 
 gum style --border normal --padding "1 2" "${lines[@]}"
 
 echo
 
-if ! gum confirm "Continue with update?"; then
+if ! gum confirm --affirmative "$(omarchy-i18n common.yes)" --negative "$(omarchy-i18n common.no)" "$(omarchy-i18n update.continue)"; then
   echo "Update cancelled"
   exit 1
 fi
