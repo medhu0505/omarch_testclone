@@ -695,7 +695,19 @@ firewall_rules_file() {
 }
 
 firewall_rules_file_tag_present() {
-  local rules=$1 iface=$2 subnet=$3 tag=$4 comment protocol="" port="" chain="ufw-user-input" need_source=0
+  # Only a rule under this hotspot's own owner comment counts: ownership of
+  # a rule under any other comment would belong to its author.
+  firewall_rules_file_match "$2" "$3" "$4" 1
+}
+
+# The same effect under any comment, or none: the user may have added an
+# equivalent rule before the hotspot ever ran.
+firewall_rules_file_tag_equivalent() {
+  firewall_rules_file_match "$2" "$3" "$4" 0
+}
+
+firewall_rules_file_match() {
+  local iface=$1 subnet=$2 tag=$3 owner_only=$4 comment protocol="" port="" chain="ufw-user-input" need_source=0
   comment=$(firewall_tag_comment "$tag") || return 1
   case "$tag" in
     dhcp) protocol=udp port=67 ;;
@@ -703,8 +715,8 @@ firewall_rules_file_tag_present() {
     dns-tcp) protocol=tcp port=53 need_source=1 ;;
     forward) chain="ufw-user-forward" need_source=1 ;;
   esac
-  LC_ALL=C awk -v iface="$iface" -v subnet="$subnet" -v comment="$comment" -v protocol="$protocol" -v port="$port" -v chain="$chain" -v need_source="$need_source" '
-    index($0, comment) == 0 { next }
+  LC_ALL=C awk -v iface="$iface" -v subnet="$subnet" -v comment="$comment" -v owner_only="$owner_only" -v protocol="$protocol" -v port="$port" -v chain="$chain" -v need_source="$need_source" '
+    owner_only == 1 && index($0, comment) == 0 { next }
     $1 == "-A" && $2 == chain {
       scoped = 0
       matched_source = (need_source == 0)
@@ -723,15 +735,17 @@ firewall_rules_file_tag_present() {
 }
 
 firewall_rules_present() {
-  local iface=$1 subnet=$2 state tag rules
+  local iface=$1 subnet=$2 rules tag
   firewall_scope_valid "$iface" "$subnet" || return 1
-  state=$(firewall_state_records) || return 1
-  for tag in "${FIREWALL_TAGS[@]}"; do
-    firewall_state_text_has "$state" "$iface" "$subnet" "$tag" || return 1
-  done
+  # Presence is read from the firewall's own rules, independently of
+  # ownership: rules with an equivalent effect the user added (never
+  # claimed by us) already make the configuration complete, so a start
+  # without our ownership records must not keep asking for authorization.
+  # A lost state file leaves nothing to reclaim here; firewall_remove
+  # recovers rules by their owner comment when it runs.
   rules=$(firewall_rules_file) || return 1
   for tag in "${FIREWALL_TAGS[@]}"; do
-    firewall_rules_file_tag_present "$rules" "$iface" "$subnet" "$tag" || return 1
+    firewall_rules_file_tag_equivalent "$rules" "$iface" "$subnet" "$tag" || return 1
   done
 }
 
@@ -800,7 +814,9 @@ firewall_apply() {
   for tag in "${FIREWALL_TAGS[@]}"; do
     if firewall_tag_present "$rules" "$iface" "$subnet" "$tag"; then
       # Only a rule this hotspot recorded installing is its to remove later;
-      # a matching rule that was already there stays the user's.
+      # a matching rule that was already there stays the user's. A lost
+      # ownership file is recovered by firewall_remove's owner-comment
+      # fallback instead of retroactively claiming existing rules.
       ! firewall_state_text_has "$state" "$iface" "$subnet" "$tag" || owned+=("$tag")
       continue
     fi
@@ -856,7 +872,22 @@ firewall_remove() {
   local -a records=() failed=()
   require_privileged
   state=$(firewall_state_records) || fail "could not read hotspot firewall state"
-  [[ -n $state ]] || return 0
+  if [[ -z $state ]]; then
+    # The ownership records did not survive, but the owner comment still
+    # marks what the hotspot installed. Scope the cleanup to the interface
+    # the NetworkManager profile recorded, so a hotspot built for one
+    # interface cannot touch another's rules; rules under a different
+    # comment (or none) stay the user's.
+    iface=$(recorded_iface)
+    [[ -n $iface ]] || return 0
+    subnet=$(shared_subnet)
+    for tag in "${FIREWALL_TAGS[@]}"; do
+      if [[ -n $state ]]; then
+        state+=$'\n'
+      fi
+      state+="$iface"$'\t'"$subnet"$'\t'"$tag"
+    done
+  fi
   mapfile -t records <<<"$state"
   rules=$(ufw show added 2>/dev/null) || fail "could not read active UFW rules"
   # Keep going past a failed rule so one bad delete doesn't strand the rest.
@@ -1058,7 +1089,7 @@ generate_password() {
 # Password arrives on stdin (never argv). band is optional, default 2.4.
 # apply() writes the profile; start() writes it the same way, then brings the AP up.
 start() {
-  local ssid=$1 band=${2:-2.4}
+  local ssid=$1 band=${2:-2.4} nm_up_error=""
   hotspot_lock
 
   if omarchy-cmd-missing dnsmasq; then
@@ -1070,8 +1101,11 @@ start() {
   if ! forwarding_ensure; then
     rollback_start "could not enable IPv4 forwarding for hotspot" 0
   fi
-  if ! nmcli connection up "$PROFILE" >/dev/null 2>&1; then
-    rollback_start "could not start hotspot (does this adapter allow AP mode on band '$band'?)" 1
+  # Keep NetworkManager's own error text: a failed activation may have
+  # nothing to do with the band (busy radio, failed shared connection), and
+  # the reason tells the user what to fix.
+  if ! nm_up_error=$(nmcli connection up "$PROFILE" 2>&1 >/dev/null); then
+    rollback_start "could not start hotspot (does this adapter allow AP mode on band '$band'?): $nm_up_error" 1
   fi
   if ! ipv4_forwarding_enabled; then
     rollback_start "IPv4 forwarding is not enabled after hotspot activation" 1
@@ -1129,8 +1163,13 @@ hotspot_host_state_owned() {
 # hotspot's UFW rules, each only where state records the hotspot as the owner.
 hotspot_release() {
   require_privileged
-  forwarding_restore
-  [[ $(firewall_backend) != ufw ]] || firewall_remove
+  # Each step in a subshell, like teardown: a failed forwarding restore
+  # cannot also skip the firewall cleanup, and every failure is reported
+  # together at the end.
+  local -a failed=()
+  (forwarding_restore) || failed+=("IPv4 forwarding restore")
+  [[ $(firewall_backend) != ufw ]] || (firewall_remove) || failed+=("firewall rule removal")
+  ((${#failed[@]} == 0)) || fail "could not release hotspot host state: ${failed[*]}"
 }
 
 # Turning the hotspot off releases what it turned on, in one privileged step.
