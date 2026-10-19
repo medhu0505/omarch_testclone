@@ -7,8 +7,10 @@ import Quickshell.Io
 // a double-click and a widget drag on the bar move and cycle nothing; turned
 // back on through shell.json, the same gestures move the bar to the bottom
 // edge and cycle the background again, so the one gate drives all of them.
-// The background-cycle calls go through a logged omarchy-bar stub; the test
-// script counts them in the log.
+// The bar draws in its own window per screen, so the pointer events go to
+// items inside that window, at coordinates local to them. The background-
+// cycle calls go through a logged omarchy-bar stub; the test script counts
+// them in the log.
 ShellRoot {
   id: root
 
@@ -16,10 +18,12 @@ ShellRoot {
   readonly property string rootPath: Quickshell.env("OMARCHY_PATH")
   property var failures: []
   property var bar: null
+  property var surface: null
   property var gestureArea: null
-  // A point over empty bar space, past the center box toward the right side.
-  property real emptyX: 0
-  property real emptyY: 0
+  // A point over empty bar space, between the left section and the centered
+  // box, in the gesture area's own coordinates.
+  property real patchX: 0
+  property real patchY: 0
 
   function check(condition, message) {
     if (!condition) failures = failures.concat([String(message)])
@@ -31,7 +35,7 @@ ShellRoot {
 
   // The center gesture area fills the bar and the widgets are drawn over it;
   // the only MouseArea with a hand-set pressAndHoldInterval is this one, so
-  // a walk finds it wherever it ends up in the bar's tree.
+  // a walk of the bar window's content finds it wherever it ends up.
   function findGestureArea(item) {
     if (typeof item.cursorShape !== "undefined" && typeof item.pressAndHoldInterval === "number" && item.pressAndHoldInterval === 200)
       return item
@@ -120,35 +124,38 @@ ShellRoot {
 
       [function() {
         root.check(root.bar.editGestures === false, "the config's editGestures false reaches the bar")
-        var area = root.findGestureArea(root.bar)
+        var a = root.bar.moduleSlots.filter(function(slot) { return slot && slot.moduleName === "test.a" })[0]
+        root.check(a, "the left widget is on the bar")
+        if (!a) return
+        root.surface = root.bar.slotWindow(a)
+        root.check(root.surface && root.surface.contentItem, "the bar's window is there")
+        if (!root.surface || !root.surface.contentItem) return
+        var area = root.findGestureArea(root.surface.contentItem)
         root.check(area, "the center gesture area is there")
         root.gestureArea = area
         root.check(area && area.enabled === false, "the gestures off leave the center gesture area idle")
-        // A patch clear of the widgets: between the left section and the
-        // centered box, clear of both.
-        var patch = area.mapToItem(null, area.width * 0.35, area.height / 2)
-        root.emptyX = patch.x
-        root.emptyY = patch.y
+        root.patchX = area ? area.width * 0.35 : 0
+        root.patchY = area ? area.height / 2 : 0
       }, 300],
 
       // An empty-space drag with the gestures off moves or bothers nothing.
       [function() {
-        tc.mousePress(root.bar, root.emptyX, root.emptyY, Qt.LeftButton)
+        tc.mousePress(root.gestureArea, root.patchX, root.patchY, Qt.LeftButton)
       }, 100],
       [function() {
-        tc.mouseMove(root.bar, root.emptyX + 60, root.emptyY, -1, Qt.LeftButton)
+        tc.mouseMove(root.gestureArea, root.patchX + 60, root.patchY, -1, Qt.LeftButton)
       }, 200],
       [function() {
         root.check(root.bar.barMoveActive === false, "a drag on empty space doesn't start a bar move: " + root.bar.barMoveActive)
         root.check(host.config.bar.position === "top", "the bar holds its position: " + host.config.bar.position)
-        tc.mouseRelease(root.bar, root.emptyX + 60, root.emptyY)
+        tc.mouseRelease(root.gestureArea, root.patchX + 60, root.patchY)
       }, 300],
 
       // A double-click on empty space with the gestures off cycles nothing:
       // the omarchy-bar stub's log stays free of "background cycle" calls,
       // which the test script counts at the end.
       [function() {
-        tc.mouseDoubleClickSequence(root.bar, root.emptyX, root.emptyY)
+        tc.mouseDoubleClickSequence(root.gestureArea, root.patchX, root.patchY)
       }, 300],
 
       // A widget drag with the gestures off reorders nothing.
@@ -178,19 +185,21 @@ ShellRoot {
       [function() {
         root.check(root.bar.editGestures === true, "a config write turns the gestures back on")
         root.check(root.gestureArea && root.gestureArea.enabled === true, "the center gesture area answers again")
-        tc.mouseDoubleClickSequence(root.bar, root.emptyX, root.emptyY)
+        tc.mouseDoubleClickSequence(root.gestureArea, root.patchX, root.patchY)
       }, 400],
 
-      // And the bar-move drag moves the bar toward the pointer's edge.
+      // And the bar-move drag moves the bar toward the pointer's edge: the
+      // area holds the grab, so the move reaching the screen's bottom keeps
+      // coming to it well outside its own thickness.
       [function() {
-        tc.mousePress(root.bar, root.emptyX, root.emptyY, Qt.LeftButton)
+        tc.mousePress(root.gestureArea, root.patchX, root.patchY, Qt.LeftButton)
       }, 100],
       [function() {
-        tc.mouseMove(root.bar, root.emptyX, Quickshell.screens[0].height - 8, -1, Qt.LeftButton)
+        tc.mouseMove(root.gestureArea, root.patchX, Quickshell.screens[0].height - 8, -1, Qt.LeftButton)
       }, 300],
       [function() {
         root.check(root.bar.barMoveActive === true, "the same drag with the gestures on moves the bar")
-        tc.mouseRelease(root.bar, root.emptyX, Quickshell.screens[0].height - 8)
+        tc.mouseRelease(root.gestureArea, root.patchX, Quickshell.screens[0].height - 8)
       }, 700],
       [function() {
         root.check(host.config.bar.position === "bottom", "the bar lands at the bottom edge: " + host.config.bar.position)
