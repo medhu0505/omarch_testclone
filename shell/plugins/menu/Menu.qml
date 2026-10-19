@@ -98,12 +98,14 @@ Item {
   property var providersLoaded: ({})
   property var providerQueue: []
   property int providerRevision: 0
+  property bool gamesRefreshed: false
 
   // Shared application engine (entries, hidden filters, icons, launch,
   // removal), owned by the shell and also used by the standalone launcher.
   readonly property var appLibrary: root.shell ? root.shell.appLibrary : null
   property bool deleteConfirmOpen: false
   property var deleteTarget: null
+  readonly property bool removingGameShortcut: !!root.deleteTarget && String(root.deleteTarget.appId || "").indexOf("omarchy-game-") === 0
   onOpenedChanged: if (!opened) { deleteConfirmOpen = false; deleteTarget = null }
   // Bound to the central [menu] section in shell.toml via Commons.Color.qml.
   // Each color already includes its alpha companion (composed in the
@@ -352,7 +354,7 @@ Item {
     return MenuModel.slugify(value)
   }
 
-  // The apps provider is QML-native: rows come from the shared AppLibrary
+  // The Apps and Games providers are QML-native: rows come from the shared AppLibrary
   // (DesktopEntries) instead of a bash enumeration, so they carry image
   // icons, launch feedback, and uninstall support like the launcher.
   function mergeAppRows() {
@@ -371,7 +373,7 @@ Item {
       } catch (e) { }
       appRows.push({
         id: "apps." + appId,
-        parent: "apps",
+        parent: rows[j].category,
         kind: "app",
         icon: "",
         appIcon: String(entry.icon || ""),
@@ -400,7 +402,7 @@ Item {
   function startProviderForMenu(id) {
     var entry = root.item(id)
     if (!entry || !entry.provider || root.providersLoaded[id]) return
-    if (entry.provider === "apps") {
+    if (entry.provider === "apps" || entry.provider === "games") {
       root.providersLoaded[id] = true
       root.mergeAppRows()
       return
@@ -488,10 +490,12 @@ Item {
 
   function loadProviderForMenu(id) {
     var entry = root.item(id)
-    if (!entry || !entry.provider || root.providersLoaded[id]) return
+    if (!entry || !entry.provider) return
+    if (entry.provider === "games") root.refreshGamesOnce()
+    if (root.providersLoaded[id]) return
 
     // Native providers don't touch providerProc, so they never need to queue.
-    if (entry.provider === "apps") {
+    if (entry.provider === "apps" || entry.provider === "games") {
       root.startProviderForMenu(id)
       return
     }
@@ -504,8 +508,15 @@ Item {
     root.startProviderForMenu(id)
   }
 
+  function refreshGamesOnce() {
+    if (!root.opened || root.gamesRefreshed || !root.appLibrary) return
+    root.gamesRefreshed = true
+    root.appLibrary.refreshGames()
+  }
+
   function loadProvidersForSearch() {
     var active = root.item(root.activeMenu) ? root.activeMenu : "root"
+    if (active === "root" || active === "games") root.refreshGamesOnce()
 
     for (var i = 0; i < root.itemOrder.length; i++) {
       var entry = root.item(root.itemOrder[i])
@@ -746,8 +757,8 @@ Item {
       }
 
       // DesktopEntries can reorder its values when an application starts.
-      // Keep the Apps menu alphabetical independently of provider refreshes.
-      if (active === "apps") {
+      // Keep Apps and Games alphabetical independently of provider refreshes.
+      if (active === "apps" || active === "games") {
         rows.sort(function(a, b) {
           var aLabel = String(a.label || "").toLowerCase()
           var bLabel = String(b.label || "").toLowerCase()
@@ -942,6 +953,7 @@ Item {
 
   function openExistingMenu(initialMenu) {
     requestSerial += 1
+    gamesRefreshed = false
     mode = "menu"
     requestActive = false
     selectionFile = ""
@@ -1129,7 +1141,7 @@ Item {
   Connections {
     target: root.appLibrary
     function onAppsChanged() {
-      if (root.providersLoaded["apps"]) root.mergeAppRows()
+      if (root.providersLoaded["apps"] || root.providersLoaded["games"]) root.mergeAppRows()
     }
   }
 
@@ -1362,8 +1374,8 @@ Item {
           anchors.fill: parent
           opened: root.deleteConfirmOpen
           z: 10
-          message: Commons.I18n.t("common.uninstallConfirm").arg((root.deleteTarget && root.deleteTarget.label) || "")
-          confirmText: Commons.I18n.t("common.uninstall")
+          message: (root.removingGameShortcut ? Commons.I18n.t("common.removeShortcutConfirm") : Commons.I18n.t("common.uninstallConfirm")).arg((root.deleteTarget && root.deleteTarget.label) || "")
+          confirmText: root.removingGameShortcut ? Commons.I18n.t("common.removeShortcut") : Commons.I18n.t("common.uninstall")
           background: root.background
           foreground: root.foreground
           scrim: root.scrim

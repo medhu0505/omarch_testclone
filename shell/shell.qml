@@ -425,11 +425,14 @@ ShellRoot {
     if (_pluginAppLibraryApis[cacheKey]) return _pluginAppLibraryApis[cacheKey]
     var api = pluginAppLibraryApiComponent.createObject(null, {
       ownerPluginId: pluginId,
+      refreshingGames: Qt.binding(function() { return shell.appLibrary.refreshingGames }),
       _entryName: function(entry) { return shell.appLibrary.entryName(entry) },
       _entrySubtext: function(entry) { return shell.appLibrary.entrySubtext(entry) },
       _sortedEntries: function(query) { return shell.appLibrary.sortedEntries(query) },
       _iconSource: function(icon) { return shell.appLibrary.iconSource(icon) },
       _refreshIcons: function() { shell.appLibrary.refreshIcons() },
+      _refreshGames: function() { shell.appLibrary.refreshGames() },
+      _canonicalId: function(desktopId) { return shell.appLibrary.canonicalId(desktopId) },
       _launch: function(desktopId, name) { shell.appLibrary.launch(desktopId, name) },
       _remove: function(desktopId, name) { shell.appLibrary.remove(desktopId, name) }
     })

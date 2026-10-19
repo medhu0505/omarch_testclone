@@ -5,7 +5,7 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
 
-// Every app on one grid. Type to narrow it, arrows to move, Enter to launch.
+// Apps and Games share one grid. Type to narrow it, arrows to move, Enter to launch.
 Item {
   id: root
 
@@ -22,10 +22,12 @@ Item {
   property point dragPoint
   // The app waiting on the user to confirm uninstalling it.
   property var uninstallEntry: null
+  readonly property bool removingGameShortcut: root.isImportedGame(root.uninstallEntry)
   // The app whose menu is open, and where it opened.
   property var menuEntry: null
   property point menuPoint
   property string filterText: ""
+  property string category: "apps"
   property int selectedIndex: 0
   property var apps: []
 
@@ -51,9 +53,18 @@ Item {
   readonly property int gridWidth: columns * cellWidth
   readonly property int cardHeight: Math.min(panel.height - screenMargin * 2, inset * 2 + headerHeight + headerSpacing + visibleRows * cellHeight)
 
-  function open() {
+  function open(category) {
+    var nextCategory = category === "games" ? "games" : "apps"
+    if (root.opened) root.close()
+    if (root.category !== nextCategory) {
+      root.category = nextCategory
+      root.appsStale = true
+    }
     root.selectedIndex = 0
-    if (root.appLibrary) root.appLibrary.refreshIcons()
+    if (root.appLibrary) {
+      root.appLibrary.refreshIcons()
+      if (nextCategory === "games") root.appLibrary.refreshGames()
+    }
     // The cells from last time are reused when nothing changed, so the grid
     // opens with its icons already drawn.
     if (root.appsStale || root.filterText !== "" || root.apps.length === 0) {
@@ -98,6 +109,10 @@ Item {
     root.uninstallEntry = entry
   }
 
+  function isImportedGame(entry) {
+    return !!entry && String(entry.id || "").indexOf("omarchy-game-") === 0
+  }
+
   function cancelUninstall() {
     root.uninstallEntry = null
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
@@ -115,15 +130,16 @@ Item {
     root.menuPoint = point
   }
 
-  function toggle() {
-    if (root.opened) root.close()
-    else root.open()
+  function toggle(category) {
+    var nextCategory = category === "games" ? "games" : "apps"
+    if (root.opened && root.category === nextCategory) root.close()
+    else root.open(nextCategory)
   }
 
   function rebuild() {
     root.appsStale = false
     var rows = root.appLibrary ? root.appLibrary.sortedEntries(root.filterText) : []
-    root.apps = rows.map(function(row) { return row.entry })
+    root.apps = rows.filter(function(row) { return row.category === root.category }).map(function(row) { return row.entry })
     root.selectedIndex = Math.max(0, Math.min(root.selectedIndex, root.apps.length - 1))
     grid.positionViewAtBeginning()
   }
@@ -212,8 +228,8 @@ Item {
         anchors.fill: parent
         opened: !!root.uninstallEntry
         z: 10
-        message: Commons.I18n.t("common.uninstallConfirm").arg(root.uninstallEntry && root.appLibrary ? root.appLibrary.entryName(root.uninstallEntry) : "")
-        confirmText: Commons.I18n.t("common.uninstall")
+        message: (root.removingGameShortcut ? Commons.I18n.t("common.removeShortcutConfirm") : Commons.I18n.t("common.uninstallConfirm")).arg(root.uninstallEntry && root.appLibrary ? root.appLibrary.entryName(root.uninstallEntry) : "")
+        confirmText: root.removingGameShortcut ? Commons.I18n.t("common.removeShortcut") : Commons.I18n.t("common.uninstall")
         background: Commons.Color.menu.background
         foreground: Commons.Color.menu.text
         scrim: Commons.Color.menu.scrim
@@ -286,7 +302,7 @@ Item {
             anchors.rightMargin: Style.spacing.controlPaddingX
             anchors.verticalCenter: parent.verticalCenter
             textFormat: Text.PlainText
-            text: root.filterText || Commons.I18n.t("dock.searchApps")
+            text: root.filterText || (root.category === "games" ? Commons.I18n.t("dock.searchGames") : Commons.I18n.t("dock.searchApps"))
             color: Commons.Color.menu.text
             opacity: root.filterText ? 1 : 0.58
             font.family: Style.font.menuFamily
@@ -400,9 +416,15 @@ Item {
 
           Text {
             anchors.centerIn: parent
+            width: parent.width
             visible: root.apps.length === 0
             textFormat: Text.PlainText
-            text: Commons.I18n.t("dock.noAppsMatch").arg(root.filterText)
+            text: root.category === "games"
+              ? (root.filterText ? Commons.I18n.t("dock.noGamesMatch").arg(root.filterText)
+                : (root.appLibrary && root.appLibrary.refreshingGames ? Commons.I18n.t("dock.findingGames") : Commons.I18n.t("dock.noGames")))
+              : Commons.I18n.t("dock.noAppsMatch").arg(root.filterText)
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
             color: Commons.Color.menu.text
             opacity: 0.7
             font.family: Style.font.menuFamily
@@ -471,7 +493,7 @@ Item {
         }
 
         MenuRow {
-          text: Commons.I18n.t("dock.uninstall")
+          text: root.isImportedGame(menu.entry) ? Commons.I18n.t("common.removeShortcut") : Commons.I18n.t("dock.uninstall")
           onTriggered: root.requestUninstall(menu.entry)
         }
       }

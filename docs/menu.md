@@ -113,11 +113,15 @@ A submenu with `provider: "name"` gets its rows at runtime instead of from
 JSONC. The names are defined by the shell, not the menu file — an extension
 can point a submenu at an existing provider but cannot declare a new one:
 
-- `apps` is QML-native: rows come from the shared AppLibrary (desktop
+- `apps` and `games` are QML-native: rows come from the shared AppLibrary (desktop
   entries), carrying image icons, launch feedback, and uninstall support like
   the launcher. App rows are searchable by their desktop Keywords but never
   routable, so an installed app cannot capture a menu route (htop ships
   `Keywords=system;...`, and SUPER+ESCAPE must still open the system menu).
+  Each desktop entry has one canonical search row. Entries with the exact `Game` category belong to Games; known game clients remain in Apps, identified by desktop ID in `AppSearch.js`. The built-in Apps and Games actions open the same dock grid with the corresponding category. Global search includes both.
+  Opening Games or beginning a global menu search asks AppLibrary to run `omarchy-refresh-game-shortcuts` asynchronously. Search requests discovery once per menu opening; icon refresh and unrelated menus do not start it. Its standard-library Python helper reads local Steam manifests and appinfo versions 27–29, plus Heroic's Epic, GOG, and Amazon installation records. It writes ordinary `Categories=Game;` desktop entries into the XDG user applications directory and delegates launching to the client's URI handler. DesktopEntries supplies change notifications; there is no polling or shell-side game library.
+  The ownership ledger lives in `$XDG_STATE_HOME/omarchy/game-shortcuts.json` (default `~/.local/state/omarchy/game-shortcuts.json`). Only unchanged generated content is updated or removed. Each generated file includes a content checksum so an interrupted ledger write can recover ownership without claiming user edits. Explicitly removed or edited imports stay suppressed. Observations of existing client shortcuts expire on confirmed uninstall, allowing a later reinstall to be imported. Incomplete source data and unavailable libraries never authorize cleanup. Deleting the ledger resets suppression; unchanged checksummed imports are recovered and user edits remain untouched.
+  If a client adds its own shortcut after import, the generated ID remains as a `NoDisplay=true` alias. Lists prefer the client shortcut by store launch identity, including while discovery is still running. Dock pins and window matching resolve the alias to the client entry, while saved pins retain their original ID so a later reinstall can restore them. The importer does not edit client shortcuts.
 - `fonts`, `power-profiles`, and `languages` are bash one-liners in the `providers` map in
   `Menu.qml`. The contract is one tab-delimited line per row:
   `label\tvalue\tcurrent`, with an optional fourth field that becomes a search-only

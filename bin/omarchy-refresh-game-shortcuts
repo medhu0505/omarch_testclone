@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# omarchy:summary=Discover installed Steam and Heroic games for the launcher
+
+exec /usr/bin/python3 "$OMARCHY_PATH/default/games/shortcuts.py"

@@ -5,6 +5,7 @@ import QtQuick
 // ShellRoot parent in the plugin-visible object graph.
 QtObject {
   required property string ownerPluginId
+  property bool refreshingGames: false
 
   signal appsChanged()
 
@@ -13,6 +14,8 @@ QtObject {
   property var _sortedEntries: null
   property var _iconSource: null
   property var _refreshIcons: null
+  property var _refreshGames: null
+  property var _canonicalId: null
   property var _launch: null
   property var _remove: null
 
@@ -34,6 +37,15 @@ QtObject {
 
   function refreshIcons() {
     if (_refreshIcons) _refreshIcons()
+  }
+
+  function refreshGames() {
+    if (_refreshGames) _refreshGames()
+  }
+
+  function canonicalId(desktopId) {
+    var id = String(desktopId || "")
+    return _canonicalId ? _canonicalId(id) : id
   }
 
   function launch(desktopId, name) {

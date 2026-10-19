@@ -7,7 +7,7 @@ import "AppSearch.js" as AppSearch
 
 // Shared desktop-application library: the sorted entry list with hidden-entry
 // filtering, the icon fallback index, launch feedback, and entry removal.
-// Injected as shell.appLibrary; the menu's Apps submenu is the consumer.
+// Injected as shell.appLibrary; the dock grid and menu share its entries.
 Item {
   id: root
 
@@ -15,6 +15,8 @@ Item {
 
   property var configuredHiddenEntryIds: ({})
   property var desktopHiddenEntryIds: ({})
+  readonly property bool refreshingGames: gameShortcutScan.running
+  readonly property var clientGameIds: AppSearch.clientGameIds(DesktopEntries.applications.values || [])
 
   // Maps an icon name to a file on disk (e.g. "omacut" -> ".../apps/omacut.svg").
   // Used as a fallback for icons that Qt's themed lookup misses because they were
@@ -54,6 +56,15 @@ Item {
     return AppSearch.sortedEntries(values, query, function(entry) { return root.isHiddenEntry(entry) })
   }
 
+  function canonicalId(desktopId) {
+    var id = String(desktopId || "")
+    if (id.indexOf("omarchy-game-") !== 0) return id
+    // NoDisplay aliases are absent from applications.values but still resolve
+    // through byId, so old pins can follow the visible client entry.
+    var key = AppSearch.gameIdentity(DesktopEntries.byId(id))
+    return root.clientGameIds[key] || id
+  }
+
   function iconSource(icon) {
     var value = String(icon || "")
     if (value.length === 0) return Quickshell.iconPath("application-x-executable", true)
@@ -68,10 +79,21 @@ Item {
     return Quickshell.iconPath("application-x-executable", true)
   }
 
-  // The shell may start before first-install packages have finished placing
-  // their icons; consumers call this when they open so icons appear live.
+  // Consumers call this on open to pick up icons from packages still finishing
+  // installation when the shell started.
   function refreshIcons() {
     if (!iconIndexScan.running) iconIndexScan.running = true
+  }
+
+  function refreshGames() {
+    if (!gameShortcutScan.running) gameShortcutScan.running = true
+  }
+
+  // Refresh on Games open or global search. DesktopEntries watches shortcuts;
+  // no client process, network request or background polling is needed.
+  Process {
+    id: gameShortcutScan
+    command: [root.omarchyPath + "/bin/omarchy-refresh-game-shortcuts"]
   }
 
   function launch(desktopId, name) {
