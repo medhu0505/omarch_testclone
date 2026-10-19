@@ -93,6 +93,16 @@ apply env
 [[ $(readlink "$link") == "$other" && -z $(<"$command_log") ]] || fail "a still without a loop stays" "$(readlink "$link")"
 pass "a still without a loop stays"
 
+# A shell starting up begins from the still, with nothing to tell yet.
+ln -nsf "$loop" "$link"
+: >"$command_log"
+startup=$(HOME="$loop_home" PATH="$command_bin:$PATH" COMMAND_LOG="$command_log" "$ROOT/bin/omarchy-theme-bg-loop-apply" --still-only)
+[[ $startup == "$background" && $(readlink "$link") == "$background" ]] || fail "a shell starting up begins from the loop's still" "$startup"
+[[ -z $(<"$command_log") ]] || fail "a shell starting up isn't told of the still" "$(<"$command_log")"
+startup=$(HOME="$loop_home" "$ROOT/bin/omarchy-theme-bg-loop-apply" --still-only)
+[[ $startup == "$background" ]] || fail "a shell starting up on a still keeps it" "$startup"
+pass "a shell starting up begins from the loop's still"
+
 # Picking a still with a loop tells the shell once, with the loop.
 : >"$command_log"
 HOME="$loop_home" PATH="$command_bin:$PATH" COMMAND_LOG="$command_log" "$ROOT/bin/omarchy-theme-bg-set" "$background"

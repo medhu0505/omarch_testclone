@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # omarchy:summary=Point the background at the current still's theme loop, or back at the still
-# omarchy:args=[--resolve-only [background]|--still background]
+# omarchy:args=[--resolve-only [background]|--still background|--still-only]
 # omarchy:hidden=true
 
 set -euo pipefail
@@ -24,13 +24,23 @@ case ${1:-} in
     ;;
 esac
 
-# omarchy-theme-bg-set changes the link under the same lock, so a pick made
+# Every writer of the link takes the same lock, so a pick or theme switch made
 # while this runs is never replaced by the loop of the background before it.
 mkdir -p "$HOME/.local/state/omarchy"
 exec 8>"$HOME/.local/state/omarchy/background-loop.lock"
 flock 8
 
 current=$(readlink -f "$current_background_link" 2>/dev/null) || exit 0
+
+# A shell starting up begins a theme loop again from its still, which is what
+# an intro pairs with. It isn't running yet, so only the link changes.
+if [[ ${1:-} == "--still-only" ]]; then
+  target=$(theme_bg_still_for "$current")
+  [[ $target == "$current" ]] || ln -nsf "$target" "$current_background_link"
+  printf '%s\n' "$target"
+  exit 0
+fi
+
 target=$(theme_bg_live_target "$(theme_bg_still_for "$current")")
 
 if [[ $target != "$current" ]]; then
