@@ -274,6 +274,15 @@ ShellRoot {
     root.config = { version: 1, bar: { layout: { left: [], center: [], right: [{ id: "home", type: "drawer" }, { id: "omarchy.tray" }], tray: [], drawers: { home: [{ id: "third.widget" }] } } }, plugins: [] }
     root.assertEqual(registry.moveBarWidget("omarchy.tray", { section: "drawer:home" }), "the tray cannot go in a drawer", "registry keeps the tray out of drawers")
     root.assertEqual(registry.moveBarWidget("omarchy.tray", { after: "third.widget" }), "the tray cannot go in a drawer", "registry keeps the tray out of drawers when placed beside a widget in one")
+    // A drawer inside another would have no section, and its widgets would
+    // not be drawn: drawers stay out of drawers and the tray's drawer.
+    root.config = { version: 1, bar: { layout: { left: [{ id: "tools", type: "drawer" }], center: [], right: [{ id: "home", type: "drawer" }, { id: "omarchy.tray" }], tray: [], drawers: { home: [{ id: "third.widget" }], tools: [] } } }, plugins: [] }
+    root.assertEqual(registry.moveBarWidget("home", { section: "drawer:tools" }), "a drawer cannot go in a drawer", "registry keeps a drawer out of another drawer")
+    root.assertEqual(registry.moveBarWidget("tools", { after: "third.widget" }), "a drawer cannot go in a drawer", "registry keeps a drawer out of a drawer when placed beside a widget in one")
+    root.assertEqual(registry.moveBarWidget("home", { section: "tray" }), "a drawer cannot go in the tray's drawer", "registry keeps a drawer out of the tray's drawer")
+    root.assertDeepEqual(root.config.bar.layout.left, [{ id: "tools", type: "drawer" }], "a refused drawer move changes nothing")
+    root.assertEqual(registry.moveBarWidget("home", { section: "left" }), "", "a drawer still moves along the bar")
+    root.assertDeepEqual(root.config.bar.layout.left.map(function(entry) { return entry.id }), ["tools", "home"], "the moved drawer lands in the other section")
     root.config = { version: 1, bar: { layout: { left: [], center: [], right: [], tray: [], drawers: { gone: [{ id: "third.widget" }] } } }, plugins: [] }
     registry.setEnabled("third.widget", true)
     root.assertEqual(root.config.bar.layout.left.concat(root.config.bar.layout.center, root.config.bar.layout.right).filter(function(e) { return e.id === "third.widget" }).length, 1, "a widget in a drawer that is no longer on the bar counts as off the bar")

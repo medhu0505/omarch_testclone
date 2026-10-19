@@ -905,3 +905,19 @@ put_output=$(PATH="$put_tmp/bin:$ROOT/bin:$PATH" \
   fail "put places a widget through a ready shell" "$put_output"
 [[ $put_output == "omarchy.keyboard-layout is on the bar" ]] || fail "put reports the placed widget" "$put_output"
 pass "put places a widget through a ready shell"
+
+# get reads widgets in drawers on the bar, never in a drawer gone from it,
+# whose widgets are off the bar and which set cannot reach either.
+get_home=$(mktemp -d)
+mkdir -p "$get_home/.config/omarchy"
+cat >"$get_home/.config/omarchy/shell.json" <<'JSON'
+{"bar":{"layout":{"left":[],"right":[{"id":"home","type":"drawer"}],"tray":[],"drawers":{"home":[{"id":"w.in","size":1}],"gone":[{"id":"w.gone","size":2}]}}}}
+JSON
+get_output=$(HOME="$get_home" "$ROOT/bin/omarchy-bar" get w.in size) || fail "get finds a widget in a drawer on the bar"
+[[ $get_output == "1" ]] || fail "get reads a setting of a widget in a drawer" "$get_output"
+pass "get reads a setting of a widget in a drawer"
+if HOME="$get_home" "$ROOT/bin/omarchy-bar" get w.gone size >/dev/null 2>&1; then
+  fail "get leaves widgets of a drawer gone from the bar alone"
+fi
+pass "get leaves widgets of a drawer gone from the bar alone"
+rm -rf "$get_home"

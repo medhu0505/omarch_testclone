@@ -447,7 +447,10 @@ cmd_get() {
   (( $# == 2 )) || fail "get takes a widget id and a setting key"
 
   jq -e -r --arg id "$id" --arg key "$key" '
-    first(.bar.layout | (.left, .centerBegin, .center, .centerEnd, .right, .tray, (.drawers // {} | .[]?)) | arrays | .[]
+    first(.bar.layout
+      # Drawers count only while their entry is on the bar itself, as in the shell.
+      | [(.left, .centerBegin, .center, .centerEnd, .right) | arrays | .[] | select(type == "object" and .type == "drawer") | .id] as $drawers
+      | (.left, .centerBegin, .center, .centerEnd, .right, .tray, ($drawers[] as $drawer | .drawers[$drawer]?)) | arrays | .[]
       | select(type == "object" and .id == $id) | .[$key] | select(. != null))
     | if type == "string" then . else tojson end
   ' "$(source_file)" 2>/dev/null || exit 1

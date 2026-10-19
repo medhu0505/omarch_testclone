@@ -268,19 +268,35 @@ QtObject {
     return { error: section === "tray" ? "the tray cannot go in its own drawer" : "the tray cannot go in a drawer" }
   }
 
+  // Why the tray or a drawer cannot go into a section drawn inside another
+  // widget (the tray's drawer or a drawer), or null when it can go there.
+  function hostedSectionError(section, tray, drawer) {
+    if (!Util.isHostedLayoutSection(section)) return null
+    if (tray) return trayDrawerError(section)
+    if (drawer) return { error: section === "tray" ? "a drawer cannot go in the tray's drawer" : "a drawer cannot go in a drawer" }
+    return null
+  }
+
   // The tray section is drawn inside the tray and a drawer's section inside
-  // the drawer, so the tray cannot go into either.
-  function barTarget(config, placement, fallbackSection, id) {
+  // the drawer, so neither the tray nor a drawer can go into either: a
+  // drawer inside one would have no section of its own, and its widgets
+  // would not be drawn. `entry` is the entry being moved, when there is one:
+  // a drawer is known by its entry, which a move has already taken out of
+  // the layout by now.
+  function barTarget(config, placement, fallbackSection, id, entry) {
     var target = placement || {}
     var section = Util.layoutSectionNames(config.bar.layout).indexOf(String(target.section || "")) !== -1
       ? String(target.section) : fallbackSection
     var tray = isTray(id)
-    if (tray && Util.isHostedLayoutSection(section)) return trayDrawerError(section)
+    var drawer = Util.isPlainObject(entry) && entry.type === "drawer"
+    var refused = hostedSectionError(section, tray, drawer)
+    if (refused) return refused
     var relativeId = String(target.before || target.after || "")
     if (relativeId) {
       var relative = findRelativeBarLocation(config, relativeId, section && target.section ? section : "")
       if (!relative.found) return { error: "could not find target widget " + relativeId }
-      if (tray && Util.isHostedLayoutSection(relative.section)) return trayDrawerError(relative.section)
+      refused = hostedSectionError(relative.section, tray, drawer)
+      if (refused) return refused
       return {
         section: relative.section,
         index: relative.index + (target.after ? 1 : 0)
@@ -324,7 +340,7 @@ QtObject {
 
     var entry = layoutSection(config, source.section)[source.index]
     layoutSection(config, source.section).splice(source.index, 1)
-    var target = barTarget(config, placement, source.section, key)
+    var target = barTarget(config, placement, source.section, key, entry)
     if (target.error) {
       layoutSection(config, source.section).splice(source.index, 0, entry)
       return target.error
