@@ -114,6 +114,26 @@ assert(
 transitionBackground('', '/bg/waves.webp', '/bg/waves.webp', false, false)
 recoverBackground('/bg/waves.webp')
 assert(background.recoverProc.running, 'a failed still that is the background is still recovered')
+// An intro cover over a video is sized for OWE's frame, not the still held behind it.
+const introQml = fs.readFileSync(path.join(root, 'shell/services/BackgroundIntro.qml'), 'utf8')
+const prepareMatch = introQml.match(/function prepareTheme\(([^)]*)\) \{([\s\S]*?)\n  \}\n/)
+assert(prepareMatch, 'prepareTheme is defined')
+const intro = {
+  themeBackground: '', themeNativeSize: null, themeToken: '', transitionToken: '', themeColors: '', themeShell: '', themeOpacity: 0,
+  framePoll: { stop: () => {} }, themeFade: { stop: () => {} }, themeFallback: { restart: () => {} },
+  Util: { isVideoPath: background.isVideo },
+  backgroundService: {
+    displayedBackground: '/bg/small.webp', currentBackground: '/bg/loops/totoro.mp4',
+    nativeSizes: { '/bg/small.webp': { width: 1280, height: 720 } },
+  },
+}
+const prepareTheme = new Function('state', ...prepareMatch[1].split(',').map(name => name.trim()),
+  `with (state) {${prepareMatch[2]}\n}`).bind(null, intro)
+prepareTheme('/cache/previous.ppm', 'token', '', '')
+assert(intro.themeNativeSize === null, 'an intro cover over a video decodes at screen size, not the held still\'s size')
+intro.backgroundService.currentBackground = '/bg/small.webp'
+prepareTheme('/cache/previous-2.webp', 'token', '', '')
+assert(intro.themeNativeSize && intro.themeNativeSize.width === 1280, 'an intro cover over a still keeps that still\'s size')
 assert(backgroundQml.includes('BackgroundMedia {') && lockQml.includes('BackgroundMedia {'), 'desktop and lock screen share still rendering')
 assert(
   !backgroundQml.includes('videoEnabled') &&
