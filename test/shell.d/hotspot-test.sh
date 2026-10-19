@@ -83,7 +83,7 @@ stderr: $(<"$TEST_TMP/status.err")"
 
 declare -A values=()
 declare -A seen=()
-expected=(ap_capable ap_bands active configured iface ssid band password freq ip client_count clients upstream save_data aliases)
+expected=(ap_capable ap_bands active configured iface ssid band password freq ip client_count clients max_clients upstream save_data)
 index=0
 while IFS=$'\t' read -r key value; do
   [[ -n $key ]] || continue
