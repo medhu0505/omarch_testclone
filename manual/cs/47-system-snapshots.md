@@ -8,7 +8,7 @@ Na této obrazovce zvolte snímek, který chcete spustit, podle data a verze. Ve
 
  ![snapshots-bootloader](images/snapshots-bootloader.webp)
 
-Až se do systému dostanete, zobrazí se oznámení, které vás informuje, že jste ve spustitelném snímku, a kliknutím na něj zahájíte proces obnovení. Případně můžete použít příkaz `omarchy-snapshot restore`.
+Až se do systému dostanete, zobrazí se oznámení, které vás informuje, že systém běží ze snímku, a kliknutím na něj zahájíte proces obnovení. Případně můžete použít příkaz `omarchy-snapshot restore`.
 
  ![snapshots-restore](images/snapshots-restore.webp)
 

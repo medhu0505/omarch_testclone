@@ -32,7 +32,7 @@ Omarchy toto zabalilo jako _O aplikaci_ do nabídky Omarchy (`Super + Space`).
 
 ## A co Wi-Fi a Bluetooth?
 
-Pro Wi-Fi a Bluetooth žádné TUI nenajdete — tyto úkoly patří shellu Omarchy. Kliknutím na ikonu Wi-Fi na horním panelu (nebo stisknutím `Super + Ctrl + W`) zobrazíte sítě a připojíte se a kliknutím na ikonu Bluetooth (nebo stisknutím `Super + Ctrl + B`) spárujete a připojíte zařízení. Celý příběh najdete v části [sítě](35-networking.md).
+Pro Wi-Fi a Bluetooth žádné TUI nenajdete — tyto úkoly patří shellu Omarchy. Kliknutím na ikonu Wi-Fi na horní liště (nebo stisknutím `Super + Ctrl + W`) zobrazíte sítě a připojíte se a kliknutím na ikonu Bluetooth (nebo stisknutím `Super + Ctrl + B`) spárujete a připojíte zařízení. Celý příběh najdete v části [sítě](35-networking.md).
 
 ## Přidání vlastních
 

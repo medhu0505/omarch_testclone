@@ -22,13 +22,13 @@ Hlavními poměry škálování monitoru (1×, 1,25×, 1,6×, 2×, 3×, 4×) mů
 
 ### Zvětšení nebo zmenšení textu
 
-Škálování monitoru mění velikost všeho. Pokud chcete jen větší nebo menší _text_, existuje pro to jediný ovladač:
+Škálování monitoru mění velikost všeho. Pokud chcete jen větší nebo menší _text_, stačí jeden příkaz:
 
 ```
 omarchy display text size 14
 ```
 
-Ten přijímá velikost v pixelech mezi 9 a 20 a přesouvá společně shell Omarchy, aplikace GTK a váš terminál, takže celé pracovní prostředí zůstává v proporcích. Spusťte ho bez argumentu, abyste viděli, kde se nacházíte, a příkazem `omarchy display text size reset` se vraťte k výchozímu nastavení. Foot je jediný opozdilec: nemá způsob, jak svou konfiguraci načíst znovu, takže běžící terminály si uchovají svou starou velikost, dokud neotevřete nový.
+Ten přijímá velikost v pixelech mezi 9 a 20 a mění velikost textu současně v shellu Omarchy, aplikacích GTK a terminálu, aby celé pracovní prostředí zůstalo sladěné. Spusťte ho bez argumentu, abyste viděli, kde se nacházíte, a příkazem `omarchy display text size reset` se vraťte k výchozímu nastavení. Foot je jediný opozdilec: nemá způsob, jak svou konfiguraci načíst znovu, takže běžící terminály si uchovají svou starou velikost, dokud neotevřete nový.
 
 ### Rozšíření a zrcadlení displejů notebooků
 

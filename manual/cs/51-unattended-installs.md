@@ -2,7 +2,7 @@
 
 Obraz ISO systému Omarchy se může nainstalovat sám, aniž by kdokoli seděl u klávesnice. Pokud instalátor najde druhou jednotku označenou `cidata` se svými konfiguračními soubory, zkopíruje si je, průvodce prvotním nastavením úplně přeskočí a sám restartuje počítač do hotového systému. Není potřeba žádná zvláštní sestava ISO, žádná další položka spouštěcí nabídky — není-li připojena žádná taková jednotka, nic se nemění a dostanete běžného průvodce.
 
-Díky tomu se Omarchy výborně hodí jako základní obraz pro jednorázová vývojová prostředí: vytvoříte virtuální počítač v systému Proxmox nebo pomocí nástroje Packer, spustíte ho, odejdete a přihlásíte se přes SSH. Označení `cidata` je označením `NoCloud` nástrojí cloud-init, takže všechny běžné virtualizační nástroje už takovou jednotku připojit umějí.
+Díky tomu se Omarchy výborně hodí jako základní obraz pro jednorázová vývojová prostředí: vytvoříte virtuální počítač v systému Proxmox nebo pomocí nástroje Packer, spustíte ho, odejdete a přihlásíte se přes SSH. Jmenovku `cidata` používá zdroj dat `NoCloud` nástroje cloud-init, takže všechny běžné virtualizační nástroje už takovou jednotku připojit umějí.
 
 ## Konfigurační soubory
 
@@ -30,7 +30,7 @@ Pokud je přítomen soubor `tailscale_authkey`, počítač se namísto toho při
 
 ## Vytvoření jednotky cidata
 
-Funguje jakýkoli souborový systém se správným označením. Snadným řešením je drobný obraz ISO:
+Funguje jakýkoli souborový systém se správnou jmenovkou. Snadným řešením je drobný obraz ISO:
 
 ```bash
 mkdir cidata
@@ -54,8 +54,8 @@ qm create 101 --name my-omarchy \
 qm start 101
 ```
 
-Pořadí spouštění uvádí disk na první pozici záměrně: prázdný disk při prvním spuštění propadne na obraz ISO a nainstalovaný systém se od té chvíle spouští z disku.
+Disk je v pořadí spouštění první záměrně. Při prvním spuštění je prázdný, takže se přeskočí a spustí se instalátor z obrazu ISO. Po instalaci už počítač startuje z disku.
 
 ## Dvě výhrady
 
-Šifrované bezobslužné instalace nejsou úplně bezobslužné — někdo přece jen musí při prvním spuštění zadat přístupovou frázi LUKS. A blok `disk_encryption` v souboru `user_configuration.json` tuto přístupovou frázi obsahuje v prostém textu, takže s jednotkou cidata vytvořenou na základě šifrované instalace nakládejte jako s tajemstvím, kterým skutečně je.
+Šifrované bezobslužné instalace nejsou úplně bezobslužné — někdo přece jen musí při prvním spuštění zadat heslo LUKS. A blok `disk_encryption` v souboru `user_configuration.json` toto heslo obsahuje v nešifrované podobě, takže s jednotkou cidata vytvořenou na základě šifrované instalace nakládejte jako s tajemstvím, kterým skutečně je.

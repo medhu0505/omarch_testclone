@@ -1,4 +1,4 @@
-# Horní panel
+# Horní lišta
 
 Pruh podél horní části obrazovky je panel Omarchy. Není to přišroubovaná stavová lišta, ale součást shellu Omarchy, jediného dlouhodobě běžícího procesu Quickshell, který kreslí také nabídku, oznámení, vyskakovací okna OSD a zamykací obrazovku. Proto se dokonale stylizuje se vším ostatním a proto se panel otevře okamžitě, místo aby spouštěl novou aplikaci.
 

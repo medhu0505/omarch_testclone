@@ -12,7 +12,7 @@
     "label": "Akce"
   },
   "style": {
-    "label": "Styl"
+    "label": "Vzhled"
   },
   "setup": {
     "label": "Nastavení"
@@ -376,7 +376,7 @@
     "label": "Pozadí"
   },
   "style.unlock": {
-    "label": "Odemknout"
+    "label": "Obrazovka odemykání"
   },
   "style.font": {
     "label": "Písmo"
