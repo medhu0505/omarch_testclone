@@ -2360,6 +2360,7 @@ Panel {
             Repeater {
               model: Model.hotspotSaveDataChoices
               delegate: HotspotSaveDataPill {
+                required property var modelData
                 choice: modelData
               }
             }

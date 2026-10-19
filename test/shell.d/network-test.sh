@@ -542,6 +542,7 @@ assert(/hotspotMaxClients = Model\.hotspotMaxClients\(next\)/.test(panelSource),
 assert(/"start", hotspotSsid\.trim\(\), hotspotBand, hotspotLimitArgument/.test(panelSource), 'hotspot start applies the chosen participant limit')
 assert(/"apply", hotspotSsid\.trim\(\), hotspotBand, hotspotLimitArgument/.test(panelSource), 'hotspot apply applies the chosen participant limit')
 assert(/component HotspotLimitPill: Button/.test(panelSource), 'network renders the participant limit as a pill')
+assert(/delegate: HotspotSaveDataPill \{\n\s*required property var modelData\n\s*choice: modelData/.test(panelSource), 'network declares the injected repeater property on the save-data pills')
 assert(/id: hotspotCogButton[\s\S]*?tooltipText: root\.hotspotSetupOpen \? "Hide hotspot settings" : "Hotspot settings"/.test(panelSource), 'network labels the hotspot settings button through the button tooltip')
 assert(!/wifi-sec\.psk "\$password"/.test(hotspotSource), 'hotspot never puts the PSK on nmcli argv')
 assert(/apply "\$\{apply_args\[@\]\}"/.test(hotspotSource), 'hotspot start writes the profile through apply')
