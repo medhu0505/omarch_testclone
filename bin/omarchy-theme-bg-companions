@@ -8,7 +8,6 @@
 # backgrounds/loops/<stem>.mp4 plays in its place afterwards.
 
 theme_bg_video_extensions=(mp4 m4v mov webm mkv avi)
-theme_bg_still_extensions=(jpg jpeg png bmp webp)
 
 # Print the companion video of kind intros or loops for a still.
 theme_bg_companion() {
@@ -20,6 +19,10 @@ theme_bg_companion() {
     *.jpg | *.jpeg | *.png | *.bmp | *.webp) ;;
     *) return 1 ;;
   esac
+
+  # Only a still in a backgrounds folder has a loop, which is the one place
+  # theme_bg_still_for maps back from.
+  [[ $kind != "loops" || ${background%/*} == */backgrounds ]] || return 1
 
   stem=${background##*/}
   stem=${stem%.*}
@@ -40,17 +43,21 @@ theme_bg_animations_off() {
 # A playing theme loop stands for its still. Print the still for a path under
 # backgrounds/loops/, or the path itself for anything else.
 theme_bg_still_for() {
-  local background="$1" stem extension still
+  local background="$1" stem still
 
   if [[ $background == */backgrounds/loops/* ]]; then
     stem=${background##*/}
     stem=${stem%.*}
-    for extension in "${theme_bg_still_extensions[@]}"; do
-      still="${background%/loops/*}/$stem.$extension"
-      if [[ -f $still ]]; then
-        printf '%s\n' "$still"
-        return
-      fi
+    # Any case, as theme_bg_companion accepts it.
+    for still in "${background%/loops/*}/$stem".*; do
+      case ${still,,} in
+        *.jpg | *.jpeg | *.png | *.bmp | *.webp)
+          if [[ ${still%.*} == "${background%/loops/*}/$stem" && -f $still ]]; then
+            printf '%s\n' "$still"
+            return
+          fi
+          ;;
+      esac
     done
   fi
   printf '%s\n' "$background"

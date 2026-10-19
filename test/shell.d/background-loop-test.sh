@@ -49,6 +49,33 @@ still=$("$ROOT/bin/omarchy-theme-bg-loop-apply" --still "$user_loop")
 [[ $still == "$user_loop" ]] || fail "a user video in a loops folder stays a video background" "$still"
 pass "a user video in a loops folder stays a video background"
 
+# Every loop a still starts maps back to that still, so turning loops off and
+# cycling can always find it.
+printf 'upper still\n' >"$backgrounds/4-moon.JPG"
+printf 'upper loop\n' >"$backgrounds/loops/4-moon.mp4"
+resolved=$(HOME="$loop_home" "$ROOT/bin/omarchy-theme-bg-loop-apply" --resolve-only "$backgrounds/4-moon.JPG")
+still=$("$ROOT/bin/omarchy-theme-bg-loop-apply" --still "$backgrounds/loops/4-moon.mp4")
+[[ $resolved == "$backgrounds/loops/4-moon.mp4" && $still == "$backgrounds/4-moon.JPG" ]] || fail "an uppercase still and its loop map both ways" "$resolved / $still"
+pass "an uppercase still and its loop map both ways"
+
+printf 'longer still\n' >"$backgrounds/4-moon.old.png"
+still=$("$ROOT/bin/omarchy-theme-bg-loop-apply" --still "$backgrounds/loops/4-moon.mp4")
+[[ $still == "$backgrounds/4-moon.JPG" ]] || fail "a loop maps back only to the still of its own name" "$still"
+rm "$backgrounds/4-moon.JPG"
+still=$("$ROOT/bin/omarchy-theme-bg-loop-apply" --still "$backgrounds/loops/4-moon.mp4")
+[[ $still == "$backgrounds/loops/4-moon.mp4" ]] || fail "a loop maps back only to the still of its own name" "$still"
+pass "a loop maps back only to the still of its own name"
+
+resolved=$(HOME="$loop_home" "$ROOT/bin/omarchy-theme-bg-loop-apply" --resolve-only "$loop_home/Videos/rain.jpg")
+[[ -z $resolved ]] || fail "a still outside a backgrounds folder takes no loop" "$resolved"
+user_backgrounds="$loop_home/.config/omarchy/backgrounds/test"
+mkdir -p "$user_backgrounds/loops"
+printf 'user still\n' >"$user_backgrounds/photo.jpg"
+printf 'user loop\n' >"$user_backgrounds/loops/photo.mp4"
+resolved=$(HOME="$loop_home" "$ROOT/bin/omarchy-theme-bg-loop-apply" --resolve-only "$user_backgrounds/photo.jpg")
+[[ -z $resolved ]] || fail "a still outside a backgrounds folder takes no loop" "$resolved"
+pass "a still outside a backgrounds folder takes no loop"
+
 command_bin="$test_tmp/bin"
 command_log="$test_tmp/command-log"
 mkdir -p "$command_bin"
