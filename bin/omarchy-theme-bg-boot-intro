@@ -13,7 +13,7 @@ toggle="$state_home/omarchy/toggles/background-intros-off"
 video_extensions=(mp4 m4v mov webm mkv avi)
 intros_commit=25d3a0f276d93db4fe84da4a376a3d21fcbafaa4
 intro_host=${OMARCHY_BACKGROUND_INTROS_URL:-https://raw.githubusercontent.com/yamz8/omarchy-intros/$intros_commit}
-intro_cache_root="$HOME/.cache/omarchy/background-intros"
+intro_cache_root="${XDG_CACHE_HOME:-$HOME/.cache}/omarchy/background-intros"
 intro_cache="$intro_cache_root/${intro_host//[^A-Za-z0-9._-]/_}"
 
 # Only each theme's default intro ships with Omarchy. The others are hosted in

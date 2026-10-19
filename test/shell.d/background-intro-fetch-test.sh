@@ -4,6 +4,7 @@ set -euo pipefail
 
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
+unset XDG_CACHE_HOME
 test_tmp=$(mktemp -d)
 trap 'rm -rf "$test_tmp"' EXIT
 
@@ -128,6 +129,11 @@ wait "$first" "$second"
 pass "overlapping choices of one wallpaper share its download"
 
 rm -rf "$cache_root"
+XDG_CACHE_HOME="$test_tmp/xdg" intro --fetch "$dusk"
+[[ -f $test_tmp/xdg/${cached#"$fetch_home/.cache/"} && ! -e $cache_root ]] || fail "intros download into XDG_CACHE_HOME when it is set"
+[[ $(XDG_CACHE_HOME="$test_tmp/xdg" intro --resolve-only) == "$test_tmp/xdg/${cached#"$fetch_home/.cache/"}" ]] || fail "intros resolve from XDG_CACHE_HOME"
+pass "downloaded intros follow XDG_CACHE_HOME"
+
 command_bin="$test_tmp/bin"
 mkdir -p "$command_bin"
 printf '#!/bin/bash\n' >"$command_bin/omarchy-shell"
