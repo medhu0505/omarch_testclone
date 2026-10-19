@@ -818,13 +818,48 @@ for case in command path gateway; do
   esac
   run bash -euo pipefail "$test_tmp/migration.sh" ||
     fail "an OpenClaw of the user's own does not stop the update ($case)" "$(cat "$test_tmp/output")"
-  grep -q "Leaving OpenClaw as it is" "$test_tmp/output" || fail "the migration says it left OpenClaw alone ($case)" "$(cat "$test_tmp/output")"
+  grep -q "Leaving the OpenClaw above as it is" "$test_tmp/output" || fail "the migration says it left OpenClaw alone ($case)" "$(cat "$test_tmp/output")"
   ! grep -q '^install-cli' "$events" && [[ ! -e $test_home/.openclaw ]] ||
     fail "the migration sets nothing up beside an OpenClaw of the user's own ($case)" "$(cat "$events")"
   rm -f "$test_tmp/usr-bin/openclaw"
 done
 grep -q mine "$test_home/../migration-own-command/.local/bin/openclaw" || fail "the user's own command is kept"
 pass "an OpenClaw of the user's own leaves the migration finished and changes nothing"
+
+# A service the old package installed stops starting once the seed package
+# replaces it, so it is moved to the runtime even with an OpenClaw of the
+# user's own in the way, whose command is left as it is.
+for case in command path; do
+  new_home "migration-own-$case-services"
+  touch "$test_tmp/package-installed"
+  units="$test_home/.config/systemd/user"
+  mkdir -p "$units"
+  printf 'ExecStart=/usr/bin/node /usr/lib/node_modules/openclaw/dist/index.js gateway --port 18789\n' >"$units/openclaw-gateway.service"
+  touch "$test_home/active-openclaw-gateway.service" "$test_home/enabled-openclaw-gateway.service"
+  case $case in
+  command)
+    printf '#!/bin/bash\necho mine\n' >"$command"
+    chmod +x "$command"
+    ;;
+  path)
+    printf '#!/bin/bash\n' >"$test_tmp/usr-bin/openclaw"
+    chmod +x "$test_tmp/usr-bin/openclaw"
+    ;;
+  esac
+  run bash -euo pipefail "$test_tmp/migration.sh" ||
+    fail "an OpenClaw of the user's own does not stop the update beside the old package's gateway ($case)" "$(cat "$test_tmp/output")"
+  grep -q "Leaving the OpenClaw above as it is" "$test_tmp/output" || fail "the migration says it left the user's OpenClaw alone ($case)" "$(cat "$test_tmp/output")"
+  sed -n 's/^ExecStart=\([^ ]*\).*/\1/p' "$units/openclaw-gateway.service" | grep -qx "$test_home/.openclaw/tools/node-v24.19.0/bin/node" &&
+    [[ -e $test_home/active-openclaw-gateway.service ]] ||
+    fail "the migration moves the old package's gateway to the runtime beside an OpenClaw of the user's own ($case)" "$(cat "$units/openclaw-gateway.service")"
+  if [[ $case == command ]]; then
+    grep -q mine "$command" || fail "the user's own command is kept while the gateway moves"
+  else
+    [[ $(readlink -- "$command") == "$runtime" ]] || fail "the command is linked while another openclaw is on PATH"
+  fi
+  rm -f "$test_tmp/usr-bin/openclaw"
+done
+pass "a service the old package installed moves to the runtime whatever OpenClaw of the user's own is in the way"
 
 new_home migration-update
 touch "$test_tmp/package-installed"
