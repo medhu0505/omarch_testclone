@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# omarchy:summary=Remove the Proton-Omarchy Steam compatibility layer and overrides
+# omarchy:group=remove
+# omarchy:name=gaming proton
+
+set -euo pipefail
+
+rm -rf \
+  "$HOME/.local/share/Steam/compatibilitytools.d/Proton-Omarchy" \
+  "$HOME/.config/omarchy/proton"
+
+echo "Proton-Omarchy has been removed."

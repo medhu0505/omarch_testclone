@@ -843,6 +843,9 @@
   "install.gaming.steam": {
     "label": "Steam"
   },
+  "install.gaming.proton": {
+    "label": "Proton-Omarchy"
+  },
   "install.gaming.retroarch": {
     "label": "RetroArch"
   },
@@ -1058,6 +1061,9 @@
   },
   "remove.gaming.steam": {
     "label": "Steam"
+  },
+  "remove.gaming.proton": {
+    "label": "Proton-Omarchy"
   },
   "remove.gaming.retroarch": {
     "label": "RetroArch"

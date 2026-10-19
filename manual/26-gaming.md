@@ -10,6 +10,8 @@ All gaming installers live under _Install > Gaming_ in the Omarchy menu (`Super 
 
 Install [Steam](https://store.steampowered.com/) by selecting _Install > Gaming > Steam_ from the Omarchy menu (`Super + Space`).
 
+Installing Steam also provisions **Proton-Omarchy** (`~/.local/share/Steam/compatibilitytools.d/Proton-Omarchy`), a built-in hardware-adaptive compatibility layer that automatically configures `linux-omarchy` kernel features (BORE, `/dev/ntsync`), CPU topology pinning (3D V-Cache CCD0 isolation and hybrid LP-E core exclusion), and multi-GPU PRIME / Vulkan driver routing at game launch. You can also tune a specific game with your default coding agent by passing its title or Steam AppID (for example, `omarchy agent proton "Cyberpunk 2077"` or `omarchy agent proton 1091500`), or run bare `omarchy agent proton` to tune settings across all games.
+
 After you've installed it, you'll be able to launch Steam with `Super + Space`.
 
 Note that Steam can take 10-20 seconds to start up, and it's not going to provide any visual feedback that it's loading.

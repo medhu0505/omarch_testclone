@@ -1,0 +1,113 @@
+#!/bin/bash
+
+# omarchy:summary=Optimize Proton compatibility settings for this hardware using the default coding agent
+# omarchy:args=[game-name-or-appid]
+# omarchy:examples=omarchy agent proton | omarchy agent proton 1091500 | omarchy agent proton "Cyberpunk 2077"
+
+set -euo pipefail
+shopt -s nullglob
+
+target_game="${1:-system-wide}"
+skill="$OMARCHY_PATH/default/agents/skills/optimize-proton/SKILL.md"
+
+kernel=$(uname -r)
+bore=$(cat /proc/sys/kernel/sched_bore 2>/dev/null || echo "0")
+ntsync="inactive"
+[[ -e /dev/ntsync ]] && ntsync="active (/dev/ntsync)"
+cpu_model=$(awk -F': ' '/^model name/{print $2; exit}' /proc/cpuinfo 2>/dev/null || echo "unknown")
+ram_mb=$(awk '/^MemTotal:/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null || echo "0")
+
+pci_devices_path="${OMARCHY_PCI_DEVICES_PATH:-/sys/bus/pci/devices}"
+gpus=""
+for dev in "$pci_devices_path"/*; do
+  [[ -f $dev/class && -f $dev/vendor && -f $dev/device ]] || continue
+  [[ $(< "$dev/class") == 0x03* ]] || continue
+  gpus+="  $(basename "$dev"): vendor=$(< "$dev/vendor") device=$(< "$dev/device")"$'\n'
+done
+gpus=${gpus:-"  unknown"}
+
+if [[ $target_game == "system-wide" ]]; then
+  target_file="~/.config/omarchy/proton/overrides.env (system-wide)"
+elif [[ $target_game =~ ^[0-9]+$ ]]; then
+  target_file="~/.config/omarchy/proton/games/${target_game}.env (SteamAppId $target_game)"
+else
+  steam_libs=("$HOME/.local/share/Steam" "$HOME/.steam/root")
+  for vdf in "$HOME/.local/share/Steam/steamapps/libraryfolders.vdf" "$HOME/.steam/root/steamapps/libraryfolders.vdf"; do
+    [[ -f $vdf ]] || continue
+    while IFS= read -r lib_path; do
+      [[ -n $lib_path ]] && steam_libs+=("$lib_path")
+    done < <(awk -F'"' '/"path"[[:space:]]*"/{gsub(/\\\\/, "\\", $4); print $4}' "$vdf" 2>/dev/null || true)
+  done
+
+  declare -A seen_appids=()
+  exact_matches=()
+  partial_matches=()
+  needle_lower="${target_game,,}"
+
+  for lib in "${steam_libs[@]}"; do
+    for acf in "$lib"/steamapps/appmanifest_*.acf; do
+      [[ -f $acf ]] || continue
+      app_id=$(awk -F'"' '/^[[:space:]]*"appid"[[:space:]]*"/{print $4; exit}' "$acf" 2>/dev/null || true)
+      game_name=$(awk -F'"' '/^[[:space:]]*"name"[[:space:]]*"/{print $4; exit}' "$acf" 2>/dev/null || true)
+      [[ -n $app_id && -n $game_name ]] || continue
+      [[ -z ${seen_appids[$app_id]:-} ]] || continue
+      seen_appids[$app_id]=1
+
+      name_lower="${game_name,,}"
+      if [[ $name_lower == "$needle_lower" ]]; then
+        exact_matches+=("${app_id}:${game_name}")
+      elif [[ $name_lower == *"$needle_lower"* ]]; then
+        partial_matches+=("${app_id}:${game_name}")
+      fi
+    done
+  done
+
+  candidates=()
+  if (( ${#exact_matches[@]} > 0 )); then
+    candidates=("${exact_matches[@]}")
+  elif (( ${#partial_matches[@]} > 0 )); then
+    candidates=("${partial_matches[@]}")
+  fi
+
+  if (( ${#candidates[@]} == 1 )); then
+    resolved_id="${candidates[0]%%:*}"
+    resolved_name="${candidates[0]#*:}"
+    target_file="~/.config/omarchy/proton/games/${resolved_id}.env (SteamAppId $resolved_id: $resolved_name)"
+  elif (( ${#candidates[@]} > 1 )); then
+    if [[ -t 0 && -t 1 ]]; then
+      choice=$(printf '%s\n' "${candidates[@]}" | gum choose) || exit 1
+      resolved_id="${choice%%:*}"
+      resolved_name="${choice#*:}"
+      target_file="~/.config/omarchy/proton/games/${resolved_id}.env (SteamAppId $resolved_id: $resolved_name)"
+    else
+      echo "Multiple installed games match '$target_game':" >&2
+      printf '  %s\n' "${candidates[@]}" >&2
+      echo "Pass the exact game title or numeric SteamAppId." >&2
+      exit 1
+    fi
+  else
+    target_file="~/.config/omarchy/proton/games/<SteamAppId>.env (match exact \"name\" field in appmanifest_*.acf for '$target_game'; ask the user to choose if multiple games match)"
+  fi
+fi
+
+prompt=$(
+  cat <<PROMPT
+Optimize the built-in Proton-Omarchy compatibility layer on this Omarchy Linux machine.
+
+Target scope: $target_game
+Target override file: $target_file
+
+Detected hardware and kernel state:
+  kernel:  $kernel (BORE=$bore, NTSYNC=$ntsync)
+  CPU:     $cpu_model
+  RAM:     ${ram_mb} MB
+  GPUs:
+$gpus
+
+Use the optimize-proton skill to inspect the CPU cache/frequency topology, GPU stack, and kernel capabilities, and write verified Proton environment overrides to the target override file above:
+
+  $skill
+PROMPT
+)
+
+exec omarchy-agent --prompt "$prompt"
