@@ -30,9 +30,15 @@ if sys.argv[1] == "monitors":
       "width": int(os.environ.get("OMARCHY_TEST_MONITOR_WIDTH", 2880)),
       "height": int(os.environ.get("OMARCHY_TEST_MONITOR_HEIGHT", 1800)),
       "refreshRate": 120.0}]))
+elif sys.argv[1] == "repl":
+  print("GDK_SCALE:" + (out.with_suffix(".gdk").read_text() if out.with_suffix(".gdk").exists() else "2"))
 elif sys.argv[1] == "getoption":
   print(json.dumps({"bool": False}))
 elif sys.argv[1] == "eval":
+  match = re.search(r'hl.env\("GDK_SCALE", "([^\"]*)"\)', sys.argv[2])
+  if match:
+    value = re.sub(r'\\(\d{3})', lambda m: chr(int(m[1])), match[1])
+    out.with_suffix(".gdk").write_text(value)
   if "hl.monitor(" not in sys.argv[2]:
     print("ok")
     sys.exit(0)
@@ -66,6 +72,7 @@ assert_saved_scale() {
 }
 assert_saved_gdk() {
   [[ $(saved_value gdk) == "$1" ]] || fail "managed GDK scale is $1"
+  [[ $(cat "$eval_out.gdk") == "$1" ]] || fail "live GDK scale is $1"
 }
 
 write_monitor_config() {
@@ -232,3 +239,25 @@ if run_scaling --mode invalid 2 >/dev/null 2>&1; then
 fi
 [[ $(cat "$monitor_lua") == "$before" ]] || fail "invalid mode leaves config untouched"
 pass "monitor scaling rejects invalid modes without changing config"
+
+[[ $(cat "$eval_out.gdk") == 2 ]] || fail "single-display scale updates live GTK environment"
+pass "single-display scale updates live GTK environment"
+
+# The loader and both managed writers use the same alternate config root.
+custom_config="$test_tmp/custom config"
+mkdir -p "$custom_config/hypr"
+mv "$monitor_lua" "$custom_config/hypr/monitors.lua"
+rm "$home_dir/.local/state/omarchy/monitor-layout"
+XDG_CONFIG_HOME="$custom_config" run_scaling 1
+assert_saved_scale eDP-1 1
+assert_saved_gdk 1
+[[ $(cat "$eval_out.gdk") == 1 ]] || fail "custom config updates live GTK scale"
+[[ ! -e $monitor_lua ]] || fail "custom config must not create the default config"
+pass "scaling honors XDG_CONFIG_HOME without a default config"
+
+rm "$custom_config/hypr/monitors.lua"
+state_before=$(shasum "$home_dir/.local/state/omarchy/monitor-layout")
+XDG_CONFIG_HOME="$custom_config" run_scaling 2.5
+grep -F 'scale = 2.5' "$eval_out" >/dev/null || fail "missing config still scales live"
+[[ $(shasum "$home_dir/.local/state/omarchy/monitor-layout") == "$state_before" ]] || fail "missing config must skip persistence"
+pass "missing config keeps live scaling available and skips persistence"

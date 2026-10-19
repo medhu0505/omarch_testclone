@@ -211,10 +211,34 @@ def state_path():
   return Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "omarchy/monitor-layout"
 
 
+def gdk_scale(original, displays):
+  return str(rounded(displays[0]["scale"])) if original is not None and len(displays) == 1 and b"omarchy_gdk_scale" in original else None
+
+
+def read_config(path):
+  try:
+    return path.read_bytes()
+  except FileNotFoundError:
+    return None
+
+
+def live_gdk_scale():
+  result = ipc("repl", 'return "GDK_SCALE:" .. (os.getenv("GDK_SCALE") or "")', check=True)
+  if not result.stdout.startswith("GDK_SCALE:"):
+    raise ValueError("Could not read live GTK scale: " + result.stdout.strip())
+  return result.stdout.removeprefix("GDK_SCALE:").removesuffix("\n")
+
+
+def env_rule(value):
+  # Decimal byte escapes are valid Lua for every environment value.
+  quoted = "".join(chr(92) + f"{byte:03d}" for byte in value.encode())
+  return f'hl.env("GDK_SCALE", "{quoted}")'
+
+
 def encode_state(original, displays, name):
   # Framed data, never executable Lua. Preserve the owner file's exact bytes;
   # the loader ignores this state when those bytes differ after an owner edit.
-  gdk = str(rounded(displays[0]["scale"])) if len(displays) == 1 and b"omarchy_gdk_scale" in original else "-"
+  gdk = gdk_scale(original, displays) or "-"
   rows = ["\t".join((m["name"], f'{m["width"]}x{m["height"]}@{m["refreshRate"]:g}',
                        f'{m["x"]}x{m["y"]}', f'{m["scale"]:g}', str(m.get("transform", 0)))) for m in displays]
   return f"OMARCHY_MONITOR_LAYOUT_V1\n{len(original)}\n{gdk}\n".encode() + original + b"\n" + ("\n".join(rows) + "\n").encode()
@@ -357,12 +381,16 @@ def verify_layout(displays, settled=False):
 def apply_guarded(monitors, name, scale, config, mode=None):
   displays = plan(monitors, name, scale, mode)
   path = Path(config).resolve()
-  original = path.read_bytes()
-  if len(original) > 1048576 or len(displays) > 256:
+  original = read_config(path)
+  if len(original or b"") > 1048576 or len(displays) > 256:
     raise ValueError("Monitor state exceeds supported size")
   saved = state_path()
-  prior = saved.read_bytes() if saved.exists() else None
-  persisted = remembered_layout(prior, original, displays)
+  prior = saved.read_bytes() if original is not None and saved.exists() else None
+  persisted = remembered_layout(prior, original, displays) if original is not None else displays
+  gdk = gdk_scale(original, persisted)
+  previous_gdk = None
+  if gdk is not None:
+    previous_gdk = live_gdk_scale()
   option = ipc("getoption", "misc.disable_autoreload", "-j", check=True)
   disabled = json.loads(option.stdout).get("bool")
   if not isinstance(disabled, bool):
@@ -371,16 +399,17 @@ def apply_guarded(monitors, name, scale, config, mode=None):
   publishing = False
   try:
     changed_live = True
-    hypr_eval(lua_rules(displays))
+    hypr_eval(lua_rules(displays) + ("; " + env_rule(gdk) if gdk is not None else ""))
     verify_layout(displays)
-    if path.read_bytes() != original:
+    if read_config(path) != original:
       raise ValueError("Owner monitor config changed; scale save cancelled")
     # Only helper-owned state is replaced. An owner save at this very boundary
     # cannot be overwritten: the owner file is never a replacement destination.
-    publishing = True
-    committed = encode_state(original, persisted, name)
-    publish_state(saved, committed)
-    if path.read_bytes() != original:
+    if original is not None:
+      publishing = True
+      committed = encode_state(original, persisted, name)
+      publish_state(saved, committed)
+    if read_config(path) != original:
       raise ValueError("Owner monitor config changed during publication; scale save cancelled")
     # A reload already in progress can have consumed the previous record and
     # undo the earlier live eval. The unwatched publication does not apply it.
@@ -388,7 +417,9 @@ def apply_guarded(monitors, name, scale, config, mode=None):
     # a previous-record reload completing between the first two observations.
     # This is a bounded live witness, not serialization of future config edits.
     verify_layout(displays, settled=True)
-    if saved.read_bytes() != committed or path.read_bytes() != original:
+    if gdk is not None and live_gdk_scale() != gdk:
+      raise ValueError("Final live GTK scale differs from saved scale; scale save cancelled")
+    if (publishing and saved.read_bytes() != committed) or read_config(path) != original:
       raise ValueError("Monitor state/config changed during final verification; scale save cancelled")
   except Exception:
     with finish_cleanup():
@@ -417,6 +448,12 @@ def apply_guarded(monitors, name, scale, config, mode=None):
         except (ValueError, OSError, subprocess.SubprocessError) as error:
           recovery_failed = True
           print(f"Monitor recovery failed: {error}; inspect {saved}, then run hyprctl reload when the compositor responds", file=sys.stderr)
+      if changed_live and previous_gdk is not None:
+        try:
+          hypr_eval(env_rule(previous_gdk))
+        except (ValueError, OSError, subprocess.SubprocessError) as error:
+          recovery_failed = True
+          print(f"GTK scale recovery failed: {error}", file=sys.stderr)
       if recovery_failed:
         print("Monitor recovery incomplete; no success reported", file=sys.stderr)
     raise

@@ -441,3 +441,12 @@ pass "closed lid overrides managed state without applying baseline scale"
 OMARCHY_TEST_INTERNAL_DISABLED=true OMARCHY_TEST_EXTERNAL_ACTIVE=true run_clamshell
 grep -F 'position = "1536x1080", scale = 1.6' "$eval_log" >/dev/null || fail "reopening lid restores saved geometry"
 pass "reopening lid restores saved geometry"
+
+custom_config="$test_tmp/custom config"
+mkdir -p "$custom_config/hypr"
+mv "$monitor_lua" "$custom_config/hypr/monitors.lua"
+: >"$eval_log"
+XDG_CONFIG_HOME="$custom_config" OMARCHY_TEST_INTERNAL_DISABLED=true OMARCHY_TEST_EXTERNAL_ACTIVE=true run_clamshell
+grep -F 'position = "1536x1080"' "$eval_log" >/dev/null || fail "custom config restores saved position"
+grep -F 'scale = 1.6' "$eval_log" >/dev/null || fail "custom config restores saved scale"
+pass "clamshell reconciliation honors XDG_CONFIG_HOME for the managed baseline"

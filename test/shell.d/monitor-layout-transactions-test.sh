@@ -25,12 +25,21 @@ with tempfile.TemporaryDirectory() as td, patch.dict(os.environ, {'XDG_STATE_HOM
   stale = [dict(row) for row in live]
   calls = []
   def ipc(*args, **kwargs):
-    global live
+    global live, gtk
     calls.append(args)
     if args[0] == 'monitors': out = json.dumps(live)
+    elif args[0] == 'repl': out = 'GDK_SCALE:' + gtk + '\n'
+    elif args[0] == 'reload':
+      live = [monitor('A', scale=2)]
+      gtk = '2'
+      out = 'ok'
     elif args[0] == 'getoption': out = '{"bool":false}'
     elif args[0] == 'eval':
-      live = [monitor(n, int(x), int(y), float(sc), int(w), int(h)) for n,w,h,rate,x,y,sc,t in re.findall(
+      match = re.search(r'hl.env\("GDK_SCALE", "([^"]*)"\)', args[1])
+      if match:
+        gtk = re.sub(r'\\(\d{3})', lambda m: chr(int(m[1])), match[1])
+      if 'hl.monitor(' in args[1]:
+        live = [monitor(n, int(x), int(y), float(sc), int(w), int(h)) for n,w,h,rate,x,y,sc,t in re.findall(
         r'output = "([^"]+)", mode = "(\d+)x(\d+)@([\d.]+)", position = "(-?\d+)x(-?\d+)", scale = ([\d.]+), transform = (\d+)', args[1])]
       out = 'ok'
     else: raise AssertionError(args)
@@ -87,4 +96,45 @@ with tempfile.TemporaryDirectory() as td, patch.dict(os.environ, {'XDG_STATE_HOM
     assert m.read_state(m.state_path().read_bytes(), original+b'-- edit') == []
     assert m.read_state(m.state_path().read_bytes()+b'not-a-monitor-row\n', original) == []
     print('ok - stale-baseline and malformed saved memory cannot override new owner settings')
+
+  # Exercise the default managed GTK knob through the mocked compositor, with
+  # failures at each transaction boundary and both autoreload policies.
+  for disabled in (False, True):
+    for phase in ('success', 'eval', 'publish', 'readback', 'gtk-readback', 'signal'):
+      owner.write_text('local omarchy_gdk_scale = 2\n')
+      live = [monitor('A', scale=2)]
+      gtk = '3'  # Must restore the compositor value, not infer it from geometry.
+      prior = m.encode_state(owner.read_bytes(), live, 'A')
+      m.publish_state(m.state_path(), prior)
+      calls.clear()
+      real_publish = m.publish_state
+      def guarded_ipc(*args, **kwargs):
+        global gtk
+        result = ipc(*args, **kwargs)
+        if args[0] == 'getoption': result.stdout = json.dumps({'bool':disabled})
+        if args[0] == 'eval' and 'hl.monitor(' in args[1] and len([c for c in calls if c[0]=='eval']) == 1:
+          if phase == 'eval': result.stdout = 'error: partial apply'
+          if phase == 'signal': raise m.Terminated(15)
+        if args[0] == 'monitors' and phase == 'readback' and any(c[0]=='eval' for c in calls):
+          result.stdout = json.dumps([monitor('A', scale=2)])
+        if args[0] == 'repl' and phase == 'gtk-readback' and any(c[0]=='eval' for c in calls):
+          gtk = '2'
+          result.stdout = 'GDK_SCALE:2\n'
+        return result
+      def publication(path, content):
+        if phase == 'publish' and content != prior: raise OSError('injected publication failure')
+        real_publish(path, content)
+      with patch.object(m, 'ipc', guarded_ipc), patch.object(m, 'publish_state', publication), patch.object(m.time, 'sleep'):
+        if phase == 'success':
+          assert m.apply(live, 'A', 1, owner) == 1
+          assert gtk == '1' and m.state_path().read_bytes().split(b'\n')[2] == b'1'
+          assert not any(c[0]=='reload' for c in calls)
+        else:
+          try: m.apply(live, 'A', 1, owner)
+          except (ValueError, OSError, m.Terminated): pass
+          else: raise AssertionError('false success: ' + phase)
+          assert gtk == '3', (phase, disabled, gtk)
+          assert live == [monitor('A', scale=2)] and m.state_path().read_bytes() == prior
+          assert any(c[0]=='reload' for c in calls) == (not disabled)
+      print(f'ok - GTK {phase}, autoreload disabled={disabled}: live environment and saved state follow transaction recovery')
 PY

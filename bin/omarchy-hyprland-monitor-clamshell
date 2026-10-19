@@ -13,7 +13,7 @@ TOGGLES_DIR="$HOME/.local/state/omarchy/toggles/hypr"
 CLAMSHELL_FLAG="$TOGGLES_DIR/internal-monitor-clamshell.lua"
 MANUAL_DISABLE_FLAG="$TOGGLES_DIR/internal-monitor-disable.lua"
 SCALE_STATE="$TOGGLES_DIR/internal-monitor-scale"
-MONITOR_LUA="$HOME/.config/hypr/monitors.lua"
+MONITOR_LUA="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/monitors.lua"
 
 INTERNAL=$(omarchy-hyprland-monitor-laptop)
 # Use the same byte-validated managed geometry as the normal Lua loader.

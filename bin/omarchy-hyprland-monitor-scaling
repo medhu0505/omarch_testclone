@@ -78,7 +78,7 @@ set_scale() {
   current_scale=$(jq -r '.scale' <<<"$monitor_info")
 
   new_scale=$(python3 "$OMARCHY_PATH/default/hypr/monitor-layout.py" \
-    "$active_monitor" "$requested_scale" "$HOME/.config/hypr/monitors.lua" "$TARGET_MODE" \
+    "$active_monitor" "$requested_scale" "${XDG_CONFIG_HOME:-$HOME/.config}/hypr/monitors.lua" "$TARGET_MODE" \
     <<<"$monitors_json") || return 1
   audit_scale_change "$requested" "$active_monitor" "$current_scale" "$new_scale"
 }

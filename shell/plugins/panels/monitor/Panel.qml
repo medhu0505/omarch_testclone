@@ -146,7 +146,7 @@ Panel {
     }
   }
 
-  // h/l: in scale section, walks the preset row; everywhere else, no-op
+  // h/l walks the scale presets and monitor picker; elsewhere, no-op
   // because adjustBrightness handles horizontal motion on the brightness
   // slider.
   function moveCursorH(delta) {
@@ -528,7 +528,7 @@ Panel {
         else if (dx !== 0) {
           if (root.focusSection === "brightness") root.adjustBrightness(dx * 5)
           else if (root.focusSection === "textsize") root.adjustTextSize(dx)
-          else if (root.focusSection === "scale") root.moveCursorH(dx)
+          else if (root.focusSection === "scale" || root.focusSection === "scaletarget") root.moveCursorH(dx)
         }
       }
       onActivateRequested: if (root.cursorActive) root.activateCursor()
