@@ -57,6 +57,10 @@ assert(dispatched_index == nil, "an out-of-range group window is ignored")
 
 active_window = nil
 bindings["SUPER + ALT + code:10"]()
+assert(dispatched_index == nil, "a group window shortcut without a focused window is ignored")
+
+active_window = {}
+bindings["SUPER + ALT + code:10"]()
 assert(dispatched_index == nil, "a group window shortcut outside a group is ignored")
 
 assert(
