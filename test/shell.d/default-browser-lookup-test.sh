@@ -104,5 +104,7 @@ chmod +x "$mock_bin/omarchy-notification-send" "$mock_bin/uwsm-app"
 
 err_out=$(OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-launch-browser" 2>&1) && fail "launch browser must fail when no browser is installed" || true
 grep -q "No default browser found" <<<"$err_out" || fail "launch browser outputs actionable error message"
+grep -q "^omarchy-notification-send .*No default browser found" "$OMARCHY_TEST_XDG_SETTINGS_LOG" ||
+  fail "launch browser notifies that no default browser was found"
 ! grep -q "UWSM CALLED" <<<"$err_out" || fail "launch browser must never pass empty command to uwsm-app"
 pass "omarchy-launch-browser fails gracefully with notification when no browser is available"
