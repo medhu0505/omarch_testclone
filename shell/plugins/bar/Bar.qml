@@ -197,6 +197,7 @@ Item {
     api.vertical = Qt.binding(function() { return root.vertical })
     api.barSize = Qt.binding(function() { return root.barSize })
     api.transparent = Qt.binding(function() { return root.transparent })
+    api.cycleLayoutOnClick = Qt.binding(function() { return root.cycleLayoutOnClick })
     api.foregroundAnimationEnabled = Qt.binding(function() { return root.foregroundAnimationEnabled })
     api.centerSectionRevealHeld = Qt.binding(function() { return root.centerSectionRevealHeld })
     api._centerHoverRevealSuppressed = Qt.binding(function() { return root.centerHoverRevealSuppressed })
