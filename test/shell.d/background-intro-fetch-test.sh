@@ -99,6 +99,35 @@ mirror_cached="$cache_root/${mirror_url//[^A-Za-z0-9._-]/_}/themes/retro/backgro
 pass "the download location is configurable and a new commit replaces the old intros"
 
 rm -rf "$cache_root"
+gate_bin="$test_tmp/gate-bin"
+mkdir -p "$gate_bin"
+cat >"$gate_bin/curl" <<'SH'
+#!/bin/bash
+printf 'curl\n' >>"$CURL_LOG"
+touch "$CURL_GATE.entered"
+while [[ ! -f $CURL_GATE ]]; do sleep 0.01; done
+exec /usr/bin/curl "$@"
+SH
+chmod +x "$gate_bin/curl"
+export CURL_LOG="$test_tmp/curl.log" CURL_GATE="$test_tmp/curl-gate"
+PATH="$gate_bin:$PATH" intro --fetch "$dusk" &
+first=$!
+for _ in {1..300}; do
+  [[ -f $CURL_GATE.entered ]] && break
+  sleep 0.01
+done
+PATH="$gate_bin:$PATH" intro --fetch "$dusk" &
+second=$!
+for _ in {1..100}; do
+  kill -0 "$second" 2>/dev/null || break
+  sleep 0.01
+done
+touch "$CURL_GATE"
+wait "$first" "$second"
+[[ $(wc -l <"$CURL_LOG") == 1 && -f $cached ]] || fail "choosing a wallpaper again during its download starts no second download"
+pass "overlapping choices of one wallpaper share its download"
+
+rm -rf "$cache_root"
 command_bin="$test_tmp/bin"
 mkdir -p "$command_bin"
 printf '#!/bin/bash\n' >"$command_bin/omarchy-shell"

@@ -83,6 +83,10 @@ fetch_intro() {
   # Remember a wallpaper the host has no intro for, so it is asked only once.
   [[ ! -e $intro_cache/$hosted.missing ]] || return 0
   mkdir -p "$intro_cache/${hosted%/*}"
+  # Choosing a wallpaper again while its intro downloads shares that download.
+  exec 8>"$intro_cache/$hosted.lock"
+  flock -n 8 || return 0
+  [[ ! -f $intro_cache/$hosted && ! -e $intro_cache/$hosted.missing ]] || return 0
   staged=$(mktemp "$intro_cache/${hosted%/*}/.intro.XXXXXX")
   trap 'rm -f "$staged"' EXIT
   if code=$(curl -fsSL --proto '=https,file' --connect-timeout 10 --max-time 600 --retry 2 \
