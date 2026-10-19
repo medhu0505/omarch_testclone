@@ -79,6 +79,12 @@ Item {
 
   function recoverBackground(failedPath) {
     if (!failedPath || failedPath !== displayedBackground) return
+    // A still held behind a starting video is let go, not recovered: the link
+    // names the video, and reloading the still for it would only fail again.
+    if (isVideo(currentBackground)) {
+      displayedBackground = currentBackground
+      return
+    }
     failedBackground = failedPath
     if (recoverProc.running) return
     recoverVersion = backgroundVersion

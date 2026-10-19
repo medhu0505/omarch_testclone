@@ -99,6 +99,21 @@ assert(
   background.displayedBackground === '/bg/waves.webp' && background.revealProgress === 1 && background.oldBackground === '',
   'a still replacing a video shows at once, with no fade from the image before the video'
 )
+// A still held behind a video that then fails to load is let go, not recovered.
+const recoverMatch = backgroundQml.match(/function recoverBackground\(([^)]*)\) \{([\s\S]*?)\n  \}\n/)
+assert(recoverMatch, 'recoverBackground is defined')
+Object.assign(background, { recoverProc: { running: false }, recoverVersion: -1 })
+const recoverBackground = new Function('state', recoverMatch[1].trim(),
+  `with (state) {${recoverMatch[2]}\n}`).bind(null, background)
+transitionBackground('', '/bg/loops/totoro.mp4', '/bg/loops/totoro.mp4', false, false)
+recoverBackground('/bg/waves.webp')
+assert(
+  background.displayedBackground === '/bg/loops/totoro.mp4' && !background.recoverProc.running,
+  'a held still that fails behind a video is dropped rather than reloaded for the video'
+)
+transitionBackground('', '/bg/waves.webp', '/bg/waves.webp', false, false)
+recoverBackground('/bg/waves.webp')
+assert(background.recoverProc.running, 'a failed still that is the background is still recovered')
 assert(backgroundQml.includes('BackgroundMedia {') && lockQml.includes('BackgroundMedia {'), 'desktop and lock screen share still rendering')
 assert(
   !backgroundQml.includes('videoEnabled') &&
