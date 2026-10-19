@@ -582,6 +582,38 @@ Item {
     return MenuModel.matchesQuery(entry, query, root.isVisible(entry) && !root.isDisabled(entry))
   }
 
+  function isAgentPromptQuery() {
+    return MenuModel.isAgentPromptQuery(root.filterText)
+  }
+
+  function agentPrompt() {
+    return MenuModel.agentPromptForQuery(root.filterText)
+  }
+
+  // The one row a "!" query shows: the prompt, ready to send to the default
+  // agent. With nothing after the "!" it is a hint, and stays unselectable.
+  function agentPromptRow() {
+    var prompt = root.agentPrompt()
+    return {
+      itemId: "agent.prompt",
+      disabled: !prompt,
+      kind: "action",
+      icon: String.fromCodePoint(0xf06a9),
+      iconFont: "",
+      appIcon: "",
+      appId: "",
+      label: prompt ? Commons.I18n.t("menu.askAgent").arg(prompt) : Commons.I18n.t("menu.askAgentHint"),
+      target: "",
+      detail: Commons.I18n.t("menu.defaultAgent"),
+      path: "",
+      childCount: 0,
+      action: prompt ? "omarchy-agent-prompt " + Util.shellQuote(prompt) : "",
+      provider: "",
+      score: 0,
+      section: ""
+    }
+  }
+
   function searchScore(entry, query) {
     return MenuModel.searchScore(root.items, entry, query)
   }
@@ -709,7 +741,9 @@ Item {
     var query = root.filterText.trim()
     root.searchDivider = false
 
-    if (query) {
+    if (root.isAgentPromptQuery()) {
+      rows = [root.agentPromptRow()]
+    } else if (query) {
       var currentRows = []
       var drilldownRows = []
 
@@ -813,7 +847,7 @@ Item {
     root.selectedIndex = 0
     root.cursorActive = root.mode !== "input"
     root.disarmPointer()
-    if (!root.dmenuActive && root.filterText.trim()) root.loadProvidersForSearch()
+    if (!root.dmenuActive && root.filterText.trim() && !root.isAgentPromptQuery()) root.loadProvidersForSearch()
     root.rebuildDisplay()
   }
 

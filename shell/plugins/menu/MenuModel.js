@@ -346,6 +346,18 @@ function matchesQuery(entry, query, visible) {
   return true
 }
 
+// A query opening with "!" is not a search at all: the rest is a prompt for
+// the default agent, launched when the row it produces is picked.
+function isAgentPromptQuery(query) {
+  return String(query || "").trim().charAt(0) === "!"
+}
+
+function agentPromptForQuery(query) {
+  if (!isAgentPromptQuery(query)) return null
+  var prompt = String(query || "").trim().slice(1).trim()
+  return prompt ? prompt : null
+}
+
 function searchScore(items, entry, query) {
   var needle = String(query || "").toLowerCase().trim()
   var label = entry.label.toLowerCase()
@@ -693,6 +705,8 @@ if (typeof module !== "undefined") {
     termInSearchWords: termInSearchWords,
     descriptionTextMatches: descriptionTextMatches,
     matchesQuery: matchesQuery,
+    isAgentPromptQuery: isAgentPromptQuery,
+    agentPromptForQuery: agentPromptForQuery,
     searchScore: searchScore,
     dmenuValue: dmenuValue,
     dmenuSelections: dmenuSelections,
