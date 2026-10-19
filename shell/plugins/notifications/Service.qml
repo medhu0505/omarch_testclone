@@ -3,6 +3,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.Notifications
@@ -997,6 +998,17 @@ Item {
   // stacked toast cards. Layer is Overlay, exclusionMode Ignore, no
   // keyboard focus — popups are passive surfaces and must never steal input
   // from the focused application.
+  //
+  // Toasts show on the focused monitor only, as mako did, so a notice about
+  // one monitor doesn't read as being about all of them. While no screen
+  // matches the focused monitor, every screen shows them.
+  readonly property string focusedScreenName: {
+    var name = Hyprland.focusedMonitor ? String(Hyprland.focusedMonitor.name || "") : ""
+    for (var i = 0; i < Quickshell.screens.length; i++) {
+      if (Quickshell.screens[i].name === name) return name
+    }
+    return ""
+  }
 
   Variants {
     model: Quickshell.screens
@@ -1006,6 +1018,7 @@ Item {
       required property var modelData
       screen: modelData
       visible: popupModel.count > 0
+        && (service.focusedScreenName === "" || (modelData && modelData.name === service.focusedScreenName))
 
       WlrLayershell.namespace: "omarchy-notifications"
       WlrLayershell.layer: WlrLayer.Overlay
