@@ -479,6 +479,32 @@ function hotspotClients(status) {
   }
 }
 
+// The participant limit the profile carries, as a plain digit string, or ""
+// when the hotspot is unlimited. Anything unexpected reads as unlimited so a
+// malformed status can never invent a cap the user did not set.
+function hotspotMaxClients(status) {
+  var raw = String((status && status.max_clients) || "").trim()
+  if (!/^[0-9]{1,3}$/.test(raw)) return ""
+  var clients = parseInt(raw, 10)
+  if (!(clients >= 1 && clients <= 253)) return ""
+  return String(clients)
+}
+
+function hotspotLimitLabel(limit) {
+  return String(limit || "") === "" ? "Unlimited" : String(limit) + " devices"
+}
+
+// True once the AP is serving as many clients as its limit allows, so the
+// panel can say so instead of letting the next joiner silently fail to get an
+// address.
+function hotspotAtCapacity(status) {
+  var limit = hotspotMaxClients(status)
+  if (limit === "") return false
+  var clients = parseInt((status && status.client_count) || "0", 10)
+  if (!isFinite(clients)) return false
+  return clients >= parseInt(limit, 10)
+}
+
 // What to call a client: the name the user gave it, else the name the network
 // gave it, else its address, always with the MAC. The network name, address, and
 // the stored alias all arrive from outside this file, so they are only rendered
@@ -550,6 +576,9 @@ if (typeof module !== "undefined") {
     hotspotSaveDataLabel: hotspotSaveDataLabel,
     hotspotSaveDataTooltip: hotspotSaveDataTooltip,
     hotspotClients: hotspotClients,
+    hotspotMaxClients: hotspotMaxClients,
+    hotspotLimitLabel: hotspotLimitLabel,
+    hotspotAtCapacity: hotspotAtCapacity,
     hotspotClientLabel: hotspotClientLabel,
     hotspotCredentialsError: hotspotCredentialsError
   }

@@ -220,6 +220,16 @@ Panel {
   property string hotspotAliasMac: ""
   property string hotspotAliasDraft: ""
   property bool hotspotAliasBusy: false
+  // Participant limit. The profile's shared DHCP range is the source of
+  // truth, so the poll seeds this once per open exactly like the band and
+  // then leaves the user's choice alone.
+  property var hotspotLimitChoices: ["", "4", "8", "16"]
+  property string hotspotMaxClients: ""
+  readonly property bool hotspotFull: Model.hotspotAtCapacity(hotspot)
+  // The limit the next start/apply will run with. An empty choice means
+  // unlimited and is passed explicitly, so a stale default can never clear a
+  // limit the profile still has.
+  readonly property string hotspotLimitArgument: hotspotMaxClients === "" ? "unlimited" : hotspotMaxClients
   // Keyboard cycle is toggle / cog, plus QR only while the AP is on air.
   readonly property int hotspotFocusMax: hotspotActive ? 2 : 1
 
@@ -1023,6 +1033,7 @@ Panel {
       if (next.password) hotspotPassword = next.password
       hotspotBand = Model.hotspotDefaultBand(next)
       hotspotSaveData = Model.hotspotSaveData(next)
+      hotspotMaxClients = Model.hotspotMaxClients(next)
     }
     if ((next.active === "1") !== wasActive) syncWifiNetworks()
   }
@@ -1035,7 +1046,7 @@ Panel {
     hotspotBusy = true
     hotspotError = ""
     hotspotActionProc.secret = hotspotPassword
-    hotspotActionProc.command = [hotspotCommand, "start", hotspotSsid.trim(), hotspotBand, "--save-data=" + hotspotSaveData]
+    hotspotActionProc.command = [hotspotCommand, "start", hotspotSsid.trim(), hotspotBand, hotspotLimitArgument, "--save-data=" + hotspotSaveData]
     hotspotActionProc.running = true
   }
 
@@ -1076,7 +1087,7 @@ Panel {
     hotspotBusy = true
     hotspotError = ""
     hotspotActionProc.secret = hotspotPassword
-    hotspotActionProc.command = [hotspotCommand, "apply", hotspotSsid.trim(), hotspotBand, "--save-data=" + hotspotSaveData]
+    hotspotActionProc.command = [hotspotCommand, "apply", hotspotSsid.trim(), hotspotBand, hotspotLimitArgument, "--save-data=" + hotspotSaveData]
     hotspotActionProc.running = true
   }
 
@@ -2059,9 +2070,12 @@ Panel {
               if (root.hotspotActive) {
                 var band = root.hotspot.band || root.hotspotBand
                 var s = root.hotspotSsid + " \u00b7 " + band + "GHz"
+                var limit = Model.hotspotMaxClients(root.hotspot)
                 if (root.hotspotClients.length > 0) {
                   s += " \u00b7 " + root.hotspotClients.length + " CLIENT"
                   if (root.hotspotClients.length > 1) s += "S"
+                  if (limit !== "") s += "/" + limit
+                  if (root.hotspotFull) s += " FULL"
                 }
                 return s
               }
@@ -2210,6 +2224,8 @@ Panel {
           Repeater {
             model: root.hotspotBands
             delegate: HotspotBandPill {
+              required property var modelData
+              required property int index
               band: modelData
               slot: index
             }
@@ -2235,6 +2251,24 @@ Panel {
             verticalPadding: Style.spacing.controlPaddingY
             text: root.hotspotSsid
             onTextChanged: if (text !== root.hotspotSsid) root.hotspotSsid = text
+          }
+
+          // Participant limit. NetworkManager enforces it as the shared DHCP
+          // range, so a device past the last lease associates but never gets an
+          // address. Mouse-only: the keyboard cursor cycle stays on the
+          // toggle / cog / QR row.
+          Row {
+            visible: root.hotspotSetupOpen
+            width: parent.width
+            spacing: Style.space(6)
+
+            Repeater {
+              model: root.hotspotLimitChoices
+              delegate: HotspotLimitPill {
+                required property var modelData
+                limit: modelData
+              }
+            }
           }
 
           Row {
@@ -2547,6 +2581,26 @@ Panel {
   // the hotspot would start with; `active` (fill) is the band actually
   // serving while the AP is up. Mouse-only: the hotspot cursor cycle stays on
   // the toggle / cog / QR row.
+  // One participant-limit pill. An empty `limit` is unlimited, the only state
+  // that clears the profile's shared DHCP range.
+  component HotspotLimitPill: Button {
+    id: pill
+    required property string limit
+
+    text: Model.hotspotLimitLabel(limit)
+    fontSize: Style.font.bodySmall
+    foreground: root.bar.foreground
+    fontFamily: root.bar.fontFamily
+    horizontalPadding: Style.spacing.controlPaddingX
+    verticalPadding: Style.spacing.controlPaddingY + Style.space(2)
+    bordered: true
+
+    active: root.hotspotActive && Model.hotspotMaxClients(root.hotspot) === limit
+    selected: root.hotspotMaxClients === limit
+
+    onClicked: root.hotspotMaxClients = limit
+  }
+
   component HotspotBandPill: Button {
     id: pill
     required property string band
