@@ -22,6 +22,20 @@ assertDeepEqual(
 
 assert(power.profileIcon('performance').length > 0, 'power maps profile icons')
 assertEqual(power.batteryFraction({ isPresent: true, percentage: 1.5 }), 1, 'power clamps battery fraction')
+assertDeepEqual(
+  power.peripheralBatteries([
+    { type: 1, isPresent: true }, { type: 2, isPresent: true },
+    { type: 5, isPresent: true, model: 'Mouse X' }, { type: 6, isPresent: true, model: 'Keyboard Y' },
+    { type: 5, isPresent: false }
+  ], { Mouse: 5, Keyboard: 6 }, null),
+  [{ type: 5, isPresent: true, model: 'Mouse X' }, { type: 6, isPresent: true, model: 'Keyboard Y' }],
+  'power filters connected mice and keyboards from system batteries and absent devices'
+)
+const displayDevice = { type: 5, isPresent: true }
+assertEqual(power.peripheralBatteries([displayDevice], { Mouse: 5, Keyboard: 6 }, displayDevice).length, 0, 'power excludes display device')
+assertEqual(power.peripheralName({ model: 'Wireless Mouse', nativePath: '/device/one' }), 'Wireless Mouse', 'power displays peripheral model')
+assertEqual(power.peripheralName({ name: 'Unsupported fallback' }), 'Peripheral', 'power uses valid generic name fallback')
+assertEqual(power.peripheralState({ state: 2 }, { Discharging: 2 }), 'Discharging', 'power formats peripheral state')
 
 assert(power.chargeThresholdActive({ isPresent: true, percentage: 0.8, state: states.PendingCharge }, false, states), 'power detects threshold by pending charge state')
 assert(power.chargeThresholdActive({ isPresent: true, percentage: 0.8, state: states.Charging, changeRate: 0.1, timeToFull: 120 }, false, states), 'power detects threshold by stalled charging')
@@ -46,6 +60,10 @@ assert(/if \(b === Qt\.RightButton\) root\.togglePercentage\(\)/.test(panelSourc
 assert(/Object\.assign\([^\n]+showPercentage: !root\.showPercentage[^\n]+\)[\s\S]*updateEntryInline/.test(panelSource), 'power persists the bar percentage setting')
 assert(/Math\.round\(root\.batteryFraction \* 100\) \+ "% " \+ root\.batteryIcon\(\)/.test(panelSource), 'power places the percentage before the battery icon')
 assert(/openPanelIndicatorWidth:.*showPercentage.*button\.glyphPaintedWidth : 0/.test(panelSource), 'power spans the open-panel mark across the painted percentage block')
+assert(/UPower\.devices \? UPower\.devices\.values : \[\]/.test(panelSource), 'power consumes live UPower device values')
+assert(/Math\.round\(modelData\.percentage \* 100\)/.test(panelSource), 'power converts peripheral fraction to percent')
+assert(/powerAvailable: batteryPresent \|\| peripheralBatteries\.length > 0/.test(panelSource), 'power widget is available with peripherals without system battery')
+assert(/visible: root\.batteryPresent/.test(panelSource), 'power hides system battery hero without system battery')
 assert(/IpcHandler[\s\S]*?function togglePercentage\(\) \{ root\.togglePercentage\(\) \}/.test(panelSource), 'power exposes togglePercentage over IPC')
 assert(/manageIpc: false/.test(panelSource), 'power owns its IPC handler so it can extend the target methods')
 JS

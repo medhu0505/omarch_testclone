@@ -16,6 +16,8 @@ Panel {
   property var batteryInfo: ({})
   property var systemInfo: ({})
   property var profiles: []
+  readonly property var peripheralBatteries: Model.peripheralBatteries(UPower.devices ? UPower.devices.values : [], { Mouse: UPowerDeviceType.Mouse, Keyboard: UPowerDeviceType.Keyboard }, UPower.displayDevice)
+  readonly property bool powerAvailable: batteryPresent || peripheralBatteries.length > 0
   property string activeProfile: ""
   property int profileIndex: 0
   property bool cursorActive: false
@@ -133,11 +135,11 @@ Panel {
   }
 
   function refresh() {
-    if (!batteryPresent) return
-
-    if (!batteryProc.running) batteryProc.running = true
+    if (batteryPresent) {
+      if (!batteryProc.running) batteryProc.running = true
+      if (!systemProc.running) systemProc.running = true
+    }
     if (!profilesProc.running) profilesProc.running = true
-    if (!systemProc.running) systemProc.running = true
   }
 
   function updateKeyValue(raw, targetName) {
@@ -187,7 +189,7 @@ Panel {
 
   onOpenedChanged: {
     if (opened) {
-      if (!batteryPresent) {
+      if (!powerAvailable) {
         close()
         return
       }
@@ -199,11 +201,11 @@ Panel {
     }
   }
 
-  onBatteryPresentChanged: if (!batteryPresent) close()
+  onPowerAvailableChanged: if (!powerAvailable) close()
 
-  visible: batteryPresent
-  implicitWidth: batteryPresent ? button.implicitWidth : 0
-  implicitHeight: batteryPresent ? button.implicitHeight : 0
+  visible: powerAvailable
+  implicitWidth: powerAvailable ? button.implicitWidth : 0
+  implicitHeight: powerAvailable ? button.implicitHeight : 0
 
   Process {
     id: batteryProc
@@ -277,13 +279,13 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.showPercentage && !vertical
-      ? Math.round(root.batteryFraction * 100) + "% " + root.batteryIcon()
-      : root.batteryIcon()
+    text: root.batteryPresent
+      ? (root.showPercentage && !vertical ? Math.round(root.batteryFraction * 100) + "% " + root.batteryIcon() : root.batteryIcon())
+      : "󰂄"
     slotSize: Style.bar.iconSlot * (root.showPercentage && !vertical ? 2 : 1)
     tooltipText: ""
     onPressed: function(b) {
-      if (!root.batteryPresent) return
+      if (!root.powerAvailable) return
       if (b === Qt.RightButton) root.togglePercentage()
       else root.toggle()
     }
@@ -294,7 +296,7 @@ Panel {
     anchorItem: button
     owner: root
     bar: root.bar
-    open: root.opened && root.batteryPresent
+    open: root.opened && root.powerAvailable
     focusTarget: keyCatcher
     contentWidth: panel.fittedContentWidth(Style.space(380))
     contentHeight: panel.fittedContentHeight(column.implicitHeight)
@@ -321,6 +323,7 @@ Panel {
         // ---------- Hero: battery icon · title/status · percentage ----------
         Item {
           width: parent.width
+          visible: root.batteryPresent
           implicitHeight: Math.max(heroIcon.implicitHeight, heroLabels.implicitHeight, heroPercent.implicitHeight)
 
           Text {
@@ -387,6 +390,7 @@ Panel {
         // ---------- Battery progress bar ----------
         Item {
           width: parent.width
+          visible: root.batteryPresent
           implicitHeight: Style.space(8)
 
           Rectangle {
@@ -426,7 +430,7 @@ Panel {
         // the battery sits above the charge-control start threshold, and we
         // refuse to flicker the whole panel for that ~1s window.
         Row {
-          visible: root.batteryInfo.percentage !== undefined
+          visible: root.batteryPresent && root.batteryInfo.percentage !== undefined
           width: parent.width
           spacing: Style.space(20)
 
@@ -447,6 +451,40 @@ Panel {
             InfoPair {
               label: root.chargeThresholdActive ? "Battery state" : (root.discharging ? "Discharging" : "Charging")
               value: root.chargeThresholdActive ? "Holding" : (root.batteryFull ? "-" : (root.batteryInfo.rate || ""))
+            }
+          }
+        }
+
+        // ---------- Connected peripheral batteries ----------
+        Column {
+          visible: root.peripheralBatteries.length > 0
+          width: parent.width
+          spacing: Style.space(8)
+
+          PanelSeparator { foreground: root.bar.foreground }
+
+          PanelSectionHeader {
+            text: "PERIPHERAL BATTERIES"
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+          }
+
+          Repeater {
+            model: root.peripheralBatteries
+            Row {
+              required property var modelData
+              width: parent.width
+              spacing: Style.space(8)
+              InfoPair {
+                label: Model.peripheralName(modelData)
+                value: Math.round(modelData.percentage * 100) + "%  " + Model.peripheralState(modelData, {
+                  Charging: UPowerDeviceState.Charging,
+                  Discharging: UPowerDeviceState.Discharging,
+                  FullyCharged: UPowerDeviceState.FullyCharged,
+                  PendingCharge: UPowerDeviceState.PendingCharge,
+                  PendingDischarge: UPowerDeviceState.PendingDischarge
+                })
+              }
             }
           }
         }

@@ -45,6 +45,31 @@ function profileIcon(name) {
   return "󰂄"
 }
 
+function peripheralBatteries(devices, types, displayDevice) {
+  var values = Array.isArray(devices) ? devices : []
+  var supported = types || {}
+  return values.filter(function(device) {
+    if (!device || device === displayDevice || !device.isPresent) return false
+    return device.type === supported.Mouse || device.type === supported.Keyboard
+  })
+}
+
+function peripheralName(device) {
+  if (!device) return ""
+  return String(device.model || device.nativePath || "Peripheral")
+}
+
+function peripheralState(device, states) {
+  var state = device ? device.state : undefined
+  var values = states || {}
+  if (state === values.Charging) return "Charging"
+  if (state === values.Discharging) return "Discharging"
+  if (state === values.FullyCharged) return "Fully charged"
+  if (state === values.PendingCharge) return "Pending charge"
+  if (state === values.PendingDischarge) return "Pending discharge"
+  return ""
+}
+
 function batteryFraction(device) {
   return device && device.isPresent ? Math.max(0, Math.min(1, device.percentage)) : 0
 }
@@ -96,6 +121,9 @@ if (typeof module !== "undefined") {
     parseKeyValue: parseKeyValue,
     parseProfiles: parseProfiles,
     profileIcon: profileIcon,
+    peripheralBatteries: peripheralBatteries,
+    peripheralName: peripheralName,
+    peripheralState: peripheralState,
     batteryFraction: batteryFraction,
     chargeThresholdActive: chargeThresholdActive,
     batteryIcon: batteryIcon,
