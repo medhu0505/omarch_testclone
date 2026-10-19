@@ -6,6 +6,7 @@ import QtQuick
 QtObject {
   required property string ownerPluginId
   property bool refreshingGames: false
+  property bool gameRefreshFailed: false
 
   signal appsChanged()
 

@@ -218,19 +218,117 @@ class GameShortcutsTest(unittest.TestCase):
 
   def test_interrupted_cleanup_does_not_suppress_a_reinstall(self):
     self.sync()
+    path = self.generated()[0]
     write_atomic = shortcuts.atomic_write
 
-    def fail_state(path, text):
-      if path == self.state:
-        raise OSError("interrupted cleanup")
-      write_atomic(path, text)
+    def fail_final_state(target, text):
+      if target == self.state and not path.exists():
+        raise OSError("interrupted cleanup after unlink")
+      write_atomic(target, text)
 
-    with patch.object(shortcuts, "atomic_write", side_effect=fail_state):
+    with patch.object(shortcuts, "atomic_write", side_effect=fail_final_state):
       with self.assertRaises(OSError):
         self.sync({}, set(), {"steam"})
+    self.assertFalse(path.exists())
+    self.assertTrue(shortcuts.read_json(self.state)["entries"]["steam:1145360"]["cleanup"])
+    self.sync()  # Reinstall immediately, without an intervening cleanup run.
+    self.assertEqual(len(self.generated()), 1)
     self.sync({}, set(), {"steam"})
+    self.assertFalse(path.exists(), "recovered imports retain cleanup ownership")
+
+  def test_failed_cleanup_journal_leaves_shortcut_intact(self):
+    self.sync()
+    path = self.generated()[0]
+    before = path.read_bytes()
+    with patch.object(shortcuts, "atomic_write", side_effect=OSError("unwritable state")):
+      with self.assertRaises(OSError):
+        self.sync({}, set(), {"steam"})
+    self.assertEqual(path.read_bytes(), before)
     self.sync()
     self.assertEqual(len(self.generated()), 1)
+
+  def test_pending_cleanup_before_unlink_preserves_edits(self):
+    for edited in (False, True):
+      with self.subTest(edited=edited):
+        self.state.unlink(missing_ok=True)
+        self.sync()
+        path = self.generated()[0]
+        original_unlink = Path.unlink
+
+        def fail_unlink(target, *args, **kwargs):
+          if target == path:
+            raise OSError("interrupted before unlink")
+          return original_unlink(target, *args, **kwargs)
+
+        with patch.object(Path, "unlink", fail_unlink):
+          with self.assertRaises(OSError):
+            self.sync({}, set(), {"steam"})
+        self.assertTrue(shortcuts.read_json(self.state)["entries"]["steam:1145360"]["cleanup"])
+        if edited:
+          path.write_text("user edit after interrupted cleanup")
+        self.sync()
+        if edited:
+          self.sync({}, set(), {"steam"})
+          self.assertEqual(path.read_text(), "user edit after interrupted cleanup")
+        else:
+          self.assertIn("Name=Hades", path.read_text())
+
+  def test_missing_shortcut_is_suppressed_before_uninstall_cleanup(self):
+    self.sync()
+    self.generated()[0].unlink()
+    self.sync({}, set(), {"steam"})
+    self.sync()
+    self.assertEqual(self.generated(), [])
+
+  def test_failed_removal_state_write_does_not_delete_shortcut(self):
+    self.sync()
+    path = self.generated()[0]
+    with patch.object(shortcuts, "atomic_write", side_effect=OSError("unwritable state")):
+      with self.assertRaises(OSError):
+        shortcuts.remove_shortcut(self.app_dir, self.state, path.name)
+    self.assertTrue(path.exists())
+    self.sync()
+    self.assertEqual(len(self.generated()), 1)
+
+  def test_interrupted_explicit_removal_is_completed_without_touching_edits(self):
+    for edited in (False, True):
+      with self.subTest(edited=edited):
+        self.state.unlink(missing_ok=True)
+        self.sync()
+        path = self.generated()[0]
+        original_unlink = Path.unlink
+
+        def fail_unlink(target, *args, **kwargs):
+          if target == path:
+            raise OSError("interrupted removal")
+          return original_unlink(target, *args, **kwargs)
+
+        with patch.object(Path, "unlink", fail_unlink):
+          with self.assertRaises(OSError):
+            shortcuts.remove_shortcut(self.app_dir, self.state, path.name)
+        if edited:
+          path.write_text("new user edit")
+        self.sync({}, set(), {"steam"})
+        self.sync()
+        if edited:
+          self.assertEqual(path.read_text(), "new user edit")
+        else:
+          self.assertFalse(path.exists())
+
+  def test_launcher_removal_survives_uninstall_before_discovery(self):
+    self.sync()
+    path = self.generated()[0]
+    state_dir = self.home / "custom state/omarchy"
+    state_dir.mkdir(parents=True)
+    self.state.rename(state_dir / "game-shortcuts.json")
+    self.state = state_dir / "game-shortcuts.json"
+    env = dict(os.environ, HOME=str(self.home), OMARCHY_PATH=str(ROOT), XDG_DATA_HOME=str(self.data),
+               XDG_STATE_HOME=str(state_dir.parent), XDG_DATA_DIRS=str(self.home / "system"))
+    subprocess.run([str(ROOT / "bin/omarchy-remove-launcher-entry"), path.stem, "Hades"], env=env, check=True, capture_output=True)
+    self.assertFalse(path.exists())
+    self.sync({}, set(), {"steam"})
+    self.sync()
+    self.assertEqual(self.generated(), [], "explicit removal must survive uninstall before the next discovery")
 
   def test_command_recovers_orphans_even_with_no_installed_games(self):
     key = "heroic:legendary:epic"
@@ -262,6 +360,43 @@ class GameShortcutsTest(unittest.TestCase):
     with self.assertRaises(ValueError):
       self.sync({}, set(), {"steam"})
     self.assertEqual(path.read_bytes(), before)
+
+  def test_failed_discovery_command_preserves_existing_shortcuts(self):
+    self.sync()
+    path = self.generated()[0]
+    before = path.read_bytes()
+    state_dir = self.home / "custom state/omarchy"
+    state_dir.mkdir(parents=True)
+    write(state_dir / "game-shortcuts.json", "invalid JSON")
+    env = dict(os.environ, HOME=str(self.home), OMARCHY_PATH=str(ROOT), XDG_DATA_HOME=str(self.data),
+               XDG_CONFIG_HOME=str(self.config), XDG_STATE_HOME=str(state_dir.parent), XDG_DATA_DIRS=str(self.home / "system"))
+    result = subprocess.run([str(ROOT / "bin/omarchy-refresh-game-shortcuts")], env=env, capture_output=True, text=True)
+    self.assertEqual(result.returncode, 1)
+    self.assertIn("Game shortcut refresh failed", result.stderr)
+    self.assertEqual(path.read_bytes(), before)
+
+  def test_removal_waits_for_discovery_lock(self):
+    self.sync()
+    path = self.generated()[0]
+    state_dir = self.home / "custom state/omarchy"
+    state_dir.mkdir(parents=True)
+    self.state.rename(state_dir / "game-shortcuts.json")
+    self.state = state_dir / "game-shortcuts.json"
+    env = dict(os.environ, HOME=str(self.home), OMARCHY_PATH=str(ROOT), XDG_DATA_HOME=str(self.data),
+               XDG_STATE_HOME=str(state_dir.parent), XDG_DATA_DIRS=str(self.home / "system"))
+    with (state_dir / "game-shortcuts.lock").open("a") as lock:
+      fcntl.flock(lock, fcntl.LOCK_EX)
+      process = subprocess.Popen([str(ROOT / "bin/omarchy-remove-launcher-entry"), path.stem, "Hades"], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      self.addCleanup(lambda: process.kill() if process.poll() is None else None)
+      with self.assertRaises(subprocess.TimeoutExpired):
+        process.communicate(timeout=0.2)
+      self.assertTrue(path.exists())
+    output, error = process.communicate(timeout=5)
+    self.assertEqual(process.returncode, 0, error.decode())
+    self.assertFalse(path.exists())
+    self.sync({}, set(), {"steam"})
+    self.sync()
+    self.assertEqual(self.generated(), [])
 
   def test_command_uses_xdg_paths_without_launching_clients(self):
     write(self.heroic / "legendaryConfig/legendary/installed.json", {"epic": {"title": "Epic game", "install_path": str(self.home)}})

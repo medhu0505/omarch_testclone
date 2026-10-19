@@ -16,6 +16,7 @@ Item {
   property var configuredHiddenEntryIds: ({})
   property var desktopHiddenEntryIds: ({})
   readonly property bool refreshingGames: gameShortcutScan.running
+  property bool gameRefreshFailed: false
   readonly property var clientGameIds: AppSearch.clientGameIds(DesktopEntries.applications.values || [])
 
   // Maps an icon name to a file on disk (e.g. "omacut" -> ".../apps/omacut.svg").
@@ -86,7 +87,10 @@ Item {
   }
 
   function refreshGames() {
-    if (!gameShortcutScan.running) gameShortcutScan.running = true
+    if (!gameShortcutScan.running) {
+      root.gameRefreshFailed = false
+      gameShortcutScan.running = true
+    }
   }
 
   // Refresh on Games open or global search. DesktopEntries watches shortcuts;
@@ -94,6 +98,7 @@ Item {
   Process {
     id: gameShortcutScan
     command: [root.omarchyPath + "/bin/omarchy-refresh-game-shortcuts"]
+    onExited: function(exitCode, exitStatus) { root.gameRefreshFailed = exitCode !== 0 || exitStatus !== 0 }
   }
 
   function launch(desktopId, name) {

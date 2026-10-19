@@ -327,7 +327,7 @@ def atomic_write(path, text):
       temporary.unlink(missing_ok=True)
 
 
-def synchronize(app_dir, desktop_dirs, state_path, games, present, complete):
+def load_state(state_path):
   state = read_json(state_path) if state_path.exists() else {"version": 1, "entries": {}}
   if not isinstance(state, dict) or state.get("version") != 1 or not isinstance(state.get("entries"), dict):
     raise ValueError("Invalid game-shortcut state")
@@ -338,10 +338,47 @@ def synchronize(app_dir, desktop_dirs, state_path, games, present, complete):
     filename = record.get("file", "")
     if not isinstance(filename, str) or (filename and (Path(filename).name != filename or not filename.startswith("omarchy-game-"))):
       raise ValueError("Invalid managed shortcut filename")
+  return state
+
+
+def save_state(state_path, state):
+  text = json.dumps(state, indent=2, sort_keys=True) + "\n"
+  if not state_path.exists() or state_path.read_text() != text:
+    atomic_write(state_path, text)
+
+
+def remove_shortcut(app_dir, state_path, filename):
+  if Path(filename).name != filename or not filename.startswith("omarchy-game-") or not filename.endswith(".desktop"):
+    raise ValueError("Invalid managed shortcut filename")
+  path = app_dir / filename
+  state = load_state(state_path)
+  key = next((key for key, record in state["entries"].items() if record.get("file") == filename), None)
+  if key is None:
+    recovered = recover_shortcut(path)
+    if recovered:
+      key = recovered[0]
+  if key is not None:
+    # Persist the user's choice before unlinking, under the discovery lock.
+    # Pending cleanup also lets discovery finish an interrupted removal.
+    record = {"file": filename, "suppressed": True, "cleanup": True}
+    if path.is_file() and not path.is_symlink():
+      record["hash"] = hashlib.sha256(path.read_bytes()).hexdigest()
+    state["entries"][key] = record
+    save_state(state_path, state)
+  path.unlink(missing_ok=True)
+  if key is not None:
+    state["entries"][key] = {"suppressed": True}
+    save_state(state_path, state)
+
+
+def synchronize(app_dir, desktop_dirs, state_path, games, present, complete):
+  state = load_state(state_path)
+  entries = state["entries"]
   for path in app_dir.glob("omarchy-game-*.desktop"):
     try:
       recovered = recover_shortcut(path)
-      if recovered and not entries.get(recovered[0], {}).get("suppressed"):
+      record = entries.get(recovered[0], {}) if recovered else {}
+      if recovered and not record.get("suppressed") and not record.get("cleanup"):
         entries[recovered[0]] = recovered[1]
     except (OSError, ValueError, configparser.Error):
       continue
@@ -369,16 +406,32 @@ def synchronize(app_dir, desktop_dirs, state_path, games, present, complete):
     if record.get("hash"):
       if path.is_file() and not path.is_symlink():
         owned = hashlib.sha256(path.read_bytes()).hexdigest() == record["hash"]
-    source = "steam" if key.startswith("steam:") else ":".join(key.split(":")[:2])
-    if key not in present and source in complete and not record.get("suppressed"):
-      if owned:
-        path.unlink()
-      entries.pop(key, None)
-      continue
+    if record.get("cleanup"):
+      if record.get("suppressed"):
+        if owned:
+          path.unlink()
+        entries[key] = {"suppressed": True}
+        continue
+      if not path.exists() and not path.is_symlink():
+        # Our interrupted cleanup removed it, even if the game is installed again.
+        record = {}
+        entries.pop(key, None)
+      else:
+        record.pop("cleanup", None)
     if record.get("hash") and not owned:
       record["suppressed"] = True  # Deleted and edited imports belong to the user.
     if record.get("suppressed"):
       entries[key] = record
+      continue
+    source = "steam" if key.startswith("steam:") else ":".join(key.split(":")[:2])
+    if key not in present and source in complete:
+      if owned:
+        # Write ahead of unlink: a missing file must not look like a user removal
+        # if the process stops before the final ledger write.
+        record["cleanup"] = True
+        save_state(state_path, state)
+        path.unlink()
+      entries.pop(key, None)
       continue
     if not record.get("hash") and (key in existing or record.get("external")):
       # A client shortcut is an observation, not a permanent removal preference.
@@ -398,12 +451,13 @@ def synchronize(app_dir, desktop_dirs, state_path, games, present, complete):
       entries[key] = {"file": filename, "hash": digest}
       if alias:
         entries[key]["external"] = True
-  text = json.dumps(state, indent=2, sort_keys=True) + "\n"
-  if not state_path.exists() or state_path.read_text() != text:
-    atomic_write(state_path, text)
+  save_state(state_path, state)
 
 
 def main():
+  remove = len(sys.argv) == 3 and sys.argv[1] == "--remove"
+  if len(sys.argv) != 1 and not remove:
+    raise ValueError("Usage: shortcuts.py [--remove <desktop-file>]")
   home = Path.home()
   data_home = Path(os.environ.get("XDG_DATA_HOME") or home / ".local/share")
   config_home = Path(os.environ.get("XDG_CONFIG_HOME") or home / ".config")
@@ -412,11 +466,14 @@ def main():
   state_dir.mkdir(parents=True, exist_ok=True)
   with (state_dir / "game-shortcuts.lock").open("a") as lock:
     try:
-      fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+      fcntl.flock(lock, fcntl.LOCK_EX if remove else fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
       return
     app_dir = data_home / "applications"
     app_dir.mkdir(parents=True, exist_ok=True)
+    if remove:
+      remove_shortcut(app_dir, state_dir / "game-shortcuts.json", sys.argv[2])
+      return
     desktop_dirs = [app_dir] + [Path(path) / "applications" for path in (os.environ.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share").split(":") if path]
     steam, steam_present, steam_complete = steam_games(home, data_home)
     heroic, heroic_present, heroic_complete = heroic_games(home, config_home)

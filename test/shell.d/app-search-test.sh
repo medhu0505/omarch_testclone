@@ -93,8 +93,8 @@ function qmlFunction(source, name, context) {
 }
 const gridQml = fs.readFileSync(path.join(root, 'shell/plugins/dock/AppGrid.qml'), 'utf8')
 const gridRoot = { appLibrary: library, category: 'apps', apps: [], appsStale: true, opened: false, filterText: '', dragging: false }
-const gridContext = { root: gridRoot, grid: { positionViewAtBeginning() {} }, Qt: { callLater(callback) { callback() } }, keyCatcher: { forceActiveFocus() {} } }
-for (const name of ['open', 'close', 'toggle', 'rebuild', 'setFilter', 'isImportedGame']) gridRoot[name] = qmlFunction(gridQml, name, gridContext)
+const gridContext = { Commons: { I18n: { t: key => key } }, root: gridRoot, grid: { positionViewAtBeginning() {} }, Qt: { callLater(callback) { callback() } }, keyCatcher: { forceActiveFocus() {} } }
+for (const name of ['open', 'close', 'toggle', 'rebuild', 'setFilter', 'isImportedGame', 'emptyMessage']) gridRoot[name] = qmlFunction(gridQml, name, gridContext)
 assert(gridRoot.isImportedGame({ id: 'omarchy-game-abcdef' }) && !gridRoot.isImportedGame({ id: 'steam' }), 'imported shortcuts use shortcut removal while clients keep uninstall')
 gridRoot.open('games')
 assertEqual(gameRefreshes, 1, 'opening Games discovers newly installed games')
@@ -169,6 +169,39 @@ qmlFunction(appLibraryQml, 'refreshIcons', refreshContext)()
 assert(iconsRunning && !discoveryRunning, 'opening an unrelated menu only refreshes icons')
 qmlFunction(appLibraryQml, 'refreshGames', refreshContext)()
 assert(discoveryRunning, 'game discovery starts only through its explicit refresh')
+const discoveryExit = appLibraryQml.match(/id: gameShortcutScan[\s\S]*?onExited: (function\([^)]*\) \{[^\n]+\})/)
+assert(discoveryExit, 'the discovery process handles its exit')
+const finishRefresh = vm.runInNewContext('(' + discoveryExit[1] + ')', refreshContext)
+finishRefresh(1, 0)
+assert(refreshContext.root.gameRefreshFailed, 'an unsuccessful helper exit records discovery failure')
+finishRefresh(0, 1)
+assert(refreshContext.root.gameRefreshFailed, 'a crashed helper records discovery failure even with exit code zero')
+finishRefresh(0, 0)
+assert(!refreshContext.root.gameRefreshFailed, 'successful discovery clears the previous failure')
+refreshContext.root.gameRefreshFailed = true
+discoveryRunning = false
+qmlFunction(appLibraryQml, 'refreshGames', refreshContext)()
+assert(!refreshContext.root.gameRefreshFailed && discoveryRunning, 'reopening Games clears the error and retries discovery')
+const existingGames = gridRoot.apps
+gridRoot.category = 'games'
+gridRoot.filterText = ''
+library.gameRefreshFailed = true
+assertEqual(gridRoot.emptyMessage(), 'dock.gameRefreshFailed', 'an empty Games view reports failure instead of suggesting an install')
+gridRoot.filterText = 'hades'
+assertEqual(gridRoot.emptyMessage(), 'dock.gameRefreshFailed', 'a query cannot hide a discovery error behind no matches')
+library.refreshingGames = true
+assertEqual(gridRoot.emptyMessage(), 'dock.findingGames', 'a retry shows loading while discovery runs')
+library.refreshingGames = false
+library.gameRefreshFailed = false
+gridRoot.filterText = ''
+assertEqual(gridRoot.emptyMessage(), 'dock.noGames', 'only successful discovery can show the no-games guidance')
+assert(gridRoot.apps === existingGames, 'discovery status changes preserve existing game entries')
+const errorNotice = gridQml.match(/Text \{\s+id: gameDiscoveryError([\s\S]*?)\n        \}/)
+assert(errorNotice && errorNotice[1].includes('root.appLibrary.gameRefreshFailed') && errorNotice[1].includes('root.apps.length > 0'), 'a failed refresh remains visible above an existing game grid')
+const facadeQml = fs.readFileSync(path.join(root, 'shell/services/PluginAppLibraryApi.qml'), 'utf8')
+const shellQml = fs.readFileSync(path.join(root, 'shell/shell.qml'), 'utf8')
+assert(facadeQml.includes('property bool gameRefreshFailed: false') && shellQml.includes('gameRefreshFailed: Qt.binding(function() { return shell.appLibrary.gameRefreshFailed })'), 'menu plugins receive the same detached discovery status')
+
 const refreshRoot = { appLibrary: library, opened: true, gamesRefreshed: false, activeMenu: 'system', itemOrder: [], item: id => ({ id }), providersLoaded: {} }
 refreshRoot.refreshGamesOnce = qmlFunction(menuQml, 'refreshGamesOnce', { root: refreshRoot })
 const refreshSearch = qmlFunction(menuQml, 'loadProvidersForSearch', { root: refreshRoot })

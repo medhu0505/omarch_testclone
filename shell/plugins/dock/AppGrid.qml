@@ -113,6 +113,15 @@ Item {
     return !!entry && String(entry.id || "").indexOf("omarchy-game-") === 0
   }
 
+  function emptyMessage() {
+    if (root.category === "games") {
+      if (root.appLibrary && root.appLibrary.refreshingGames) return Commons.I18n.t("dock.findingGames")
+      if (root.appLibrary && root.appLibrary.gameRefreshFailed) return Commons.I18n.t("dock.gameRefreshFailed")
+      return root.filterText ? Commons.I18n.t("dock.noGamesMatch").arg(root.filterText) : Commons.I18n.t("dock.noGames")
+    }
+    return Commons.I18n.t("dock.noAppsMatch").arg(root.filterText)
+  }
+
   function cancelUninstall() {
     root.uninstallEntry = null
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
@@ -311,9 +320,22 @@ Item {
           }
         }
 
+        Text {
+          id: gameDiscoveryError
+          width: parent.width
+          visible: root.category === "games" && !!root.appLibrary && root.appLibrary.gameRefreshFailed && root.apps.length > 0
+          textFormat: Text.PlainText
+          text: Commons.I18n.t("dock.gameRefreshFailed")
+          horizontalAlignment: Text.AlignHCenter
+          wrapMode: Text.WordWrap
+          color: Commons.Color.menu.text
+          font.family: Style.font.menuFamily
+          font.pixelSize: Style.font.body
+        }
+
         Item {
           width: parent.width
-          height: parent.height - root.headerHeight - parent.spacing
+          height: parent.height - root.headerHeight - parent.spacing - (gameDiscoveryError.visible ? gameDiscoveryError.height + parent.spacing : 0)
 
           GridView {
             id: grid
@@ -419,10 +441,7 @@ Item {
             width: parent.width
             visible: root.apps.length === 0
             textFormat: Text.PlainText
-            text: root.category === "games"
-              ? (root.filterText ? Commons.I18n.t("dock.noGamesMatch").arg(root.filterText)
-                : (root.appLibrary && root.appLibrary.refreshingGames ? Commons.I18n.t("dock.findingGames") : Commons.I18n.t("dock.noGames")))
-              : Commons.I18n.t("dock.noAppsMatch").arg(root.filterText)
+            text: root.emptyMessage()
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap
             color: Commons.Color.menu.text

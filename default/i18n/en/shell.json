@@ -209,6 +209,7 @@
   "diskSpeedtest.write": "WRITE",
   "dock.autoHide": "Auto-hide",
   "dock.findingGames": "Looking for installed games…",
+  "dock.gameRefreshFailed": "Could not refresh games. Reopen Games to try again.",
   "dock.keepInDock": "Keep in Dock",
   "dock.newWindow": "New Window",
   "dock.noAppsMatch": "No apps match “%1”",

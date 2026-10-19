@@ -426,6 +426,7 @@ ShellRoot {
     var api = pluginAppLibraryApiComponent.createObject(null, {
       ownerPluginId: pluginId,
       refreshingGames: Qt.binding(function() { return shell.appLibrary.refreshingGames }),
+      gameRefreshFailed: Qt.binding(function() { return shell.appLibrary.gameRefreshFailed }),
       _entryName: function(entry) { return shell.appLibrary.entryName(entry) },
       _entrySubtext: function(entry) { return shell.appLibrary.entrySubtext(entry) },
       _sortedEntries: function(query) { return shell.appLibrary.sortedEntries(query) },
