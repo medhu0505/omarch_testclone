@@ -205,6 +205,10 @@ Panel {
   readonly property string hotspotCommand: "omarchy-hotspot"
   readonly property bool hotspotAvailable: hotspot.ap_capable === "1"
   readonly property bool hotspotActive: hotspot.active === "1"
+  // The hotspot's radio hides the station list of its own device: the scan
+  // would show the AP's own SSID. A second adapter keeps its rows and its
+  // connection controls.
+  readonly property bool hotspotRadioTaken: hotspotActive && hotspot.iface !== "" && !!wifiDevice && hotspot.iface === wifiDevice.name
   readonly property bool hotspotConfigured: hotspot.configured === "1"
   // The AP runs on the Wi-Fi radio, so the internet it shares has to come
   // from somewhere else (ethernet / USB tether). When the default route still
@@ -772,10 +776,11 @@ Panel {
     wifiNetworks = Model.sortWifiRows(nets)
     wifiStationAvailable = !!wifiDevice
     scanning = false
-    // While the hotspot borrows the radio, the station list is meaningless --
-    // it would even surface the AP's own SSID. Drop the whole section; the
-    // existing onWifiNetworksChanged bounce moves the cursor back to DNS.
-    if (hotspotActive) wifiNetworks = []
+    // While the hotspot borrows this radio, the station list is meaningless
+    // -- it would even surface the AP's own SSID. Drop the section only for
+    // the radio hosting the AP; a second adapter keeps its upstream list.
+    // The existing onWifiNetworksChanged bounce moves the cursor back to DNS.
+    if (hotspotRadioTaken) wifiNetworks = []
   }
 
   function wifiSectionTitle(index) {
@@ -2291,12 +2296,12 @@ Panel {
       // Wi-Fi networks (only if a Wi-Fi station is available). Hidden while
       // the hotspot owns the radio — see syncWifiNetworks.
       PanelSeparator {
-        visible: root.wifiStationAvailable && !root.hotspotActive
+        visible: root.wifiStationAvailable && !root.hotspotRadioTaken
         foreground: root.bar.foreground
       }
 
       PanelSectionHeader {
-        visible: root.wifiStationAvailable && !root.hotspotActive && root.scanning
+        visible: root.wifiStationAvailable && !root.hotspotRadioTaken && root.scanning
         text: Commons.I18n.t("network.scanningWifi")
         foreground: root.bar.foreground
         fontFamily: root.bar.fontFamily
