@@ -2594,6 +2594,10 @@ Panel {
     readonly property string statusText: {
       if (!net) return ""
       if (isPasswordOpen) return ""
+      if (isBusy && root.actionKind === "connect") return Commons.I18n.t("network.connecting")
+      if (isBusy && root.actionKind === "disconnect") return Commons.I18n.t("network.disconnecting")
+      if (isBusy && root.actionKind === "forget") return Commons.I18n.t("network.forgetting")
+      if (isFailed) return root.failureReason || Commons.I18n.t("network.failed")
       if (isConnected && root.kind === "wifi" && root.hasCaptivePortal) return Commons.I18n.t("network.signInRequired")
       if (isConnected && net.hotspot) return Commons.I18n.t("network.mobileHotspot")
       if (isConnected) return Commons.I18n.t("network.connected")

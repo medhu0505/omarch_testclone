@@ -11,16 +11,31 @@ stub_bin="$test_tmp/bin"
 mkdir -p "$stub_bin" "$test_tmp/home"
 
 # Traffic leaves by $TEST_ROUTE_DEV (wlan0 unless a VPN is up), and the main
-# table's defaults are eth0 at metric 600 and wlan0 at 100. Only wlan0 is a
-# NetworkManager link, with metering and profile from the environment. gum
-# prints the box it was handed and answers with $GUM_ANSWER.
+# table's defaults are eth0 at metric 600 and wlan0 at 100. With
+# $TEST_V4_EMPTY, IPv4 is unreachable (an IPv6-only link) and the IPv6
+# lookups answer with $TEST_ROUTE6_DEV / $TEST_ROUTE6_DEFAULT instead. Only
+# wlan0 is a NetworkManager link, with metering and profile from the
+# environment. gum prints the box it was handed and answers with $GUM_ANSWER.
 cat >"$stub_bin/ip" <<'STUB'
 #!/bin/bash
+if [[ ${TEST_V4_EMPTY:-0} == 1 ]]; then
+  case "$*" in
+    'route get 1.1.1.1' | '-o route show default') exit 1 ;;
+  esac
+fi
 if [[ $* == "route get 1.1.1.1" ]]; then
   echo "1.1.1.1 dev ${TEST_ROUTE_DEV:-wlan0} src 192.0.2.10 uid 1000"
 elif [[ $* == "-o route show default" ]]; then
   echo "default via 198.51.100.1 dev eth0 proto dhcp metric 600"
   echo "default via 192.0.2.1 dev wlan0 proto dhcp metric 100"
+elif [[ $* == "-6 route get 2001:4860:4860::8888" ]]; then
+  if [[ ${TEST_V6_EMPTY:-0} != 1 ]]; then
+    [[ ${TEST_ROUTE6_DEV:-wlan0} ]] && echo "2001:4860:4860::8888 dev ${TEST_ROUTE6_DEV:-wlan0} src 2001:db8::10 uid 1000"
+  fi
+elif [[ $* == "-6 -o route show default" ]]; then
+  if [[ ${TEST_V6_EMPTY:-0} != 1 ]]; then
+    [[ ${TEST_ROUTE6_DEFAULT:-wlan0} ]] && echo "default via 2001:db8::1 dev ${TEST_ROUTE6_DEFAULT:-wlan0} proto static metric 100"
+  fi
 fi
 STUB
 cat >"$stub_bin/nmcli" <<'STUB'
@@ -87,6 +102,19 @@ pass "the warning unescapes the network name"
 TEST_ROUTE_DEV=tailscale0 confirm "yes (guessed)" vpn-uuid "Galaxy A54" yes || fail "a hotspot behind a VPN is not confirmed"
 grep -q "Galaxy A54 is a mobile hotspot" "$test_tmp/out" || fail "a full-tunnel VPN hides the hotspot underneath it" "$(cat "$test_tmp/out")"
 pass "a hotspot behind a full-tunnel VPN still warns"
+
+# An IPv6-only link has no IPv4 default route; the warning must look at the
+# IPv6 routes instead of skipping the check.
+TEST_V4_EMPTY=1 confirm "yes (guessed)" v6-uuid "Poco X6" no || true
+warned || fail "an IPv6-only metered network does not warn" "$(cat "$test_tmp/out")"
+grep -q "Poco X6 is a mobile hotspot" "$test_tmp/out" || fail "the IPv6-only warning does not name the network" "$(cat "$test_tmp/out")"
+pass "an IPv6-only metered network still warns"
+
+TEST_V4_EMPTY=1 confirm "yes (guessed)" v6-uuid "Poco X6" yes || fail "an IPv6-only metered network is not confirmed"
+grep -qx "v6-uuid" "$remembered" || fail "an IPv6-only metered network is not remembered" "$(cat "$remembered" 2>/dev/null)"
+TEST_V4_EMPTY=1 confirm "yes (guessed)" v6-uuid "Poco X6" yes || fail "a remembered IPv6-only network is not confirmed" "$(cat "$test_tmp/out")"
+! warned || fail "a remembered IPv6-only network warns again" "$(cat "$test_tmp/out")"
+pass "an IPv6-only metered network is remembered after confirming"
 
 readonly_home="$test_tmp/readonly-home"
 mkdir -p "$readonly_home"
