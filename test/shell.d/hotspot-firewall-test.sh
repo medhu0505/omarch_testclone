@@ -136,7 +136,10 @@ case "$*" in
     ;;
   'connection up omarchy-hotspot')
     printf '%s\n' up >>"$NMCLI_UP_LOG"
-    (( ${NMCLI_UP_SUCCEED:-1} == 1 )) || exit 1
+    if [[ ${NMCLI_UP_SUCCEED:-1} != 1 ]]; then
+      printf '%s\n' "${NMCLI_UP_ERROR:-Error: Connection activation failed}" >&2
+      exit 1
+    fi
     touch "$NMCLI_ACTIVE"
     printf '%s\n' "${FORWARDING_AFTER_UP:-1}" >"$FORWARDING_STATE_VALUE"
     ;;
@@ -347,6 +350,23 @@ backend_status=$?
 set -e
 (( backend_status == 0 )) || fail "firewall backend detection fails closed on filter base chains" "$backend_output"
 pass "firewall backend detection fails closed on filter base chains"
+# Writes the readable rules fixture the same way UFW persisted the shown
+# rules, so checks that read the file instead of privileged UFW state can
+# run unprivileged.
+write_user_rules() {
+  local path=$1 iface=$2 subnet=$3 omit=${4:-}
+  local tag
+  : >"$path"
+  for tag in dhcp dns-udp dns-tcp forward; do
+    [[ $tag == "$omit" ]] && continue
+    case "$tag" in
+      dhcp) printf -- '-A ufw-user-input -i %s -p udp --dport 67 -m comment --comment omarchy-hotspot:dhcp -j ACCEPT\n' "$iface" >>"$path" ;;
+      dns-udp) printf -- '-A ufw-user-input -i %s -s %s -p udp --dport 53 -m comment --comment omarchy-hotspot:dns -j ACCEPT\n' "$iface" "$subnet" >>"$path" ;;
+      dns-tcp) printf -- '-A ufw-user-input -i %s -s %s -p tcp --dport 53 -m comment --comment omarchy-hotspot:dns -j ACCEPT\n' "$iface" "$subnet" >>"$path" ;;
+      forward) printf -- '-A ufw-user-forward -s %s -i %s -m comment --comment omarchy-hotspot:forward -j ACCEPT\n' "$subnet" "$iface" >>"$path" ;;
+    esac
+  done
+}
 
 cat >"$TEST_TMP/apply-driver.sh" <<'DRIVER'
 require_privileged() { :; }
@@ -373,13 +393,18 @@ DRIVER
 run_isolated "$TEST_TMP/apply-driver.sh"
 : >"$UFW_SHOW_LOG"
 : >"$PRIVILEGED_LOG"
+# The backend probes are stub commands in child processes, so the backend
+# choice has to survive the process boundary: export, not assign. With the
+# readable rules fixture in place the presence check reads the file instead
+# of privileged UFW state, so both checks below bite.
+export UFW_PRESENT=1
+export UFW_ACTIVE=1
+write_user_rules "$UFW_RULES_FILE" wlan2 10.55.0.0/24
 cat >"$TEST_TMP/idempotent-driver.sh" <<'DRIVER'
 HOTSPOT_STATE_DIR="$TEST_STATE_DIR"
 FIREWALL_STATE_FILE="$TEST_STATE_DIR/firewall.state"
-UFW_PRESENT=1
-UFW_ACTIVE=1
-firewall_ensure
-firewall_ensure
+firewall_ensure || exit 1
+firewall_ensure || exit 1
 DRIVER
 run_isolated "$TEST_TMP/idempotent-driver.sh"
 [[ ! -s $UFW_SHOW_LOG ]] || fail "unprivileged idempotency does not read root-only UFW rules" "$(<"$UFW_SHOW_LOG")"
@@ -536,6 +561,7 @@ if (( EUID != 0 )); then
   set -e
   (( start_failure_status != 0 )) || fail "a real AP activation failure fails hotspot start"
   [[ $(<"$TEST_TMP/start-failure.err") == *"could not start hotspot"* ]] || fail "AP activation failure is explicit" "$(<"$TEST_TMP/start-failure.err")"
+  [[ $(<"$TEST_TMP/start-failure.err") == *"Connection activation failed"* ]] || fail "start failure includes NetworkManager's own error" "$(<"$TEST_TMP/start-failure.err")"
   [[ $(wc -l <"$NMCLI_UP_LOG") == 1 ]] || fail "real failure attempts AP activation once" "$(<"$NMCLI_UP_LOG")"
   [[ ! -e $TEST_TMP/nmcli-active ]] || fail "failed activation leaves the AP down"
   hotspot_rules=0
@@ -581,6 +607,67 @@ if (( EUID != 0 )); then
   OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" stop
   [[ ! -s $PRIVILEGED_LOG ]] || fail "stopping with nothing owned asks for no privilege" "$(<"$PRIVILEGED_LOG")"
   pass "hotspot stop with nothing owned stays unprivileged"
+
+  # User-added equivalent rules satisfy the presence check without any
+  # ownership record, so a start where the user predated the hotspot does
+  # not repeat the privileged firewall setup on every run.
+  reset_firewall_fixture
+  write_user_rules "$UFW_RULES_FILE" wlan2 10.55.0.0/24
+  rm -f "$FIREWALL_STATE"
+  : >"$UFW_LOG"
+  : >"$UFW_SHOW_LOG"
+  : >"$PRIVILEGED_LOG"
+  cat >"$TEST_TMP/ensure-equivalent-driver.sh" <<'DRIVER'
+HOTSPOT_STATE_DIR="$TEST_STATE_DIR"
+FIREWALL_STATE_FILE="$TEST_STATE_DIR/firewall.state"
+FORWARDING_STATE_FILE="$TEST_STATE_DIR/forwarding.state"
+firewall_ensure
+DRIVER
+  run_isolated "$TEST_TMP/ensure-equivalent-driver.sh"
+  [[ ! -s $PRIVILEGED_LOG ]] || fail "equivalent existing rules do not repeat the privilege prompt" "$(<"$PRIVILEGED_LOG")"
+  [[ ! -s $UFW_SHOW_LOG ]] || fail "equivalent existing rules are recognized without privileged UFW output" "$(<"$UFW_SHOW_LOG")"
+  [[ ! -s $UFW_LOG ]] || fail "equivalent existing rules are not reinstalled" "$(<"$UFW_LOG")"
+  pass "equivalent existing rules satisfy presence without ownership records"
+
+  # A forwarding restore that fails must not skip the firewall cleanup, and
+  # stop reports both problems in one message.
+  reset_firewall_fixture
+  run_isolated "$TEST_TMP/seed-complete-driver.sh"
+  printf '%s\n' savedpassword | NMCLI_UP_SUCCEED=1 KEEP_FORWARDING_ON_DOWN=1 OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" start Shared 2.4
+  export SYSCTL_FORWARDING_RESTORE_FAILS=1
+  : >"$UFW_LOG"
+  : >"$SYSCTL_LOG"
+  : >"$PRIVILEGED_LOG"
+  set +e
+  KEEP_FORWARDING_ON_DOWN=1 OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" stop >"$TEST_TMP/stop-failure.out" 2>&1
+  release_failure_status=$?
+  set -e
+  unset SYSCTL_FORWARDING_RESTORE_FAILS
+  (( release_failure_status != 0 )) || fail "a failed forwarding restore still fails stop"
+  release_failure=$(<"$TEST_TMP/stop-failure.out")
+  [[ $release_failure == *"could not release hotspot host state"* ]] || fail "stop names the release failure" "$release_failure"
+  [[ $release_failure == *"IPv4 forwarding restore"* ]] || fail "stop reports the failed forwarding restore" "$release_failure"
+  grep -q 'net.ipv4.ip_forward=0' "$SYSCTL_LOG" || fail "stop still attempts the forwarding restore" "$(<"$SYSCTL_LOG")"
+  (( $(grep -c delete "$UFW_LOG") == 4 )) || fail "stop removes firewall rules despite the failed forwarding restore" "$(<"$UFW_LOG")"
+  pass "stop keeps cleaning up firewall rules after a failed forwarding restore"
+
+  # The ownership records did not survive, but the owner comment still
+  # identifies the rules on stop, scoped to the interface the profile
+  # recorded:
+  reset_firewall_fixture
+  run_isolated "$TEST_TMP/seed-complete-driver.sh"
+  printf '%s\n' savedpassword | NMCLI_UP_SUCCEED=1 KEEP_FORWARDING_ON_DOWN=1 OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" start Shared 2.4
+  rm -f "$FIREWALL_STATE"
+  printf '%s\n' 'ufw allow 22/tcp comment unrelated' >>"$UFW_STATE"
+  : >"$UFW_LOG"
+  : >"$SYSCTL_LOG"
+  : >"$PRIVILEGED_LOG"
+  KEEP_FORWARDING_ON_DOWN=1 SAVED_INTERFACE=wlan2 OMARCHY_HOTSPOT_STATE_DIR="$STATE_DIR" PATH="$STUB_BIN:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-hotspot" stop >"$TEST_TMP/stop-state-loss.out" 2>&1
+  [[ ! -s $TEST_TMP/stop-state-loss.out ]] || fail "stopping without ownership state still succeeds" "$(<"$TEST_TMP/stop-state-loss.out")"
+  (( $(grep -c delete "$UFW_LOG") == 4 )) || fail "stop without ownership state removes the owner-commented rules" "$(<"$UFW_LOG")"
+  grep -q 'unrelated' "$UFW_STATE" || fail "stop without ownership state preserves unrelated rules" "$(<"$UFW_STATE")"
+  grep -q 'net.ipv4.ip_forward=0' "$SYSCTL_LOG" || fail "stop without ownership state still restores forwarding" "$(<"$SYSCTL_LOG")"
+  pass "stop still removes the hotspot's rules when the ownership state is lost"
 
   cat >"$TEST_TMP/teardown-forwarding-driver.sh" <<'DRIVER'
 require_root() { :; }
@@ -632,21 +719,6 @@ DRIVER
 else
   skip "running as root; the escalated start and teardown paths would write the production state directory"
 fi
-
-write_user_rules() {
-  local path=$1 iface=$2 subnet=$3 omit=${4:-}
-  local tag
-  : >"$path"
-  for tag in dhcp dns-udp dns-tcp forward; do
-    [[ $tag == "$omit" ]] && continue
-    case "$tag" in
-      dhcp) printf -- '-A ufw-user-input -i %s -p udp --dport 67 -m comment --comment omarchy-hotspot:dhcp -j ACCEPT\n' "$iface" >>"$path" ;;
-      dns-udp) printf -- '-A ufw-user-input -i %s -s %s -p udp --dport 53 -m comment --comment omarchy-hotspot:dns -j ACCEPT\n' "$iface" "$subnet" >>"$path" ;;
-      dns-tcp) printf -- '-A ufw-user-input -i %s -s %s -p tcp --dport 53 -m comment --comment omarchy-hotspot:dns -j ACCEPT\n' "$iface" "$subnet" >>"$path" ;;
-      forward) printf -- '-A ufw-user-forward -s %s -i %s -m comment --comment omarchy-hotspot:forward -j ACCEPT\n' "$subnet" "$iface" >>"$path" ;;
-    esac
-  done
-}
 
 reset_firewall_fixture
 run_isolated "$TEST_TMP/seed-complete-driver.sh"
