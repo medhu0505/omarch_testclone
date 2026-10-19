@@ -150,6 +150,8 @@ const keyboardPanelSource = fs.readFileSync(root + '/shell/Ui/KeyboardPanel.qml'
 const popupCardSource = fs.readFileSync(root + '/shell/Ui/PopupCard.qml', 'utf8')
 assert(
   /readonly property bool centeredOnBar: centerOnBar && !\(anchorWindow && anchorWindow\.centerBesideRight === true\)/.test(keyboardPanelSource) &&
+    /if \(centeredOnBar && \(barPos === "top" \|\| barPos === "bottom"\)\) \{/.test(keyboardPanelSource) &&
+    /\} else if \(centeredOnBar\) \{/.test(keyboardPanelSource) &&
     !/\bcenterOnBar &&|if \(centerOnBar\)/.test(keyboardPanelSource.slice(keyboardPanelSource.indexOf('readonly property point cardOrigin'))),
   'a keyboard panel centers on the bar only where the center section is drawn in the middle'
 )
