@@ -253,9 +253,8 @@ BarWidget {
     rowSpacing: root.vertical ? Style.space(2) : 0
 
     Repeater {
-      // A ScriptModel keeps the buttons for workspaces that are still listed.
-      // A plain array replaces every button on each workspace change, which
-      // falls behind under rapid switching and leaves the marker stuck (#8788).
+      // A ScriptModel keeps the buttons for workspaces that are still listed,
+      // where a plain array replaces every button on each workspace change.
       model: ScriptModel { values: root.workspaceIds() }
 
       WidgetButton {
