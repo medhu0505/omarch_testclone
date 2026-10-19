@@ -41,7 +41,7 @@ Než cokoli udělá, rovnou vám řekne, že pluginy běží jako libovolný kó
 
 Náhradní panel může vykreslovat nainstalované widgety, ale widgety třetích stran podporované službami tam mohou mít omezenou funkčnost, protože panel nesmí požadovat živý objekt služby jiného pluginu. Pokud takový widget potřebuje svou doprovodnou službu, přepněte zpět na integrovaný panel `omarchy.bar`.
 
-Poté repozitář naklonuje do přípravného adresáře, ověří manifest, odmítne instalaci, pokud si dané id již nárokuje jiný plugin, a přesune ho do adresáře `~/.config/omarchy/plugins/<id>/`. Bez volby `--enable` se zeptá, zda ho chcete nyní zapnout, a vy můžete říci ne a nejprve si kód přečíst. Instalační příkaz sám nespouští kód z repozitáře ani instalační skripty a nevyžaduje sudo — naklonuje soubory, zkontroluje manifest a přes IPC přepne jeden bit.
+Poté repozitář naklonuje do přípravného adresáře, ověří manifest, odmítne instalaci, pokud si dané id již nárokuje jiný plugin, a přesune ho do adresáře `~/.config/omarchy/plugins/<id>/`. Bez volby `--enable` se zeptá, zda ho chcete nyní zapnout, a vy můžete říci ne a nejprve si kód přečíst. Při stažení a ověření pluginu se nespouštějí instalační skripty z repozitáře a sudo není potřeba. Povolení přes IPC už spustí jeho kód v shellu.
 
 Aktualizace posune stávající místní kopii repozitáře na novější revizi bez slučování větví (fast-forward):
 

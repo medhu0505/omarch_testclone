@@ -165,10 +165,10 @@ Všechny možnosti zachycení jsou přístupné také v _Akce > Zachytit_ v nab�
 | `Super + ,` | Zavřít nejnovější oznámení  |
 | `Super + Shift + ,` | Zavřít všechna oznámení |
 | `Super + Ctrl + ,` | Přepnout ztišení oznámení  |
-| `Super + Alt + ,` | Vyvolat nejnovější oznámení  |
+| `Super + Alt + ,` | Provést akci posledního oznámení  |
 | `Super + Shift + Alt + ,` | Otevřít historii oznámení  |
 
-## Styl
+## Vzhled
 
 | Klávesová zkratka                  | Funkce              |
 | ----------------------- | --------------------- |
@@ -179,7 +179,7 @@ Všechny možnosti zachycení jsou přístupné také v _Akce > Zachytit_ v nab�
 
 Další obrázky na pozadí žijí v `~/.config/omarchy/backgrounds/<theme name>`. K dispozici také přes _Instalovat > Vzhled > Pozadí_ v nabídce Omarchy.
 
-Všechny možnosti stylu jsou přístupné také v _Styl_ v nabídce Omarchy (`Super + Space`).
+Všechny možnosti vzhledu najdete v části _Vzhled_ nabídky Omarchy (`Super + Space`).
 
 ## Přepínače
 

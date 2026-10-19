@@ -14,7 +14,7 @@ Motiv, který nainstalujete z cizího repozitáře příkazem `omarchy theme ins
 
 Všechno ostatní nadále funguje přesně tak, jak autor motivu zamýšlel — soubory `btop.theme`, `chromium.theme`, `helix.toml`, `icons.theme`, `shell.toml`, pozadí i náhledy se zachovají. Pouze to, co bylo odebráno, se na vašem počítači opět vygeneruje ze souboru `colors.toml`.
 
-Omarchy oba typy odliší podle toho, zda má motiv uvnitř vlastní repozitář git, což je to, co příkaz `omarchy theme install` po naklonování zanechá. Motiv, který jste napsali, tak zůstává váš a motiv stažený z internetu mění pouze vzhled a nespouští vlastní kód.
+Omarchy oba typy odliší podle toho, zda má motiv uvnitř vlastní repozitář git, což je to, co příkaz `omarchy theme install` po naklonování zanechá. Vlastní motiv si tak můžete upravit podle sebe. U staženého motivu Omarchy vynechá výše uvedené soubory, které mohou spouštět kód.
 
 ### Světlý režim
 
