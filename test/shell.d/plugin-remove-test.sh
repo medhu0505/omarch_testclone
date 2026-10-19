@@ -95,6 +95,17 @@ backup=$(backup_of acme.untracked)
 [[ -n $backup && -f $backup/Extra.qml ]] || fail "plugin remove drops untracked files" "$output"
 pass "plugin remove backs up a checkout with untracked files"
 
+add_plugin acme.ignored
+printf 'secret.json\n' >"$TMPDIR/upstream/acme.ignored/.gitignore"
+git -C "$TMPDIR/upstream/acme.ignored" add .gitignore
+git_test -C "$TMPDIR/upstream/acme.ignored" commit -qm "Ignore local secrets"
+output=$(run omarchy-plugin-update acme.ignored --yes) || fail "plugin update fast-forwards acme.ignored" "$output"
+printf '{}\n' >"$plugins_dir/acme.ignored/secret.json"
+remove_plugin acme.ignored
+backup=$(backup_of acme.ignored)
+[[ -n $backup && -f $backup/secret.json ]] || fail "plugin remove drops ignored files" "$output"
+pass "plugin remove backs up a checkout with ignored files"
+
 add_plugin acme.committed
 printf '// local commit\n' >>"$plugins_dir/acme.committed/Widget.qml"
 git_test -C "$plugins_dir/acme.committed" commit -qam "Local change"
