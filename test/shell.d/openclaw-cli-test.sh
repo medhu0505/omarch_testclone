@@ -861,6 +861,31 @@ for case in command path; do
 done
 pass "a service the old package installed moves to the runtime whatever OpenClaw of the user's own is in the way"
 
+# A move that rewrote the gateway but could not get it to answer leaves it
+# stopped, no longer on the old package. The next run still repairs and starts
+# it before leaving the user's command alone, rather than finishing without it.
+new_home migration-own-command-retry
+touch "$test_tmp/package-installed"
+units="$test_home/.config/systemd/user"
+mkdir -p "$units"
+printf 'ExecStart=/usr/bin/node /usr/lib/node_modules/openclaw/dist/index.js gateway --port 18789\n' >"$units/openclaw-gateway.service"
+touch "$test_home/active-openclaw-gateway.service" "$test_home/enabled-openclaw-gateway.service" "$test_home/stale-agent-db"
+printf '#!/bin/bash\necho mine\n' >"$command"
+chmod +x "$command"
+OMARCHY_TEST_DOCTOR_CANNOT_FIX=1 run bash -euo pipefail "$test_tmp/migration.sh" &&
+  fail "a moved gateway that does not answer keeps the migration pending beside the user's command"
+grep -q "gateway does not answer after moving" "$test_tmp/output" || fail "a moved gateway that does not answer is named" "$(cat "$test_tmp/output")"
+! grep -qF /usr/lib/node_modules "$units/openclaw-gateway.service" ||
+  fail "the failed run had already moved the gateway" "$(cat "$units/openclaw-gateway.service")"
+: >"$events"
+run bash -euo pipefail "$test_tmp/migration.sh" ||
+  fail "the next migration finishes beside the user's command" "$(cat "$test_tmp/output")"
+grep -q "Leaving the OpenClaw above as it is" "$test_tmp/output" || fail "the retried migration says it left the user's OpenClaw alone" "$(cat "$test_tmp/output")"
+grep -q '^runtime doctor' "$events" && [[ -e $test_home/active-openclaw-gateway.service && ! -e $test_home/.local/state/omarchy/openclaw-stopped/gateway ]] ||
+  fail "the retried migration repairs and starts the gateway the failed run stopped" "$(cat "$events")"
+grep -q mine "$command" || fail "the user's own command is kept through the retry"
+pass "a gateway a failed move left stopped is repaired by the next migration, with the user's command still in the way"
+
 new_home migration-update
 touch "$test_tmp/package-installed"
 mkdir -p "$test_home/.config/systemd/user"
