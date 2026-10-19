@@ -780,10 +780,11 @@ Panel {
     wifiNetworks = Model.sortWifiRows(nets)
     wifiStationAvailable = !!wifiDevice
     scanning = false
-    // While the hotspot borrows the radio, the station list is meaningless --
-    // it would even surface the AP's own SSID. Drop the whole section; the
-    // existing onWifiNetworksChanged bounce moves the cursor back to DNS.
-    if (hotspotActive) wifiNetworks = []
+    // While the hotspot borrows this radio, the station list is meaningless
+    // -- it would even surface the AP's own SSID. Drop the section only for
+    // the radio hosting the AP; a second adapter keeps its upstream list.
+    // The existing onWifiNetworksChanged bounce moves the cursor back to DNS.
+    if (hotspotActive && hotspot.iface && hotspot.iface === wifiDevice.name) wifiNetworks = []
   }
 
   function wifiSectionTitle(index) {
