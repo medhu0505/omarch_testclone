@@ -33,7 +33,12 @@ for package in "${packages[@]}"; do
   [[ -n ${installed[$package]:-} ]] || absent+=("$package")
 done
 if (( ${#absent[@]} > 0 )); then
-  while IFS= read -r name; do unsatisfied[$name]=1; done < <(pacman -T -- "${absent[@]}")
+  # pacman -T exits 127 when it lists unsatisfied names; any other failure is an
+  # error, which would otherwise leave every absent default out.
+  status=0
+  unsatisfied_names=$(pacman -T -- "${absent[@]}") || status=$?
+  (( status == 0 || status == 127 )) || exit "$status"
+  while IFS= read -r name; do [[ -z $name ]] || unsatisfied[$name]=1; done <<<"$unsatisfied_names"
 fi
 wanted=()
 for package in "${packages[@]}"; do
