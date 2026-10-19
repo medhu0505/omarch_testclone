@@ -54,14 +54,14 @@ Panel {
   //                  controllable backlight was detected.
   //   "scaletarget"- monitor picker for SCALE (only with 2+ displays);
   //                  a single horizontal row walked with h/l.
-  //   "scale"      - 6 Button scale presets; treated as a single
+  //   "scale"      - 7 Button scale presets; treated as a single
   //                  horizontal row from j/k's perspective. h/l moves
   //                  between presets, identical to bluetooth's header.
   //   "monitors"   - vertical display row list for enabling/disabling displays;
   //                  j/k walks each row.
   // Mouse hover on a target updates root state via the components' `hovered`
   // signal so keyboard cursor and pointer share one highlight.
-  readonly property var scalePresets: ["1", "1.25", "1.6", "2", "3", "4"]
+  readonly property var scalePresets: ["1", "1.25", "1.6", "2", "2.5", "3", "4"]
   readonly property var scaleValues: targetDisplay
     ? Model.availableScales(scalePresets, targetDisplay.width, targetDisplay.height)
     : scalePresets
@@ -326,8 +326,8 @@ Panel {
     if (!actionProc.running) actionProc.running = true
   }
 
-  // Applies to the picked monitor only; the CLI persists it to that monitor's
-  // own rule when several are connected, so displays keep independent scales.
+  // Applies to the picked monitor; the CLI saves verified geometry as managed
+  // data, so displays keep independent scales without rewriting owner rules.
   function setScale(scale) {
     if (!targetName) return
     actionProc.command = ["omarchy-hyprland-monitor-scaling", "--monitor", targetName, String(scale)]
