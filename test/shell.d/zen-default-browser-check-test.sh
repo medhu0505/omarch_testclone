@@ -60,7 +60,8 @@ printf '#!/bin/bash\necho chromium.desktop\n' >"$mock_bin/omarchy-cmd-default-br
 printf '#!/bin/bash\nexit 0\n' >"$mock_bin/omarchy-lifecycle-dispatch"
 chmod +x "$mock_bin"/*
 
-# The real helper with Zen's two paths moved under FAKE_ROOT.
+# The real helper with Zen's two paths moved under FAKE_ROOT. as_root skips sudo
+# as root, so route it through the stub or the installer writes the host's /opt.
 omarchy_path=$test_tmp/omarchy
 mkdir -p "$omarchy_path/install/helpers"
 ln -s "$ROOT/default" "$omarchy_path/default"
@@ -68,6 +69,7 @@ cat >"$omarchy_path/install/helpers/browser-policy.sh" <<'SH'
 source "$ROOT/install/helpers/browser-policy.sh"
 BROWSER_POLICY_ZEN_DIR=$FAKE_ROOT$BROWSER_POLICY_ZEN_DIR
 BROWSER_POLICY_ZEN_PACKAGED=$FAKE_ROOT$BROWSER_POLICY_ZEN_PACKAGED
+as_root() { sudo "$@"; }
 SH
 
 package_policies='{"policies": {"DisableAppUpdate": true, "DefaultSerialGuardSetting": 3}}'
