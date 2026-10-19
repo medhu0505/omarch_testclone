@@ -85,6 +85,14 @@ function stripImageTags(text) {
 // the input never contained. Measured against Qt 6.11.2 — the rewritten form
 // fetches, the original does not. So strip again after, and what Qt parses is what
 // was checked last.
+function webAppHost(body, app, appIcon) {
+  if (!isChromiumDerived(app, appIcon)) return ""
+  var text = stripImageTags(String(body || ""))
+  var match = text.match(/^\s*<a\b[^>]*>\s*(?:https?:\/\/|www\.)?((?:[a-z0-9-]+\.)+[a-z]{2,}|localhost)(?::\d+)?(?:\/[^<\s]*)?\s*<\/a>/i)
+    || text.match(/^\s*(?:https?:\/\/|www\.)?((?:[a-z0-9-]+\.)+[a-z]{2,}|localhost)(?::\d+)?(?:\/\S*)?\s+/i)
+  return match ? match[1].toLowerCase() : ""
+}
+
 function styledBody(body, app, appIcon) {
   return stripImageTags(sanitizeBody(body, app, appIcon).replace(/\r\n|\r|\n/g, "<br/>"))
 }
@@ -480,6 +488,7 @@ if (typeof module !== "undefined") {
   module.exports = {
     isChromiumDerived: isChromiumDerived,
     sanitizeBody: sanitizeBody,
+    webAppHost: webAppHost,
     styledBody: styledBody,
     summaryStartsWithGlyph: summaryStartsWithGlyph,
     shouldBypassDnd: shouldBypassDnd,

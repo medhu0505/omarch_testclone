@@ -412,14 +412,12 @@ Item {
     // Restored rows have no live actions, and looking up liveRefs by their
     // old-generation id could fire an unrelated fresh notification's action.
     var ref = entry && !isRestoredRow(entry) ? liveRefs[entry.originalId] : null
-    var invoked = false
     try {
       if (ref && ref.actions) {
         for (var i = 0; i < ref.actions.length; i++) {
           var action = ref.actions[i]
           if (action && action.identifier === "default") {
             action.invoke()
-            invoked = true
             break
           }
         }
@@ -428,21 +426,24 @@ Item {
       // Notification already torn down by the server — fall through to focus.
       console.warn("invoke default failed:", e)
     }
-    // Chat apps (Slack, Discord, Vesktop, etc.) rarely register a "default"
-    // libnotify action — they just expect clicking the notification to
-    // focus their window. Fall back to focusing the sending app by class so
-    // that click-to-jump actually works.
-    if (!invoked) focusApp(entry)
+    // Always focus the sending window as well: even when an app registers a
+    // "default" libnotify action, invoking it over D-Bus carries no Wayland
+    // xdg_activation_v1 token, so the app may switch conversation internally
+    // while Hyprland leaves its window unfocused.
+    focusApp(entry)
     dismissPopup(index)
   }
 
   // Try to focus an existing Hyprland window matching the notification's
-  // sender. The helper handles case-insensitive class matching.
+  // sender, web app origin, or summary.
   function focusApp(entry) {
     if (!entry || !entry.app) return
+    var host = NotificationLogic.webAppHost(entry.body, entry.app, entry.appIcon)
     focusAppProc.command = [
       service.omarchyPath + "/bin/omarchy-hyprland-focus-app",
-      String(entry.app)
+      String(entry.app),
+      host,
+      String(entry.summary || "")
     ]
     focusAppProc.running = true
   }

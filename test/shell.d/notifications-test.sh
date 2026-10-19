@@ -772,4 +772,28 @@ assert(
   !/pendingModel|pastModel/.test(serviceQml),
   'notifications service keeps no in-memory history models'
 )
+assertEqual(
+  notifications.webAppHost('<a href="https://app.slack.com/">app.slack.com</a>\nHello there', 'Brave Browser', 'brave-browser'),
+  'app.slack.com',
+  'notifications extract the origin host from Chromium anchor prefixes'
+)
+assertEqual(
+  notifications.webAppHost('https://web.whatsapp.com/ New message', 'Chromium', 'chromium'),
+  'web.whatsapp.com',
+  'notifications extract the origin host from Chromium URL prefixes'
+)
+assertEqual(
+  notifications.webAppHost('<a href="https://app.slack.com/">app.slack.com</a>\nHello there', 'Signal', 'signal'),
+  '',
+  'notifications ignore origin hosts for non-Chromium apps'
+)
+assert(
+  /action\.invoke\(\)[\s\S]{0,800}?\n\s*focusApp\(entry\)/.test(serviceQml) &&
+    !/if \(!invoked\) focusApp\(entry\)/.test(serviceQml),
+  'notifications service focuses the app window even when a default D-Bus action is invoked'
+)
+assert(
+  /NotificationLogic\.webAppHost\(entry\.body,\s*entry\.app,\s*entry\.appIcon\)/.test(serviceQml),
+  'notifications service passes the web app origin and summary to the focus helper'
+)
 JS

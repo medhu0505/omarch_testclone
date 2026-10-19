@@ -70,3 +70,41 @@ grep -F 'hl.dsp.focus({ window = "address:0xrecent" })' "$dispatch_log" >/dev/nu
   fail "app focus picks the window focused last"
 
 pass "app focus picks the window focused last among several"
+
+clients_json='[
+  {"address":"0xbrave","class":"brave-browser","initialClass":"brave-browser","focusHistoryID":1}
+]'
+PATH="$mock_bin:$PATH" OMARCHY_TEST_CLIENTS_JSON="$clients_json" \
+  OMARCHY_TEST_FOCUS_DISPATCH="$dispatch_log" \
+  bash "$ROOT/bin/omarchy-hyprland-focus-app" "Brave Browser"
+
+grep -F 'hl.dsp.focus({ window = "address:0xbrave" })' "$dispatch_log" >/dev/null || \
+  fail "app focus matches multi-word app names against hyphenated Wayland classes"
+
+pass "app focus matches multi-word app names against hyphenated classes"
+
+clients_json='[
+  {"address":"0xbrowser","class":"brave-browser","initialClass":"brave-browser","title":"New Tab","focusHistoryID":0},
+  {"address":"0xwebapp","class":"chrome-app.slack.com__-Default","initialClass":"chrome-app.slack.com__-Default","title":"Slack","focusHistoryID":3}
+]'
+PATH="$mock_bin:$PATH" OMARCHY_TEST_CLIENTS_JSON="$clients_json" \
+  OMARCHY_TEST_FOCUS_DISPATCH="$dispatch_log" \
+  bash "$ROOT/bin/omarchy-hyprland-focus-app" "Brave Browser" "app.slack.com" "Alice"
+
+grep -F 'hl.dsp.focus({ window = "address:0xwebapp" })' "$dispatch_log" >/dev/null || \
+  fail "app focus prefers a dedicated web app window matching the origin host"
+
+pass "app focus prefers a dedicated web app window matching the origin host"
+
+clients_json='[
+  {"address":"0xbrowser","class":"brave-browser","initialClass":"brave-browser","title":"Docs - Brave","focusHistoryID":0},
+  {"address":"0xpwa","class":"brave-cifhbcnohmdccbgoicgdjpfamggdegmo-Default","initialClass":"brave-cifhbcnohmdccbgoicgdjpfamggdegmo-Default","title":"Chat | Alice — Microsoft Teams","focusHistoryID":2}
+]'
+PATH="$mock_bin:$PATH" OMARCHY_TEST_CLIENTS_JSON="$clients_json" \
+  OMARCHY_TEST_FOCUS_DISPATCH="$dispatch_log" \
+  bash "$ROOT/bin/omarchy-hyprland-focus-app" "Brave Browser" "teams.microsoft.com" "Alice reacted to your message"
+
+grep -F 'hl.dsp.focus({ window = "address:0xpwa" })' "$dispatch_log" >/dev/null || \
+  fail "app focus matches an installed PWA window by notification summary"
+
+pass "app focus disambiguates PWA and multi-window matches by notification summary"

@@ -1,31 +1,59 @@
 #!/bin/bash
 
 # omarchy:summary=Focus a Hyprland window by application identity
-# omarchy:args=<app-name>
+# omarchy:args=<app-name> [web-app-host] [summary]
 # omarchy:examples=omarchy hyprland focus app Slack
 
 usage() {
-  echo "Usage: omarchy-hyprland-focus-app <app-name>" >&2
+  echo "Usage: omarchy-hyprland-focus-app <app-name> [web-app-host] [summary]" >&2
   exit 1
 }
 
 app=${1:-}
-[[ -n $app ]] || usage
+host=${2:-}
+summary=${3:-}
+[[ -n $app || -n $host ]] || usage
 
 # Agent terminals notify as kitty/foot/etc. while their shared window class is
-# org.omarchy.agent, leaving the terminal name only in initialTitle. So match
-# by class first, then fall back to the launch-time title of agent windows.
-# Among several matches take the one focused last, which is also the window a
-# browser hands a new tab to.
+# org.omarchy.agent, leaving the terminal name only in initialTitle. Web apps
+# and PWAs notify under the host browser's appName with the origin URL in the
+# notification body. Match dedicated web apps by origin first, then disambiguate
+# windows by notification summary when available, and finally fall back to class
+# or agent initialTitle ordered by focusHistoryID.
 address=$(
   hyprctl clients -j 2>/dev/null |
-    jq -r --arg pattern "$app" \
-      'def matches($value): ($value // "") | test($pattern; "i");
-       sort_by(.focusHistoryID) |
-       first(
-         (.[] | select(matches(.class))),
-         (.[] | select(.initialClass == "org.omarchy.agent" and matches(.initialTitle)))
-       ).address // empty'
+    jq -r --arg app "$app" --arg host "$host" --arg summary "$summary" '
+      def esc: gsub("(?<c>[.^$*+?()\\[\\]{}|\\\\])"; "\\\(.c)");
+      def matches($value; $p): $p != "" and (($value // "") | test($p; "i"));
+      def app_matches($p):
+        matches(.class; $p) or
+        matches(.initialClass; $p) or
+        ((.initialClass == "org.omarchy.agent" or .class == "org.omarchy.agent") and matches(.initialTitle; $p));
+      def webapp_matches($h):
+        $h != "" and (
+          matches(.class; "-" + ($h | esc) + "__") or
+          matches(.initialClass; "-" + ($h | esc) + "__")
+        );
+      def pwa_matches($h):
+        $h != "" and (
+          matches(.class; "^(chrome|brave|chromium|msedge|vivaldi|opera)-[a-p]{32}-") or
+          matches(.initialClass; "^(chrome|brave|chromium|msedge|vivaldi|opera)-[a-p]{32}-")
+        );
+      def summary_needle($s):
+        ($s | sub("^\\s+"; "") | sub("\\s+$"; "")
+            | sub("\\s+(reacted|replied|sent|shared|liked|mentioned|invited|tagged|commented|wrote|called)\\b.*$"; ""; "i")
+            | sub("\\s+in\\s+#.*$"; ""; "i"));
+      def title_matches($s):
+        (summary_needle($s)) as $needle |
+        ($needle != "" and ($needle | length) >= 2 and matches(.title; $needle | esc));
+      (if ($app | startswith("^")) then $app else ($app | esc | gsub("\\s+"; "[-_.\\s]+")) end) as $pattern |
+      sort_by(.focusHistoryID) |
+      first(
+        (.[] | select(webapp_matches($host))),
+        (.[] | select((app_matches($pattern) or pwa_matches($host)) and title_matches($summary))),
+        (.[] | select(app_matches($pattern)))
+      ).address // empty
+    '
 )
 
 [[ -n $address ]] || exit 1
