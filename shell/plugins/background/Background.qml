@@ -422,8 +422,8 @@ Item {
       WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
       exclusionMode: ExclusionMode.Ignore
 
-      // OWE owns video backgrounds. This layer draws stills, and stays empty
-      // behind a video so OWE's own layer shows through.
+      // OWE owns video backgrounds. This layer draws stills, and keeps the last
+      // one behind a starting video until OWE suspends it.
       BackgroundMedia {
         id: base
         anchors.fill: parent
