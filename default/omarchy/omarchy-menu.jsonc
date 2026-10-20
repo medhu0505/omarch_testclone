@@ -64,7 +64,7 @@
   "appearance.font.cjk.sc": {"icon":"","label":"Simplified Chinese","checked":"[[ $(omarchy-font-cjk) == sc ]]","action":"omarchy-font-cjk sc"},
   "appearance.font.cjk.tc": {"icon":"","label":"Taiwan","checked":"[[ $(omarchy-font-cjk) == tc ]]","action":"omarchy-font-cjk tc"},
   "appearance.font.cjk.hk": {"icon":"","label":"Hong Kong","checked":"[[ $(omarchy-font-cjk) == hk ]]","action":"omarchy-font-cjk hk"},
-  "appearance.branding": {"icon":"","label":"Branding"},
+  "appearance.branding": {"icon":"","iconFont":"omarchy","label":"Branding"},
   "appearance.branding.screensaver": {"icon":"󱄄","label":"Screensaver"},
   "appearance.branding.about": {"icon":"","label":"About"},
   "appearance.branding.about.text": {"icon":"","label":"Edit Text","action":"omarchy-branding-about text"},
