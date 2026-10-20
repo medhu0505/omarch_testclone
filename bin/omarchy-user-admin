@@ -51,11 +51,12 @@ while (( $# > 0 )); do
 done
 
 self=$(user_accounts_self)
+omarchy-sudo-allowed || fail "only an administrator can change administrator rights"
 
 if [[ -z $name ]]; then
   interactive || fail "a name is required (e.g. omarchy user admin alice on)"
   name=$(user_accounts_login_users | cut -f1 | sort |
-    gum filter --placeholder "Change administrator rights for which user?") || fail "cancelled"
+    gum filter --placeholder "$(omarchy-i18n user.adminWhich)") || fail "cancelled"
   [[ -n $name ]] || fail "nothing selected"
 fi
 

@@ -291,6 +291,7 @@
     "other": "Remove %1 orphaned packages?"
   },
   "update.whatsNew": "What's new: %1",
+  "user.adminWhich": "Change administrator rights for which user?",
   "user.choiceNewOwn": "A new password for me",
   "user.choiceShareDisk": "A new disk password, to share",
   "user.continue": "Continue?",
@@ -304,6 +305,7 @@
   "user.passwordFor": "Password for %1: ",
   "user.removeAndDelete": "Remove %1 and delete %2?",
   "user.removeKeepHome": "Remove %1? Their home folder %2 is kept.",
+  "user.removeWhich": "Remove which user?",
   "user.repeatIt": "Repeat it: ",
   "user.repeatPassword": "Repeat the password: ",
   "user.signOutNow": "Sign %1 out now? Unsaved work is lost.",

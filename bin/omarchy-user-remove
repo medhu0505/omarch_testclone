@@ -66,11 +66,13 @@ done
 
 self=$(user_accounts_self)
 
+omarchy-sudo-allowed || fail "only an administrator can remove accounts"
+
 if [[ -z $name ]]; then
   interactive || fail "a name is required (e.g. omarchy user remove alice)"
   candidates=$(user_accounts_login_users | cut -f1 | grep -vxF -- "$self" | sort || true)
   [[ -n $candidates ]] || fail "there are no other login users to remove"
-  name=$(gum filter --placeholder "Remove which user?" <<<"$candidates") || fail "cancelled"
+  name=$(gum filter --placeholder "$(omarchy-i18n user.removeWhich)" <<<"$candidates") || fail "cancelled"
   [[ -n $name ]] || fail "nothing selected"
 fi
 
@@ -89,8 +91,12 @@ fi
 last_password=""
 if (( $(user_accounts_login_count) == 2 )); then
   interactive || fail "removing '$name' leaves one account, which changes how this computer unlocks, so run it in a terminal"
-  echo "$name is the only other account, so after removing them your password will unlock the disk and root again, and you'll be logged in automatically."
-  last_password=$(user_accounts_ask_own_password "$self") || fail "cancelled"
+  if [[ -n $(user_accounts_root_luks_or_explain) ]]; then
+    echo "$name is the only other account, so after removing them your password will unlock the disk and root again, and you'll be logged in automatically."
+  else
+    echo "$name is the only other account, so after removing them root will have your password again."
+  fi
+  last_password=$(user_accounts_ask_own_password "$self") || exit 1
 else
   as_root true || fail "couldn't get administrator rights (sudo)"
 fi
@@ -102,20 +108,20 @@ else
   confirm "$(omarchy-i18n user.removeKeepHome "$name" "$home")" || fail "cancelled"
 fi
 
+# Switch back to one account before anything is signed out or removed. Every
+# step of the switch can be repeated, and the account is still there until it's
+# done, so if anything stops this midway (a closed terminal, a wrong disk
+# password, a power cut), running the same command again finishes the job.
+if [[ -n $last_password ]]; then
+  user_accounts_go_single "$self" "$last_password" ||
+    fail "couldn't switch back to one account, so '$name' was not removed; run this again to finish"
+fi
+
 # userdel refuses while the account has programs running.
 if user_accounts_has_programs "$name"; then
   confirm "$(omarchy-i18n user.signOutRunning "$name")" || fail "cancelled"
   as_root loginctl disable-linger "$name" 2>/dev/null || true
   user_accounts_sign_out "$name" || fail "'$name' still has programs running; try again in a moment"
-fi
-
-# Switch back to one account before removing this one. Every step of the
-# switch can be repeated, and the account is still there until it's done, so if
-# anything stops this midway (a closed terminal, a wrong disk password, a power
-# cut), running the same command again finishes the job.
-if [[ -n $last_password ]]; then
-  user_accounts_go_single "$self" "$last_password" ||
-    fail "couldn't switch back to one account, so '$name' was not removed; run this again to finish"
 fi
 
 userdel_args=()

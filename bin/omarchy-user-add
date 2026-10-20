@@ -75,13 +75,15 @@ done
 # the administrator's go-ahead and their password. That one password also opens
 # sudo, so nothing asks for it twice. Otherwise sudo asks for it here, before
 # the new user's.
+omarchy-sudo-allowed || fail "only an administrator can add accounts"
+
 second_account=0
 mine=""
 if (( $(user_accounts_login_count) == 1 )); then
   second_account=1
   interactive || fail "the second account changes how this computer unlocks and logs in, so add it in a terminal"
   user_accounts_explain_multi || fail "cancelled"
-  mine=$(user_accounts_ask_own_password "$(user_accounts_self)") || fail "cancelled"
+  mine=$(user_accounts_ask_own_password "$(user_accounts_self)") || exit 1
 else
   as_root true || fail "couldn't get administrator rights (sudo)"
 fi
@@ -150,6 +152,6 @@ fi
 
 user_accounts_log "login user '$name' added by $(user_accounts_self) (administrator: $admin)"
 echo "Added $name (administrator: $admin). Their desktop is set up the first time they log in."
-if (( second_account )) && [[ -n $(user_accounts_root_luks) ]]; then
+if (( second_account )) && [[ -n $(user_accounts_root_luks 2>/dev/null || true) ]]; then
   echo "Give $name the disk password: it unlocks the computer when it starts. Their own password logs them in."
 fi

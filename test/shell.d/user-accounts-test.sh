@@ -27,10 +27,11 @@ cat >"$mock_bin/sudo" <<'SH'
 echo "sudo $*" >>"$OMARCHY_TEST_DIR/calls.log"
 if [[ $1 == "-l" && $2 == "-U" ]]; then
   echo "User $3 may run the following commands on test:"
-  if { [[ -e $OMARCHY_SUDOERS_DIR/00-omarchy-wheel ]] && grep -qE "^wheel:.*[:,]$3(,|$)" "$OMARCHY_TEST_DIR/group"; } ||
-    grep -qs "^$3 ALL=(ALL) .*ALL$" "$OMARCHY_SUDOERS_DIR"/*; then
+  if [[ -e $OMARCHY_SUDOERS_DIR/00-omarchy-wheel ]] && grep -qE "^wheel:.*[:,]$3(,|$)" "$OMARCHY_TEST_DIR/group"; then
     echo "    (ALL) ALL"
   fi
+  # A rule naming the user is listed as sudo prints it: its tags and all.
+  sed -n "s/^$3 ALL=(ALL) \(.*\)$/    (ALL) \1/p" "$OMARCHY_SUDOERS_DIR"/* 2>/dev/null
   echo "    (root) NOPASSWD: /usr/bin/omarchy-dns Cloudflare"
   exit 0
 fi
@@ -87,13 +88,24 @@ cat >"$mock_bin/findmnt" <<'SH'
 if [[ -e $OMARCHY_TEST_DIR/encrypted ]]; then echo /dev/mapper/root; else echo /dev/vda2; fi
 SH
 
+# NAME TYPE FSTYPE up from /. With $OMARCHY_TEST_DIR/undecidable, / sits on an
+# encryption layer whose LUKS device the listing can't name.
 cat >"$mock_bin/lsblk" <<'SH'
 #!/bin/bash
-if [[ -e $OMARCHY_TEST_DIR/encrypted ]]; then
-  printf '/dev/mapper/root btrfs\n/dev/vda2 crypto_LUKS\n/dev/vda \n'
+if [[ -e $OMARCHY_TEST_DIR/undecidable ]]; then
+  printf '/dev/mapper/root crypt btrfs\n/dev/vda disk \n'
+elif [[ -e $OMARCHY_TEST_DIR/encrypted ]]; then
+  printf '/dev/mapper/root crypt btrfs\n/dev/vda2 part crypto_LUKS\n/dev/vda disk \n'
 else
-  printf '/dev/vda2 btrfs\n/dev/vda \n'
+  printf '/dev/vda2 part btrfs\n/dev/vda disk \n'
 fi
+SH
+
+# The commands run as an administrator unless $OMARCHY_TEST_DIR/not_admin says
+# otherwise.
+cat >"$mock_bin/omarchy-sudo-allowed" <<'SH'
+#!/bin/bash
+[[ ! -e $OMARCHY_TEST_DIR/not_admin ]]
 SH
 
 cat >"$mock_bin/cryptsetup" <<'SH'
@@ -203,7 +215,7 @@ SH
 chmod +x "$mock_bin"/*
 
 reset_fixtures() {
-  rm -rf "${test_tmp:?}/home" "$test_tmp/sudoers.d" "$test_tmp/calls.log" "$test_tmp/journal" "$test_tmp/chpasswd.log" "$test_tmp/encrypted"
+  rm -rf "${test_tmp:?}/home" "$test_tmp/sudoers.d" "$test_tmp/calls.log" "$test_tmp/journal" "$test_tmp/chpasswd.log" "$test_tmp/encrypted" "$test_tmp/undecidable" "$test_tmp/not_admin"
   mkdir -p "$test_tmp/home/alice" "$test_tmp/home/bob" "$test_tmp/sudoers.d"
   # The owner, alice, was installed from the ISO: sudo by name, no wheel rule.
   echo "alice ALL=(ALL) ALL" >"$test_tmp/sudoers.d/04_alice"
@@ -717,3 +729,70 @@ answers wrongpw wrongpw
 if run_tty remove bob >/dev/null; then :; fi
 has_user bob || fail "nothing is removed before the administrator's password checks out"
 pass "nothing is removed before the administrator's password checks out"
+
+# Accounts that aren't administrators are told so before sudo is asked for a
+# password it would refuse.
+reset_fixtures
+touch "$test_tmp/not_admin"
+for command in "add carol --password-stdin" "remove bob --yes" "admin bob on"; do
+  if output=$(RUN_AS=bob run_user $command <<<"carolpw" 2>&1); then fail "a non-administrator can't run $command"; fi
+  [[ $output == *"only an administrator"* ]] || fail "a non-administrator is told who can run $command" "$output"
+done
+! has_user carol && has_user bob && ! grep -q "^sudo" "$test_tmp/calls.log" ||
+  fail "a non-administrator changes nothing and never reaches sudo" "$(cat "$test_tmp/calls.log")"
+pass "accounts that aren't administrators are told so, before sudo"
+
+# A hand-written rule with tags, or exceptions, still gives full sudo.
+for rule in "alice ALL=(ALL) SETENV: ALL" "alice ALL=(ALL) NOPASSWD:SETENV: ALL, !/usr/bin/passwd"; do
+  reset_fixtures
+  sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
+  printf '%s\n' "$rule" >"$test_tmp/sudoers.d/04_alice"
+  output=$(RUN_AS=bob run_user admin alice off 2>&1) && fail "admin off misses the full sudo in '$rule'"
+  [[ $output == *"another sudo rule"* ]] || fail "admin off misses the full sudo in '$rule'" "$output"
+done
+pass "admin off notices full sudo whatever its tags"
+
+# Three tries for your own password, as sudo gives, so a wrong one can't be
+# typed until the login lockout takes the account.
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers yes wrong1 wrong2 wrong3 alicepw
+if output=$(run_tty add carol); then fail "three wrong passwords stop the command"; fi
+[[ $output == *"Nothing was changed"* ]] && ! has_user carol && [[ $(cat "$test_tmp/root_status") == "P" ]] ||
+  fail "three wrong passwords stop the command, changing nothing" "$output"
+[[ $(password_prompts) == 3 ]] || fail "your own password is asked three times at most" "$(cat "$test_tmp/gum.log")"
+pass "three wrong own passwords stop the command"
+
+# When / sits on an encryption layer whose LUKS device can't be told, nothing
+# can check a password against the disk, so the switch refuses rather than
+# treating the disk as unencrypted (and leaving the owner's password on it).
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted" "$test_tmp/undecidable"
+answers yes alicepw no carolpw carolpw
+if output=$(run_tty add carol); then fail "an undecidable system disk stops the switch-over"; fi
+[[ $output == *"Couldn't tell which drive holds the system"* ]] && ! has_user carol && [[ $(cat "$test_tmp/root_status") == "P" ]] ||
+  fail "an undecidable system disk stops the switch-over before anything changes" "$output"
+pass "an undecidable system disk stops the switch-over"
+
+# The disk password is asked before the other account is signed out, so a
+# switch back that stops there costs nobody their unsaved work.
+two_accounts
+touch "$test_tmp/encrypted"
+echo bob >"$test_tmp/procs"
+# A removal confirmed twice over (the sign-out too), with no disk password:
+# nothing may be signed out before the switch back has that password.
+answers alicepw yes yes
+if output=$(run_tty remove bob); then fail "a dismissed disk password prompt stops the removal"; fi
+has_user bob && grep -qx bob "$test_tmp/procs" && ! grep -q "terminate-user" "$test_tmp/calls.log" ||
+  fail "nobody is signed out before the switch back has what it needs" "$output; $(cat "$test_tmp/calls.log")"
+pass "the disk password is asked before anyone is signed out"
+
+# On an unencrypted install the announcement promises only what happens.
+two_accounts
+answers alicepw yes
+output=$(run_tty remove bob) || fail "back to one account on an unencrypted install" "$output"
+[[ $output == *"root will have your password again"* && $output != *"logged in automatically"* ]] ||
+  fail "an unencrypted install is told only about root" "$output"
+pass "an unencrypted install is promised only what happens"
