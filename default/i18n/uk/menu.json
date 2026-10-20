@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Індикатори панелі"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Відсоток батареї"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Годинник"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Панель праворуч"
   },
-  "appearance.windows.gaps": {
-    "label": "Відступи вікон"
-  },
   "appearance.windows.corners": {
     "label": "Кути вікон"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Скляні вікна"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Співвідношення 1 вікна"
   },
   "appearance.branding.screensaver": {
     "label": "Заставка"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Плаваючі"
   },
-  "appearance.animations": {
-    "label": "Анімації"
-  },
   "appearance.unlock": {
     "label": "Розблокувати"
   },
   "trigger.toggle": {
     "label": "Перемикати"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Не засинати"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Сповіщення"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Нічне світло"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Заставка"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Перехоплення збоїв"
   },
   "trigger.emoji": {
     "label": "Емоджі"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Тест швидкості"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Дисплей ноутбука"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Дублювання дисплея"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Гібридний GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Тачпад"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Вібрація тачпада"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "високий"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Сенсорний екран"
   },
   "trigger.reminder.set": {
     "label": "Створити"

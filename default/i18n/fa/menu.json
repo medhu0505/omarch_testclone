@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "نشانگرهای نوار"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "درصد باتری"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "ساعت"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "نوار راست"
   },
-  "appearance.windows.gaps": {
-    "label": "فاصله پنجره‌ها"
-  },
   "appearance.windows.corners": {
     "label": "گوشه‌های پنجره"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "پنجره‌های شیشه‌ای"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "نسبت 1 پنجره"
   },
   "appearance.branding.screensaver": {
     "label": "محافظ صفحه"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "شناور"
   },
-  "appearance.animations": {
-    "label": "پویانمایی"
-  },
   "appearance.unlock": {
     "label": "باز کردن قفل"
   },
   "trigger.toggle": {
     "label": "روشن/خاموش"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "بیدار بمان"
-  },
-  "trigger.toggle.notifications": {
-    "label": "اعلان‌ها"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "نور شب"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "محافظ صفحه"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "ثبت خرابی"
   },
   "trigger.emoji": {
     "label": "ایموجی"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "تست سرعت"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "نمایشگر لپ‌تاپ"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "نمایش آینه‌ای"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU ترکیبی"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "تاچ‌پد"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "لرزش تاچ‌پد"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "زیاد"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "صفحه لمسی"
   },
   "trigger.reminder.set": {
     "label": "تنظیم کن"

@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "列指示"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "電池百分比"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "時鐘"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "右側列"
   },
-  "appearance.windows.gaps": {
-    "label": "視窗間距"
-  },
   "appearance.windows.corners": {
     "label": "視窗圓角"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "玻璃視窗"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "單視窗比例"
   },
   "appearance.branding.screensaver": {
     "label": "螢幕保護程式"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "浮動"
   },
-  "appearance.animations": {
-    "label": "動畫"
-  },
   "appearance.unlock": {
     "label": "解鎖"
   },
   "trigger.toggle": {
     "label": "切換"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "保持喚醒"
-  },
-  "trigger.toggle.notifications": {
-    "label": "通知"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "夜光"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "螢幕保護程式"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "當機擷取"
   },
   "trigger.emoji": {
     "label": "表情符號"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "測速"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "筆電螢幕"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "鏡像顯示"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "混合 GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "觸控板"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "觸控板觸覺"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "高"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "觸控螢幕"
   },
   "trigger.reminder.set": {
     "label": "設定一則"

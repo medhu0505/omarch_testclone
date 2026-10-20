@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Sávjelzők"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Akku százaléka"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Óra"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Jobb sáv"
   },
-  "appearance.windows.gaps": {
-    "label": "Ablakközök"
-  },
   "appearance.windows.corners": {
     "label": "Ablaksarkok"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Üveges ablakok"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1 ablak aránya"
   },
   "appearance.branding.screensaver": {
     "label": "Képernyővédő"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Lebegő"
   },
-  "appearance.animations": {
-    "label": "Animációk"
-  },
   "appearance.unlock": {
     "label": "Feloldás"
   },
   "trigger.toggle": {
     "label": "Kapcsoló"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Ébrenlét"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Értesítések"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Éjszakai fény"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Képernyővédő"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Összeomlás rögzítése"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Sebességteszt"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Laptopkijelző"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Kijelző tükrözése"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hibrid GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Érintőpad"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Érintőpad-rezgés"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "magas"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Érintőképernyő"
   },
   "trigger.reminder.set": {
     "label": "Új beállítása"

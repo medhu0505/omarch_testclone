@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "بار اشارے"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "بیٹری فیصد"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "گھڑی"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "دائیں بار"
   },
-  "appearance.windows.gaps": {
-    "label": "ونڈو فاصلے"
-  },
   "appearance.windows.corners": {
     "label": "ونڈو کونے"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "شیشہ نما ونڈوز"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-ونڈو تناسب"
   },
   "appearance.branding.screensaver": {
     "label": "اسکرین سیور"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "تیرتا"
   },
-  "appearance.animations": {
-    "label": "اینیمیشنز"
-  },
   "appearance.unlock": {
     "label": "کھولیں"
   },
   "trigger.toggle": {
     "label": "ٹوگل"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "جاگتے رہیں"
-  },
-  "trigger.toggle.notifications": {
-    "label": "اطلاعات"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "نائٹ لائٹ"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "اسکرین سیور"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "کریش کیپچر"
   },
   "trigger.emoji": {
     "label": "ایموجی"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "رفتار ٹیسٹ"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "لیپ ٹاپ ڈسپلے"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "ڈسپلے عکس"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "ہائبرڈ GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "ٹچ پیڈ"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "ٹچ پیڈ ہیپٹکس"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "زیادہ"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "ٹچ اسکرین"
   },
   "trigger.reminder.set": {
     "label": "ایک لگائیں"

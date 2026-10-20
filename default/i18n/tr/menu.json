@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Çubuk Göstergeleri"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Pil Yüzdesi"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Saat"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Sağ Çubuk"
   },
-  "appearance.windows.gaps": {
-    "label": "Pencere Boşlukları"
-  },
   "appearance.windows.corners": {
     "label": "Pencere Köşeleri"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Cam Pencereler"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-Pencere Oranı"
   },
   "appearance.branding.screensaver": {
     "label": "Ekran Koruyucu"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Yüzen"
   },
-  "appearance.animations": {
-    "label": "Animasyonlar"
-  },
   "appearance.unlock": {
     "label": "Kilidi Aç"
   },
   "trigger.toggle": {
     "label": "Aç/Kapat"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Uyanık Tut"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Bildirimler"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Gece Işığı"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Ekran Koruyucu"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Çökme Yakalama"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Hız Testi"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Dizüstü Ekranı"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Ekranı Yansıt"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hibrit GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Dokunmatik Yüzey"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Dokunmatik Titreşim"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "yüksek"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Dokunmatik Ekran"
   },
   "trigger.reminder.set": {
     "label": "Oluştur"

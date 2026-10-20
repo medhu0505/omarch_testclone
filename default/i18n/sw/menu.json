@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Viashiria vya upau"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Asilimia ya betri"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Saa"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Upau wa kulia"
   },
-  "appearance.windows.gaps": {
-    "label": "Mapengo ya madirisha"
-  },
   "appearance.windows.corners": {
     "label": "Pembeni za madirisha"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Madirisha ya kioo"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Uwiano wa dirisha 1"
   },
   "appearance.branding.screensaver": {
     "label": "Kiokozi cha skrini"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Kuelea"
   },
-  "appearance.animations": {
-    "label": "Uhuishaji"
-  },
   "appearance.unlock": {
     "label": "Fungua"
   },
   "trigger.toggle": {
     "label": "Badilisha"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Usilale"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Arifa"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Taa ya usiku"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Kiokozi cha skrini"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Nasa mkwamo"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Jaribio la kasi"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Skrini ya kompyuta mpakato"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Akisi skrini"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU mseto"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Kiguso"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Mtetema wa kiguso"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "juu"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Skrini ya kugusa"
   },
   "trigger.reminder.set": {
     "label": "Weka moja"

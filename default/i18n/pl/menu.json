@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Wskaźniki paska"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Procent baterii"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Zegar"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Pasek prawy"
   },
-  "appearance.windows.gaps": {
-    "label": "Odstępy okien"
-  },
   "appearance.windows.corners": {
     "label": "Narożniki okien"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Okna szklane"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Proporcje 1 okna"
   },
   "appearance.branding.screensaver": {
     "label": "Wygaszacz"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Pływające"
   },
-  "appearance.animations": {
-    "label": "Animacje"
-  },
   "appearance.unlock": {
     "label": "Odblokuj"
   },
   "trigger.toggle": {
     "label": "Przełącz"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Nie usypiaj"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Powiadomienia"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Światło nocne"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Wygaszacz"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Rejestr awarii"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Test prędkości"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Ekran laptopa"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Duplikuj ekran"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hybrydowe GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Gładzik"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Haptyka gładzika"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "wysoka"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Ekran dotykowy"
   },
   "trigger.reminder.set": {
     "label": "Ustaw jedno"

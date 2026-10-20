@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Ukazatele panelu"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Procenta baterie"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Hodiny"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Panel vpravo"
   },
-  "appearance.windows.gaps": {
-    "label": "Mezery oken"
-  },
   "appearance.windows.corners": {
     "label": "Rohy oken"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Skleněná okna"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Poměr pro 1 okno"
   },
   "appearance.branding.screensaver": {
     "label": "Spořič obrazovky"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Plovoucí"
   },
-  "appearance.animations": {
-    "label": "Animace"
-  },
   "appearance.unlock": {
     "label": "Odemknout"
   },
   "trigger.toggle": {
     "label": "Přepnout"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Neusínat"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Oznámení"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Noční světlo"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Spořič obrazovky"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Záznam pádů"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Test rychlosti"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Displej notebooku"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Zrcadlit displej"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hybridní GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Touchpad"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Haptika touchpadu"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "vysoká"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Dotykový displej"
   },
   "trigger.reminder.set": {
     "label": "Nastavit"

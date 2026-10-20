@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Индикаторы панели"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Процент батареи"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Часы"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Панель справа"
   },
-  "appearance.windows.gaps": {
-    "label": "Зазоры окон"
-  },
   "appearance.windows.corners": {
     "label": "Углы окон"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Стеклянные окна"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Пропорции 1 окна"
   },
   "appearance.branding.screensaver": {
     "label": "Заставка"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Плавающий"
   },
-  "appearance.animations": {
-    "label": "Анимации"
-  },
   "appearance.unlock": {
     "label": "Разблокировать"
   },
   "trigger.toggle": {
     "label": "Переключить"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Не засыпать"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Уведомления"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Ночной свет"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Заставка"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Отлов сбоев"
   },
   "trigger.emoji": {
     "label": "Эмодзи"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Тест скорости"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Дисплей ноутбука"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Дублировать дисплей"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Гибридный GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Тачпад"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Вибрация тачпада"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "высокая"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Сенсорный экран"
   },
   "trigger.reminder.set": {
     "label": "Создать"

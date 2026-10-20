@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Palkin ilmaisimet"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Akun prosentti"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Kello"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Oikea palkki"
   },
-  "appearance.windows.gaps": {
-    "label": "Ikkunoiden välit"
-  },
   "appearance.windows.corners": {
     "label": "Ikkunan kulmat"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Lasiset ikkunat"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1 ikkunan suhde"
   },
   "appearance.branding.screensaver": {
     "label": "Näytönsäästäjä"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Kelluva"
   },
-  "appearance.animations": {
-    "label": "Animaatiot"
-  },
   "appearance.unlock": {
     "label": "Avaa lukitus"
   },
   "trigger.toggle": {
     "label": "Kytke"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Pysy hereillä"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Ilmoitukset"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Yövalo"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Näytönsäästäjä"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Kaatumisten tallennus"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Nopeustesti"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Kannettavan näyttö"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Peilaa näyttö"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hybridi-GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Kosketuslevy"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Kosketuslevyn haptiikka"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "korkea"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Kosketusnäyttö"
   },
   "trigger.reminder.set": {
     "label": "Aseta"

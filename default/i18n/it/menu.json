@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Indicatori barra"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Percentuale batteria"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Orologio"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Barra destra"
   },
-  "appearance.windows.gaps": {
-    "label": "Spazi finestre"
-  },
   "appearance.windows.corners": {
     "label": "Angoli finestre"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Finestre vetro"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Rapporto 1 finestra"
   },
   "appearance.branding.screensaver": {
     "label": "Salvaschermo"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Flottanti"
   },
-  "appearance.animations": {
-    "label": "Animazioni"
-  },
   "appearance.unlock": {
     "label": "Sblocca"
   },
   "trigger.toggle": {
     "label": "Attiva/Disattiva"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Resta attivo"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Notifiche"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Luce notturna"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Salvaschermo"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Cattura crash"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Test velocità"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Schermo portatile"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Duplica schermo"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU ibrida"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Touchpad"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Vibrazione touchpad"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "alto"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Schermo tattile"
   },
   "trigger.reminder.set": {
     "label": "Imposta"

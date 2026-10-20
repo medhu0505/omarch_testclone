@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "बार संकेतक"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "बैटरी प्रतिशत"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "घड़ी"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "दायां बार"
   },
-  "appearance.windows.gaps": {
-    "label": "विंडो अंतराल"
-  },
   "appearance.windows.corners": {
     "label": "विंडो कोने"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "ग्लासी विंडो"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-विंडो अनुपात"
   },
   "appearance.branding.screensaver": {
     "label": "स्क्रीनसेवर"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "फ़्लोटिंग"
   },
-  "appearance.animations": {
-    "label": "एनिमेशन"
-  },
   "appearance.unlock": {
     "label": "अनलॉक करें"
   },
   "trigger.toggle": {
     "label": "टॉगल"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "जागते रहें"
-  },
-  "trigger.toggle.notifications": {
-    "label": "सूचनाएं"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "नाइट लाइट"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "स्क्रीनसेवर"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "क्रैश कैप्चर"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "गति परीक्षण"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "लैपटॉप डिस्प्ले"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "मिरर डिस्प्ले"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hybrid GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "टचपैड"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "टचपैड हैप्टिक्स"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "उच्च"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "टचस्क्रीन"
   },
   "trigger.reminder.set": {
     "label": "एक सेट करें"

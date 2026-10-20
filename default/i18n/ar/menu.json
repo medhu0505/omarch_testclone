@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "مؤشرات الشريط"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "نسبة البطارية"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "الساعة"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "شريط أيمن"
   },
-  "appearance.windows.gaps": {
-    "label": "فواصل النوافذ"
-  },
   "appearance.windows.corners": {
     "label": "زوايا النوافذ"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "نوافذ زجاجية"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "نسبة النافذة الواحدة"
   },
   "appearance.branding.screensaver": {
     "label": "شاشة التوقف"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "عائم"
   },
-  "appearance.animations": {
-    "label": "الرسوم المتحركة"
-  },
   "appearance.unlock": {
     "label": "فتح القفل"
   },
   "trigger.toggle": {
     "label": "تبديل"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "البقاء مستيقظًا"
-  },
-  "trigger.toggle.notifications": {
-    "label": "الإشعارات"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "الإضاءة الليلية"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "شاشة التوقف"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "التقاط الأعطال"
   },
   "trigger.emoji": {
     "label": "إيموجي"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "اختبار السرعة"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "شاشة المحمول"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "عكس الشاشة"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU هجين"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "لوحة اللمس"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "اهتزاز لوحة اللمس"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "مرتفع"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "شاشة لمس"
   },
   "trigger.reminder.set": {
     "label": "تعيين واحد"

@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Balkindicatoren"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Batterijpercentage"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Klok"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Balk rechts"
   },
-  "appearance.windows.gaps": {
-    "label": "Vensterafstand"
-  },
   "appearance.windows.corners": {
     "label": "Vensterhoeken"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Glazen vensters"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-venster verhouding"
   },
   "appearance.branding.screensaver": {
     "label": "Schermbeveiliging"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Zwevend"
   },
-  "appearance.animations": {
-    "label": "Animaties"
-  },
   "appearance.unlock": {
     "label": "Ontgrendelen"
   },
   "trigger.toggle": {
     "label": "Schakelen"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Wakker blijven"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Meldingen"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Nachtlicht"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Schermbeveiliging"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Crashregistratie"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Snelheidstest"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Laptopscherm"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Scherm spiegelen"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hybride GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Touchpad"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Touchpad-haptiek"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "hoog"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Aanraakscherm"
   },
   "trigger.reminder.set": {
     "label": "Een instellen"

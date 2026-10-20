@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Indicateurs de barre"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Pourcentage batterie"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Horloge"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Barre de droite"
   },
-  "appearance.windows.gaps": {
-    "label": "Espacements fenêtres"
-  },
   "appearance.windows.corners": {
     "label": "Coins des fenêtres"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Fenêtres vitrées"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Ratio 1 fenêtre"
   },
   "appearance.branding.screensaver": {
     "label": "Écran de veille"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Flottant"
   },
-  "appearance.animations": {
-    "label": "Animations"
-  },
   "appearance.unlock": {
     "label": "Déverrouiller"
   },
   "trigger.toggle": {
     "label": "Basculer"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Rester éveillé"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Notifications"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Éclairage nocturne"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Écran de veille"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Capture de crash"
   },
   "trigger.emoji": {
     "label": "Émoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Test de vitesse"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Écran du portable"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Recopie d'écran"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU hybride"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Pavé tactile"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Haptique pavé tactile"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "élevé"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Écran tactile"
   },
   "trigger.reminder.set": {
     "label": "En créer un"

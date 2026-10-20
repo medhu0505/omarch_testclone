@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Chỉ báo thanh"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Phần trăm pin"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Đồng hồ"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Thanh phải"
   },
-  "appearance.windows.gaps": {
-    "label": "Khoảng cách cửa sổ"
-  },
   "appearance.windows.corners": {
     "label": "Góc cửa sổ"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Cửa sổ kính"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Tỷ lệ 1 cửa sổ"
   },
   "appearance.branding.screensaver": {
     "label": "Bảo vệ màn hình"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Nổi"
   },
-  "appearance.animations": {
-    "label": "Hiệu ứng"
-  },
   "appearance.unlock": {
     "label": "Mở khóa"
   },
   "trigger.toggle": {
     "label": "Bật/tắt"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Giữ thức"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Thông báo"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Đèn đêm"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Bảo vệ màn hình"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Ghi sự cố"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Kiểm tra tốc độ"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Màn hình laptop"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Phản chiếu màn hình"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU lai"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Bàn di chuột"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Rung bàn di chuột"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "cao"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Màn hình cảm ứng"
   },
   "trigger.reminder.set": {
     "label": "Đặt một lời nhắc"

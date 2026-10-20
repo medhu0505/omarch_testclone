@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Indicadors de barra"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Percentatge de bateria"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Rellotge"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Barra dreta"
   },
-  "appearance.windows.gaps": {
-    "label": "Separació de finestres"
-  },
   "appearance.windows.corners": {
     "label": "Cantons de finestra"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Finestres de vidre"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Proporció 1 finestra"
   },
   "appearance.branding.screensaver": {
     "label": "Salvapantalles"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Flotant"
   },
-  "appearance.animations": {
-    "label": "Animacions"
-  },
   "appearance.unlock": {
     "label": "Desbloqueja"
   },
   "trigger.toggle": {
     "label": "Commuta"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Mantén despert"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Notificacions"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Llum nocturna"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Salvapantalles"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Captura de fallades"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Prova de velocitat"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Pantalla del portàtil"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Duplica la pantalla"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU híbrida"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Panell tàctil"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Hàptica del panell"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "alta"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Pantalla tàctil"
   },
   "trigger.reminder.set": {
     "label": "Crea'n un"

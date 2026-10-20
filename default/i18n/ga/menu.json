@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Táscairí barra"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Céatadán ceallra"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Clog"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Barra ar dheis"
   },
-  "appearance.windows.gaps": {
-    "label": "Bearnaí fuinneog"
-  },
   "appearance.windows.corners": {
     "label": "Cúinní fuinneog"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Fuinneoga gloineacha"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Cóimheas 1-fhuinneog"
   },
   "appearance.branding.screensaver": {
     "label": "Coigilteoir scáileáin"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Foluaineach"
   },
-  "appearance.animations": {
-    "label": "Beochana"
-  },
   "appearance.unlock": {
     "label": "Díghlasáil"
   },
   "trigger.toggle": {
     "label": "Scoránaigh"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Fan i do dhúis"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Fógraí"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Solas oíche"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Coigilteoir scáileáin"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Gabháil tuairte"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Tástáil luais"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Scáileán ríomhaire glúine"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Scáthánaigh scáileán"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU Hibrideach"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Ceap tadhaill"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Tadhall tadhlach"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "ard"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Scáileán tadhaill"
   },
   "trigger.reminder.set": {
     "label": "Socrú ceann"

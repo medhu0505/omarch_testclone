@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Indicadores da barra"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Percentagem da bateria"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Relógio"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Barra direita"
   },
-  "appearance.windows.gaps": {
-    "label": "Espaçamento"
-  },
   "appearance.windows.corners": {
     "label": "Cantos da janela"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Janelas vidro"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Proporção 1 janela"
   },
   "appearance.branding.screensaver": {
     "label": "Proteção de ecrã"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Flutuante"
   },
-  "appearance.animations": {
-    "label": "Animações"
-  },
   "appearance.unlock": {
     "label": "Desbloquear"
   },
   "trigger.toggle": {
     "label": "Alternar"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Manter ativo"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Notificações"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Luz noturna"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Proteção de ecrã"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Captura de falhas"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Teste de velocidade"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Ecrã do portátil"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Espelhar ecrã"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU híbrida"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Painel tátil"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Vibração tátil"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "alta"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Ecrã tátil"
   },
   "trigger.reminder.set": {
     "label": "Criar um"

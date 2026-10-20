@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Индикатори траке"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Проценат батерије"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Сат"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Десна трака"
   },
-  "appearance.windows.gaps": {
-    "label": "Размаци прозора"
-  },
   "appearance.windows.corners": {
     "label": "Углови прозора"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Стаклени прозори"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Однос 1 прозора"
   },
   "appearance.branding.screensaver": {
     "label": "Чувар екрана"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Плутајући"
   },
-  "appearance.animations": {
-    "label": "Анимације"
-  },
   "appearance.unlock": {
     "label": "Откључај"
   },
   "trigger.toggle": {
     "label": "Укључи/искључи"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Остани будан"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Обавештења"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Ноћно светло"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Чувар екрана"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Снимање пада"
   },
   "trigger.emoji": {
     "label": "Емоџи"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Тест брзине"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Екран лаптопа"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Зрцали екран"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Хибридни GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Тачпед"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Хаптика тачпеда"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "високо"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Екран на додир"
   },
   "trigger.reminder.set": {
     "label": "Подеси један"

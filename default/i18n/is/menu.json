@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Vísar stiku"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Rafhlöðuhlutfall"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Klukka"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Hægri stika"
   },
-  "appearance.windows.gaps": {
-    "label": "Gluggabil"
-  },
   "appearance.windows.corners": {
     "label": "Gluggahorn"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Glergluggar"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-gluggahlutfall"
   },
   "appearance.branding.screensaver": {
     "label": "Skjáverji"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Fljótandi"
   },
-  "appearance.animations": {
-    "label": "Hreyfingar"
-  },
   "appearance.unlock": {
     "label": "Opna"
   },
   "trigger.toggle": {
     "label": "Víxla"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Halda vakandi"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Tilkynningar"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Næturljós"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Skjáverji"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Hrungrip"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Hraðapróf"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Fartölvuskjár"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Spegla skjá"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Blendings-GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Snertiflötur"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Snertisvörun flatar"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "hátt"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Snertiskjár"
   },
   "trigger.reminder.set": {
     "label": "Búa til eina"

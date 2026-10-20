@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "ตัวชี้วัดแถบ"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "เปอร์เซ็นต์แบต"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "นาฬิกา"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "แถบขวา"
   },
-  "appearance.windows.gaps": {
-    "label": "ช่องว่างหน้าต่าง"
-  },
   "appearance.windows.corners": {
     "label": "มุมหน้าต่าง"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "หน้าต่างกระจก"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "อัตราส่วน 1 หน้าต่าง"
   },
   "appearance.branding.screensaver": {
     "label": "พักหน้าจอ"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "ลอย"
   },
-  "appearance.animations": {
-    "label": "แอนิเมชัน"
-  },
   "appearance.unlock": {
     "label": "ปลดล็อก"
   },
   "trigger.toggle": {
     "label": "สลับ"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "ไม่พักเครื่อง"
-  },
-  "trigger.toggle.notifications": {
-    "label": "การแจ้งเตือน"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "แสงกลางคืน"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "พักหน้าจอ"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "บันทึกการขัดข้อง"
   },
   "trigger.emoji": {
     "label": "อิโมจิ"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "ทดสอบความเร็ว"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "จอแล็ปท็อป"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "สะท้อนจอ"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU ไฮบริด"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "ทัชแพด"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "การสั่นทัชแพด"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "สูง"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "จอสัมผัส"
   },
   "trigger.reminder.set": {
     "label": "ตั้งรายการ"

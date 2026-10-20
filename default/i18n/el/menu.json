@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Ενδείξεις γραμμής"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Ποσοστό μπαταρίας"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Ρολόι"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Δεξιά γραμμή"
   },
-  "appearance.windows.gaps": {
-    "label": "Κενά παραθύρων"
-  },
   "appearance.windows.corners": {
     "label": "Γωνίες παραθύρων"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Γυάλινα παράθυρα"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Λόγος 1 παραθύρου"
   },
   "appearance.branding.screensaver": {
     "label": "Προφύλαξη οθόνης"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Αιωρούμενα"
   },
-  "appearance.animations": {
-    "label": "Κινήσεις"
-  },
   "appearance.unlock": {
     "label": "Ξεκλείδωμα"
   },
   "trigger.toggle": {
     "label": "Εναλλαγή"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Μείνε ξύπνιο"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Ειδοποιήσεις"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Νυχτερινό φως"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Προφύλαξη οθόνης"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Καταγραφή κρασαρίσματος"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Δοκιμή ταχύτητας"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Οθόνη φορητού"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Κατοπτρισμός οθόνης"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Υβριδική GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Επιφάνεια αφής"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Απτικά επιφάνειας"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "υψηλό"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Οθόνη αφής"
   },
   "trigger.reminder.set": {
     "label": "Ορισμός μίας"

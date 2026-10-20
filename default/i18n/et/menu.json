@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Riba näidikud"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Aku protsent"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Kell"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Parem riba"
   },
-  "appearance.windows.gaps": {
-    "label": "Aknavahed"
-  },
   "appearance.windows.corners": {
     "label": "Aknanurgad"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Klaasaknad"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1 akna suhe"
   },
   "appearance.branding.screensaver": {
     "label": "Ekraanisäästja"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Ujuv"
   },
-  "appearance.animations": {
-    "label": "Animatsioonid"
-  },
   "appearance.unlock": {
     "label": "Ava lukk"
   },
   "trigger.toggle": {
     "label": "Lülita"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Püsi ärkvel"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Teavitused"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Öövalgus"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Ekraanisäästja"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Krahhide salvestus"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Kiirustest"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Sülearvuti ekraan"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Ekraani peegeldamine"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hübriid GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Puuteplaat"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Puuteplaadi haptika"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "kõrge"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Puuteekraan"
   },
   "trigger.reminder.set": {
     "label": "Loo üks"

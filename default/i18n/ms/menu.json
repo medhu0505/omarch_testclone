@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Penunjuk Bar"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Peratus Bateri"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Jam"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Bar Kanan"
   },
-  "appearance.windows.gaps": {
-    "label": "Jurang Tetingkap"
-  },
   "appearance.windows.corners": {
     "label": "Sudut Tetingkap"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Tetingkap Kaca"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Nisbah 1-Tetingkap"
   },
   "appearance.branding.screensaver": {
     "label": "Tabir Skrin"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Terapung"
   },
-  "appearance.animations": {
-    "label": "Animasi"
-  },
   "appearance.unlock": {
     "label": "Buka Kunci"
   },
   "trigger.toggle": {
     "label": "Togol"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Kekal Jaga"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Pemberitahuan"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Cahaya Malam"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Tabir Skrin"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Tangkapan Ranap"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Ujian Kelajuan"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Paparan Laptop"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Paparan Cermin"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU Hibrid"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Pad Sentuh"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Haptik Pad Sentuh"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "tinggi"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Skrin Sentuh"
   },
   "trigger.reminder.set": {
     "label": "Tetapkan Satu"

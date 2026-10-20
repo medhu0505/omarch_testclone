@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Juostos indikatoriai"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Akumuliatoriaus procentai"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Laikrodis"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Juosta dešinėje"
   },
-  "appearance.windows.gaps": {
-    "label": "Langų tarpai"
-  },
   "appearance.windows.corners": {
     "label": "Langų kampai"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Stikliniai langai"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1 lango santykis"
   },
   "appearance.branding.screensaver": {
     "label": "Ekrano užsklanda"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Plūduriuojantys"
   },
-  "appearance.animations": {
-    "label": "Animacijos"
-  },
   "appearance.unlock": {
     "label": "Atrakinti"
   },
   "trigger.toggle": {
     "label": "Perjungti"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Nemiegoti"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Pranešimai"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Naktinė šviesa"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Ekrano užsklanda"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Strigčių fiksavimas"
   },
   "trigger.emoji": {
     "label": "Jaustukai"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Greitis"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Nešiojamojo ekranas"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Dubliuoti ekraną"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hibridinis GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Jutiklinis kilimėlis"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Kilimėlio vibracija"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "aukštas"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Lietimui jautrus ekranas"
   },
   "trigger.reminder.set": {
     "label": "Nustatyti"

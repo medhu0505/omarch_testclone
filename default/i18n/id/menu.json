@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Indikator Bilah"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Persentase Baterai"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Jam"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Bilah Kanan"
   },
-  "appearance.windows.gaps": {
-    "label": "Celah Jendela"
-  },
   "appearance.windows.corners": {
     "label": "Sudut Jendela"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Jendela Kaca"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Rasio 1 Jendela"
   },
   "appearance.branding.screensaver": {
     "label": "Penghemat Layar"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Melayang"
   },
-  "appearance.animations": {
-    "label": "Animasi"
-  },
   "appearance.unlock": {
     "label": "Buka Kunci"
   },
   "trigger.toggle": {
     "label": "Alihkan"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Tetap Bangun"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Notifikasi"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Lampu Malam"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Penghemat Layar"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Tangkap Crash"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Uji Kecepatan"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Layar Laptop"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Cerminkan Layar"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU Hibrida"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Touchpad"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Haptik Touchpad"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "tinggi"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Layar Sentuh"
   },
   "trigger.reminder.set": {
     "label": "Buat Satu"

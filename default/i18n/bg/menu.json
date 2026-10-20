@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Индикатори"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Процент батерия"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Часовник"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Дясна лента"
   },
-  "appearance.windows.gaps": {
-    "label": "Разстояния прозорци"
-  },
   "appearance.windows.corners": {
     "label": "Ъгли прозорци"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Стъклени прозорци"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Съотношение 1 прозорец"
   },
   "appearance.branding.screensaver": {
     "label": "Скрийнсейвър"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Плаващо"
   },
-  "appearance.animations": {
-    "label": "Анимации"
-  },
   "appearance.unlock": {
     "label": "Отключи"
   },
   "trigger.toggle": {
     "label": "Превключи"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Остани буден"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Известия"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Нощна светлина"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Скрийнсейвър"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Запис на сривове"
   },
   "trigger.emoji": {
     "label": "Емоджи"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Тест на скоростта"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Дисплей лаптоп"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Огледален дисплей"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Хибриден GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Тъчпад"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Вибрация тъчпад"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "високо"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Сензорен екран"
   },
   "trigger.reminder.set": {
     "label": "Задай"

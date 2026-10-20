@@ -519,7 +519,7 @@ assertDeepEqual(
 }
 assertDeepEqual(
   defaultItems.filter(item => item.parent === 'appearance.top-bar.indicators').map(item => item.label),
-  ['Battery Percentage', 'Clock'],
+  ['Battery Percentage Shown', 'Battery Percentage Hidden', 'Clock'],
   'menu gathers bar indicator options under Menu Bar > Bar Indicators'
 )
 const clockModel = requireFromRoot('shell/plugins/panels/clock/Model.js')
@@ -554,12 +554,12 @@ assertDeepEqual(
   'menu picks window transparency from Appearance > Windows > Window Opacity'
 )
 const triggerIds = triggerItems.map(item => item.id)
-const windowLabels = ['Window Gaps', 'Window Corners', 'Window Opacity', '1-Window Ratio']
-const appearanceLabels = ['Animations', 'Menu Bar', 'Dock', 'Windows', 'Workspace Layout', ...windowLabels]
+const windowLabels = ['Window Gaps On', 'Window Gaps Off', 'Window Corners', 'Window Opacity', '1-Window Ratio On', '1-Window Ratio Off']
+const appearanceLabels = ['Animations On', 'Animations Off', 'Menu Bar', 'Dock', 'Windows', 'Workspace Layout', ...windowLabels]
 assertEqual(triggerIds[0], 'trigger.toggle', 'menu lists Toggle first under Trigger')
 assertDeepEqual(
   defaultItems.filter(item => item.parent === 'appearance').map(item => item.label),
-  ['Theme', 'Background', 'Font', 'Menu Bar', 'Windows', 'Branding', 'Dock', 'Workspace Layout', 'Animations', 'Unlock'],
+  ['Theme', 'Background', 'Font', 'Menu Bar', 'Windows', 'Branding', 'Dock', 'Workspace Layout', 'Animations On', 'Animations Off', 'Unlock'],
   'menu gathers the style and look of the desktop under Appearance'
 )
 assertDeepEqual(
@@ -579,7 +579,7 @@ assert(
 assertEqual(triggerIds.indexOf('trigger.clipboard-history'), triggerIds.indexOf('trigger.emoji') + 1, 'menu places Clipboard History right after Emoji')
 assert(
   !defaultItems.some(item => item.id.startsWith('appearance.background-intro'))
-    && defaultById['appearance.animations'].action === 'omarchy-toggle-animations',
+    && defaultById['appearance.animations-on'].action === 'omarchy-toggle-animations',
   'menu uses the existing animations toggle without separate background intro controls'
 )
 assertDeepEqual(
@@ -670,14 +670,25 @@ assert(
   ),
   'menu search never restarts a volatile provider'
 )
+// A toggle is a pair of rows named for the state it is in: the -on row shows
+// while the feature is on, the -off row while it is off, and both flip it.
+{
+  const pairs = defaultItems.filter(item => item.id.endsWith('-on') && defaultById[item.id.replace(/-on$/, '-off')])
+  assert(pairs.length >= 14, 'menu names every toggle by the state it is in', String(pairs.length))
+  for (const on of pairs) {
+    const off = defaultById[on.id.replace(/-on$/, '-off')]
+    assertEqual(off.action, on.action, `${on.id} and its -off row flip the same toggle`)
+    assert(on.when && off.when && on.when !== off.when, `${on.id} and its -off row show in opposite states`)
+  }
+}
 assertEqual(
-  defaultById['trigger.hardware.laptop-display'].when,
-  'omarchy-hw-laptop',
+  defaultById['trigger.hardware.laptop-display-on'].when,
+  'omarchy-hw-laptop && ! omarchy-hyprland-toggle-enabled internal-monitor-disable',
   'menu only shows Laptop Display on laptops'
 )
 assertEqual(
-  defaultById['trigger.hardware.mirror-display'].when,
-  'omarchy-hw-laptop',
+  defaultById['trigger.hardware.mirror-display-on'].when,
+  'omarchy-hw-laptop && omarchy-hyprland-toggle-enabled internal-monitor-mirror',
   'menu only shows Mirror Display on laptops'
 )
 assertEqual(

@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "තීරු දර්ශක"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "බැටරි ප්‍රතිශතය"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "ඔරලෝසුව"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "දකුණු තීරුව"
   },
-  "appearance.windows.gaps": {
-    "label": "කවුළු හිඩැස්"
-  },
   "appearance.windows.corners": {
     "label": "කවුළු කොන්"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "වීදුරු කවුළු"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "කවුළු 1 අනුපාතය"
   },
   "appearance.branding.screensaver": {
     "label": "තිර ආරක්ෂකය"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "පාවෙන"
   },
-  "appearance.animations": {
-    "label": "සජීවිකරණ"
-  },
   "appearance.unlock": {
     "label": "අගුලු හරින්න"
   },
   "trigger.toggle": {
     "label": "සක්‍රිය/අක්‍රිය"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "අවදියෙන් සිටින්න"
-  },
-  "trigger.toggle.notifications": {
-    "label": "දැනුම්දීම්"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "රාත්‍රී ආලෝකය"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "තිර ආරක්ෂකය"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "බිඳවැටීම් ග්‍රහණය"
   },
   "trigger.emoji": {
     "label": "ඉමෝජි"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "වේග පරීක්ෂණය"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "ලැප්ටොප් සංදර්ශකය"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "සංදර්ශකය දර්පණය කරන්න"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "දෙමුහුන් GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "ටච්පෑඩය"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "ටච්පෑඩ් හැප්ටික්ස්"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "වැඩි"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "ස්පර්ශ තිරය"
   },
   "trigger.reminder.set": {
     "label": "එකක් සකසන්න"

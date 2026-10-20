@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "বারের সূচক"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "ব্যাটারির শতাংশ"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "ঘড়ি"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "ডান বার"
   },
-  "appearance.windows.gaps": {
-    "label": "উইন্ডোর ফাঁক"
-  },
   "appearance.windows.corners": {
     "label": "উইন্ডোর কোণ"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "কাচের মতো উইন্ডো"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-উইন্ডো অনুপাত"
   },
   "appearance.branding.screensaver": {
     "label": "স্ক্রিনসেভার"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "ভাসমান"
   },
-  "appearance.animations": {
-    "label": "অ্যানিমেশন"
-  },
   "appearance.unlock": {
     "label": "আনলক"
   },
   "trigger.toggle": {
     "label": "টগল"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "জাগ্রত থাকুন"
-  },
-  "trigger.toggle.notifications": {
-    "label": "বিজ্ঞপ্তি"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "নাইটলাইট"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "স্ক্রিনসেভার"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "ক্র্যাশ ক্যাপচার"
   },
   "trigger.emoji": {
     "label": "ইমোজি"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "গতি পরীক্ষা"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "ল্যাপটপ ডিসপ্লে"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "মিরর ডিসপ্লে"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "হাইব্রিড GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "টাচপ্যাড"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "টাচপ্যাড হ্যাপটিক্স"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "বেশি"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "টাচস্ক্রিন"
   },
   "trigger.reminder.set": {
     "label": "একটি সেট করুন"

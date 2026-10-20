@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "பட்டை குறிகாட்டிகள்"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "மின்கல சதவீதம்"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "கடிகாரம்"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "வலது பட்டை"
   },
-  "appearance.windows.gaps": {
-    "label": "சாளர இடைவெளி"
-  },
   "appearance.windows.corners": {
     "label": "சாளர மூலைகள்"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "கண்ணாடி சாளரங்கள்"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-சாளர விகிதம்"
   },
   "appearance.branding.screensaver": {
     "label": "திரைசேமிப்பு"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "மிதக்கும்"
   },
-  "appearance.animations": {
-    "label": "அசைவூட்டங்கள்"
-  },
   "appearance.unlock": {
     "label": "திற"
   },
   "trigger.toggle": {
     "label": "மாற்று"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "விழித்திரு"
-  },
-  "trigger.toggle.notifications": {
-    "label": "அறிவிப்புகள்"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "இரவு விளக்கு"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "திரைசேமிப்பு"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "செயலிழப்பு பதிவு"
   },
   "trigger.emoji": {
     "label": "எமோஜி"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "வேக சோதனை"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "மடிக்கணினி திரை"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "பிரதிபலிப்பு திரை"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "கலப்பின GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "தொடுதளம்"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "தொடுதள அதிர்வு"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "அதிகம்"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "தொடுதிரை"
   },
   "trigger.reminder.set": {
     "label": "ஒன்றை அமை"

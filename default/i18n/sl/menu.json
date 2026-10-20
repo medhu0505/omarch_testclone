@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Kazalniki vrstice"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Odstotek baterije"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Ura"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Desna vrstica"
   },
-  "appearance.windows.gaps": {
-    "label": "Razmiki oken"
-  },
   "appearance.windows.corners": {
     "label": "Vogali oken"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Steklena okna"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Razmerje 1 okna"
   },
   "appearance.branding.screensaver": {
     "label": "Ohranjevalnik"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Lebdeče"
   },
-  "appearance.animations": {
-    "label": "Animacije"
-  },
   "appearance.unlock": {
     "label": "Odkleni"
   },
   "trigger.toggle": {
     "label": "Preklopi"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Ostani buden"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Obvestila"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Nočna svetloba"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Ohranjevalnik"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Zajem sesutij"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Preizkus hitrosti"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Zaslon prenosnika"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Zrcali zaslon"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hibridni GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Sledilna ploščica"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Haptičnost ploščice"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "visoka"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Zaslon na dotik"
   },
   "trigger.reminder.set": {
     "label": "Nastavi enega"

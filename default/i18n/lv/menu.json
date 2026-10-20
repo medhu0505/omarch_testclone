@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Joslas rādītāji"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Baterijas procenti"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Pulkstenis"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Labā josla"
   },
-  "appearance.windows.gaps": {
-    "label": "Logu atstarpes"
-  },
   "appearance.windows.corners": {
     "label": "Logu stūri"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Stikla logi"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1 loga attiecība"
   },
   "appearance.branding.screensaver": {
     "label": "Ekrānsaudzētājs"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Peldošs"
   },
-  "appearance.animations": {
-    "label": "Animācijas"
-  },
   "appearance.unlock": {
     "label": "Atbloķēt"
   },
   "trigger.toggle": {
     "label": "Pārslēgt"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Palikt nomodā"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Paziņojumi"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Nakts apgaismojums"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Ekrānsaudzētājs"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Avāriju fiksēšana"
   },
   "trigger.emoji": {
     "label": "Emocijzīmes"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Ātruma tests"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Klēpjdatora ekrāns"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Spoguļot ekrānu"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hibrīdais GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Skārienpaliktnis"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Skārienpaliktņa vibrācija"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "augsta"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Skārienekrāns"
   },
   "trigger.reminder.set": {
     "label": "Uzlikt vienu"

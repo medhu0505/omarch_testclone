@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Ukazovatele lišty"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Percento batérie"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Hodiny"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Pravá lišta"
   },
-  "appearance.windows.gaps": {
-    "label": "Medzery okien"
-  },
   "appearance.windows.corners": {
     "label": "Rohy okien"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Sklenené okná"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Pomer 1 okna"
   },
   "appearance.branding.screensaver": {
     "label": "Šetrič obrazovky"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Plávajúce"
   },
-  "appearance.animations": {
-    "label": "Animácie"
-  },
   "appearance.unlock": {
     "label": "Odomknúť"
   },
   "trigger.toggle": {
     "label": "Prepnúť"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Neuspať"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Upozornenia"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Nočné svetlo"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Šetrič obrazovky"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Zachytávanie pádov"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Test rýchlosti"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Displej notebooku"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Zrkadliť displej"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hybridné GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Touchpad"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Haptika touchpadu"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "vysoká"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Dotyková obrazovka"
   },
   "trigger.reminder.set": {
     "label": "Vytvoriť"

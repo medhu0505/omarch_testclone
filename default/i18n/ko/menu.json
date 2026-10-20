@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "막대 표시기"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "배터리 백분율"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "시계"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "오른쪽 막대"
   },
-  "appearance.windows.gaps": {
-    "label": "창 간격"
-  },
   "appearance.windows.corners": {
     "label": "창 모서리"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "유리 창"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-창 비율"
   },
   "appearance.branding.screensaver": {
     "label": "화면 보호기"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "플로팅"
   },
-  "appearance.animations": {
-    "label": "애니메이션"
-  },
   "appearance.unlock": {
     "label": "잠금 해제"
   },
   "trigger.toggle": {
     "label": "토글"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "깨어 있기"
-  },
-  "trigger.toggle.notifications": {
-    "label": "알림"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "야간 모드"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "화면 보호기"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "충돌 캡처"
   },
   "trigger.emoji": {
     "label": "이모지"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "속도 테스트"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "노트북 화면"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "화면 미러링"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "하이브리드 GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "터치패드"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "터치패드 햅틱"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "높음"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "터치스크린"
   },
   "trigger.reminder.set": {
     "label": "설정하기"

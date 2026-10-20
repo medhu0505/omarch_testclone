@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Fältindikatorer"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Batteriprocent"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Klocka"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Högerfält"
   },
-  "appearance.windows.gaps": {
-    "label": "Fönstermellanrum"
-  },
   "appearance.windows.corners": {
     "label": "Fönsterhörn"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Glasfönster"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-fönster-förhållande"
   },
   "appearance.branding.screensaver": {
     "label": "Skärmsläckare"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Flytande"
   },
-  "appearance.animations": {
-    "label": "Animeringar"
-  },
   "appearance.unlock": {
     "label": "Lås upp"
   },
   "trigger.toggle": {
     "label": "Växla"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Håll vaken"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Aviseringar"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Nattljus"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Skärmsläckare"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Kraschregistrering"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Hastighetstest"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Bärbar skärm"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Spegla skärm"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hybrid GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Styrplatta"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Styrplattehaptik"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "hög"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Pekskärm"
   },
   "trigger.reminder.set": {
     "label": "Skapa en"

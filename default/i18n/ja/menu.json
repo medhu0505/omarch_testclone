@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "バー表示"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "残量表示（%）"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "時計"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "右バー"
   },
-  "appearance.windows.gaps": {
-    "label": "ウィンドウ間隔"
-  },
   "appearance.windows.corners": {
     "label": "ウィンドウの角"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "ガラス質ウィンドウ"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "単一ウィンドウ比率"
   },
   "appearance.branding.screensaver": {
     "label": "スクリーンセーバー"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "フロート型"
   },
-  "appearance.animations": {
-    "label": "アニメーション"
-  },
   "appearance.unlock": {
     "label": "ロック画面"
   },
   "trigger.toggle": {
     "label": "切り替え"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "スリープ防止"
-  },
-  "trigger.toggle.notifications": {
-    "label": "通知"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "夜間モード"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "スクリーンセーバー"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "クラッシュ記録"
   },
   "trigger.emoji": {
     "label": "絵文字"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "速度テスト"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "ノートPC画面"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "画面ミラーリング"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "ハイブリッド GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "タッチパッド"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "タッチパッド振動"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "強"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "タッチスクリーン"
   },
   "trigger.reminder.set": {
     "label": "作成する"

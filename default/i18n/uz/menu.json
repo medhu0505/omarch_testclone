@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Panel koʻrsatkichlari"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Batareya foizi"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Soat"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Oʻng panel"
   },
-  "appearance.windows.gaps": {
-    "label": "Oyna oraliqlari"
-  },
   "appearance.windows.corners": {
     "label": "Oyna burchaklari"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Shishasimon oynalar"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-oyna nisbati"
   },
   "appearance.branding.screensaver": {
     "label": "Ekran saqlagich"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Suzuvchi"
   },
-  "appearance.animations": {
-    "label": "Animatsiyalar"
-  },
   "appearance.unlock": {
     "label": "Qulfdan ochish"
   },
   "trigger.toggle": {
     "label": "Almashtirish"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Uygʻoq qolish"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Bildirishnomalar"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Tungi yorugʻlik"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Ekran saqlagich"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Buzilish qaydi"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Tezlik testi"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Noutbuk ekrani"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Ekranni aks ettirish"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Gibrid GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Sensor panel"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Sensor panel tebranishi"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "yuqori"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Sensor ekran"
   },
   "trigger.reminder.set": {
     "label": "Yaratish"

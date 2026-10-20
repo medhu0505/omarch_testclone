@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "מחווני שורה"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "אחוז סוללה"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "שעון"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "שורה ימנית"
   },
-  "appearance.windows.gaps": {
-    "label": "מרווחי חלונות"
-  },
   "appearance.windows.corners": {
     "label": "פינות חלון"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "חלונות זכוכיתיים"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "יחס חלון אחד"
   },
   "appearance.branding.screensaver": {
     "label": "שומר מסך"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "צף"
   },
-  "appearance.animations": {
-    "label": "הנפשות"
-  },
   "appearance.unlock": {
     "label": "ביטול נעילה"
   },
   "trigger.toggle": {
     "label": "החלפה"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "הישאר ער"
-  },
-  "trigger.toggle.notifications": {
-    "label": "התראות"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "אור לילה"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "שומר מסך"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "לכידת קריסות"
   },
   "trigger.emoji": {
     "label": "אמוג'י"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "בדיקת מהירות"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "תצוגת מחשב נייד"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "שיקוף תצוגה"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU היברידי"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "משטח מגע"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "רטט משטח מגע"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "גבוה"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "מסך מגע"
   },
   "trigger.reminder.set": {
     "label": "קביעת תזכורת"

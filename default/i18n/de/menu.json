@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Leistenanzeigen"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Akkuprozentsatz"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Uhr"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Leiste rechts"
   },
-  "appearance.windows.gaps": {
-    "label": "Fensterabstände"
-  },
   "appearance.windows.corners": {
     "label": "Fensterecken"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Glasfenster"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-Fenster-Verhältnis"
   },
   "appearance.branding.screensaver": {
     "label": "Bildschirmschoner"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Schwebend"
   },
-  "appearance.animations": {
-    "label": "Animationen"
-  },
   "appearance.unlock": {
     "label": "Entsperren"
   },
   "trigger.toggle": {
     "label": "Umschalten"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Wach bleiben"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Benachrichtigungen"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Nachtlicht"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Bildschirmschoner"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Absturzerfassung"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Geschwindigkeitstest"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Laptop-Display"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Display spiegeln"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hybrid-GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Touchpad"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Touchpad-Haptik"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "hoch"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Touchscreen"
   },
   "trigger.reminder.set": {
     "label": "Erstellen"

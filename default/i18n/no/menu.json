@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Linjeindikatorer"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Batteriprosent"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Klokke"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Høyre linje"
   },
-  "appearance.windows.gaps": {
-    "label": "Vindusmellomrom"
-  },
   "appearance.windows.corners": {
     "label": "Vindushjørner"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Glassvinduer"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "1-vindus-forhold"
   },
   "appearance.branding.screensaver": {
     "label": "Skjermsparer"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Flytende"
   },
-  "appearance.animations": {
-    "label": "Animasjoner"
-  },
   "appearance.unlock": {
     "label": "Lås opp"
   },
   "trigger.toggle": {
     "label": "Av/på"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Hold våken"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Varsler"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Nattlys"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Skjermsparer"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Krasjregistrering"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Hastighetstest"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Bærbar skjerm"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Speil skjerm"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hybrid GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Styreflate"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Styreflate-haptikk"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "høy"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Berøringsskjerm"
   },
   "trigger.reminder.set": {
     "label": "Opprett en"

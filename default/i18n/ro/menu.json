@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Indicatori bară"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Procent baterie"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Ceas"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Bară dreapta"
   },
-  "appearance.windows.gaps": {
-    "label": "Spații fereastră"
-  },
   "appearance.windows.corners": {
     "label": "Colțuri fereastră"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Ferestre sticloase"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Raport 1 fereastră"
   },
   "appearance.branding.screensaver": {
     "label": "Economizor ecran"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Plutitor"
   },
-  "appearance.animations": {
-    "label": "Animații"
-  },
   "appearance.unlock": {
     "label": "Deblochează"
   },
   "trigger.toggle": {
     "label": "Comută"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Rămâi treaz"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Notificări"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Lumină de noapte"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Economizor ecran"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Captură erori"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Test viteză"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Ecran laptop"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "Oglindește ecranul"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "GPU hibrid"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Touchpad"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Haptică touchpad"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "mare"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Ecran tactil"
   },
   "trigger.reminder.set": {
     "label": "Creează unul"

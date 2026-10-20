@@ -116,9 +116,6 @@
   "appearance.top-bar.indicators": {
     "label": "Mga Indikator ng Bar"
   },
-  "appearance.top-bar.indicators.battery-percentage": {
-    "label": "Porsyento ng Baterya"
-  },
   "appearance.top-bar.indicators.clock": {
     "label": "Orasan"
   },
@@ -176,9 +173,6 @@
   "appearance.top-bar.position.right": {
     "label": "Bar sa Kanan"
   },
-  "appearance.windows.gaps": {
-    "label": "Pagitan ng Bintana"
-  },
   "appearance.windows.corners": {
     "label": "Sulok ng Bintana"
   },
@@ -202,9 +196,6 @@
   },
   "appearance.windows.transparency.glassy": {
     "label": "Mala-salaming Bintana"
-  },
-  "appearance.windows.one-window-ratio": {
-    "label": "Ratio ng 1 Bintana"
   },
   "appearance.branding.screensaver": {
     "label": "Screensaver"
@@ -267,29 +258,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Lumulutang"
   },
-  "appearance.animations": {
-    "label": "Animasyon"
-  },
   "appearance.unlock": {
     "label": "I-unlock"
   },
   "trigger.toggle": {
     "label": "I-toggle"
-  },
-  "trigger.toggle.idle-lock": {
-    "label": "Manatiling Gising"
-  },
-  "trigger.toggle.notifications": {
-    "label": "Mga Notipikasyon"
-  },
-  "trigger.toggle.nightlight": {
-    "label": "Ilaw-Panggabi"
-  },
-  "trigger.toggle.screensaver": {
-    "label": "Screensaver"
-  },
-  "trigger.toggle.crash-capture": {
-    "label": "Pagsagap ng Crash"
   },
   "trigger.emoji": {
     "label": "Emoji"
@@ -345,18 +318,6 @@
   "trigger.tests": {
     "label": "Test ng Bilis"
   },
-  "trigger.hardware.laptop-display": {
-    "label": "Display ng Laptop"
-  },
-  "trigger.hardware.mirror-display": {
-    "label": "I-mirror ang Display"
-  },
-  "trigger.hardware.hybrid-gpu": {
-    "label": "Hybrid GPU"
-  },
-  "trigger.hardware.touchpad": {
-    "label": "Touchpad"
-  },
   "trigger.hardware.touchpad-haptics": {
     "label": "Haptics ng Touchpad"
   },
@@ -368,9 +329,6 @@
   },
   "trigger.hardware.touchpad-haptics.high": {
     "label": "mataas"
-  },
-  "trigger.hardware.touchscreen": {
-    "label": "Touchscreen"
   },
   "trigger.reminder.set": {
     "label": "Magtakda"
