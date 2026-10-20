@@ -94,7 +94,7 @@ pass "notification font list prints families"
 # ------------------------------------------------------------- QML wiring
 
 service_qml=$(cat "$ROOT/shell/plugins/notifications/Service.qml")
-card_qml=$(cat "$ROOT/shell/plugins/notifications/components/NotificationCard.qml")
+card_qml=$(cat "$ROOT/shell/plugins/notifications/Toast.qml")
 
 grep -q 'shellConfig.notifications' <<<"$service_qml" \
   || fail "notifications service reads the font setting from shellConfig"
@@ -116,7 +116,7 @@ grep -q 'property string textFontFamily: "Liberation Sans"' <<<"$card_qml" \
   || fail "notification card keeps Liberation Sans as the default text font"
 pass "notification card keeps Liberation Sans as the default text font"
 
-[[ $(grep -c 'font.family: root.textFontFamily' <<<"$card_qml") == 2 ]] \
+[[ $(grep -c 'font.family: card.textFontFamily' <<<"$card_qml") == 4 ]] \
   || fail "notification card binds summary and body to the configured font"
 pass "notification card binds summary and body to the configured font"
 
@@ -124,7 +124,7 @@ pass "notification card binds summary and body to the configured font"
   || fail "notification card has no hardcoded text font literals left"
 pass "notification card has no hardcoded text font literals left"
 
-grep -q 'font.family: root.fontFamily' <<<"$card_qml" \
+grep -q 'font.family: Style.font.family' <<<"$card_qml" \
   || fail "notification card keeps glyphs on the system font"
 pass "notification card keeps glyphs on the system font"
 

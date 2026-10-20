@@ -12,7 +12,7 @@ node <<'JS'
 const fs = require('fs')
 const source = fs.readFileSync(process.env.ROOT + '/shell/plugins/notifications/Service.qml', 'utf8')
 const start = source.indexOf('  readonly property string notificationFontSetting:')
-const end = source.indexOf('\n  // Live Notification', start)
+const end = source.indexOf('\n  // ------------------------------------------------------------- settings', start)
 if (start < 0 || end < 0) throw Error('missing font bindings')
 fs.writeFileSync(process.env.FONT_TEST_STAGE + '/shell.qml', `
 import QtQuick
