@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Clú"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Coigilteoir scáileáin"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Faisnéis"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Cuir téacs in eagar"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Socraigh ó íomhá"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Athchóirigh réamhshocrú"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Cuir téacs in eagar"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Socraigh ó íomhá"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Athchóirigh réamhshocrú"
   },
   "appearance.animations": {

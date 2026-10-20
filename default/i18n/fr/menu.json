@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Police"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Écran de veille"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "À propos"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Modifier le texte"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Depuis une image"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Restaurer défaut"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Modifier le texte"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Depuis une image"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Restaurer défaut"
   },
   "appearance.animations": {

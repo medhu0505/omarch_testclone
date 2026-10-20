@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Fon"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Tabir Skrin"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Perihal"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Sunting Teks"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Tetapkan dari Imej"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Pulihkan Lalai"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Sunting Teks"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Tetapkan dari Imej"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Pulihkan Lalai"
   },
   "appearance.animations": {

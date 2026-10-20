@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Fontti"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Näytönsäästäjä"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Tietoja"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Muokkaa tekstiä"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Aseta kuvasta"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Palauta oletus"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Muokkaa tekstiä"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Aseta kuvasta"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Palauta oletus"
   },
   "appearance.animations": {

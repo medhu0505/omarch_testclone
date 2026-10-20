@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Phông chữ"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Bảo vệ màn hình"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Giới thiệu"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Sửa văn bản"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Đặt từ hình ảnh"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Khôi phục mặc định"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Sửa văn bản"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Đặt từ hình ảnh"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Khôi phục mặc định"
   },
   "appearance.animations": {

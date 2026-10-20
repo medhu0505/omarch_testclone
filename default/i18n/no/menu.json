@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Skrifttype"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Skjermsparer"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Om"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Rediger tekst"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Sett fra bilde"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Gjenopprett standard"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Rediger tekst"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Sett fra bilde"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Gjenopprett standard"
   },
   "appearance.animations": {

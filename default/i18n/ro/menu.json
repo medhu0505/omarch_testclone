@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Font"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Economizor ecran"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Despre"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Editează textul"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Setează din imagine"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Restabilește implicit"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Editează textul"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Setează din imagine"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Restabilește implicit"
   },
   "appearance.animations": {

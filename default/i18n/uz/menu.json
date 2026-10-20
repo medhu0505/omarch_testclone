@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Shrift"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Ekran saqlagich"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Haqida"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Matnni tahrirlash"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Rasmdan oʻrnatish"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Standartni tiklash"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Matnni tahrirlash"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Rasmdan oʻrnatish"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Standartni tiklash"
   },
   "appearance.animations": {

@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Pisava"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Ohranjevalnik"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Vizitka"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Uredi besedilo"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Nastavi iz slike"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Obnovi privzeto"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Uredi besedilo"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Nastavi iz slike"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Obnovi privzeto"
   },
   "appearance.animations": {

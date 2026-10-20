@@ -114,31 +114,31 @@
   "appearance.font.cjk.hk": {
     "label": "Hong Kong"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
+  "appearance.branding": {
+    "label": "Branding"
   },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Screensaver"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "About"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Edit Text"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Set From Image"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Restore Default"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Edit Text"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Set From Image"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Restore Default"
   },
   "appearance.animations": {

@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Písmo"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Šetrič obrazovky"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Informácie"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Upraviť text"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Nastaviť z obrázka"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Obnoviť predvolené"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Upraviť text"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Nastaviť z obrázka"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Obnoviť predvolené"
   },
   "appearance.animations": {

@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Γραμματοσειρά"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Προφύλαξη οθόνης"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Σχετικά"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Επεξεργασία κειμένου"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Ορισμός από εικόνα"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Επαναφορά προεπιλογής"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Επεξεργασία κειμένου"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Ορισμός από εικόνα"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Επαναφορά προεπιλογής"
   },
   "appearance.animations": {

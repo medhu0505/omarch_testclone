@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Шрифт"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Скрийнсейвър"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "За"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Редактирай текст"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "От изображение"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Възстанови"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Редактирай текст"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "От изображение"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Възстанови"
   },
   "appearance.animations": {

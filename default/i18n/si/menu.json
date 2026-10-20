@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "ෆොන්ටය"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "තිර ආරක්ෂකය"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "ගැන"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "පෙළ සංස්කරණය"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "රූපයෙන් සකසන්න"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "පෙරනිමිය යළි පිහිටුවන්න"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "පෙළ සංස්කරණය"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "රූපයෙන් සකසන්න"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "පෙරනිමිය යළි පිහිටුවන්න"
   },
   "appearance.animations": {

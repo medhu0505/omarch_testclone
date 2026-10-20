@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "قلم"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "محافظ صفحه"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "درباره"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "ویرایش متن"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "تنظیم از تصویر"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "بازیابی پیش‌فرض"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "ویرایش متن"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "تنظیم از تصویر"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "بازیابی پیش‌فرض"
   },
   "appearance.animations": {

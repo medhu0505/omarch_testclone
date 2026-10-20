@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Šriftas"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Ekrano užsklanda"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Apie"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Redaguoti tekstą"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Nustatyti iš paveikslėlio"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Atkurti numatytąjį"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Redaguoti tekstą"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Nustatyti iš paveikslėlio"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Atkurti numatytąjį"
   },
   "appearance.animations": {

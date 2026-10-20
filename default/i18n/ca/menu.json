@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Tipus de lletra"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Salvapantalles"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Quant a"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Edita el text"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Des d'una imatge"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Restableix el defecte"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Edita el text"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Des d'una imatge"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Restableix el defecte"
   },
   "appearance.animations": {

@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "फ़ॉन्ट"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "स्क्रीनसेवर"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "बारे में"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "टेक्स्ट संपादित करें"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "इमेज से सेट करें"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "डिफ़ॉल्ट पुनर्स्थापित करें"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "टेक्स्ट संपादित करें"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "इमेज से सेट करें"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "डिफ़ॉल्ट पुनर्स्थापित करें"
   },
   "appearance.animations": {

@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "فونٹ"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "اسکرین سیور"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "بارے میں"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "متن بدلیں"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "تصویر سے لگائیں"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "طے شدہ بحال کریں"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "متن بدلیں"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "تصویر سے لگائیں"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "طے شدہ بحال کریں"
   },
   "appearance.animations": {

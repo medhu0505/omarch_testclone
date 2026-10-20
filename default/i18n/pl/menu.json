@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Czcionka"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Wygaszacz"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Informacje"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Edytuj tekst"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Ustaw z obrazu"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Przywróć domyślne"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Edytuj tekst"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Ustaw z obrazu"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Przywróć domyślne"
   },
   "appearance.animations": {

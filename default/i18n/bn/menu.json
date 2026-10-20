@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "ফন্ট"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "স্ক্রিনসেভার"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "সম্পর্কে"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "টেক্সট সম্পাদনা"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "ছবি থেকে সেট"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "ডিফল্ট পুনরুদ্ধার"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "টেক্সট সম্পাদনা"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "ছবি থেকে সেট"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "ডিফল্ট পুনরুদ্ধার"
   },
   "appearance.animations": {

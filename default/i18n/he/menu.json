@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "גופן"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "שומר מסך"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "אודות"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "עריכת טקסט"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "הגדרה מתמונה"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "שחזור ברירת מחדל"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "עריכת טקסט"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "הגדרה מתמונה"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "שחזור ברירת מחדל"
   },
   "appearance.animations": {

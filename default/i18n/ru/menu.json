@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Шрифт"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Заставка"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "О программе"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Изменить текст"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Задать из изображения"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Восстановить по умолчанию"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Изменить текст"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Задать из изображения"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Восстановить по умолчанию"
   },
   "appearance.animations": {

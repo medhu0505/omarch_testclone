@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Fonts"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Ekrānsaudzētājs"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Par"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Rediģēt tekstu"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Uzlikt no attēla"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Atjaunot noklusējumu"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Rediģēt tekstu"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Uzlikt no attēla"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Atjaunot noklusējumu"
   },
   "appearance.animations": {

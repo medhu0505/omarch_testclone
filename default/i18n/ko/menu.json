@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "글꼴"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "화면 보호기"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "정보"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "텍스트 편집"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "이미지에서 설정"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "기본값 복원"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "텍스트 편집"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "이미지에서 설정"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "기본값 복원"
   },
   "appearance.animations": {

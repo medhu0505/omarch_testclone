@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "ฟอนต์"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "พักหน้าจอ"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "เกี่ยวกับ"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "แก้ข้อความ"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "ตั้งจากภาพ"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "คืนค่าเริ่มต้น"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "แก้ข้อความ"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "ตั้งจากภาพ"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "คืนค่าเริ่มต้น"
   },
   "appearance.animations": {

@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Kirjatüüp"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Ekraanisäästja"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Teave"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Muuda teksti"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Sea pildist"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Taasta vaikimisi"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Muuda teksti"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Sea pildist"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Taasta vaikimisi"
   },
   "appearance.animations": {

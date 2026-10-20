@@ -540,13 +540,18 @@ const appearanceLabels = ['Animations', 'Menu Bar', 'Dock', 'Windows', 'Workspac
 assertEqual(triggerIds[0], 'trigger.toggle', 'menu lists Toggle first under Trigger')
 assertDeepEqual(
   defaultItems.filter(item => item.parent === 'appearance').map(item => item.label),
-  ['Theme', 'Background', 'Unlock', 'Font', 'Hyprland', 'Screensaver', 'About', ...appearanceLabels.slice(0, 6)],
+  ['Theme', 'Background', 'Unlock', 'Font', 'Branding', ...appearanceLabels.slice(0, 6)],
   'menu gathers the style and look of the desktop under Appearance'
 )
 assertDeepEqual(
   defaultItems.filter(item => item.parent === 'appearance.windows').map(item => item.label),
   windowLabels,
   'menu gathers the window looks under Appearance > Windows'
+)
+assertDeepEqual(
+  defaultItems.filter(item => item.parent === 'appearance.branding').map(item => item.label),
+  ['Screensaver', 'About'],
+  'menu gathers the screensaver and About logos under Appearance > Branding'
 )
 assert(
   !defaultItems.some(item => item.parent === 'trigger.toggle' && appearanceLabels.includes(item.label)),

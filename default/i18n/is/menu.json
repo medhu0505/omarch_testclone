@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Leturgerð"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Skjáverji"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Um"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Breyta texta"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Stilla frá mynd"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Endurheimta sjálfgildi"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Breyta texta"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Stilla frá mynd"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Endurheimta sjálfgildi"
   },
   "appearance.animations": {

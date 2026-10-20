@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Шрифт"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Заставка"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Про програму"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Редагувати текст"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Встановити зображення"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Відновити типові"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Редагувати текст"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Встановити зображення"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Відновити типові"
   },
   "appearance.animations": {

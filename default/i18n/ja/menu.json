@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "フォント"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "スクリーンセーバー"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "情報"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "テキストを編集"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "画像から設定"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "デフォルトに戻す"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "テキストを編集"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "画像から設定"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "デフォルトに戻す"
   },
   "appearance.animations": {

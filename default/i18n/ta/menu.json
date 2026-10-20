@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "எழுத்துரு"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "திரைசேமிப்பு"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "பற்றி"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "உரையைத் திருத்து"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "படத்திலிருந்து அமை"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "இயல்புநிலையை மீட்டமை"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "உரையைத் திருத்து"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "படத்திலிருந்து அமை"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "இயல்புநிலையை மீட்டமை"
   },
   "appearance.animations": {

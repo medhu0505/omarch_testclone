@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Yazı Tipi"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Ekran Koruyucu"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "Hakkında"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Metni Düzenle"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Görüntüden Ayarla"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Varsayılanı Geri Yükle"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Metni Düzenle"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Görüntüden Ayarla"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Varsayılanı Geri Yükle"
   },
   "appearance.animations": {

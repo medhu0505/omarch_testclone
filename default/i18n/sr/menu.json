@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Фонт"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Чувар екрана"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "О програму"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Измени текст"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Подеси са слике"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Врати подразумевано"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Измени текст"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Подеси са слике"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Врати подразумевано"
   },
   "appearance.animations": {

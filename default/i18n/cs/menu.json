@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "Písmo"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "Spořič obrazovky"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "O aplikaci"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "Upravit text"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "Nastavit z obrázku"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "Obnovit výchozí"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "Upravit text"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "Nastavit z obrázku"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "Obnovit výchozí"
   },
   "appearance.animations": {

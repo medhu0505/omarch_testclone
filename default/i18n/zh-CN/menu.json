@@ -92,31 +92,28 @@
   "appearance.font": {
     "label": "字体"
   },
-  "appearance.hyprland": {
-    "label": "Hyprland"
-  },
-  "appearance.screensaver": {
+  "appearance.branding.screensaver": {
     "label": "屏保"
   },
-  "appearance.about": {
+  "appearance.branding.about": {
     "label": "关于"
   },
-  "appearance.about.text": {
+  "appearance.branding.about.text": {
     "label": "编辑文本"
   },
-  "appearance.about.image": {
+  "appearance.branding.about.image": {
     "label": "从图片设置"
   },
-  "appearance.about.default": {
+  "appearance.branding.about.default": {
     "label": "恢复默认"
   },
-  "appearance.screensaver.text": {
+  "appearance.branding.screensaver.text": {
     "label": "编辑文本"
   },
-  "appearance.screensaver.image": {
+  "appearance.branding.screensaver.image": {
     "label": "从图片设置"
   },
-  "appearance.screensaver.default": {
+  "appearance.branding.screensaver.default": {
     "label": "恢复默认"
   },
   "appearance.animations": {
