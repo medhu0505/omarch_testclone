@@ -34,12 +34,15 @@
 #   nothing on them needs to wake a laptop). Not restored: the sysfs flag only
 #   governs system sleep, runtime hot-plug keys on the wake capability, and a
 #   reboot resets it.
-# - pre: wait until the Thunderbolt root ports report runtime_status=suspended
-#   (milliseconds in practice; capped at 5 s).
+# - pre: wait until the root ports of the removed sides report
+#   runtime_status=suspended (milliseconds in practice; capped at 5 s). A side
+#   skipped for a mount keeps its devices, so its root port may never suspend
+#   and is not waited on.
 # - post: one rescan; if the tree is not back within 2 s, retries go to a
 #   transient unit via systemd-run, because post hooks run while user.slice is
 #   frozen and a backgrounded subshell dies with the hook
 #   (systemd-suspend.service is Type=oneshot with KillMode=control-group).
+#   "Back" means XHCI_WANT below, less one for each side pre skipped.
 # - Acts only on a plain suspend into S3: systemd-sleep must be about to
 #   write "mem" to /sys/power/state (see suspend_state below), and
 #   /sys/power/mem_sleep must select deep. systemd-sleep writes mem_sleep
@@ -163,7 +166,7 @@ case "$1" in
     done
     sync
     thunderbolt_ports >"$STATE"
-    n=0; skipped=0
+    n=0; skipped=0; removed_roots=""
     while read -r up rp; do
       [[ -n $up ]] || continue
       if m=$(mounted_under "$up"); then
@@ -171,12 +174,14 @@ case "$1" in
         skipped=$((skipped + 1)); continue
       fi
       if echo 1 > "$up/remove" 2>/dev/null; then
-        n=$((n + 1)); log "pre/$2: removed $(basename "$up") (under $(basename "$rp"))"
+        n=$((n + 1)); removed_roots="$removed_roots $rp"
+        log "pre/$2: removed $(basename "$up") (under $(basename "$rp"))"
       else
         log "pre/$2: WARNING could not remove $(basename "$up")"
       fi
     done <"$STATE"
     log "pre/$2: removed $n upstream port(s), skipped $skipped; $(state)"
+    echo "$skipped" > "$ACTIVE"   # post counts a skipped side as not coming back
     # S3 wake off on every PCIe root port (see the header); not restored.
     w=""
     for rp in /sys/devices/pci0000:00/0000:*; do
@@ -185,8 +190,9 @@ case "$1" in
       w="$w$(basename "$rp")=$(cat "$rp/power/wakeup" 2>/dev/null) "
     done
     log "pre/$2: S3 wake: $w"
-    # Settle: wait for the (now childless) Thunderbolt root ports to runtime-suspend, cap 5 s.
-    roots=$(roots_from_state)
+    # Settle: wait for the root ports of the removed sides (now childless) to
+    # runtime-suspend, cap 5 s. A skipped side may not suspend under its devices.
+    roots=$removed_roots
     if [[ -n $roots ]]; then
       t0=$(date +%s%N)
       for ((i = 0; i < 50; i++)); do
@@ -200,23 +206,26 @@ case "$1" in
     fi
     ;;
   post)
+    skipped=$(cat "$ACTIVE" 2>/dev/null); [[ $skipped =~ ^[0-9]+$ ]] || skipped=0
     rm -f "$ACTIVE"
+    want=$((XHCI_WANT - skipped))
     echo 1 > /sys/bus/pci/rescan 2>/dev/null || log "post/$2: WARNING rescan write failed"
-    for ((i = 0; i < 4; i++)); do (( $(xhci) >= XHCI_WANT )) && break; sleep 0.5; done
-    if (( $(xhci) >= XHCI_WANT )); then
+    for ((i = 0; i < 4; i++)); do (( $(xhci) >= want )) && break; sleep 0.5; done
+    if (( $(xhci) >= want )); then
       log "post/$2: tree back after attempt 1 (~$((i * 500)) ms): $(state)"
     else
       log "post/$2: attempt 1 short after 2 s: $(state) - retrying in a transient unit"
       systemd-run --quiet --no-block --collect --unit="thunderbolt-remove-rescan-retry-$(date +%s)" \
-        "$0" retry "$2" || log "post/$2: WARNING systemd-run failed; no further attempts"
+        "$0" retry "$2" "$want" || log "post/$2: WARNING systemd-run failed; no further attempts"
     fi
     ;;
   retry)
+    want=${3:-$XHCI_WANT}
     for ((a = 2; a <= 6; a++)); do
       sleep 2
       echo 1 > /sys/bus/pci/rescan 2>/dev/null
       sleep 0.5
-      if (( $(xhci) >= XHCI_WANT )); then log "post/$2: tree back after attempt $a: $(state)"; exit 0; fi
+      if (( $(xhci) >= want )); then log "post/$2: tree back after attempt $a: $(state)"; exit 0; fi
       log "post/$2: attempt $a short: $(state)"
     done
     log "post/$2: WARNING tree NOT back after 6 attempts: $(state) - it returns after the next sleep of a few minutes"
