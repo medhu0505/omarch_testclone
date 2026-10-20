@@ -8,6 +8,9 @@
   "learn": {
     "label": "Belajar"
   },
+  "appearance": {
+    "label": "Penampilan"
+  },
   "trigger": {
     "label": "Pencetus"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Komuniti"
+  },
+  "appearance.theme": {
+    "label": "Tema"
+  },
+  "appearance.background": {
+    "label": "Latar Belakang"
+  },
+  "appearance.unlock": {
+    "label": "Buka Kunci"
+  },
+  "appearance.font": {
+    "label": "Fon"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Tabir Skrin"
+  },
+  "appearance.about": {
+    "label": "Perihal"
+  },
+  "appearance.about.text": {
+    "label": "Sunting Teks"
+  },
+  "appearance.about.image": {
+    "label": "Tetapkan dari Imej"
+  },
+  "appearance.about.default": {
+    "label": "Pulihkan Lalai"
+  },
+  "appearance.screensaver.text": {
+    "label": "Sunting Teks"
+  },
+  "appearance.screensaver.image": {
+    "label": "Tetapkan dari Imej"
+  },
+  "appearance.screensaver.default": {
+    "label": "Pulihkan Lalai"
+  },
+  "appearance.animations": {
+    "label": "Animasi"
+  },
+  "appearance.top-bar": {
+    "label": "Bar Menu"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Sembunyi Bar"
+  },
+  "appearance.top-bar.show": {
+    "label": "Papar Bar"
+  },
+  "appearance.top-bar.position": {
+    "label": "Kedudukan Bar"
+  },
+  "appearance.top-bar.background": {
+    "label": "Latar Bar"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Bar Legap"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Bar Kaca"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Bar Jernih"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Penunjuk Bar"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Peratus Bateri"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Jam"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Ahad 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Ahad 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Ahad 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Ahad 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "Ahad 3 Mei 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "Ahad 3 Mei 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 Mei W18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 Mei W18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Bar Atas"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Bar Bawah"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Bar Kiri"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Bar Kanan"
+  },
+  "appearance.dock": {
+    "label": "Dok"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dok Auto-sembunyi"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dok Sentiasa Papar"
+  },
+  "appearance.dock.position": {
+    "label": "Kedudukan Dok"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dok Atas"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dok Bawah"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dok Kiri"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dok Kanan"
+  },
+  "appearance.windows.gaps": {
+    "label": "Jurang Tetingkap"
+  },
+  "appearance.windows.corners": {
+    "label": "Sudut Tetingkap"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Sudut Tema"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Sudut Tajam"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Sudut Bulat"
+  },
+  "appearance.windows.transparency": {
+    "label": "Kelegapan Tetingkap"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Tetingkap Legap"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Tetingkap Lutsinar"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Tetingkap Kaca"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "Nisbah 1-Tetingkap"
+  },
+  "appearance.workspace-layout": {
+    "label": "Susun Atur Ruang Kerja",
+    "title": "Susun Atur Ruang Kerja Lalai"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Jubinan"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Penatalan"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Terapung"
+  },
+  "appearance.theme-sync": {
+    "label": "Segerak Tema Herdr"
   },
   "trigger.toggle": {
     "label": "Togol"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Ujian Kelajuan Cakera"
-  },
-  "setup.appearance": {
-    "label": "Penampilan"
-  },
-  "setup.appearance.animations": {
-    "label": "Animasi"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Bar Menu"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Sembunyi Bar"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Papar Bar"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Kedudukan Bar"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Latar Bar"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Bar Legap"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Bar Kaca"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Bar Jernih"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Penunjuk Bar"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Peratus Bateri"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Jam"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Ahad 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Ahad 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Ahad 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Ahad 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "Ahad 3 Mei 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "Ahad 3 Mei 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 Mei W18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 Mei W18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Bar Atas"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Bar Bawah"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Bar Kiri"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Bar Kanan"
-  },
-  "setup.appearance.dock": {
-    "label": "Dok"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Dok Auto-sembunyi"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Dok Sentiasa Papar"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Kedudukan Dok"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Dok Atas"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Dok Bawah"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Dok Kiri"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Dok Kanan"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Jurang Tetingkap"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Sudut Tetingkap"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Sudut Tema"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Sudut Tajam"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Sudut Bulat"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Kelegapan Tetingkap"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Tetingkap Legap"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Tetingkap Lutsinar"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Tetingkap Kaca"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "Nisbah 1-Tetingkap"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Susun Atur Ruang Kerja",
-    "title": "Susun Atur Ruang Kerja Lalai"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Jubinan"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Penatalan"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Terapung"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Segerak Tema Herdr"
-  },
-  "setup.style": {
-    "label": "Gaya"
-  },
-  "setup.style.theme": {
-    "label": "Tema"
-  },
-  "setup.style.background": {
-    "label": "Latar Belakang"
-  },
-  "setup.style.unlock": {
-    "label": "Buka Kunci"
-  },
-  "setup.style.font": {
-    "label": "Fon"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Tabir Skrin"
-  },
-  "setup.style.about": {
-    "label": "Perihal"
-  },
-  "setup.style.about.text": {
-    "label": "Sunting Teks"
-  },
-  "setup.style.about.image": {
-    "label": "Tetapkan dari Imej"
-  },
-  "setup.style.about.default": {
-    "label": "Pulihkan Lalai"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Sunting Teks"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Tetapkan dari Imej"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Pulihkan Lalai"
   },
   "setup.monitors": {
     "label": "Monitor"

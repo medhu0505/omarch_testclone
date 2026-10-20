@@ -8,6 +8,9 @@
   "learn": {
     "label": "Научи"
   },
+  "appearance": {
+    "label": "Изглед"
+  },
   "trigger": {
     "label": "Покрени"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Заједница"
+  },
+  "appearance.theme": {
+    "label": "Тема"
+  },
+  "appearance.background": {
+    "label": "Позадина"
+  },
+  "appearance.unlock": {
+    "label": "Откључај"
+  },
+  "appearance.font": {
+    "label": "Фонт"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Чувар екрана"
+  },
+  "appearance.about": {
+    "label": "О програму"
+  },
+  "appearance.about.text": {
+    "label": "Измени текст"
+  },
+  "appearance.about.image": {
+    "label": "Подеси са слике"
+  },
+  "appearance.about.default": {
+    "label": "Врати подразумевано"
+  },
+  "appearance.screensaver.text": {
+    "label": "Измени текст"
+  },
+  "appearance.screensaver.image": {
+    "label": "Подеси са слике"
+  },
+  "appearance.screensaver.default": {
+    "label": "Врати подразумевано"
+  },
+  "appearance.animations": {
+    "label": "Анимације"
+  },
+  "appearance.top-bar": {
+    "label": "Трака менија"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Сакриј траку"
+  },
+  "appearance.top-bar.show": {
+    "label": "Прикажи траку"
+  },
+  "appearance.top-bar.position": {
+    "label": "Положај траке"
+  },
+  "appearance.top-bar.background": {
+    "label": "Позадина траке"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Непрозирна трака"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Стаклена трака"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Прозирна трака"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Индикатори траке"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Проценат батерије"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Сат"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Недеља 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Недеља 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Недеља 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Недеља 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "Нед 3. мај 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "Нед 3. мај 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3. мај Н18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03. мај Н18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Горња трака"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Доња трака"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Лева трака"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Десна трака"
+  },
+  "appearance.dock": {
+    "label": "Док"
+  },
+  "appearance.dock.autohide": {
+    "label": "Аутоматски сакриј Dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "Увек видљив Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Положај Dock-а"
+  },
+  "appearance.dock.position.top": {
+    "label": "Горњи Dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Доњи Dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "Леви Dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "Десни Dock"
+  },
+  "appearance.windows.gaps": {
+    "label": "Размаци прозора"
+  },
+  "appearance.windows.corners": {
+    "label": "Углови прозора"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Углови теме"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Оштри углови"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Заобљени углови"
+  },
+  "appearance.windows.transparency": {
+    "label": "Непрозирност прозора"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Непрозирни прозори"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Прозирни прозори"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Стаклени прозори"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "Однос 1 прозора"
+  },
+  "appearance.workspace-layout": {
+    "label": "Распоред радног простора",
+    "title": "Подразумевани распоред радног простора"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Плочице"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Померање"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Плутајући"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr синхронизација теме"
   },
   "trigger.toggle": {
     "label": "Укључи/искључи"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Тест брзине диска"
-  },
-  "setup.appearance": {
-    "label": "Изглед"
-  },
-  "setup.appearance.animations": {
-    "label": "Анимације"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Трака менија"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Сакриј траку"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Прикажи траку"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Положај траке"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Позадина траке"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Непрозирна трака"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Стаклена трака"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Прозирна трака"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Индикатори траке"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Проценат батерије"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Сат"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Недеља 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Недеља 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Недеља 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Недеља 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "Нед 3. мај 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "Нед 3. мај 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3. мај Н18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03. мај Н18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Горња трака"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Доња трака"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Лева трака"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Десна трака"
-  },
-  "setup.appearance.dock": {
-    "label": "Док"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Аутоматски сакриј Dock"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Увек видљив Dock"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Положај Dock-а"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Горњи Dock"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Доњи Dock"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Леви Dock"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Десни Dock"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Размаци прозора"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Углови прозора"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Углови теме"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Оштри углови"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Заобљени углови"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Непрозирност прозора"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Непрозирни прозори"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Прозирни прозори"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Стаклени прозори"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "Однос 1 прозора"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Распоред радног простора",
-    "title": "Подразумевани распоред радног простора"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Плочице"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Померање"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Плутајући"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr синхронизација теме"
-  },
-  "setup.style": {
-    "label": "Стил"
-  },
-  "setup.style.theme": {
-    "label": "Тема"
-  },
-  "setup.style.background": {
-    "label": "Позадина"
-  },
-  "setup.style.unlock": {
-    "label": "Откључај"
-  },
-  "setup.style.font": {
-    "label": "Фонт"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Чувар екрана"
-  },
-  "setup.style.about": {
-    "label": "О програму"
-  },
-  "setup.style.about.text": {
-    "label": "Измени текст"
-  },
-  "setup.style.about.image": {
-    "label": "Подеси са слике"
-  },
-  "setup.style.about.default": {
-    "label": "Врати подразумевано"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Измени текст"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Подеси са слике"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Врати подразумевано"
   },
   "setup.monitors": {
     "label": "Монитори"

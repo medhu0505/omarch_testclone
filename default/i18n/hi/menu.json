@@ -8,6 +8,9 @@
   "learn": {
     "label": "सीखें"
   },
+  "appearance": {
+    "label": "दिखावट"
+  },
   "trigger": {
     "label": "ट्रिगर"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "समुदाय"
+  },
+  "appearance.theme": {
+    "label": "थीम"
+  },
+  "appearance.background": {
+    "label": "पृष्ठभूमि"
+  },
+  "appearance.unlock": {
+    "label": "अनलॉक करें"
+  },
+  "appearance.font": {
+    "label": "फ़ॉन्ट"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "स्क्रीनसेवर"
+  },
+  "appearance.about": {
+    "label": "बारे में"
+  },
+  "appearance.about.text": {
+    "label": "टेक्स्ट संपादित करें"
+  },
+  "appearance.about.image": {
+    "label": "इमेज से सेट करें"
+  },
+  "appearance.about.default": {
+    "label": "डिफ़ॉल्ट पुनर्स्थापित करें"
+  },
+  "appearance.screensaver.text": {
+    "label": "टेक्स्ट संपादित करें"
+  },
+  "appearance.screensaver.image": {
+    "label": "इमेज से सेट करें"
+  },
+  "appearance.screensaver.default": {
+    "label": "डिफ़ॉल्ट पुनर्स्थापित करें"
+  },
+  "appearance.animations": {
+    "label": "एनिमेशन"
+  },
+  "appearance.top-bar": {
+    "label": "मेनू बार"
+  },
+  "appearance.top-bar.hide": {
+    "label": "बार छिपाएं"
+  },
+  "appearance.top-bar.show": {
+    "label": "बार दिखाएं"
+  },
+  "appearance.top-bar.position": {
+    "label": "बार स्थिति"
+  },
+  "appearance.top-bar.background": {
+    "label": "बार पृष्ठभूमि"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "अपारदर्शी बार"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "ग्लासी बार"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "साफ़ बार"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "बार संकेतक"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "बैटरी प्रतिशत"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "घड़ी"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "रविवार 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "रविवार 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "रविवार 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "रविवार 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "रवि 3 मई 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "रवि 3 मई 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 मई W18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 मई W18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "ऊपरी बार"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "निचला बार"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "बायां बार"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "दायां बार"
+  },
+  "appearance.dock": {
+    "label": "डॉक"
+  },
+  "appearance.dock.autohide": {
+    "label": "ऑटो-छिपा डॉक"
+  },
+  "appearance.dock.always-on": {
+    "label": "हमेशा दृश्य डॉक"
+  },
+  "appearance.dock.position": {
+    "label": "डॉक स्थिति"
+  },
+  "appearance.dock.position.top": {
+    "label": "ऊपरी डॉक"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "निचला डॉक"
+  },
+  "appearance.dock.position.left": {
+    "label": "बायां डॉक"
+  },
+  "appearance.dock.position.right": {
+    "label": "दायां डॉक"
+  },
+  "appearance.windows.gaps": {
+    "label": "विंडो अंतराल"
+  },
+  "appearance.windows.corners": {
+    "label": "विंडो कोने"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "थीम कोने"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "तेज़ कोने"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "गोल कोने"
+  },
+  "appearance.windows.transparency": {
+    "label": "विंडो अपारदर्शिता"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "अपारदर्शी विंडो"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "पारदर्शी विंडो"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "ग्लासी विंडो"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "1-विंडो अनुपात"
+  },
+  "appearance.workspace-layout": {
+    "label": "वर्कस्पेस लेआउट",
+    "title": "डिफ़ॉल्ट वर्कस्पेस लेआउट"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "टाइलिंग"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "स्क्रॉलिंग"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "फ़्लोटिंग"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr थीम सिंक"
   },
   "trigger.toggle": {
     "label": "टॉगल"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "डिस्क गति परीक्षण"
-  },
-  "setup.appearance": {
-    "label": "दिखावट"
-  },
-  "setup.appearance.animations": {
-    "label": "एनिमेशन"
-  },
-  "setup.appearance.top-bar": {
-    "label": "मेनू बार"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "बार छिपाएं"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "बार दिखाएं"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "बार स्थिति"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "बार पृष्ठभूमि"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "अपारदर्शी बार"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "ग्लासी बार"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "साफ़ बार"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "बार संकेतक"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "बैटरी प्रतिशत"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "घड़ी"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "रविवार 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "रविवार 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "रविवार 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "रविवार 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "रवि 3 मई 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "रवि 3 मई 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 मई W18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 मई W18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "ऊपरी बार"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "निचला बार"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "बायां बार"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "दायां बार"
-  },
-  "setup.appearance.dock": {
-    "label": "डॉक"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "ऑटो-छिपा डॉक"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "हमेशा दृश्य डॉक"
-  },
-  "setup.appearance.dock.position": {
-    "label": "डॉक स्थिति"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "ऊपरी डॉक"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "निचला डॉक"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "बायां डॉक"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "दायां डॉक"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "विंडो अंतराल"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "विंडो कोने"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "थीम कोने"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "तेज़ कोने"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "गोल कोने"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "विंडो अपारदर्शिता"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "अपारदर्शी विंडो"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "पारदर्शी विंडो"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "ग्लासी विंडो"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "1-विंडो अनुपात"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "वर्कस्पेस लेआउट",
-    "title": "डिफ़ॉल्ट वर्कस्पेस लेआउट"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "टाइलिंग"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "स्क्रॉलिंग"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "फ़्लोटिंग"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr थीम सिंक"
-  },
-  "setup.style": {
-    "label": "स्टाइल"
-  },
-  "setup.style.theme": {
-    "label": "थीम"
-  },
-  "setup.style.background": {
-    "label": "पृष्ठभूमि"
-  },
-  "setup.style.unlock": {
-    "label": "अनलॉक करें"
-  },
-  "setup.style.font": {
-    "label": "फ़ॉन्ट"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "स्क्रीनसेवर"
-  },
-  "setup.style.about": {
-    "label": "बारे में"
-  },
-  "setup.style.about.text": {
-    "label": "टेक्स्ट संपादित करें"
-  },
-  "setup.style.about.image": {
-    "label": "इमेज से सेट करें"
-  },
-  "setup.style.about.default": {
-    "label": "डिफ़ॉल्ट पुनर्स्थापित करें"
-  },
-  "setup.style.screensaver.text": {
-    "label": "टेक्स्ट संपादित करें"
-  },
-  "setup.style.screensaver.image": {
-    "label": "इमेज से सेट करें"
-  },
-  "setup.style.screensaver.default": {
-    "label": "डिफ़ॉल्ट पुनर्स्थापित करें"
   },
   "setup.monitors": {
     "label": "मॉनिटर"

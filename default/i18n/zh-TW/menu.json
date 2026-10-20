@@ -8,6 +8,9 @@
   "learn": {
     "label": "學習"
   },
+  "appearance": {
+    "label": "外觀"
+  },
   "trigger": {
     "label": "觸發"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "社群"
+  },
+  "appearance.theme": {
+    "label": "主題"
+  },
+  "appearance.background": {
+    "label": "背景"
+  },
+  "appearance.unlock": {
+    "label": "解鎖"
+  },
+  "appearance.font": {
+    "label": "字型"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "螢幕保護程式"
+  },
+  "appearance.about": {
+    "label": "關於"
+  },
+  "appearance.about.text": {
+    "label": "編輯文字"
+  },
+  "appearance.about.image": {
+    "label": "以圖片設定"
+  },
+  "appearance.about.default": {
+    "label": "還原預設"
+  },
+  "appearance.screensaver.text": {
+    "label": "編輯文字"
+  },
+  "appearance.screensaver.image": {
+    "label": "以圖片設定"
+  },
+  "appearance.screensaver.default": {
+    "label": "還原預設"
+  },
+  "appearance.animations": {
+    "label": "動畫"
+  },
+  "appearance.top-bar": {
+    "label": "選單列"
+  },
+  "appearance.top-bar.hide": {
+    "label": "隱藏列"
+  },
+  "appearance.top-bar.show": {
+    "label": "顯示列"
+  },
+  "appearance.top-bar.position": {
+    "label": "列位置"
+  },
+  "appearance.top-bar.background": {
+    "label": "列背景"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "不透明列"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "玻璃列"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "透明列"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "列指示"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "電池百分比"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "時鐘"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "星期日 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "星期日 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "星期日 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "星期日 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "週日 3 5月 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "週日 3 5月 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 5月 W18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 5月 W18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "頂部列"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "底部列"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "左側列"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "右側列"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "自動隱藏 Dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock 常駐"
+  },
+  "appearance.dock.position": {
+    "label": "Dock 位置"
+  },
+  "appearance.dock.position.top": {
+    "label": "頂部 Dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "底部 Dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "左側 Dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "右側 Dock"
+  },
+  "appearance.windows.gaps": {
+    "label": "視窗間距"
+  },
+  "appearance.windows.corners": {
+    "label": "視窗圓角"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "主題圓角"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "直角"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "圓角"
+  },
+  "appearance.windows.transparency": {
+    "label": "視窗不透明度"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "不透明視窗"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "透明視窗"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "玻璃視窗"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "單視窗比例"
+  },
+  "appearance.workspace-layout": {
+    "label": "工作區配置",
+    "title": "預設工作區配置"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "平鋪"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "捲動"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "浮動"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr 主題同步"
   },
   "trigger.toggle": {
     "label": "切換"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "磁碟測速"
-  },
-  "setup.appearance": {
-    "label": "外觀"
-  },
-  "setup.appearance.animations": {
-    "label": "動畫"
-  },
-  "setup.appearance.top-bar": {
-    "label": "選單列"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "隱藏列"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "顯示列"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "列位置"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "列背景"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "不透明列"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "玻璃列"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "透明列"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "列指示"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "電池百分比"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "時鐘"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "星期日 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "星期日 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "星期日 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "星期日 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "週日 3 5月 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "週日 3 5月 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 5月 W18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 5月 W18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "頂部列"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "底部列"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "左側列"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "右側列"
-  },
-  "setup.appearance.dock": {
-    "label": "Dock"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "自動隱藏 Dock"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Dock 常駐"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Dock 位置"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "頂部 Dock"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "底部 Dock"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "左側 Dock"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "右側 Dock"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "視窗間距"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "視窗圓角"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "主題圓角"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "直角"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "圓角"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "視窗不透明度"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "不透明視窗"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "透明視窗"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "玻璃視窗"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "單視窗比例"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "工作區配置",
-    "title": "預設工作區配置"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "平鋪"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "捲動"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "浮動"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr 主題同步"
-  },
-  "setup.style": {
-    "label": "風格"
-  },
-  "setup.style.theme": {
-    "label": "主題"
-  },
-  "setup.style.background": {
-    "label": "背景"
-  },
-  "setup.style.unlock": {
-    "label": "解鎖"
-  },
-  "setup.style.font": {
-    "label": "字型"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "螢幕保護程式"
-  },
-  "setup.style.about": {
-    "label": "關於"
-  },
-  "setup.style.about.text": {
-    "label": "編輯文字"
-  },
-  "setup.style.about.image": {
-    "label": "以圖片設定"
-  },
-  "setup.style.about.default": {
-    "label": "還原預設"
-  },
-  "setup.style.screensaver.text": {
-    "label": "編輯文字"
-  },
-  "setup.style.screensaver.image": {
-    "label": "以圖片設定"
-  },
-  "setup.style.screensaver.default": {
-    "label": "還原預設"
   },
   "setup.monitors": {
     "label": "顯示器"

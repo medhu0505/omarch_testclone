@@ -8,6 +8,9 @@
   "learn": {
     "label": "Leer"
   },
+  "appearance": {
+    "label": "Weergave"
+  },
   "trigger": {
     "label": "Activeren"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Gemeenschap"
+  },
+  "appearance.theme": {
+    "label": "Thema"
+  },
+  "appearance.background": {
+    "label": "Achtergrond"
+  },
+  "appearance.unlock": {
+    "label": "Ontgrendelen"
+  },
+  "appearance.font": {
+    "label": "Lettertype"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Schermbeveiliging"
+  },
+  "appearance.about": {
+    "label": "Over"
+  },
+  "appearance.about.text": {
+    "label": "Tekst bewerken"
+  },
+  "appearance.about.image": {
+    "label": "Uit afbeelding instellen"
+  },
+  "appearance.about.default": {
+    "label": "Standaard herstellen"
+  },
+  "appearance.screensaver.text": {
+    "label": "Tekst bewerken"
+  },
+  "appearance.screensaver.image": {
+    "label": "Uit afbeelding instellen"
+  },
+  "appearance.screensaver.default": {
+    "label": "Standaard herstellen"
+  },
+  "appearance.animations": {
+    "label": "Animaties"
+  },
+  "appearance.top-bar": {
+    "label": "Menubalk"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Balk verbergen"
+  },
+  "appearance.top-bar.show": {
+    "label": "Balk tonen"
+  },
+  "appearance.top-bar.position": {
+    "label": "Balkpositie"
+  },
+  "appearance.top-bar.background": {
+    "label": "Balkachtergrond"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Ondoorzichtige balk"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Glazen balk"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Doorzichtige balk"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Balkindicatoren"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Batterijpercentage"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Klok"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Zondag 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Zondag 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Zondag 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Zondag 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "Zo 3 mei 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "Zo 3 mei 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 mei W18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 mei W18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Balk boven"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Balk onder"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Balk links"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Balk rechts"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dock auto-verbergen"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock altijd zichtbaar"
+  },
+  "appearance.dock.position": {
+    "label": "Dockpositie"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock boven"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock onder"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock links"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock rechts"
+  },
+  "appearance.windows.gaps": {
+    "label": "Vensterafstand"
+  },
+  "appearance.windows.corners": {
+    "label": "Vensterhoeken"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Themahoeken"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Scherpe hoeken"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Ronde hoeken"
+  },
+  "appearance.windows.transparency": {
+    "label": "Vensterdekking"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Ondoorzichtige vensters"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Doorzichtige vensters"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Glazen vensters"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "1-venster verhouding"
+  },
+  "appearance.workspace-layout": {
+    "label": "Werkbladindeling",
+    "title": "Standaard werkbladindeling"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Tegelen"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Scrollen"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Zwevend"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr-themasync"
   },
   "trigger.toggle": {
     "label": "Schakelen"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Schijfsnelheidstest"
-  },
-  "setup.appearance": {
-    "label": "Weergave"
-  },
-  "setup.appearance.animations": {
-    "label": "Animaties"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Menubalk"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Balk verbergen"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Balk tonen"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Balkpositie"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Balkachtergrond"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Ondoorzichtige balk"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Glazen balk"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Doorzichtige balk"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Balkindicatoren"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Batterijpercentage"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Klok"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Zondag 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Zondag 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Zondag 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Zondag 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "Zo 3 mei 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "Zo 3 mei 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 mei W18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 mei W18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Balk boven"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Balk onder"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Balk links"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Balk rechts"
-  },
-  "setup.appearance.dock": {
-    "label": "Dock"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Dock auto-verbergen"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Dock altijd zichtbaar"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Dockpositie"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Dock boven"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Dock onder"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Dock links"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Dock rechts"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Vensterafstand"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Vensterhoeken"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Themahoeken"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Scherpe hoeken"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Ronde hoeken"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Vensterdekking"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Ondoorzichtige vensters"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Doorzichtige vensters"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Glazen vensters"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "1-venster verhouding"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Werkbladindeling",
-    "title": "Standaard werkbladindeling"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Tegelen"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Scrollen"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Zwevend"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr-themasync"
-  },
-  "setup.style": {
-    "label": "Stijl"
-  },
-  "setup.style.theme": {
-    "label": "Thema"
-  },
-  "setup.style.background": {
-    "label": "Achtergrond"
-  },
-  "setup.style.unlock": {
-    "label": "Ontgrendelen"
-  },
-  "setup.style.font": {
-    "label": "Lettertype"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Schermbeveiliging"
-  },
-  "setup.style.about": {
-    "label": "Over"
-  },
-  "setup.style.about.text": {
-    "label": "Tekst bewerken"
-  },
-  "setup.style.about.image": {
-    "label": "Uit afbeelding instellen"
-  },
-  "setup.style.about.default": {
-    "label": "Standaard herstellen"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Tekst bewerken"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Uit afbeelding instellen"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Standaard herstellen"
   },
   "setup.monitors": {
     "label": "Monitoren"

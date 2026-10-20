@@ -8,6 +8,9 @@
   "learn": {
     "label": "Læra"
   },
+  "appearance": {
+    "label": "Útlit"
+  },
   "trigger": {
     "label": "Kveikja"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Samfélag"
+  },
+  "appearance.theme": {
+    "label": "Þema"
+  },
+  "appearance.background": {
+    "label": "Bakgrunnur"
+  },
+  "appearance.unlock": {
+    "label": "Opna"
+  },
+  "appearance.font": {
+    "label": "Leturgerð"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Skjáverji"
+  },
+  "appearance.about": {
+    "label": "Um"
+  },
+  "appearance.about.text": {
+    "label": "Breyta texta"
+  },
+  "appearance.about.image": {
+    "label": "Stilla frá mynd"
+  },
+  "appearance.about.default": {
+    "label": "Endurheimta sjálfgildi"
+  },
+  "appearance.screensaver.text": {
+    "label": "Breyta texta"
+  },
+  "appearance.screensaver.image": {
+    "label": "Stilla frá mynd"
+  },
+  "appearance.screensaver.default": {
+    "label": "Endurheimta sjálfgildi"
+  },
+  "appearance.animations": {
+    "label": "Hreyfingar"
+  },
+  "appearance.top-bar": {
+    "label": "Valmyndastika"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Fela stiku"
+  },
+  "appearance.top-bar.show": {
+    "label": "Sýna stiku"
+  },
+  "appearance.top-bar.position": {
+    "label": "Staðsetja stiku"
+  },
+  "appearance.top-bar.background": {
+    "label": "Bakgrunnur stiku"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Ógegnsæ stika"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Glerstika"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Tær stika"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Vísar stiku"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Rafhlöðuhlutfall"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Klukka"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Sunnudagur 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Sunnudagur 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Sunnudagur 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Sunnudagur 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "Sun 3. maí 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "Sun 3. maí 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3. maí V18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03. maí V18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Efsta stika"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Neðsta stika"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Vinstri stika"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Hægri stika"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Fela dock sjálfkrafa"
+  },
+  "appearance.dock.always-on": {
+    "label": "Alltaf sýnilegt dock"
+  },
+  "appearance.dock.position": {
+    "label": "Staðsetning docks"
+  },
+  "appearance.dock.position.top": {
+    "label": "Efsta dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Neðsta dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "Vinstri dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "Hægri dock"
+  },
+  "appearance.windows.gaps": {
+    "label": "Gluggabil"
+  },
+  "appearance.windows.corners": {
+    "label": "Gluggahorn"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Þemahorn"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Skörp horn"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Rúnnuð horn"
+  },
+  "appearance.windows.transparency": {
+    "label": "Ógegnsæi glugga"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Ógegnsæir gluggar"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Gegnsæir gluggar"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Glergluggar"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "1-gluggahlutfall"
+  },
+  "appearance.workspace-layout": {
+    "label": "Vinnusvæðaskipun",
+    "title": "Sjálfgefin vinnusvæðaskipun"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Flísalögn"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Skrunun"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Fljótandi"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr þemasamstilling"
   },
   "trigger.toggle": {
     "label": "Víxla"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Diskahraðapróf"
-  },
-  "setup.appearance": {
-    "label": "Útlit"
-  },
-  "setup.appearance.animations": {
-    "label": "Hreyfingar"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Valmyndastika"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Fela stiku"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Sýna stiku"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Staðsetja stiku"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Bakgrunnur stiku"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Ógegnsæ stika"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Glerstika"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Tær stika"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Vísar stiku"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Rafhlöðuhlutfall"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Klukka"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Sunnudagur 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Sunnudagur 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Sunnudagur 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Sunnudagur 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "Sun 3. maí 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "Sun 3. maí 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3. maí V18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03. maí V18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Efsta stika"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Neðsta stika"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Vinstri stika"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Hægri stika"
-  },
-  "setup.appearance.dock": {
-    "label": "Dock"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Fela dock sjálfkrafa"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Alltaf sýnilegt dock"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Staðsetning docks"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Efsta dock"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Neðsta dock"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Vinstri dock"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Hægri dock"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Gluggabil"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Gluggahorn"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Þemahorn"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Skörp horn"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Rúnnuð horn"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Ógegnsæi glugga"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Ógegnsæir gluggar"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Gegnsæir gluggar"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Glergluggar"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "1-gluggahlutfall"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Vinnusvæðaskipun",
-    "title": "Sjálfgefin vinnusvæðaskipun"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Flísalögn"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Skrunun"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Fljótandi"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr þemasamstilling"
-  },
-  "setup.style": {
-    "label": "Stíll"
-  },
-  "setup.style.theme": {
-    "label": "Þema"
-  },
-  "setup.style.background": {
-    "label": "Bakgrunnur"
-  },
-  "setup.style.unlock": {
-    "label": "Opna"
-  },
-  "setup.style.font": {
-    "label": "Leturgerð"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Skjáverji"
-  },
-  "setup.style.about": {
-    "label": "Um"
-  },
-  "setup.style.about.text": {
-    "label": "Breyta texta"
-  },
-  "setup.style.about.image": {
-    "label": "Stilla frá mynd"
-  },
-  "setup.style.about.default": {
-    "label": "Endurheimta sjálfgildi"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Breyta texta"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Stilla frá mynd"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Endurheimta sjálfgildi"
   },
   "setup.monitors": {
     "label": "Skjár"

@@ -8,6 +8,9 @@
   "learn": {
     "label": "Изучить"
   },
+  "appearance": {
+    "label": "Внешний вид"
+  },
   "trigger": {
     "label": "Действия"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Сообщество"
+  },
+  "appearance.theme": {
+    "label": "Тема"
+  },
+  "appearance.background": {
+    "label": "Фон"
+  },
+  "appearance.unlock": {
+    "label": "Разблокировать"
+  },
+  "appearance.font": {
+    "label": "Шрифт"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Заставка"
+  },
+  "appearance.about": {
+    "label": "О программе"
+  },
+  "appearance.about.text": {
+    "label": "Изменить текст"
+  },
+  "appearance.about.image": {
+    "label": "Задать из изображения"
+  },
+  "appearance.about.default": {
+    "label": "Восстановить по умолчанию"
+  },
+  "appearance.screensaver.text": {
+    "label": "Изменить текст"
+  },
+  "appearance.screensaver.image": {
+    "label": "Задать из изображения"
+  },
+  "appearance.screensaver.default": {
+    "label": "Восстановить по умолчанию"
+  },
+  "appearance.animations": {
+    "label": "Анимации"
+  },
+  "appearance.top-bar": {
+    "label": "Панель меню"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Скрыть панель"
+  },
+  "appearance.top-bar.show": {
+    "label": "Показать панель"
+  },
+  "appearance.top-bar.position": {
+    "label": "Положение панели"
+  },
+  "appearance.top-bar.background": {
+    "label": "Фон панели"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Непрозрачная панель"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Стеклянная панель"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Прозрачная панель"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Индикаторы панели"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Процент батареи"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Часы"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Воскресенье 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Воскресенье 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Воскресенье 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Воскресенье 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "Вс 3 мая 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "Вс 3 мая 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 мая Н18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 мая Н18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Панель сверху"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Панель снизу"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Панель слева"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Панель справа"
+  },
+  "appearance.dock": {
+    "label": "Док"
+  },
+  "appearance.dock.autohide": {
+    "label": "Автоскрытие дока"
+  },
+  "appearance.dock.always-on": {
+    "label": "Док всегда виден"
+  },
+  "appearance.dock.position": {
+    "label": "Положение дока"
+  },
+  "appearance.dock.position.top": {
+    "label": "Док сверху"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Док снизу"
+  },
+  "appearance.dock.position.left": {
+    "label": "Док слева"
+  },
+  "appearance.dock.position.right": {
+    "label": "Док справа"
+  },
+  "appearance.windows.gaps": {
+    "label": "Зазоры окон"
+  },
+  "appearance.windows.corners": {
+    "label": "Углы окон"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Углы темы"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Острые углы"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Скруглённые углы"
+  },
+  "appearance.windows.transparency": {
+    "label": "Прозрачность окон"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Непрозрачные окна"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Прозрачные окна"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Стеклянные окна"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "Пропорции 1 окна"
+  },
+  "appearance.workspace-layout": {
+    "label": "Раскладка рабочих пространств",
+    "title": "Раскладка рабочих пространств по умолчанию"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Мозаичная"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Прокрутка"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Плавающий"
+  },
+  "appearance.theme-sync": {
+    "label": "Синхронизация темы Herdr"
   },
   "trigger.toggle": {
     "label": "Переключить"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Тест скорости диска"
-  },
-  "setup.appearance": {
-    "label": "Внешний вид"
-  },
-  "setup.appearance.animations": {
-    "label": "Анимации"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Панель меню"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Скрыть панель"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Показать панель"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Положение панели"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Фон панели"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Непрозрачная панель"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Стеклянная панель"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Прозрачная панель"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Индикаторы панели"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Процент батареи"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Часы"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Воскресенье 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Воскресенье 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Воскресенье 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Воскресенье 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "Вс 3 мая 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "Вс 3 мая 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 мая Н18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 мая Н18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Панель сверху"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Панель снизу"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Панель слева"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Панель справа"
-  },
-  "setup.appearance.dock": {
-    "label": "Док"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Автоскрытие дока"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Док всегда виден"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Положение дока"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Док сверху"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Док снизу"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Док слева"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Док справа"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Зазоры окон"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Углы окон"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Углы темы"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Острые углы"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Скруглённые углы"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Прозрачность окон"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Непрозрачные окна"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Прозрачные окна"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Стеклянные окна"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "Пропорции 1 окна"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Раскладка рабочих пространств",
-    "title": "Раскладка рабочих пространств по умолчанию"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Мозаичная"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Прокрутка"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Плавающий"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Синхронизация темы Herdr"
-  },
-  "setup.style": {
-    "label": "Стиль"
-  },
-  "setup.style.theme": {
-    "label": "Тема"
-  },
-  "setup.style.background": {
-    "label": "Фон"
-  },
-  "setup.style.unlock": {
-    "label": "Разблокировать"
-  },
-  "setup.style.font": {
-    "label": "Шрифт"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Заставка"
-  },
-  "setup.style.about": {
-    "label": "О программе"
-  },
-  "setup.style.about.text": {
-    "label": "Изменить текст"
-  },
-  "setup.style.about.image": {
-    "label": "Задать из изображения"
-  },
-  "setup.style.about.default": {
-    "label": "Восстановить по умолчанию"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Изменить текст"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Задать из изображения"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Восстановить по умолчанию"
   },
   "setup.monitors": {
     "label": "Мониторы"

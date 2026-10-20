@@ -8,6 +8,9 @@
   "learn": {
     "label": "ඉගෙන ගන්න"
   },
+  "appearance": {
+    "label": "පෙනුම"
+  },
   "trigger": {
     "label": "ක්‍රියාත්මක"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "ප්‍රජාව"
+  },
+  "appearance.theme": {
+    "label": "තේමාව"
+  },
+  "appearance.background": {
+    "label": "පසුබිම"
+  },
+  "appearance.unlock": {
+    "label": "අගුලු හරින්න"
+  },
+  "appearance.font": {
+    "label": "ෆොන්ටය"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "තිර ආරක්ෂකය"
+  },
+  "appearance.about": {
+    "label": "ගැන"
+  },
+  "appearance.about.text": {
+    "label": "පෙළ සංස්කරණය"
+  },
+  "appearance.about.image": {
+    "label": "රූපයෙන් සකසන්න"
+  },
+  "appearance.about.default": {
+    "label": "පෙරනිමිය යළි පිහිටුවන්න"
+  },
+  "appearance.screensaver.text": {
+    "label": "පෙළ සංස්කරණය"
+  },
+  "appearance.screensaver.image": {
+    "label": "රූපයෙන් සකසන්න"
+  },
+  "appearance.screensaver.default": {
+    "label": "පෙරනිමිය යළි පිහිටුවන්න"
+  },
+  "appearance.animations": {
+    "label": "සජීවිකරණ"
+  },
+  "appearance.top-bar": {
+    "label": "මෙනු තීරුව"
+  },
+  "appearance.top-bar.hide": {
+    "label": "තීරුව සඟවන්න"
+  },
+  "appearance.top-bar.show": {
+    "label": "තීරුව පෙන්වන්න"
+  },
+  "appearance.top-bar.position": {
+    "label": "තීරු පිහිටුම"
+  },
+  "appearance.top-bar.background": {
+    "label": "තීරු පසුබිම"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "අපාරදෘශ්‍ය තීරුව"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "වීදුරු තීරුව"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "පැහැදිලි තීරුව"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "තීරු දර්ශක"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "බැටරි ප්‍රතිශතය"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "ඔරලෝසුව"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "ඉරිදා 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "ඉරිදා 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "ඉරිදා 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "ඉරිදා 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "ඉරි 3 මැයි 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "ඉරි 3 මැයි 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 මැයි W18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 මැයි W18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "ඉහළ තීරුව"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "පහළ තීරුව"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "වම් තීරුව"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "දකුණු තීරුව"
+  },
+  "appearance.dock": {
+    "label": "ඩොක්"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dock ස්වයං-සඟවන්න"
+  },
+  "appearance.dock.always-on": {
+    "label": "සැමවිට පෙනෙන Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Dock පිහිටුම"
+  },
+  "appearance.dock.position.top": {
+    "label": "ඉහළ Dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "පහළ Dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "වම් Dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "දකුණු Dock"
+  },
+  "appearance.windows.gaps": {
+    "label": "කවුළු හිඩැස්"
+  },
+  "appearance.windows.corners": {
+    "label": "කවුළු කොන්"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "තේමා කොන්"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "තියුණු කොන්"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "වටකුරු කොන්"
+  },
+  "appearance.windows.transparency": {
+    "label": "කවුළු අපාරදෘශ්‍යතාව"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "අපාරදෘශ්‍ය කවුළු"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "පාරදෘශ්‍ය කවුළු"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "වීදුරු කවුළු"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "කවුළු 1 අනුපාතය"
+  },
+  "appearance.workspace-layout": {
+    "label": "වැඩබිම් සැකැස්ම",
+    "title": "පෙරනිමි වැඩබිම් සැකැස්ම"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "ටයිල් කිරීම"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "අනුචලනය"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "පාවෙන"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr තේමා සමමුහුර්තය"
   },
   "trigger.toggle": {
     "label": "සක්‍රිය/අක්‍රිය"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "තැටි වේග පරීක්ෂණය"
-  },
-  "setup.appearance": {
-    "label": "පෙනුම"
-  },
-  "setup.appearance.animations": {
-    "label": "සජීවිකරණ"
-  },
-  "setup.appearance.top-bar": {
-    "label": "මෙනු තීරුව"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "තීරුව සඟවන්න"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "තීරුව පෙන්වන්න"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "තීරු පිහිටුම"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "තීරු පසුබිම"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "අපාරදෘශ්‍ය තීරුව"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "වීදුරු තීරුව"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "පැහැදිලි තීරුව"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "තීරු දර්ශක"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "බැටරි ප්‍රතිශතය"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "ඔරලෝසුව"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "ඉරිදා 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "ඉරිදා 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "ඉරිදා 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "ඉරිදා 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "ඉරි 3 මැයි 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "ඉරි 3 මැයි 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 මැයි W18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 මැයි W18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "ඉහළ තීරුව"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "පහළ තීරුව"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "වම් තීරුව"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "දකුණු තීරුව"
-  },
-  "setup.appearance.dock": {
-    "label": "ඩොක්"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Dock ස්වයං-සඟවන්න"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "සැමවිට පෙනෙන Dock"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Dock පිහිටුම"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "ඉහළ Dock"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "පහළ Dock"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "වම් Dock"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "දකුණු Dock"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "කවුළු හිඩැස්"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "කවුළු කොන්"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "තේමා කොන්"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "තියුණු කොන්"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "වටකුරු කොන්"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "කවුළු අපාරදෘශ්‍යතාව"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "අපාරදෘශ්‍ය කවුළු"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "පාරදෘශ්‍ය කවුළු"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "වීදුරු කවුළු"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "කවුළු 1 අනුපාතය"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "වැඩබිම් සැකැස්ම",
-    "title": "පෙරනිමි වැඩබිම් සැකැස්ම"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "ටයිල් කිරීම"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "අනුචලනය"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "පාවෙන"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr තේමා සමමුහුර්තය"
-  },
-  "setup.style": {
-    "label": "විලාසය"
-  },
-  "setup.style.theme": {
-    "label": "තේමාව"
-  },
-  "setup.style.background": {
-    "label": "පසුබිම"
-  },
-  "setup.style.unlock": {
-    "label": "අගුලු හරින්න"
-  },
-  "setup.style.font": {
-    "label": "ෆොන්ටය"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "තිර ආරක්ෂකය"
-  },
-  "setup.style.about": {
-    "label": "ගැන"
-  },
-  "setup.style.about.text": {
-    "label": "පෙළ සංස්කරණය"
-  },
-  "setup.style.about.image": {
-    "label": "රූපයෙන් සකසන්න"
-  },
-  "setup.style.about.default": {
-    "label": "පෙරනිමිය යළි පිහිටුවන්න"
-  },
-  "setup.style.screensaver.text": {
-    "label": "පෙළ සංස්කරණය"
-  },
-  "setup.style.screensaver.image": {
-    "label": "රූපයෙන් සකසන්න"
-  },
-  "setup.style.screensaver.default": {
-    "label": "පෙරනිමිය යළි පිහිටුවන්න"
   },
   "setup.monitors": {
     "label": "මොනිටර"

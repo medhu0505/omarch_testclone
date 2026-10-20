@@ -8,6 +8,9 @@
   "learn": {
     "label": "Oʻrganish"
   },
+  "appearance": {
+    "label": "Koʻrinish"
+  },
   "trigger": {
     "label": "Ishga tushirish"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Hamjamiyat"
+  },
+  "appearance.theme": {
+    "label": "Mavzu"
+  },
+  "appearance.background": {
+    "label": "Fon"
+  },
+  "appearance.unlock": {
+    "label": "Qulfdan ochish"
+  },
+  "appearance.font": {
+    "label": "Shrift"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Ekran saqlagich"
+  },
+  "appearance.about": {
+    "label": "Haqida"
+  },
+  "appearance.about.text": {
+    "label": "Matnni tahrirlash"
+  },
+  "appearance.about.image": {
+    "label": "Rasmdan oʻrnatish"
+  },
+  "appearance.about.default": {
+    "label": "Standartni tiklash"
+  },
+  "appearance.screensaver.text": {
+    "label": "Matnni tahrirlash"
+  },
+  "appearance.screensaver.image": {
+    "label": "Rasmdan oʻrnatish"
+  },
+  "appearance.screensaver.default": {
+    "label": "Standartni tiklash"
+  },
+  "appearance.animations": {
+    "label": "Animatsiyalar"
+  },
+  "appearance.top-bar": {
+    "label": "Menyu paneli"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Panelni yashirish"
+  },
+  "appearance.top-bar.show": {
+    "label": "Panelni koʻrsatish"
+  },
+  "appearance.top-bar.position": {
+    "label": "Panel joyi"
+  },
+  "appearance.top-bar.background": {
+    "label": "Panel foni"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Shaffofmas panel"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Shishasimon panel"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Shaffof panel"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Panel koʻrsatkichlari"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Batareya foizi"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Soat"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Yakshanba 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Yakshanba 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Yakshanba 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Yakshanba 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "Yak 3 may 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "Yak 3 may 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 may W18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 may W18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Yuqori panel"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Quyi panel"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Chap panel"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Oʻng panel"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dockni avto-yashirish"
+  },
+  "appearance.dock.always-on": {
+    "label": "Doim koʻrinadigan Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Dock joyi"
+  },
+  "appearance.dock.position.top": {
+    "label": "Yuqori Dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Quyi Dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "Chap Dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "Oʻng Dock"
+  },
+  "appearance.windows.gaps": {
+    "label": "Oyna oraliqlari"
+  },
+  "appearance.windows.corners": {
+    "label": "Oyna burchaklari"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Mavzu burchaklari"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Oʻtkir burchaklar"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Yumaloq burchaklar"
+  },
+  "appearance.windows.transparency": {
+    "label": "Oyna shaffofligi"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Shaffofmas oynalar"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Shaffof oynalar"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Shishasimon oynalar"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "1-oyna nisbati"
+  },
+  "appearance.workspace-layout": {
+    "label": "Ish maydoni tartibi",
+    "title": "Standart ish maydoni tartibi"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Mozaika"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Siljitish"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Suzuvchi"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr mavzu sinxronlash"
   },
   "trigger.toggle": {
     "label": "Almashtirish"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Disk tezligi testi"
-  },
-  "setup.appearance": {
-    "label": "Koʻrinish"
-  },
-  "setup.appearance.animations": {
-    "label": "Animatsiyalar"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Menyu paneli"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Panelni yashirish"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Panelni koʻrsatish"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Panel joyi"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Panel foni"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Shaffofmas panel"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Shishasimon panel"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Shaffof panel"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Panel koʻrsatkichlari"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Batareya foizi"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Soat"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Yakshanba 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Yakshanba 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Yakshanba 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Yakshanba 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "Yak 3 may 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "Yak 3 may 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 may W18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 may W18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Yuqori panel"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Quyi panel"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Chap panel"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Oʻng panel"
-  },
-  "setup.appearance.dock": {
-    "label": "Dock"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Dockni avto-yashirish"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Doim koʻrinadigan Dock"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Dock joyi"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Yuqori Dock"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Quyi Dock"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Chap Dock"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Oʻng Dock"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Oyna oraliqlari"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Oyna burchaklari"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Mavzu burchaklari"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Oʻtkir burchaklar"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Yumaloq burchaklar"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Oyna shaffofligi"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Shaffofmas oynalar"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Shaffof oynalar"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Shishasimon oynalar"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "1-oyna nisbati"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Ish maydoni tartibi",
-    "title": "Standart ish maydoni tartibi"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Mozaika"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Siljitish"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Suzuvchi"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr mavzu sinxronlash"
-  },
-  "setup.style": {
-    "label": "Uslub"
-  },
-  "setup.style.theme": {
-    "label": "Mavzu"
-  },
-  "setup.style.background": {
-    "label": "Fon"
-  },
-  "setup.style.unlock": {
-    "label": "Qulfdan ochish"
-  },
-  "setup.style.font": {
-    "label": "Shrift"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Ekran saqlagich"
-  },
-  "setup.style.about": {
-    "label": "Haqida"
-  },
-  "setup.style.about.text": {
-    "label": "Matnni tahrirlash"
-  },
-  "setup.style.about.image": {
-    "label": "Rasmdan oʻrnatish"
-  },
-  "setup.style.about.default": {
-    "label": "Standartni tiklash"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Matnni tahrirlash"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Rasmdan oʻrnatish"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Standartni tiklash"
   },
   "setup.monitors": {
     "label": "Monitorlar"

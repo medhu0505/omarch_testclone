@@ -8,6 +8,9 @@
   "learn": {
     "label": "Jifunze"
   },
+  "appearance": {
+    "label": "Muonekano"
+  },
   "trigger": {
     "label": "Anzisha"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Jumuiya"
+  },
+  "appearance.theme": {
+    "label": "Mandhari"
+  },
+  "appearance.background": {
+    "label": "Mandhari ya nyuma"
+  },
+  "appearance.unlock": {
+    "label": "Fungua"
+  },
+  "appearance.font": {
+    "label": "Fonti"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Kiokozi cha skrini"
+  },
+  "appearance.about": {
+    "label": "Kuhusu"
+  },
+  "appearance.about.text": {
+    "label": "Hariri maandishi"
+  },
+  "appearance.about.image": {
+    "label": "Weka kutoka picha"
+  },
+  "appearance.about.default": {
+    "label": "Rejesha chaguomsingi"
+  },
+  "appearance.screensaver.text": {
+    "label": "Hariri maandishi"
+  },
+  "appearance.screensaver.image": {
+    "label": "Weka kutoka picha"
+  },
+  "appearance.screensaver.default": {
+    "label": "Rejesha chaguomsingi"
+  },
+  "appearance.animations": {
+    "label": "Uhuishaji"
+  },
+  "appearance.top-bar": {
+    "label": "Upau wa menyu"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Ficha upau"
+  },
+  "appearance.top-bar.show": {
+    "label": "Onyesha upau"
+  },
+  "appearance.top-bar.position": {
+    "label": "Nafasi ya upau"
+  },
+  "appearance.top-bar.background": {
+    "label": "Mandhari ya upau"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Upau usioangavu"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Upau wa kioo"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Upau wazi"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Viashiria vya upau"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Asilimia ya betri"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Saa"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Jumapili 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Jumapili 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Jumapili 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Jumapili 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "Jum 3 Mei 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "Jum 3 Mei 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 Mei W18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 Mei W18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Upau wa juu"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Upau wa chini"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Upau wa kushoto"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Upau wa kulia"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Ficha Dock kiotomatiki"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock wa daima"
+  },
+  "appearance.dock.position": {
+    "label": "Nafasi ya Dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock wa juu"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock wa chini"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock wa kushoto"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock wa kulia"
+  },
+  "appearance.windows.gaps": {
+    "label": "Mapengo ya madirisha"
+  },
+  "appearance.windows.corners": {
+    "label": "Pembeni za madirisha"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Pembeni za mandhari"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Pembeni kali"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Pembeni za mviringo"
+  },
+  "appearance.windows.transparency": {
+    "label": "Uangavu wa madirisha"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Madirisha yasioangavu"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Madirisha angavu"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Madirisha ya kioo"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "Uwiano wa dirisha 1"
+  },
+  "appearance.workspace-layout": {
+    "label": "Mpangilio wa nafasi ya kazi",
+    "title": "Mpangilio chaguomsingi wa nafasi ya kazi"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Vigae"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Kusogeza"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Kuelea"
+  },
+  "appearance.theme-sync": {
+    "label": "Usawazishaji wa mandhari ya Herdr"
   },
   "trigger.toggle": {
     "label": "Badilisha"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Jaribio la kasi ya diski"
-  },
-  "setup.appearance": {
-    "label": "Muonekano"
-  },
-  "setup.appearance.animations": {
-    "label": "Uhuishaji"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Upau wa menyu"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Ficha upau"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Onyesha upau"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Nafasi ya upau"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Mandhari ya upau"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Upau usioangavu"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Upau wa kioo"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Upau wazi"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Viashiria vya upau"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Asilimia ya betri"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Saa"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Jumapili 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Jumapili 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Jumapili 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Jumapili 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "Jum 3 Mei 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "Jum 3 Mei 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 Mei W18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 Mei W18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Upau wa juu"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Upau wa chini"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Upau wa kushoto"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Upau wa kulia"
-  },
-  "setup.appearance.dock": {
-    "label": "Dock"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Ficha Dock kiotomatiki"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Dock wa daima"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Nafasi ya Dock"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Dock wa juu"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Dock wa chini"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Dock wa kushoto"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Dock wa kulia"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Mapengo ya madirisha"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Pembeni za madirisha"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Pembeni za mandhari"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Pembeni kali"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Pembeni za mviringo"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Uangavu wa madirisha"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Madirisha yasioangavu"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Madirisha angavu"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Madirisha ya kioo"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "Uwiano wa dirisha 1"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Mpangilio wa nafasi ya kazi",
-    "title": "Mpangilio chaguomsingi wa nafasi ya kazi"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Vigae"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Kusogeza"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Kuelea"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Usawazishaji wa mandhari ya Herdr"
-  },
-  "setup.style": {
-    "label": "Mtindo"
-  },
-  "setup.style.theme": {
-    "label": "Mandhari"
-  },
-  "setup.style.background": {
-    "label": "Mandhari ya nyuma"
-  },
-  "setup.style.unlock": {
-    "label": "Fungua"
-  },
-  "setup.style.font": {
-    "label": "Fonti"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Kiokozi cha skrini"
-  },
-  "setup.style.about": {
-    "label": "Kuhusu"
-  },
-  "setup.style.about.text": {
-    "label": "Hariri maandishi"
-  },
-  "setup.style.about.image": {
-    "label": "Weka kutoka picha"
-  },
-  "setup.style.about.default": {
-    "label": "Rejesha chaguomsingi"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Hariri maandishi"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Weka kutoka picha"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Rejesha chaguomsingi"
   },
   "setup.monitors": {
     "label": "Skrini"

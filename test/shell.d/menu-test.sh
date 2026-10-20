@@ -171,7 +171,7 @@ assert(
   'menu ranks an app matching the query as a whole word above exact-labeled menu entries'
 )
 assert(
-  rankScore('setup.style.font', 'font') < rankScore('apps.fontforge', 'font'),
+  rankScore('appearance.font', 'font') < rankScore('apps.fontforge', 'font'),
   'menu keeps a better-matching menu entry above a weaker app match'
 )
 
@@ -193,13 +193,10 @@ assert(
   'menu delegates route resolution to the shared model'
 )
 const triggerItems = defaultItems.filter(item => item.parent === 'trigger')
-assertDeepEqual(
-  defaultItems.filter(item => item.parent === 'setup').slice(0, 2).map(item => item.id),
-  ['setup.appearance', 'setup.style'],
-  'menu lists Appearance then Style first under Setup'
-)
-assert(!defaultById.style && !defaultById['trigger.appearance'], 'menu no longer keeps Style at the root or Appearance under Trigger')
-assertEqual(menu.resolveRoute(routed.items, routed.itemOrder, 'style'), 'setup.style', 'menu still routes style to Setup > Style')
+const rootIds = defaultItems.filter(item => item.parent === 'root').map(item => item.id)
+assertEqual(rootIds.indexOf('appearance'), rootIds.indexOf('trigger') - 1, 'menu lists Appearance right before Trigger')
+assert(!defaultById.style && !defaultById['trigger.appearance'], 'menu folds Style into Appearance and takes Appearance out of Trigger')
+assertEqual(menu.resolveRoute(routed.items, routed.itemOrder, 'style'), 'appearance', 'menu still routes style to Appearance')
 // Super+Ctrl+O routes through the `toggle` alias (#15168): dropping it
 // silently broke the shortcut, so pin the aliases and both routes.
 assertDeepEqual(
@@ -385,28 +382,27 @@ assert(
   'menu removes the relocated toggles from Trigger > Toggle'
 )
 assertDeepEqual(
-  defaultItems.filter(item => item.parent === 'setup.appearance.top-bar').map(item => item.label),
+  defaultItems.filter(item => item.parent === 'appearance.top-bar').map(item => item.label),
   ['Hide Bar', 'Show Bar', 'Position Bar', 'Bar Background', 'Bar Indicators'],
-  'menu gathers the Menu Bar under Setup > Appearance'
+  'menu gathers the Menu Bar under Appearance'
 )
 assert(
-  defaultById['setup.appearance.top-bar.hide'].when === '! omarchy-toggle-enabled bar-off'
-    && defaultById['setup.appearance.top-bar.show'].when === 'omarchy-toggle-enabled bar-off'
-    && defaultById['setup.appearance.top-bar.hide'].action === 'omarchy-toggle-bar'
-    && defaultById['setup.appearance.top-bar.show'].action === 'omarchy-toggle-bar',
+  defaultById['appearance.top-bar.hide'].when === '! omarchy-toggle-enabled bar-off'
+    && defaultById['appearance.top-bar.show'].when === 'omarchy-toggle-enabled bar-off'
+    && defaultById['appearance.top-bar.hide'].action === 'omarchy-toggle-bar'
+    && defaultById['appearance.top-bar.show'].action === 'omarchy-toggle-bar',
   'menu offers Hide while the Menu Bar shows and Show while it is hidden'
 )
-assert(!defaultItems.some(item => item.id.startsWith('setup.style.bar')), 'menu no longer keeps the Menu Bar under Style')
 assert(
-  defaultById['setup.appearance.top-bar.position'].kind === 'menu',
+  defaultById['appearance.top-bar.position'].kind === 'menu',
   'menu groups Menu Bar positions in a submenu'
 )
 assert(
-  ['top', 'bottom', 'left', 'right'].every(position => defaultById[`setup.appearance.top-bar.position.${position}`].action === `omarchy-bar position ${position}`),
+  ['top', 'bottom', 'left', 'right'].every(position => defaultById[`appearance.top-bar.position.${position}`].action === `omarchy-bar position ${position}`),
   'menu lists all Menu Bar positions under Position'
 )
 assertDeepEqual(
-  defaultItems.filter(item => item.parent === 'setup.appearance.top-bar.background').map(item => [item.label, item.action]),
+  defaultItems.filter(item => item.parent === 'appearance.top-bar.background').map(item => [item.label, item.action]),
   [
     ['Opaque Bar', 'omarchy-bar background opaque'],
     ['Glassy Bar', 'omarchy-bar background glassy'],
@@ -425,7 +421,7 @@ assertDeepEqual(
     fs.writeFileSync(path.join(home, '.config/omarchy/shell.json'), JSON.stringify({ bar }))
     return ['opaque', 'glassy', 'clear'].filter(look => {
       try {
-        execFileSync('bash', ['-c', defaultById[`setup.appearance.top-bar.background.${look}`].checked], { env: { ...process.env, HOME: home, OMARCHY_PATH: root, PATH: `${root}/bin:${process.env.PATH}` } })
+        execFileSync('bash', ['-c', defaultById[`appearance.top-bar.background.${look}`].checked], { env: { ...process.env, HOME: home, OMARCHY_PATH: root, PATH: `${root}/bin:${process.env.PATH}` } })
         return true
       } catch (e) {
         return false
@@ -439,9 +435,9 @@ assertDeepEqual(
   fs.rmSync(home, { recursive: true, force: true })
 }
 assertDeepEqual(
-  defaultItems.filter(item => item.parent === 'setup.appearance.dock').map(item => item.label),
+  defaultItems.filter(item => item.parent === 'appearance.dock').map(item => item.label),
   ['Auto-hide Dock', 'Always-on Dock', 'Dock Position'],
-  'menu gathers the dock under Setup > Appearance > Dock'
+  'menu gathers the dock under Appearance > Dock'
 )
 // Auto-hide Dock shows while the dock stays up, and Always-on Dock while it
 // hides. Ask bash, against a shell.json in each state, which rows it shows.
@@ -454,7 +450,7 @@ assertDeepEqual(
     fs.writeFileSync(path.join(home, '.config/omarchy/shell.json'), JSON.stringify({ version: 1, dock }))
     return ['autohide', 'always-on'].filter(row => {
       try {
-        execFileSync('bash', ['-c', defaultById[`setup.appearance.dock.${row}`].when], { env: { ...process.env, HOME: home, OMARCHY_PATH: root, PATH: `${root}/bin:${process.env.PATH}` } })
+        execFileSync('bash', ['-c', defaultById[`appearance.dock.${row}`].when], { env: { ...process.env, HOME: home, OMARCHY_PATH: root, PATH: `${root}/bin:${process.env.PATH}` } })
         return true
       } catch (e) {
         return false
@@ -464,14 +460,14 @@ assertDeepEqual(
   assertDeepEqual(shown({}), ['autohide'], 'menu offers Auto-hide Dock while the dock stays up')
   assertDeepEqual(shown({ autohide: true }), ['always-on'], 'menu offers Always-on Dock while the dock hides')
   assert(
-    defaultById['setup.appearance.dock.autohide'].action === 'omarchy-dock autohide on'
-      && defaultById['setup.appearance.dock.always-on'].action === 'omarchy-dock autohide off',
+    defaultById['appearance.dock.autohide'].action === 'omarchy-dock autohide on'
+      && defaultById['appearance.dock.always-on'].action === 'omarchy-dock autohide off',
     'menu turns dock auto-hide on and off'
   )
   fs.rmSync(home, { recursive: true, force: true })
 }
 assertDeepEqual(
-  defaultItems.filter(item => item.parent === 'setup.appearance.dock.position').map(item => [item.label, item.action]),
+  defaultItems.filter(item => item.parent === 'appearance.dock.position').map(item => [item.label, item.action]),
   [
     ['Top Dock', 'omarchy-dock position top'],
     ['Bottom Dock', 'omarchy-dock position bottom'],
@@ -491,7 +487,7 @@ assertDeepEqual(
     fs.writeFileSync(path.join(home, '.config/omarchy/shell.json'), JSON.stringify({ version: 1, dock }))
     return ['top', 'bottom', 'left', 'right'].filter(position => {
       try {
-        execFileSync('bash', ['-c', defaultById[`setup.appearance.dock.position.${position}`].checked], { env: { ...process.env, HOME: home, OMARCHY_PATH: root, PATH: `${root}/bin:${process.env.PATH}` } })
+        execFileSync('bash', ['-c', defaultById[`appearance.dock.position.${position}`].checked], { env: { ...process.env, HOME: home, OMARCHY_PATH: root, PATH: `${root}/bin:${process.env.PATH}` } })
         return true
       } catch (e) {
         return false
@@ -503,12 +499,12 @@ assertDeepEqual(
   fs.rmSync(home, { recursive: true, force: true })
 }
 assertDeepEqual(
-  defaultItems.filter(item => item.parent === 'setup.appearance.top-bar.indicators').map(item => item.label),
+  defaultItems.filter(item => item.parent === 'appearance.top-bar.indicators').map(item => item.label),
   ['Battery Percentage', 'Clock'],
   'menu gathers bar indicator options under Menu Bar > Bar Indicators'
 )
 const clockModel = requireFromRoot('shell/plugins/panels/clock/Model.js')
-const clockRows = defaultItems.filter(item => item.parent === 'setup.appearance.top-bar.indicators.clock')
+const clockRows = defaultItems.filter(item => item.parent === 'appearance.top-bar.indicators.clock')
 // Each row hands bash its format, so ask bash what it hands over.
 const clockRowFormats = key => clockRows
   .filter(item => item.action.startsWith(`omarchy-bar set omarchy.clock ${key} `))
@@ -520,17 +516,17 @@ assert(
   'menu checks the current clock format and offers only the formats for the bar orientation'
 )
 assertDeepEqual(
-  ['top', 'bottom', 'left', 'right'].map(position => defaultById[`setup.appearance.top-bar.position.${position}`].label),
+  ['top', 'bottom', 'left', 'right'].map(position => defaultById[`appearance.top-bar.position.${position}`].label),
   ['Top Bar', 'Bottom Bar', 'Left Bar', 'Right Bar'],
   'menu names each position after the bar'
 )
 assertDeepEqual(
-  defaultItems.filter(item => item.parent === 'setup.appearance.windows.corners').map(item => [item.label, item.action]),
+  defaultItems.filter(item => item.parent === 'appearance.windows.corners').map(item => [item.label, item.action]),
   [['Theme Corners', 'omarchy-hyprland-corners theme'], ['Sharp Corners', 'omarchy-hyprland-corners sharp'], ['Rounded Corners', 'omarchy-hyprland-corners rounded']],
   'menu picks window corners from Appearance > Windows > Window Corners'
 )
 assertDeepEqual(
-  defaultItems.filter(item => item.parent === 'setup.appearance.windows.transparency').map(item => [item.label, item.action]),
+  defaultItems.filter(item => item.parent === 'appearance.windows.transparency').map(item => [item.label, item.action]),
   [
     ['Opaque Windows', 'omarchy-hyprland-window-transparency opaque'],
     ['Transparent Windows', 'omarchy-hyprland-window-transparency transparent'],
@@ -543,14 +539,14 @@ const windowLabels = ['Window Gaps', 'Window Corners', 'Window Opacity', '1-Wind
 const appearanceLabels = ['Animations', 'Menu Bar', 'Dock', 'Windows', 'Workspace Layout', 'Herdr Theme Sync', ...windowLabels]
 assertEqual(triggerIds[0], 'trigger.toggle', 'menu lists Toggle first under Trigger')
 assertDeepEqual(
-  defaultItems.filter(item => item.parent === 'setup.appearance').map(item => item.label),
-  appearanceLabels.slice(0, 6),
-  'menu gathers the look of the desktop under Setup > Appearance'
+  defaultItems.filter(item => item.parent === 'appearance').map(item => item.label),
+  ['Theme', 'Background', 'Unlock', 'Font', 'Hyprland', 'Screensaver', 'About', ...appearanceLabels.slice(0, 6)],
+  'menu gathers the style and look of the desktop under Appearance'
 )
 assertDeepEqual(
-  defaultItems.filter(item => item.parent === 'setup.appearance.windows').map(item => item.label),
+  defaultItems.filter(item => item.parent === 'appearance.windows').map(item => item.label),
   windowLabels,
-  'menu gathers the window looks under Setup > Appearance > Windows'
+  'menu gathers the window looks under Appearance > Windows'
 )
 assert(
   !defaultItems.some(item => item.parent === 'trigger.toggle' && appearanceLabels.includes(item.label)),
@@ -558,8 +554,8 @@ assert(
 )
 assertEqual(triggerIds.indexOf('trigger.clipboard-history'), triggerIds.indexOf('trigger.emoji') + 1, 'menu places Clipboard History right after Emoji')
 assert(
-  !defaultItems.some(item => item.id.startsWith('setup.style.background-intro'))
-    && defaultById['setup.appearance.animations'].action === 'omarchy-toggle-animations',
+  !defaultItems.some(item => item.id.startsWith('appearance.background-intro'))
+    && defaultById['appearance.animations'].action === 'omarchy-toggle-animations',
   'menu uses the existing animations toggle without separate background intro controls'
 )
 assertDeepEqual(

@@ -8,6 +8,9 @@
   "learn": {
     "label": "Lær"
   },
+  "appearance": {
+    "label": "Udseende"
+  },
   "trigger": {
     "label": "Udløs"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Fællesskab"
+  },
+  "appearance.theme": {
+    "label": "Tema"
+  },
+  "appearance.background": {
+    "label": "Baggrund"
+  },
+  "appearance.unlock": {
+    "label": "Lås op"
+  },
+  "appearance.font": {
+    "label": "Skrifttype"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Pauseskærm"
+  },
+  "appearance.about": {
+    "label": "Om"
+  },
+  "appearance.about.text": {
+    "label": "Rediger tekst"
+  },
+  "appearance.about.image": {
+    "label": "Sæt fra billede"
+  },
+  "appearance.about.default": {
+    "label": "Gendan standard"
+  },
+  "appearance.screensaver.text": {
+    "label": "Rediger tekst"
+  },
+  "appearance.screensaver.image": {
+    "label": "Sæt fra billede"
+  },
+  "appearance.screensaver.default": {
+    "label": "Gendan standard"
+  },
+  "appearance.animations": {
+    "label": "Animationer"
+  },
+  "appearance.top-bar": {
+    "label": "Menulinje"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Skjul linje"
+  },
+  "appearance.top-bar.show": {
+    "label": "Vis linje"
+  },
+  "appearance.top-bar.position": {
+    "label": "Placer linje"
+  },
+  "appearance.top-bar.background": {
+    "label": "Linjebaggrund"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Uigennemsigtig linje"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Glaslinje"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Klar linje"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Linjeindikatorer"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Batteriprocent"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Ur"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Søndag 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Søndag 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Søndag 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Søndag 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "Søn 3. maj 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "Søn 3. maj 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3. maj U18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03. maj U18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Øverste linje"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Nederste linje"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Venstre linje"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Højre linje"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Skjul dock automatisk"
+  },
+  "appearance.dock.always-on": {
+    "label": "Altid synlig dock"
+  },
+  "appearance.dock.position": {
+    "label": "Dockplacering"
+  },
+  "appearance.dock.position.top": {
+    "label": "Øverste dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Nederste dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "Venstre dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "Højre dock"
+  },
+  "appearance.windows.gaps": {
+    "label": "Vinduesmellemrum"
+  },
+  "appearance.windows.corners": {
+    "label": "Vindueshjørner"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Temahjørner"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Skarpe hjørner"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Rundede hjørner"
+  },
+  "appearance.windows.transparency": {
+    "label": "Vinduesdækning"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Uigennemsigtige vinduer"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Gennemsigtige vinduer"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Glasvinduer"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "1-vindues-forhold"
+  },
+  "appearance.workspace-layout": {
+    "label": "Arbejdsområdelayout",
+    "title": "Standard arbejdsområdelayout"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Fliselægning"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Rulning"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Flydende"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr-temasynk"
   },
   "trigger.toggle": {
     "label": "Til/fra"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Diskhastighedstest"
-  },
-  "setup.appearance": {
-    "label": "Udseende"
-  },
-  "setup.appearance.animations": {
-    "label": "Animationer"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Menulinje"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Skjul linje"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Vis linje"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Placer linje"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Linjebaggrund"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Uigennemsigtig linje"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Glaslinje"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Klar linje"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Linjeindikatorer"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Batteriprocent"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Ur"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Søndag 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Søndag 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Søndag 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Søndag 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "Søn 3. maj 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "Søn 3. maj 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3. maj U18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03. maj U18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Øverste linje"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Nederste linje"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Venstre linje"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Højre linje"
-  },
-  "setup.appearance.dock": {
-    "label": "Dock"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Skjul dock automatisk"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Altid synlig dock"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Dockplacering"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Øverste dock"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Nederste dock"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Venstre dock"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Højre dock"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Vinduesmellemrum"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Vindueshjørner"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Temahjørner"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Skarpe hjørner"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Rundede hjørner"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Vinduesdækning"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Uigennemsigtige vinduer"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Gennemsigtige vinduer"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Glasvinduer"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "1-vindues-forhold"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Arbejdsområdelayout",
-    "title": "Standard arbejdsområdelayout"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Fliselægning"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Rulning"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Flydende"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr-temasynk"
-  },
-  "setup.style": {
-    "label": "Stil"
-  },
-  "setup.style.theme": {
-    "label": "Tema"
-  },
-  "setup.style.background": {
-    "label": "Baggrund"
-  },
-  "setup.style.unlock": {
-    "label": "Lås op"
-  },
-  "setup.style.font": {
-    "label": "Skrifttype"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Pauseskærm"
-  },
-  "setup.style.about": {
-    "label": "Om"
-  },
-  "setup.style.about.text": {
-    "label": "Rediger tekst"
-  },
-  "setup.style.about.image": {
-    "label": "Sæt fra billede"
-  },
-  "setup.style.about.default": {
-    "label": "Gendan standard"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Rediger tekst"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Sæt fra billede"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Gendan standard"
   },
   "setup.monitors": {
     "label": "Skærme"

@@ -8,6 +8,9 @@
   "learn": {
     "label": "Nauka"
   },
+  "appearance": {
+    "label": "Wygląd"
+  },
   "trigger": {
     "label": "Akcje"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Społeczność"
+  },
+  "appearance.theme": {
+    "label": "Motyw"
+  },
+  "appearance.background": {
+    "label": "Tło"
+  },
+  "appearance.unlock": {
+    "label": "Odblokuj"
+  },
+  "appearance.font": {
+    "label": "Czcionka"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Wygaszacz"
+  },
+  "appearance.about": {
+    "label": "Informacje"
+  },
+  "appearance.about.text": {
+    "label": "Edytuj tekst"
+  },
+  "appearance.about.image": {
+    "label": "Ustaw z obrazu"
+  },
+  "appearance.about.default": {
+    "label": "Przywróć domyślne"
+  },
+  "appearance.screensaver.text": {
+    "label": "Edytuj tekst"
+  },
+  "appearance.screensaver.image": {
+    "label": "Ustaw z obrazu"
+  },
+  "appearance.screensaver.default": {
+    "label": "Przywróć domyślne"
+  },
+  "appearance.animations": {
+    "label": "Animacje"
+  },
+  "appearance.top-bar": {
+    "label": "Pasek menu"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Ukryj pasek"
+  },
+  "appearance.top-bar.show": {
+    "label": "Pokaż pasek"
+  },
+  "appearance.top-bar.position": {
+    "label": "Położenie paska"
+  },
+  "appearance.top-bar.background": {
+    "label": "Tło paska"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Kryjący pasek"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Szklany pasek"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Przezroczysty pasek"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Wskaźniki paska"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Procent baterii"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Zegar"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Niedziela 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Niedziela 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Niedziela 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Niedziela 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "Niedz. 3 maja 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "Niedz. 3 maja 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 maja T18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 maja T18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Pasek górny"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Pasek dolny"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Pasek lewy"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Pasek prawy"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Ukrywaj dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "Zawsze widoczny dock"
+  },
+  "appearance.dock.position": {
+    "label": "Położenie docka"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock górny"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock dolny"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock lewy"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock prawy"
+  },
+  "appearance.windows.gaps": {
+    "label": "Odstępy okien"
+  },
+  "appearance.windows.corners": {
+    "label": "Narożniki okien"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Narożniki motywu"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Ostre narożniki"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Zaokrąglone narożniki"
+  },
+  "appearance.windows.transparency": {
+    "label": "Krycie okien"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Okna kryjące"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Okna przezroczyste"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Okna szklane"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "Proporcje 1 okna"
+  },
+  "appearance.workspace-layout": {
+    "label": "Układ obszarów",
+    "title": "Domyślny układ obszarów"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Kafelki"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Przewijanie"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Pływające"
+  },
+  "appearance.theme-sync": {
+    "label": "Synchronizacja Herdr"
   },
   "trigger.toggle": {
     "label": "Przełącz"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Test prędkości dysku"
-  },
-  "setup.appearance": {
-    "label": "Wygląd"
-  },
-  "setup.appearance.animations": {
-    "label": "Animacje"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Pasek menu"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Ukryj pasek"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Pokaż pasek"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Położenie paska"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Tło paska"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Kryjący pasek"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Szklany pasek"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Przezroczysty pasek"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Wskaźniki paska"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Procent baterii"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Zegar"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Niedziela 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Niedziela 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Niedziela 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Niedziela 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "Niedz. 3 maja 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "Niedz. 3 maja 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 maja T18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 maja T18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Pasek górny"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Pasek dolny"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Pasek lewy"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Pasek prawy"
-  },
-  "setup.appearance.dock": {
-    "label": "Dock"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Ukrywaj dock"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Zawsze widoczny dock"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Położenie docka"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Dock górny"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Dock dolny"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Dock lewy"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Dock prawy"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Odstępy okien"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Narożniki okien"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Narożniki motywu"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Ostre narożniki"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Zaokrąglone narożniki"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Krycie okien"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Okna kryjące"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Okna przezroczyste"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Okna szklane"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "Proporcje 1 okna"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Układ obszarów",
-    "title": "Domyślny układ obszarów"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Kafelki"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Przewijanie"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Pływające"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Synchronizacja Herdr"
-  },
-  "setup.style": {
-    "label": "Styl"
-  },
-  "setup.style.theme": {
-    "label": "Motyw"
-  },
-  "setup.style.background": {
-    "label": "Tło"
-  },
-  "setup.style.unlock": {
-    "label": "Odblokuj"
-  },
-  "setup.style.font": {
-    "label": "Czcionka"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Wygaszacz"
-  },
-  "setup.style.about": {
-    "label": "Informacje"
-  },
-  "setup.style.about.text": {
-    "label": "Edytuj tekst"
-  },
-  "setup.style.about.image": {
-    "label": "Ustaw z obrazu"
-  },
-  "setup.style.about.default": {
-    "label": "Przywróć domyślne"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Edytuj tekst"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Ustaw z obrazu"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Przywróć domyślne"
   },
   "setup.monitors": {
     "label": "Monitory"

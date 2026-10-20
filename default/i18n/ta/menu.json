@@ -8,6 +8,9 @@
   "learn": {
     "label": "கற்க"
   },
+  "appearance": {
+    "label": "தோற்றம்"
+  },
   "trigger": {
     "label": "தூண்டு"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "சமூகம்"
+  },
+  "appearance.theme": {
+    "label": "தீம்"
+  },
+  "appearance.background": {
+    "label": "பின்னணி"
+  },
+  "appearance.unlock": {
+    "label": "திற"
+  },
+  "appearance.font": {
+    "label": "எழுத்துரு"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "திரைசேமிப்பு"
+  },
+  "appearance.about": {
+    "label": "பற்றி"
+  },
+  "appearance.about.text": {
+    "label": "உரையைத் திருத்து"
+  },
+  "appearance.about.image": {
+    "label": "படத்திலிருந்து அமை"
+  },
+  "appearance.about.default": {
+    "label": "இயல்புநிலையை மீட்டமை"
+  },
+  "appearance.screensaver.text": {
+    "label": "உரையைத் திருத்து"
+  },
+  "appearance.screensaver.image": {
+    "label": "படத்திலிருந்து அமை"
+  },
+  "appearance.screensaver.default": {
+    "label": "இயல்புநிலையை மீட்டமை"
+  },
+  "appearance.animations": {
+    "label": "அசைவூட்டங்கள்"
+  },
+  "appearance.top-bar": {
+    "label": "மெனு பட்டை"
+  },
+  "appearance.top-bar.hide": {
+    "label": "பட்டையை மறை"
+  },
+  "appearance.top-bar.show": {
+    "label": "பட்டையைக் காட்டு"
+  },
+  "appearance.top-bar.position": {
+    "label": "பட்டை நிலை"
+  },
+  "appearance.top-bar.background": {
+    "label": "பட்டை பின்னணி"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "ஒளிபுகா பட்டை"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "கண்ணாடி பட்டை"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "தெளிவான பட்டை"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "பட்டை குறிகாட்டிகள்"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "மின்கல சதவீதம்"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "கடிகாரம்"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "ஞாயிறு 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "ஞாயிறு 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "ஞாயிறு 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "ஞாயிறு 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "ஞாயிறு 3 மே 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "ஞாயிறு 3 மே 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 மே W18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 மே W18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "மேல் பட்டை"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "கீழ் பட்டை"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "இடது பட்டை"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "வலது பட்டை"
+  },
+  "appearance.dock": {
+    "label": "டாக்"
+  },
+  "appearance.dock.autohide": {
+    "label": "தானாக மறையும் Dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "எப்போதும் தெரியும் Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Dock நிலை"
+  },
+  "appearance.dock.position.top": {
+    "label": "மேல் Dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "கீழ் Dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "இடது Dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "வலது Dock"
+  },
+  "appearance.windows.gaps": {
+    "label": "சாளர இடைவெளி"
+  },
+  "appearance.windows.corners": {
+    "label": "சாளர மூலைகள்"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "தீம் மூலைகள்"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "கூர்மையான மூலைகள்"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "வட்டமான மூலைகள்"
+  },
+  "appearance.windows.transparency": {
+    "label": "சாளர ஒளிபுகாமை"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "ஒளிபுகா சாளரங்கள்"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "ஒளிபுகும் சாளரங்கள்"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "கண்ணாடி சாளரங்கள்"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "1-சாளர விகிதம்"
+  },
+  "appearance.workspace-layout": {
+    "label": "பணியிட அமைப்பு",
+    "title": "இயல்புநிலை பணியிட அமைப்பு"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "அடுக்குதல்"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "உருட்டுதல்"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "மிதக்கும்"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr தீம் ஒத்திசைவு"
   },
   "trigger.toggle": {
     "label": "மாற்று"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "வட்டு வேக சோதனை"
-  },
-  "setup.appearance": {
-    "label": "தோற்றம்"
-  },
-  "setup.appearance.animations": {
-    "label": "அசைவூட்டங்கள்"
-  },
-  "setup.appearance.top-bar": {
-    "label": "மெனு பட்டை"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "பட்டையை மறை"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "பட்டையைக் காட்டு"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "பட்டை நிலை"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "பட்டை பின்னணி"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "ஒளிபுகா பட்டை"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "கண்ணாடி பட்டை"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "தெளிவான பட்டை"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "பட்டை குறிகாட்டிகள்"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "மின்கல சதவீதம்"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "கடிகாரம்"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "ஞாயிறு 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "ஞாயிறு 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "ஞாயிறு 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "ஞாயிறு 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "ஞாயிறு 3 மே 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "ஞாயிறு 3 மே 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 மே W18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 மே W18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "மேல் பட்டை"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "கீழ் பட்டை"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "இடது பட்டை"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "வலது பட்டை"
-  },
-  "setup.appearance.dock": {
-    "label": "டாக்"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "தானாக மறையும் Dock"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "எப்போதும் தெரியும் Dock"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Dock நிலை"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "மேல் Dock"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "கீழ் Dock"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "இடது Dock"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "வலது Dock"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "சாளர இடைவெளி"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "சாளர மூலைகள்"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "தீம் மூலைகள்"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "கூர்மையான மூலைகள்"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "வட்டமான மூலைகள்"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "சாளர ஒளிபுகாமை"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "ஒளிபுகா சாளரங்கள்"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "ஒளிபுகும் சாளரங்கள்"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "கண்ணாடி சாளரங்கள்"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "1-சாளர விகிதம்"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "பணியிட அமைப்பு",
-    "title": "இயல்புநிலை பணியிட அமைப்பு"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "அடுக்குதல்"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "உருட்டுதல்"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "மிதக்கும்"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr தீம் ஒத்திசைவு"
-  },
-  "setup.style": {
-    "label": "பாணி"
-  },
-  "setup.style.theme": {
-    "label": "தீம்"
-  },
-  "setup.style.background": {
-    "label": "பின்னணி"
-  },
-  "setup.style.unlock": {
-    "label": "திற"
-  },
-  "setup.style.font": {
-    "label": "எழுத்துரு"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "திரைசேமிப்பு"
-  },
-  "setup.style.about": {
-    "label": "பற்றி"
-  },
-  "setup.style.about.text": {
-    "label": "உரையைத் திருத்து"
-  },
-  "setup.style.about.image": {
-    "label": "படத்திலிருந்து அமை"
-  },
-  "setup.style.about.default": {
-    "label": "இயல்புநிலையை மீட்டமை"
-  },
-  "setup.style.screensaver.text": {
-    "label": "உரையைத் திருத்து"
-  },
-  "setup.style.screensaver.image": {
-    "label": "படத்திலிருந்து அமை"
-  },
-  "setup.style.screensaver.default": {
-    "label": "இயல்புநிலையை மீட்டமை"
   },
   "setup.monitors": {
     "label": "திரைகள்"

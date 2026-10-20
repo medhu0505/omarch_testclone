@@ -8,6 +8,9 @@
   "learn": {
     "label": "Mokytis"
   },
+  "appearance": {
+    "label": "Išvaizda"
+  },
   "trigger": {
     "label": "Veiksmai"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Bendruomenė"
+  },
+  "appearance.theme": {
+    "label": "Tema"
+  },
+  "appearance.background": {
+    "label": "Fonas"
+  },
+  "appearance.unlock": {
+    "label": "Atrakinti"
+  },
+  "appearance.font": {
+    "label": "Šriftas"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Ekrano užsklanda"
+  },
+  "appearance.about": {
+    "label": "Apie"
+  },
+  "appearance.about.text": {
+    "label": "Redaguoti tekstą"
+  },
+  "appearance.about.image": {
+    "label": "Nustatyti iš paveikslėlio"
+  },
+  "appearance.about.default": {
+    "label": "Atkurti numatytąjį"
+  },
+  "appearance.screensaver.text": {
+    "label": "Redaguoti tekstą"
+  },
+  "appearance.screensaver.image": {
+    "label": "Nustatyti iš paveikslėlio"
+  },
+  "appearance.screensaver.default": {
+    "label": "Atkurti numatytąjį"
+  },
+  "appearance.animations": {
+    "label": "Animacijos"
+  },
+  "appearance.top-bar": {
+    "label": "Meniu juosta"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Slėpti juostą"
+  },
+  "appearance.top-bar.show": {
+    "label": "Rodyti juostą"
+  },
+  "appearance.top-bar.position": {
+    "label": "Juostos padėtis"
+  },
+  "appearance.top-bar.background": {
+    "label": "Juostos fonas"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Nepermatoma juosta"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Stiklinė juosta"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Skaidri juosta"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Juostos indikatoriai"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Akumuliatoriaus procentai"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Laikrodis"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Sekmadienis 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Sekmadienis 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Sekmadienis 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Sekmadienis 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "Sek 3 geg. 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "Sek 3 geg. 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 geg. W18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 geg. W18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Juosta viršuje"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Juosta apačioje"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Juosta kairėje"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Juosta dešinėje"
+  },
+  "appearance.dock": {
+    "label": "Dokas"
+  },
+  "appearance.dock.autohide": {
+    "label": "Slėpti Dock automatiškai"
+  },
+  "appearance.dock.always-on": {
+    "label": "Visada rodyti Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Dock padėtis"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock viršuje"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock apačioje"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock kairėje"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock dešinėje"
+  },
+  "appearance.windows.gaps": {
+    "label": "Langų tarpai"
+  },
+  "appearance.windows.corners": {
+    "label": "Langų kampai"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Temos kampai"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Aštrūs kampai"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Apvalūs kampai"
+  },
+  "appearance.windows.transparency": {
+    "label": "Langų nepermatomumas"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Nepermatomi langai"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Permatomi langai"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Stikliniai langai"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "1 lango santykis"
+  },
+  "appearance.workspace-layout": {
+    "label": "Darbo srities išdėstymas",
+    "title": "Numatytasis darbo srities išdėstymas"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Plytelės"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Slinkimas"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Plūduriuojantys"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr temos sinchronizacija"
   },
   "trigger.toggle": {
     "label": "Perjungti"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Disko greičio testas"
-  },
-  "setup.appearance": {
-    "label": "Išvaizda"
-  },
-  "setup.appearance.animations": {
-    "label": "Animacijos"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Meniu juosta"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Slėpti juostą"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Rodyti juostą"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Juostos padėtis"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Juostos fonas"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Nepermatoma juosta"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Stiklinė juosta"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Skaidri juosta"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Juostos indikatoriai"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Akumuliatoriaus procentai"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Laikrodis"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Sekmadienis 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Sekmadienis 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Sekmadienis 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Sekmadienis 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "Sek 3 geg. 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "Sek 3 geg. 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 geg. W18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 geg. W18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Juosta viršuje"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Juosta apačioje"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Juosta kairėje"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Juosta dešinėje"
-  },
-  "setup.appearance.dock": {
-    "label": "Dokas"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Slėpti Dock automatiškai"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Visada rodyti Dock"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Dock padėtis"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Dock viršuje"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Dock apačioje"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Dock kairėje"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Dock dešinėje"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Langų tarpai"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Langų kampai"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Temos kampai"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Aštrūs kampai"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Apvalūs kampai"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Langų nepermatomumas"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Nepermatomi langai"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Permatomi langai"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Stikliniai langai"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "1 lango santykis"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Darbo srities išdėstymas",
-    "title": "Numatytasis darbo srities išdėstymas"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Plytelės"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Slinkimas"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Plūduriuojantys"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr temos sinchronizacija"
-  },
-  "setup.style": {
-    "label": "Stilius"
-  },
-  "setup.style.theme": {
-    "label": "Tema"
-  },
-  "setup.style.background": {
-    "label": "Fonas"
-  },
-  "setup.style.unlock": {
-    "label": "Atrakinti"
-  },
-  "setup.style.font": {
-    "label": "Šriftas"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Ekrano užsklanda"
-  },
-  "setup.style.about": {
-    "label": "Apie"
-  },
-  "setup.style.about.text": {
-    "label": "Redaguoti tekstą"
-  },
-  "setup.style.about.image": {
-    "label": "Nustatyti iš paveikslėlio"
-  },
-  "setup.style.about.default": {
-    "label": "Atkurti numatytąjį"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Redaguoti tekstą"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Nustatyti iš paveikslėlio"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Atkurti numatytąjį"
   },
   "setup.monitors": {
     "label": "Monitoriai"

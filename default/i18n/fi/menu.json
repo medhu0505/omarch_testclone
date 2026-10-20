@@ -8,6 +8,9 @@
   "learn": {
     "label": "Opi"
   },
+  "appearance": {
+    "label": "Ulkoasu"
+  },
   "trigger": {
     "label": "Käynnistä"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Yhteisö"
+  },
+  "appearance.theme": {
+    "label": "Teema"
+  },
+  "appearance.background": {
+    "label": "Tausta"
+  },
+  "appearance.unlock": {
+    "label": "Avaa lukitus"
+  },
+  "appearance.font": {
+    "label": "Fontti"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Näytönsäästäjä"
+  },
+  "appearance.about": {
+    "label": "Tietoja"
+  },
+  "appearance.about.text": {
+    "label": "Muokkaa tekstiä"
+  },
+  "appearance.about.image": {
+    "label": "Aseta kuvasta"
+  },
+  "appearance.about.default": {
+    "label": "Palauta oletus"
+  },
+  "appearance.screensaver.text": {
+    "label": "Muokkaa tekstiä"
+  },
+  "appearance.screensaver.image": {
+    "label": "Aseta kuvasta"
+  },
+  "appearance.screensaver.default": {
+    "label": "Palauta oletus"
+  },
+  "appearance.animations": {
+    "label": "Animaatiot"
+  },
+  "appearance.top-bar": {
+    "label": "Valikkopalkki"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Piilota palkki"
+  },
+  "appearance.top-bar.show": {
+    "label": "Näytä palkki"
+  },
+  "appearance.top-bar.position": {
+    "label": "Palkin sijainti"
+  },
+  "appearance.top-bar.background": {
+    "label": "Palkin tausta"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Peittävä palkki"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Lasinen palkki"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Läpinäkyvä palkki"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Palkin ilmaisimet"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Akun prosentti"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Kello"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Sunnuntai 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Sunnuntai 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Sunnuntai 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Sunnuntai 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "Su 3. toukokuuta 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "Su 3. toukokuuta 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3. toukokuuta V18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03. toukokuuta V18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Yläpalkki"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Alapalkki"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Vasen palkki"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Oikea palkki"
+  },
+  "appearance.dock": {
+    "label": "Telakka"
+  },
+  "appearance.dock.autohide": {
+    "label": "Piilota Dock automaattisesti"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock aina näkyvissä"
+  },
+  "appearance.dock.position": {
+    "label": "Dockin sijainti"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock ylhäällä"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock alhaalla"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock vasemmalla"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock oikealla"
+  },
+  "appearance.windows.gaps": {
+    "label": "Ikkunoiden välit"
+  },
+  "appearance.windows.corners": {
+    "label": "Ikkunan kulmat"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Teeman kulmat"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Terävät kulmat"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Pyöristetyt kulmat"
+  },
+  "appearance.windows.transparency": {
+    "label": "Ikkunan peittävyys"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Peittävät ikkunat"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Läpinäkyvät ikkunat"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Lasiset ikkunat"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "1 ikkunan suhde"
+  },
+  "appearance.workspace-layout": {
+    "label": "Työtilan asettelu",
+    "title": "Oletustyötilan asettelu"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Laatoitus"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Vieritys"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Kelluva"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr-teeman synkronointi"
   },
   "trigger.toggle": {
     "label": "Kytke"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Levyn nopeustesti"
-  },
-  "setup.appearance": {
-    "label": "Ulkoasu"
-  },
-  "setup.appearance.animations": {
-    "label": "Animaatiot"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Valikkopalkki"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Piilota palkki"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Näytä palkki"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Palkin sijainti"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Palkin tausta"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Peittävä palkki"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Lasinen palkki"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Läpinäkyvä palkki"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Palkin ilmaisimet"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Akun prosentti"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Kello"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Sunnuntai 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Sunnuntai 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Sunnuntai 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Sunnuntai 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "Su 3. toukokuuta 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "Su 3. toukokuuta 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3. toukokuuta V18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03. toukokuuta V18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Yläpalkki"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Alapalkki"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Vasen palkki"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Oikea palkki"
-  },
-  "setup.appearance.dock": {
-    "label": "Telakka"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Piilota Dock automaattisesti"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Dock aina näkyvissä"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Dockin sijainti"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Dock ylhäällä"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Dock alhaalla"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Dock vasemmalla"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Dock oikealla"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Ikkunoiden välit"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Ikkunan kulmat"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Teeman kulmat"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Terävät kulmat"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Pyöristetyt kulmat"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Ikkunan peittävyys"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Peittävät ikkunat"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Läpinäkyvät ikkunat"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Lasiset ikkunat"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "1 ikkunan suhde"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Työtilan asettelu",
-    "title": "Oletustyötilan asettelu"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Laatoitus"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Vieritys"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Kelluva"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr-teeman synkronointi"
-  },
-  "setup.style": {
-    "label": "Tyyli"
-  },
-  "setup.style.theme": {
-    "label": "Teema"
-  },
-  "setup.style.background": {
-    "label": "Tausta"
-  },
-  "setup.style.unlock": {
-    "label": "Avaa lukitus"
-  },
-  "setup.style.font": {
-    "label": "Fontti"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Näytönsäästäjä"
-  },
-  "setup.style.about": {
-    "label": "Tietoja"
-  },
-  "setup.style.about.text": {
-    "label": "Muokkaa tekstiä"
-  },
-  "setup.style.about.image": {
-    "label": "Aseta kuvasta"
-  },
-  "setup.style.about.default": {
-    "label": "Palauta oletus"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Muokkaa tekstiä"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Aseta kuvasta"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Palauta oletus"
   },
   "setup.monitors": {
     "label": "Näytöt"

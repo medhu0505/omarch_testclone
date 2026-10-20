@@ -8,6 +8,9 @@
   "learn": {
     "label": "Lär"
   },
+  "appearance": {
+    "label": "Utseende"
+  },
   "trigger": {
     "label": "Utlös"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Gemenskap"
+  },
+  "appearance.theme": {
+    "label": "Tema"
+  },
+  "appearance.background": {
+    "label": "Bakgrund"
+  },
+  "appearance.unlock": {
+    "label": "Lås upp"
+  },
+  "appearance.font": {
+    "label": "Typsnitt"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Skärmsläckare"
+  },
+  "appearance.about": {
+    "label": "Om"
+  },
+  "appearance.about.text": {
+    "label": "Redigera text"
+  },
+  "appearance.about.image": {
+    "label": "Från bild"
+  },
+  "appearance.about.default": {
+    "label": "Återställ standard"
+  },
+  "appearance.screensaver.text": {
+    "label": "Redigera text"
+  },
+  "appearance.screensaver.image": {
+    "label": "Från bild"
+  },
+  "appearance.screensaver.default": {
+    "label": "Återställ standard"
+  },
+  "appearance.animations": {
+    "label": "Animeringar"
+  },
+  "appearance.top-bar": {
+    "label": "Menyfält"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Dölj fält"
+  },
+  "appearance.top-bar.show": {
+    "label": "Visa fält"
+  },
+  "appearance.top-bar.position": {
+    "label": "Placera fält"
+  },
+  "appearance.top-bar.background": {
+    "label": "Fältbakgrund"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Ogenomskinligt fält"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Glasfält"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Klart fält"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Fältindikatorer"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Batteriprocent"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Klocka"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Söndag 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Söndag 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Söndag 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Söndag 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "sön 3 maj 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "sön 3 maj 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 maj V18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 maj V18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Övre fält"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Nedre fält"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Vänsterfält"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Högerfält"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dölj dock automatiskt"
+  },
+  "appearance.dock.always-on": {
+    "label": "Alltid synlig dock"
+  },
+  "appearance.dock.position": {
+    "label": "Dockplacering"
+  },
+  "appearance.dock.position.top": {
+    "label": "Övre dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Nedre dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "Vänsterdock"
+  },
+  "appearance.dock.position.right": {
+    "label": "Högerdock"
+  },
+  "appearance.windows.gaps": {
+    "label": "Fönstermellanrum"
+  },
+  "appearance.windows.corners": {
+    "label": "Fönsterhörn"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Temahörn"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Skarpa hörn"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Rundade hörn"
+  },
+  "appearance.windows.transparency": {
+    "label": "Fönsteropacitet"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Ogenomskinliga fönster"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Genomskinliga fönster"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Glasfönster"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "1-fönster-förhållande"
+  },
+  "appearance.workspace-layout": {
+    "label": "Arbetsytelayout",
+    "title": "Standardlayout för arbetsyta"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Kakling"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Rullning"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Flytande"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr-temasynk"
   },
   "trigger.toggle": {
     "label": "Växla"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Diskhastighetstest"
-  },
-  "setup.appearance": {
-    "label": "Utseende"
-  },
-  "setup.appearance.animations": {
-    "label": "Animeringar"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Menyfält"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Dölj fält"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Visa fält"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Placera fält"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Fältbakgrund"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Ogenomskinligt fält"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Glasfält"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Klart fält"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Fältindikatorer"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Batteriprocent"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Klocka"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Söndag 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Söndag 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Söndag 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Söndag 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "sön 3 maj 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "sön 3 maj 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 maj V18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 maj V18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Övre fält"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Nedre fält"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Vänsterfält"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Högerfält"
-  },
-  "setup.appearance.dock": {
-    "label": "Dock"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Dölj dock automatiskt"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Alltid synlig dock"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Dockplacering"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Övre dock"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Nedre dock"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Vänsterdock"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Högerdock"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Fönstermellanrum"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Fönsterhörn"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Temahörn"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Skarpa hörn"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Rundade hörn"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Fönsteropacitet"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Ogenomskinliga fönster"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Genomskinliga fönster"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Glasfönster"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "1-fönster-förhållande"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Arbetsytelayout",
-    "title": "Standardlayout för arbetsyta"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Kakling"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Rullning"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Flytande"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr-temasynk"
-  },
-  "setup.style": {
-    "label": "Stil"
-  },
-  "setup.style.theme": {
-    "label": "Tema"
-  },
-  "setup.style.background": {
-    "label": "Bakgrund"
-  },
-  "setup.style.unlock": {
-    "label": "Lås upp"
-  },
-  "setup.style.font": {
-    "label": "Typsnitt"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Skärmsläckare"
-  },
-  "setup.style.about": {
-    "label": "Om"
-  },
-  "setup.style.about.text": {
-    "label": "Redigera text"
-  },
-  "setup.style.about.image": {
-    "label": "Från bild"
-  },
-  "setup.style.about.default": {
-    "label": "Återställ standard"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Redigera text"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Från bild"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Återställ standard"
   },
   "setup.monitors": {
     "label": "Skärmar"

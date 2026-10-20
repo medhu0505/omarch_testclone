@@ -8,6 +8,9 @@
   "learn": {
     "label": "学ぶ"
   },
+  "appearance": {
+    "label": "外観"
+  },
   "trigger": {
     "label": "実行"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "コミュニティ"
+  },
+  "appearance.theme": {
+    "label": "テーマ"
+  },
+  "appearance.background": {
+    "label": "壁紙"
+  },
+  "appearance.unlock": {
+    "label": "ロック画面"
+  },
+  "appearance.font": {
+    "label": "フォント"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "スクリーンセーバー"
+  },
+  "appearance.about": {
+    "label": "情報"
+  },
+  "appearance.about.text": {
+    "label": "テキストを編集"
+  },
+  "appearance.about.image": {
+    "label": "画像から設定"
+  },
+  "appearance.about.default": {
+    "label": "デフォルトに戻す"
+  },
+  "appearance.screensaver.text": {
+    "label": "テキストを編集"
+  },
+  "appearance.screensaver.image": {
+    "label": "画像から設定"
+  },
+  "appearance.screensaver.default": {
+    "label": "デフォルトに戻す"
+  },
+  "appearance.animations": {
+    "label": "アニメーション"
+  },
+  "appearance.top-bar": {
+    "label": "メニューバー"
+  },
+  "appearance.top-bar.hide": {
+    "label": "バーを隠す"
+  },
+  "appearance.top-bar.show": {
+    "label": "バーを表示"
+  },
+  "appearance.top-bar.position": {
+    "label": "バーの位置"
+  },
+  "appearance.top-bar.background": {
+    "label": "バーの背景"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "不透明バー"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "ガラス質バー"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "透明バー"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "バー表示"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "残量表示（%）"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "時計"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "日曜日 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "日曜日 午後2:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "日曜日 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "日曜日 午後2:30:05"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "午後2:30"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "5月3日（日）14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "5月3日（日）午後2:30"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "2026年5月3日 第18週"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 午後"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "5月3日 第18週 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "上部バー"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "下部バー"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "左バー"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "右バー"
+  },
+  "appearance.dock": {
+    "label": "ドック"
+  },
+  "appearance.dock.autohide": {
+    "label": "ドックを自動で隠す"
+  },
+  "appearance.dock.always-on": {
+    "label": "ドックを常に表示"
+  },
+  "appearance.dock.position": {
+    "label": "ドックの位置"
+  },
+  "appearance.dock.position.top": {
+    "label": "上部ドック"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "下部ドック"
+  },
+  "appearance.dock.position.left": {
+    "label": "左ドック"
+  },
+  "appearance.dock.position.right": {
+    "label": "右ドック"
+  },
+  "appearance.windows.gaps": {
+    "label": "ウィンドウ間隔"
+  },
+  "appearance.windows.corners": {
+    "label": "ウィンドウの角"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "テーマの角"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "シャープな角"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "丸い角"
+  },
+  "appearance.windows.transparency": {
+    "label": "ウィンドウ不透明度"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "不透明ウィンドウ"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "透明ウィンドウ"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "ガラス質ウィンドウ"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "単一ウィンドウ比率"
+  },
+  "appearance.workspace-layout": {
+    "label": "ワークスペース配置",
+    "title": "既定のワークスペース配置"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "タイル型"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "スクロール型"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "フロート型"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdrテーマ同期"
   },
   "trigger.toggle": {
     "label": "切り替え"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "ディスク速度テスト"
-  },
-  "setup.appearance": {
-    "label": "外観"
-  },
-  "setup.appearance.animations": {
-    "label": "アニメーション"
-  },
-  "setup.appearance.top-bar": {
-    "label": "メニューバー"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "バーを隠す"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "バーを表示"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "バーの位置"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "バーの背景"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "不透明バー"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "ガラス質バー"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "透明バー"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "バー表示"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "残量表示（%）"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "時計"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "日曜日 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "日曜日 午後2:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "日曜日 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "日曜日 午後2:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "午後2:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "5月3日（日）14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "5月3日（日）午後2:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "2026年5月3日 第18週"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 午後"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "5月3日 第18週 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "上部バー"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "下部バー"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "左バー"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "右バー"
-  },
-  "setup.appearance.dock": {
-    "label": "ドック"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "ドックを自動で隠す"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "ドックを常に表示"
-  },
-  "setup.appearance.dock.position": {
-    "label": "ドックの位置"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "上部ドック"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "下部ドック"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "左ドック"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "右ドック"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "ウィンドウ間隔"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "ウィンドウの角"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "テーマの角"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "シャープな角"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "丸い角"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "ウィンドウ不透明度"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "不透明ウィンドウ"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "透明ウィンドウ"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "ガラス質ウィンドウ"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "単一ウィンドウ比率"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "ワークスペース配置",
-    "title": "既定のワークスペース配置"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "タイル型"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "スクロール型"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "フロート型"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdrテーマ同期"
-  },
-  "setup.style": {
-    "label": "スタイル"
-  },
-  "setup.style.theme": {
-    "label": "テーマ"
-  },
-  "setup.style.background": {
-    "label": "壁紙"
-  },
-  "setup.style.unlock": {
-    "label": "ロック画面"
-  },
-  "setup.style.font": {
-    "label": "フォント"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "スクリーンセーバー"
-  },
-  "setup.style.about": {
-    "label": "情報"
-  },
-  "setup.style.about.text": {
-    "label": "テキストを編集"
-  },
-  "setup.style.about.image": {
-    "label": "画像から設定"
-  },
-  "setup.style.about.default": {
-    "label": "デフォルトに戻す"
-  },
-  "setup.style.screensaver.text": {
-    "label": "テキストを編集"
-  },
-  "setup.style.screensaver.image": {
-    "label": "画像から設定"
-  },
-  "setup.style.screensaver.default": {
-    "label": "デフォルトに戻す"
   },
   "setup.monitors": {
     "label": "ディスプレイ"

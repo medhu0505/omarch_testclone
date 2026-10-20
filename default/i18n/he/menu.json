@@ -8,6 +8,9 @@
   "learn": {
     "label": "למידה"
   },
+  "appearance": {
+    "label": "מראה"
+  },
   "trigger": {
     "label": "הפעלה"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "קהילה"
+  },
+  "appearance.theme": {
+    "label": "ערכת נושא"
+  },
+  "appearance.background": {
+    "label": "רקע"
+  },
+  "appearance.unlock": {
+    "label": "ביטול נעילה"
+  },
+  "appearance.font": {
+    "label": "גופן"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "שומר מסך"
+  },
+  "appearance.about": {
+    "label": "אודות"
+  },
+  "appearance.about.text": {
+    "label": "עריכת טקסט"
+  },
+  "appearance.about.image": {
+    "label": "הגדרה מתמונה"
+  },
+  "appearance.about.default": {
+    "label": "שחזור ברירת מחדל"
+  },
+  "appearance.screensaver.text": {
+    "label": "עריכת טקסט"
+  },
+  "appearance.screensaver.image": {
+    "label": "הגדרה מתמונה"
+  },
+  "appearance.screensaver.default": {
+    "label": "שחזור ברירת מחדל"
+  },
+  "appearance.animations": {
+    "label": "הנפשות"
+  },
+  "appearance.top-bar": {
+    "label": "שורת תפריט"
+  },
+  "appearance.top-bar.hide": {
+    "label": "הסתרת שורה"
+  },
+  "appearance.top-bar.show": {
+    "label": "הצגת שורה"
+  },
+  "appearance.top-bar.position": {
+    "label": "מיקום שורה"
+  },
+  "appearance.top-bar.background": {
+    "label": "רקע שורה"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "שורה אטומה"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "שורה זכוכיתית"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "שורה שקופה"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "מחווני שורה"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "אחוז סוללה"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "שעון"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "ראשון 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "ראשון 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "ראשון 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "ראשון 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "יום א' 3 במאי 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "יום א' 3 במאי 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 במאי שבוע 18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 במאי שבוע 18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "שורה עליונה"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "שורה תחתונה"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "שורה שמאלית"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "שורה ימנית"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "הסתרת Dock אוטומטית"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock תמיד מוצג"
+  },
+  "appearance.dock.position": {
+    "label": "מיקום Dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock עליון"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock תחתון"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock שמאלי"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock ימני"
+  },
+  "appearance.windows.gaps": {
+    "label": "מרווחי חלונות"
+  },
+  "appearance.windows.corners": {
+    "label": "פינות חלון"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "פינות לפי ערכה"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "פינות חדות"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "פינות מעוגלות"
+  },
+  "appearance.windows.transparency": {
+    "label": "אטימות חלון"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "חלונות אטומים"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "חלונות שקופים"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "חלונות זכוכיתיים"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "יחס חלון אחד"
+  },
+  "appearance.workspace-layout": {
+    "label": "פריסת סביבת עבודה",
+    "title": "פריסת סביבת עבודה כברירת מחדל"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "ריצוף"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "גלילה"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "צף"
+  },
+  "appearance.theme-sync": {
+    "label": "סנכרון ערכה של Herdr"
   },
   "trigger.toggle": {
     "label": "החלפה"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "בדיקת מהירות דיסק"
-  },
-  "setup.appearance": {
-    "label": "מראה"
-  },
-  "setup.appearance.animations": {
-    "label": "הנפשות"
-  },
-  "setup.appearance.top-bar": {
-    "label": "שורת תפריט"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "הסתרת שורה"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "הצגת שורה"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "מיקום שורה"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "רקע שורה"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "שורה אטומה"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "שורה זכוכיתית"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "שורה שקופה"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "מחווני שורה"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "אחוז סוללה"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "שעון"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "ראשון 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "ראשון 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "ראשון 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "ראשון 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "יום א' 3 במאי 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "יום א' 3 במאי 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 במאי שבוע 18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 במאי שבוע 18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "שורה עליונה"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "שורה תחתונה"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "שורה שמאלית"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "שורה ימנית"
-  },
-  "setup.appearance.dock": {
-    "label": "Dock"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "הסתרת Dock אוטומטית"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Dock תמיד מוצג"
-  },
-  "setup.appearance.dock.position": {
-    "label": "מיקום Dock"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Dock עליון"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Dock תחתון"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Dock שמאלי"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Dock ימני"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "מרווחי חלונות"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "פינות חלון"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "פינות לפי ערכה"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "פינות חדות"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "פינות מעוגלות"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "אטימות חלון"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "חלונות אטומים"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "חלונות שקופים"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "חלונות זכוכיתיים"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "יחס חלון אחד"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "פריסת סביבת עבודה",
-    "title": "פריסת סביבת עבודה כברירת מחדל"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "ריצוף"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "גלילה"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "צף"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "סנכרון ערכה של Herdr"
-  },
-  "setup.style": {
-    "label": "סגנון"
-  },
-  "setup.style.theme": {
-    "label": "ערכת נושא"
-  },
-  "setup.style.background": {
-    "label": "רקע"
-  },
-  "setup.style.unlock": {
-    "label": "ביטול נעילה"
-  },
-  "setup.style.font": {
-    "label": "גופן"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "שומר מסך"
-  },
-  "setup.style.about": {
-    "label": "אודות"
-  },
-  "setup.style.about.text": {
-    "label": "עריכת טקסט"
-  },
-  "setup.style.about.image": {
-    "label": "הגדרה מתמונה"
-  },
-  "setup.style.about.default": {
-    "label": "שחזור ברירת מחדל"
-  },
-  "setup.style.screensaver.text": {
-    "label": "עריכת טקסט"
-  },
-  "setup.style.screensaver.image": {
-    "label": "הגדרה מתמונה"
-  },
-  "setup.style.screensaver.default": {
-    "label": "שחזור ברירת מחדל"
   },
   "setup.monitors": {
     "label": "מסכים"

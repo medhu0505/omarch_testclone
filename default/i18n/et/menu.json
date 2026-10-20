@@ -8,6 +8,9 @@
   "learn": {
     "label": "Õpi"
   },
+  "appearance": {
+    "label": "Välimus"
+  },
   "trigger": {
     "label": "Käivita"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Kogukond"
+  },
+  "appearance.theme": {
+    "label": "Teema"
+  },
+  "appearance.background": {
+    "label": "Taust"
+  },
+  "appearance.unlock": {
+    "label": "Ava lukk"
+  },
+  "appearance.font": {
+    "label": "Kirjatüüp"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Ekraanisäästja"
+  },
+  "appearance.about": {
+    "label": "Teave"
+  },
+  "appearance.about.text": {
+    "label": "Muuda teksti"
+  },
+  "appearance.about.image": {
+    "label": "Sea pildist"
+  },
+  "appearance.about.default": {
+    "label": "Taasta vaikimisi"
+  },
+  "appearance.screensaver.text": {
+    "label": "Muuda teksti"
+  },
+  "appearance.screensaver.image": {
+    "label": "Sea pildist"
+  },
+  "appearance.screensaver.default": {
+    "label": "Taasta vaikimisi"
+  },
+  "appearance.animations": {
+    "label": "Animatsioonid"
+  },
+  "appearance.top-bar": {
+    "label": "Menüüriba"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Peida riba"
+  },
+  "appearance.top-bar.show": {
+    "label": "Näita riba"
+  },
+  "appearance.top-bar.position": {
+    "label": "Riba asukoht"
+  },
+  "appearance.top-bar.background": {
+    "label": "Riba taust"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Läbipaistmatu riba"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Klaasriba"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Läbipaistev riba"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Riba näidikud"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Aku protsent"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Kell"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Pühapäev 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Pühapäev 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Pühapäev 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Pühapäev 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "P 3. mai 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "P 3. mai 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3. mai N18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03. mai N18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Ülemine riba"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Alumine riba"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Vasak riba"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Parem riba"
+  },
+  "appearance.dock": {
+    "label": "Dokk"
+  },
+  "appearance.dock.autohide": {
+    "label": "Doki autopeitmine"
+  },
+  "appearance.dock.always-on": {
+    "label": "Alati nähtav dokk"
+  },
+  "appearance.dock.position": {
+    "label": "Doki asukoht"
+  },
+  "appearance.dock.position.top": {
+    "label": "Ülemine dokk"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Alumine dokk"
+  },
+  "appearance.dock.position.left": {
+    "label": "Vasak dokk"
+  },
+  "appearance.dock.position.right": {
+    "label": "Parem dokk"
+  },
+  "appearance.windows.gaps": {
+    "label": "Aknavahed"
+  },
+  "appearance.windows.corners": {
+    "label": "Aknanurgad"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Teema nurgad"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Teravad nurgad"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Ümarad nurgad"
+  },
+  "appearance.windows.transparency": {
+    "label": "Akna katvus"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Läbipaistmatud aknad"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Läbipaistvad aknad"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Klaasaknad"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "1 akna suhe"
+  },
+  "appearance.workspace-layout": {
+    "label": "Tööala paigutus",
+    "title": "Vaikimisi tööala paigutus"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Plaaditud"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Kerimine"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Ujuv"
+  },
+  "appearance.theme-sync": {
+    "label": "Herdr teema sünk"
   },
   "trigger.toggle": {
     "label": "Lülita"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Kettakiiruse test"
-  },
-  "setup.appearance": {
-    "label": "Välimus"
-  },
-  "setup.appearance.animations": {
-    "label": "Animatsioonid"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Menüüriba"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Peida riba"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Näita riba"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Riba asukoht"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Riba taust"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Läbipaistmatu riba"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Klaasriba"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Läbipaistev riba"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Riba näidikud"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Aku protsent"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Kell"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Pühapäev 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Pühapäev 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Pühapäev 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Pühapäev 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "P 3. mai 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "P 3. mai 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3. mai N18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03. mai N18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Ülemine riba"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Alumine riba"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Vasak riba"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Parem riba"
-  },
-  "setup.appearance.dock": {
-    "label": "Dokk"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Doki autopeitmine"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Alati nähtav dokk"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Doki asukoht"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Ülemine dokk"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Alumine dokk"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Vasak dokk"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Parem dokk"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Aknavahed"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Aknanurgad"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Teema nurgad"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Teravad nurgad"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Ümarad nurgad"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Akna katvus"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Läbipaistmatud aknad"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Läbipaistvad aknad"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Klaasaknad"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "1 akna suhe"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Tööala paigutus",
-    "title": "Vaikimisi tööala paigutus"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Plaaditud"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Kerimine"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Ujuv"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Herdr teema sünk"
-  },
-  "setup.style": {
-    "label": "Stiil"
-  },
-  "setup.style.theme": {
-    "label": "Teema"
-  },
-  "setup.style.background": {
-    "label": "Taust"
-  },
-  "setup.style.unlock": {
-    "label": "Ava lukk"
-  },
-  "setup.style.font": {
-    "label": "Kirjatüüp"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Ekraanisäästja"
-  },
-  "setup.style.about": {
-    "label": "Teave"
-  },
-  "setup.style.about.text": {
-    "label": "Muuda teksti"
-  },
-  "setup.style.about.image": {
-    "label": "Sea pildist"
-  },
-  "setup.style.about.default": {
-    "label": "Taasta vaikimisi"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Muuda teksti"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Sea pildist"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Taasta vaikimisi"
   },
   "setup.monitors": {
     "label": "Kuvarid"

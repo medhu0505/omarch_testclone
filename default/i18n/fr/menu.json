@@ -8,6 +8,9 @@
   "learn": {
     "label": "Apprendre"
   },
+  "appearance": {
+    "label": "Apparence"
+  },
   "trigger": {
     "label": "Déclencher"
   },
@@ -76,6 +79,205 @@
   },
   "learn.community": {
     "label": "Communauté"
+  },
+  "appearance.theme": {
+    "label": "Thème"
+  },
+  "appearance.background": {
+    "label": "Arrière-plan"
+  },
+  "appearance.unlock": {
+    "label": "Déverrouiller"
+  },
+  "appearance.font": {
+    "label": "Police"
+  },
+  "appearance.hyprland": {
+    "label": "Hyprland"
+  },
+  "appearance.screensaver": {
+    "label": "Écran de veille"
+  },
+  "appearance.about": {
+    "label": "À propos"
+  },
+  "appearance.about.text": {
+    "label": "Modifier le texte"
+  },
+  "appearance.about.image": {
+    "label": "Depuis une image"
+  },
+  "appearance.about.default": {
+    "label": "Restaurer défaut"
+  },
+  "appearance.screensaver.text": {
+    "label": "Modifier le texte"
+  },
+  "appearance.screensaver.image": {
+    "label": "Depuis une image"
+  },
+  "appearance.screensaver.default": {
+    "label": "Restaurer défaut"
+  },
+  "appearance.animations": {
+    "label": "Animations"
+  },
+  "appearance.top-bar": {
+    "label": "Barre de menu"
+  },
+  "appearance.top-bar.hide": {
+    "label": "Masquer la barre"
+  },
+  "appearance.top-bar.show": {
+    "label": "Afficher la barre"
+  },
+  "appearance.top-bar.position": {
+    "label": "Position de la barre"
+  },
+  "appearance.top-bar.background": {
+    "label": "Fond de la barre"
+  },
+  "appearance.top-bar.background.opaque": {
+    "label": "Barre opaque"
+  },
+  "appearance.top-bar.background.glassy": {
+    "label": "Barre vitrée"
+  },
+  "appearance.top-bar.background.clear": {
+    "label": "Barre transparente"
+  },
+  "appearance.top-bar.indicators": {
+    "label": "Indicateurs de barre"
+  },
+  "appearance.top-bar.indicators.battery-percentage": {
+    "label": "Pourcentage batterie"
+  },
+  "appearance.top-bar.indicators.clock": {
+    "label": "Horloge"
+  },
+  "appearance.top-bar.indicators.clock.sunday-24h": {
+    "label": "Dimanche 14:30"
+  },
+  "appearance.top-bar.indicators.clock.sunday-12h": {
+    "label": "Dimanche 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-24h": {
+    "label": "Dimanche 14:30:05"
+  },
+  "appearance.top-bar.indicators.clock.sunday-seconds-12h": {
+    "label": "Dimanche 2:30:05 PM"
+  },
+  "appearance.top-bar.indicators.clock.time-24h": {
+    "label": "14:30"
+  },
+  "appearance.top-bar.indicators.clock.time-12h": {
+    "label": "2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.date-24h": {
+    "label": "dim. 3 mai 14:30"
+  },
+  "appearance.top-bar.indicators.clock.date-12h": {
+    "label": "dim. 3 mai 2:30 PM"
+  },
+  "appearance.top-bar.indicators.clock.week": {
+    "label": "3 mai S18 2026"
+  },
+  "appearance.top-bar.indicators.clock.iso": {
+    "label": "2026-05-03 14:30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-24h": {
+    "label": "14 — 30"
+  },
+  "appearance.top-bar.indicators.clock.stacked-12h": {
+    "label": "2 — 30 PM"
+  },
+  "appearance.top-bar.indicators.clock.stacked-date": {
+    "label": "03 mai S18 '26"
+  },
+  "appearance.top-bar.indicators.clock.stacked-time": {
+    "label": "14 30"
+  },
+  "appearance.top-bar.position.top": {
+    "label": "Barre du haut"
+  },
+  "appearance.top-bar.position.bottom": {
+    "label": "Barre du bas"
+  },
+  "appearance.top-bar.position.left": {
+    "label": "Barre de gauche"
+  },
+  "appearance.top-bar.position.right": {
+    "label": "Barre de droite"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dock auto-masqué"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock toujours visible"
+  },
+  "appearance.dock.position": {
+    "label": "Position du dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock du haut"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock du bas"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock de gauche"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock de droite"
+  },
+  "appearance.windows.gaps": {
+    "label": "Espacements fenêtres"
+  },
+  "appearance.windows.corners": {
+    "label": "Coins des fenêtres"
+  },
+  "appearance.windows.corners.theme": {
+    "label": "Coins du thème"
+  },
+  "appearance.windows.corners.sharp": {
+    "label": "Coins vifs"
+  },
+  "appearance.windows.corners.rounded": {
+    "label": "Coins arrondis"
+  },
+  "appearance.windows.transparency": {
+    "label": "Opacité des fenêtres"
+  },
+  "appearance.windows.transparency.opaque": {
+    "label": "Fenêtres opaques"
+  },
+  "appearance.windows.transparency.transparent": {
+    "label": "Fenêtres transparentes"
+  },
+  "appearance.windows.transparency.glassy": {
+    "label": "Fenêtres vitrées"
+  },
+  "appearance.windows.one-window-ratio": {
+    "label": "Ratio 1 fenêtre"
+  },
+  "appearance.workspace-layout": {
+    "label": "Disposition des espaces",
+    "title": "Disposition d'espace par défaut"
+  },
+  "appearance.workspace-layout.dwindle": {
+    "label": "Mosaïque"
+  },
+  "appearance.workspace-layout.scrolling": {
+    "label": "Défilement"
+  },
+  "appearance.workspace-layout.floating": {
+    "label": "Flottant"
+  },
+  "appearance.theme-sync": {
+    "label": "Synchro thème Herdr"
   },
   "trigger.toggle": {
     "label": "Basculer"
@@ -202,211 +404,6 @@
   },
   "trigger.tests.disk-speedtest": {
     "label": "Test débit disque"
-  },
-  "setup.appearance": {
-    "label": "Apparence"
-  },
-  "setup.appearance.animations": {
-    "label": "Animations"
-  },
-  "setup.appearance.top-bar": {
-    "label": "Barre de menu"
-  },
-  "setup.appearance.top-bar.hide": {
-    "label": "Masquer la barre"
-  },
-  "setup.appearance.top-bar.show": {
-    "label": "Afficher la barre"
-  },
-  "setup.appearance.top-bar.position": {
-    "label": "Position de la barre"
-  },
-  "setup.appearance.top-bar.background": {
-    "label": "Fond de la barre"
-  },
-  "setup.appearance.top-bar.background.opaque": {
-    "label": "Barre opaque"
-  },
-  "setup.appearance.top-bar.background.glassy": {
-    "label": "Barre vitrée"
-  },
-  "setup.appearance.top-bar.background.clear": {
-    "label": "Barre transparente"
-  },
-  "setup.appearance.top-bar.indicators": {
-    "label": "Indicateurs de barre"
-  },
-  "setup.appearance.top-bar.indicators.battery-percentage": {
-    "label": "Pourcentage batterie"
-  },
-  "setup.appearance.top-bar.indicators.clock": {
-    "label": "Horloge"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-24h": {
-    "label": "Dimanche 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-12h": {
-    "label": "Dimanche 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-24h": {
-    "label": "Dimanche 14:30:05"
-  },
-  "setup.appearance.top-bar.indicators.clock.sunday-seconds-12h": {
-    "label": "Dimanche 2:30:05 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-24h": {
-    "label": "14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.time-12h": {
-    "label": "2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-24h": {
-    "label": "dim. 3 mai 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.date-12h": {
-    "label": "dim. 3 mai 2:30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.week": {
-    "label": "3 mai S18 2026"
-  },
-  "setup.appearance.top-bar.indicators.clock.iso": {
-    "label": "2026-05-03 14:30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-24h": {
-    "label": "14 — 30"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-12h": {
-    "label": "2 — 30 PM"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-date": {
-    "label": "03 mai S18 '26"
-  },
-  "setup.appearance.top-bar.indicators.clock.stacked-time": {
-    "label": "14 30"
-  },
-  "setup.appearance.top-bar.position.top": {
-    "label": "Barre du haut"
-  },
-  "setup.appearance.top-bar.position.bottom": {
-    "label": "Barre du bas"
-  },
-  "setup.appearance.top-bar.position.left": {
-    "label": "Barre de gauche"
-  },
-  "setup.appearance.top-bar.position.right": {
-    "label": "Barre de droite"
-  },
-  "setup.appearance.dock": {
-    "label": "Dock"
-  },
-  "setup.appearance.dock.autohide": {
-    "label": "Dock auto-masqué"
-  },
-  "setup.appearance.dock.always-on": {
-    "label": "Dock toujours visible"
-  },
-  "setup.appearance.dock.position": {
-    "label": "Position du dock"
-  },
-  "setup.appearance.dock.position.top": {
-    "label": "Dock du haut"
-  },
-  "setup.appearance.dock.position.bottom": {
-    "label": "Dock du bas"
-  },
-  "setup.appearance.dock.position.left": {
-    "label": "Dock de gauche"
-  },
-  "setup.appearance.dock.position.right": {
-    "label": "Dock de droite"
-  },
-  "setup.appearance.windows.gaps": {
-    "label": "Espacements fenêtres"
-  },
-  "setup.appearance.windows.corners": {
-    "label": "Coins des fenêtres"
-  },
-  "setup.appearance.windows.corners.theme": {
-    "label": "Coins du thème"
-  },
-  "setup.appearance.windows.corners.sharp": {
-    "label": "Coins vifs"
-  },
-  "setup.appearance.windows.corners.rounded": {
-    "label": "Coins arrondis"
-  },
-  "setup.appearance.windows.transparency": {
-    "label": "Opacité des fenêtres"
-  },
-  "setup.appearance.windows.transparency.opaque": {
-    "label": "Fenêtres opaques"
-  },
-  "setup.appearance.windows.transparency.transparent": {
-    "label": "Fenêtres transparentes"
-  },
-  "setup.appearance.windows.transparency.glassy": {
-    "label": "Fenêtres vitrées"
-  },
-  "setup.appearance.windows.one-window-ratio": {
-    "label": "Ratio 1 fenêtre"
-  },
-  "setup.appearance.workspace-layout": {
-    "label": "Disposition des espaces",
-    "title": "Disposition d'espace par défaut"
-  },
-  "setup.appearance.workspace-layout.dwindle": {
-    "label": "Mosaïque"
-  },
-  "setup.appearance.workspace-layout.scrolling": {
-    "label": "Défilement"
-  },
-  "setup.appearance.workspace-layout.floating": {
-    "label": "Flottant"
-  },
-  "setup.appearance.theme-sync": {
-    "label": "Synchro thème Herdr"
-  },
-  "setup.style": {
-    "label": "Style"
-  },
-  "setup.style.theme": {
-    "label": "Thème"
-  },
-  "setup.style.background": {
-    "label": "Arrière-plan"
-  },
-  "setup.style.unlock": {
-    "label": "Déverrouiller"
-  },
-  "setup.style.font": {
-    "label": "Police"
-  },
-  "setup.style.hyprland": {
-    "label": "Hyprland"
-  },
-  "setup.style.screensaver": {
-    "label": "Écran de veille"
-  },
-  "setup.style.about": {
-    "label": "À propos"
-  },
-  "setup.style.about.text": {
-    "label": "Modifier le texte"
-  },
-  "setup.style.about.image": {
-    "label": "Depuis une image"
-  },
-  "setup.style.about.default": {
-    "label": "Restaurer défaut"
-  },
-  "setup.style.screensaver.text": {
-    "label": "Modifier le texte"
-  },
-  "setup.style.screensaver.image": {
-    "label": "Depuis une image"
-  },
-  "setup.style.screensaver.default": {
-    "label": "Restaurer défaut"
   },
   "setup.monitors": {
     "label": "Écrans"
