@@ -11,10 +11,11 @@ test_tmp=$(mktemp -d)
 trap 'rm -rf "$test_tmp"' EXIT
 
 export HOME="$test_tmp/home"
+export XDG_CACHE_HOME="$test_tmp/cache"
 mkdir -p "$HOME"
 
 collect() {
-  "$ROOT/bin/omarchy-agent-usage-agy"
+  "$ROOT/bin/omarchy-agent-usage-agy" "$@"
 }
 
 check() {
@@ -61,3 +62,26 @@ check "today counts each conversation prompted today once" '.todaySessions == 2'
 check "yesterday keeps its prompts, including late evening" "(.recentDays[] | select(.date == \"$yesterday\") | .messageCount) == 2"
 check "today shows in the last week" "(.recentDays[] | select(.date == \"$today\") | .messageCount) == 2"
 check "both days are active" ".activeDates == [\"$yesterday\", \"$today\"] and .activeDays == 2"
+
+# Antigravity has no limits to refresh, so the panel's limits-only refresh
+# reuses the last scan; a full refresh or --force rereads the transcripts.
+cat >>"$brain/fresh/.system_generated/logs/transcript.jsonl" <<EOF
+{"step_index":2,"source":"USER_EXPLICIT","type":"USER_INPUT","created_at":"$(utc_at 0 09:30)"}
+EOF
+
+record=$(collect --limits-only)
+check "a limits-only refresh reuses the recent scan" '.todayPrompts == 2 and .totalPrompts == 4'
+record=$(collect --limits-only --force)
+check "--force rescans even for limits-only" '.todayPrompts == 3 and .totalPrompts == 5'
+record=$(collect)
+check "a full refresh always rescans" '.todayPrompts == 3'
+
+# A scan saved before midnight is not reused, or yesterday would read as today.
+stats_cache="$XDG_CACHE_HOME/omarchy/agent-usage/agy-stats.json"
+jq '.day = "2000-01-01"' "$stats_cache" >"$test_tmp/stale.json"
+mv "$test_tmp/stale.json" "$stats_cache"
+cat >>"$brain/fresh/.system_generated/logs/transcript.jsonl" <<EOF
+{"step_index":3,"source":"USER_EXPLICIT","type":"USER_INPUT","created_at":"$(utc_at 0 10:00)"}
+EOF
+record=$(collect --limits-only)
+check "a scan from another day is not reused" '.todayPrompts == 4'
