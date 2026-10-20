@@ -112,6 +112,9 @@ Rectangle {
           selectionColor: Qt.rgba(root.textColor.r, root.textColor.g, root.textColor.b, 0.25)
           selectedTextColor: root.textColor
           text: root.currentUser
+          // Reached from the password box, the box offers its name selected,
+          // so typing replaces it and Tab keeps it.
+          onActiveFocusChanged: if (activeFocus) selectAll()
           KeyNavigation.tab: password
           KeyNavigation.backtab: password
           KeyNavigation.down: password
