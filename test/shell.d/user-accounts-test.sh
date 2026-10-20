@@ -908,6 +908,13 @@ if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty add carol); then fail "an unfin
 ! has_user carol && [[ $output == *"stopped part way"* && $output == *"run omarchy-drive-password to finish it, then run this again"* && $output != *"run this again to continue"* ]] ||
   fail "an unfinished disk password change tells the administrator to finish it first" "$output"
 pass "an unfinished disk password change is pointed at omarchy-drive-password"
+two_accounts
+touch "$test_tmp/encrypted"
+answers alicepw yes sharedpw
+if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty remove bob); then fail "an unfinished disk password change stops the removal"; fi
+has_user bob && [[ $output == *"run omarchy-drive-password to finish it, then run this again"* && $output != *"run this again to finish"* ]] ||
+  fail "an unfinished disk password change stops the removal and points at omarchy-drive-password" "$output"
+pass "the removal points at omarchy-drive-password too"
 
 # The lock file is root's alone, so only an administrator can hold the lock.
 reset_fixtures

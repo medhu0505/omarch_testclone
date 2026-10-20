@@ -313,7 +313,7 @@ user_accounts_explain_multi() {
 # asks who is logging in instead of logging the owner in automatically. $2 is
 # the administrator's password, already checked.
 user_accounts_go_multi() {
-  local self=$1 mine=$2 disk choice new share own
+  local self=$1 mine=$2 disk choice new share own output
   disk=$(user_accounts_root_luks_or_explain) || return 1
   if [[ -n $disk ]] && user_accounts_opens_disk "$disk" "$mine"; then
     share=$(omarchy-i18n user.choiceShareDisk)
@@ -357,7 +357,7 @@ user_accounts_go_multi() {
 # encrypted install automatic login once the disk is unlocked. $2 is the
 # remaining administrator's password, already checked.
 user_accounts_go_single() {
-  local self=$1 mine=$2 disk current
+  local self=$1 mine=$2 disk current output
   disk=$(user_accounts_root_luks_or_explain) || return 1
   if [[ -n $disk ]] && ! user_accounts_opens_disk "$disk" "$mine"; then
     while true; do
@@ -365,7 +365,14 @@ user_accounts_go_single() {
       user_accounts_opens_disk "$disk" "$current" && break
       echo "That doesn't unlock the disk. Try again." >&2
     done
-    printf '%s\n%s\n' "$current" "$mine" | omarchy-drive-password --system-stdin || return 1
+    # As in user_accounts_go_multi: an earlier change that stopped part way
+    # must be finished by a person first, status 2.
+    if ! output=$(printf '%s\n%s\n' "$current" "$mine" | omarchy-drive-password --system-stdin 2>&1); then
+      printf '%s\n' "$output" >&2
+      [[ $output != *"stopped part way"* ]] || return 2
+      return 1
+    fi
+    [[ -z $output ]] || printf '%s\n' "$output"
     if ! user_accounts_opens_disk "$disk" "$mine"; then
       echo "Your password doesn't unlock the disk yet. Run omarchy-drive-password and use your own password as the new one." >&2
       return 1

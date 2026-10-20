@@ -134,8 +134,13 @@ fi
 # done, so if anything stops this midway (a closed terminal, a wrong disk
 # password, a power cut), running the same command again finishes the job.
 if [[ -n $last_password ]]; then
-  user_accounts_go_single "$self" "$last_password" ||
+  status=0
+  user_accounts_go_single "$self" "$last_password" || status=$?
+  if (( status == 2 )); then
+    fail "an earlier disk password change stopped part way, so '$name' was not removed; run omarchy-drive-password to finish it, then run this again"
+  elif (( status != 0 )); then
     fail "couldn't switch back to one account, so '$name' was not removed; run this again to finish"
+  fi
 fi
 
 if (( sign_out )); then
