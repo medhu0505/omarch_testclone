@@ -90,7 +90,6 @@ Panel {
   function setHeaderCursor() {
     cursorActive = true
     focusSection = "header"
-    if (panelFlick) panelFlick.contentY = 0
   }
 
   function toggleRunning() {
@@ -116,25 +115,11 @@ Panel {
     scrollCursorIntoView()
   }
 
-  function scrollItemIntoView(item) {
-    if (!panelFlick || !item) return
-    Qt.callLater(function() {
-      if (!item) return
-      var margin = Style.space(6)
-      var point = item.mapToItem(panelFlick.contentItem, 0, 0)
-      var top = point.y
-      var bottom = top + item.height
-      var viewTop = panelFlick.contentY
-      var viewBottom = viewTop + panelFlick.height
-      var maxY = Math.max(0, panelFlick.contentHeight - panelFlick.height)
-      if (top < viewTop + margin) panelFlick.contentY = Math.max(0, top - margin)
-      else if (bottom > viewBottom - margin) panelFlick.contentY = Math.min(maxY, bottom + margin - panelFlick.height)
-    })
-  }
-
   function scrollCursorIntoView() {
-    if (focusSection === "files" && fileColumn && fileIndex >= 0 && fileIndex < fileColumn.children.length) {
-      scrollItemIntoView(fileColumn.children[fileIndex])
+    if (focusSection === "files" && fileList && fileIndex >= 0 && fileIndex < dropbox.files.length) {
+      Qt.callLater(function() {
+        if (fileList) fileList.positionViewAtIndex(fileIndex, ListView.Contain)
+      })
     }
   }
 
@@ -143,7 +128,6 @@ Panel {
 
   onOpenedChanged: if (opened) {
     cursorActive = false
-    if (panelFlick) panelFlick.contentY = 0
     dropbox.refresh()
     Qt.callLater(function() { if (panel.loadedContent) panel.loadedContent.forceActiveFocus() })
   }
