@@ -26,7 +26,8 @@ SH
 
 # The endpoint answer is what a hostile or hijacked response looks like: a
 # target that is not https, far more targets than the script asked for, and a
-# body that keeps going. The download itself fails, so the script finishes.
+# body that keeps going. The download fails once the worker has walked its
+# whole target list, so every target the script chose is exercised.
 cat >"$stub_dir/curl" <<SH
 #!/bin/bash
 printf 'curl %s\n' "\$*" >>"$log"
@@ -42,12 +43,20 @@ for argument in "\$@"; do
       ;;
   esac
 done
-exit 1
+# Each worker walks the list it was given, so the download fails only after
+# that many targets. The counter is per worker, keyed by the parent process.
+counter="\$CURL_COUNTS/\$PPID"
+calls=\$(cat "\$counter" 2>/dev/null || echo 0)
+calls=\$((calls + 1))
+echo "\$calls" >"\$counter"
+[[ \$calls -gt 3 ]] && exit 1
+exit 0
 SH
 
 chmod +x "$stub_dir/ip" "$stub_dir/curl" "$stub_dir/omarchy-cmd-present"
 
-PATH="$stub_dir:$PATH" OMARCHY_PATH="$ROOT" bash "$ROOT/bin/omarchy-network-speedtest" down >/dev/null 2>&1 || true
+mkdir -p "$stub_dir/counts"
+PATH="$stub_dir:$PATH" OMARCHY_PATH="$ROOT" CURL_COUNTS="$stub_dir/counts" bash "$ROOT/bin/omarchy-network-speedtest" down >/dev/null 2>&1 || true
 
 # The endpoint fetch carries a bound, so an answer that never ends cannot hold
 # the transfer open indefinitely.
@@ -60,8 +69,14 @@ grep -q 'file:///etc/shadow' "$log" && fail "a non-https target is never transfe
 grep -q 'http://192.0.2.1/payload' "$log" && fail "a plain http target is never transferred" "$(cat "$log")"
 pass "only https targets are transferred"
 
-# The script asked the endpoint for three targets, and a response that names
-# hundreds does not turn into hundreds of transfers.
-targets=$(grep -o 'https://192\.0\.2\.1/target-[0-9]*' "$log" | sort -u | wc -l)
-(( targets <= 3 )) || fail "no more targets are transferred than were asked for" "$(cat "$log")"
-pass "no more targets are transferred than were asked for"
+# The script asked the endpoint for three targets, and it transfers those
+# three: a response that names hundreds does not turn into hundreds of
+# transfers, and a script that kept only the first target would fail here.
+targets=$(grep -o 'https://192\.0\.2\.1/target-[0-9]*' "$log" | sort -u)
+[[ $(wc -l <<<"$targets") == 3 ]] ||
+  fail "the targets the script asked for are the ones it transfers" "$(cat "$log")"
+for number in 1 2 3; do
+  grep -qx "https://192.0.2.1/target-$number" <<<"$targets" ||
+    fail "the targets the script asked for are the ones it transfers" "$(cat "$log")"
+done
+pass "the targets the script asked for are the ones it transfers"

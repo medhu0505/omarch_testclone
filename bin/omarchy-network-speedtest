@@ -56,8 +56,8 @@ if [[ -z $fast_urls ]]; then
 fi
 
 # The targets are read into a list, so a target is never split on whitespace
-# or expanded as a glob.
-read -r -a fast_url_list <<<"$fast_urls"
+# or expanded as a glob, and every target the endpoint named is kept.
+mapfile -t fast_url_list <<<"$fast_urls"
 
 traffic_pids=()
 
