@@ -945,6 +945,10 @@ assertEqual(pickerMatches('O SUPER', keybindingRows)[0], 'SUPER + O → Pop wind
 assertDeepEqual(pickerMatches('obsid', keybindingRows), ['SUPER SHIFT + O → Obsidian'], 'picker search matches word prefixes')
 assertDeepEqual(pickerMatches('york america', ['Europe/London', 'America/New_York']), ['America/New_York'], 'picker search matches words split by slashes and underscores')
 assertDeepEqual(pickerMatches('menu', ['Toggle menu', 'Omarchy menu']), ['Toggle menu', 'Omarchy menu'], 'picker search keeps the caller order for equal matches')
+assertEqual(pickerMatches('super+o', keybindingRows)[0], 'SUPER + O → Pop window out (float & pin)', 'picker search splits query words on punctuation like the rows')
+assertDeepEqual(pickerMatches('+', ['SUPER + K', 'SUPER K']), ['SUPER + K'], 'picker search still finds symbol-only keys')
+assertDeepEqual(pickerMatches('猫', ['山猫.png', '猫.png']), ['猫.png', '山猫.png'], 'picker search ranks exact non-Latin words first')
+assertDeepEqual(pickerMatches('café', ['Le café', 'Cafétéria']), ['Le café', 'Cafétéria'], 'picker search keeps accented letters inside words')
 assertEqual(menu.dmenuMatchScore('zzz', 'SUPER + K → Keybindings'), -1, 'picker search rejects rows missing a query word')
 assert(
   /var match = query \? MenuModel\.dmenuMatchScore\(query, label \+ " " \+ detail\) : 0/.test(menuQml),

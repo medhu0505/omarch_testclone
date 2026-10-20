@@ -617,14 +617,29 @@ function dmenuValue(option) {
   return parts.join("\t")
 }
 
+// Punctuation, symbols and spaces separate words; letters in any script and
+// digits make them up.
+var dmenuWordSeparator = /[\s\x00-\x2f\x3a-\x40\x5b-\x60\x7b-\x7f\u00a0-\u00bf\u2000-\u2bff\u3000-\u303f\uff00-\uff0f]+/
+
+function dmenuWords(value) {
+  return String(value || "").split(dmenuWordSeparator).filter(Boolean)
+}
+
 // Picker search: every word of the query must match the option text, in any
-// order and ignoring punctuation, so "super o" finds "SUPER + O". Returns -1
-// for no match, else a score where lower is better: whole-word matches beat
-// word prefixes, which beat bare substrings, and earlier words break ties.
+// order and ignoring punctuation, so "super o" and "super+o" find
+// "SUPER + O". A query word made only of symbols, like "+", matches as a
+// substring. Returns -1 for no match, else a score where lower is better:
+// whole-word matches beat word prefixes, which beat bare substrings, and
+// earlier words break ties.
 function dmenuMatchScore(query, text) {
-  var terms = String(query || "").toLowerCase().trim().split(/\s+/)
   var haystack = String(text || "").toLowerCase()
-  var words = haystack.split(/[^0-9a-z\u00c0-\u2000]+/).filter(Boolean)
+  var words = dmenuWords(haystack)
+  var terms = []
+  var parts = String(query || "").toLowerCase().trim().split(/\s+/)
+  for (var p = 0; p < parts.length; p++) {
+    var split = dmenuWords(parts[p])
+    terms = terms.concat(split.length > 0 ? split : [parts[p]])
+  }
   var score = 0
 
   for (var i = 0; i < terms.length; i++) {
