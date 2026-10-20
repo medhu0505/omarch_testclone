@@ -28,6 +28,7 @@ Item {
   property string pinPickerText: ""
   property int pinPickerIndex: 0
   property bool deletePinboardConfirmOpen: false
+  property int quickPasteIndex: -1
   readonly property bool dialogOpen: root.clearConfirmOpen || root.deletePinboardConfirmOpen
 
   property string historyPath: Quickshell.env("HOME") + "/.local/state/omarchy/clipboard-history.json"
@@ -61,6 +62,7 @@ Item {
     root.cursorActive = true
     root.pinPickerOpen = false
     root.deletePinboardConfirmOpen = false
+    root.quickPasteIndex = -1
     if (root.pinboards.indexOf(root.currentPinboard) < 0) root.currentPinboard = ""
     root.disarmPointer()
     root.rebuildDisplay()
@@ -396,6 +398,14 @@ Item {
   // Which of the keys 1–9 on the number row was pressed, or -1. AZERTY and
   // other layouts put symbols there unshifted (Ctrl+2 arrives as Ctrl+é), so
   // fall back to the key's position: XKB keycodes 10–18 are that row.
+  // Ctrl+number selects the row, and the paste waits for Ctrl to come up:
+  // pasting sends Shift+Insert, which a held Ctrl turns into Ctrl+Shift+Insert.
+  function queueQuickPaste(index) {
+    if (index < 0 || index >= displayModel.count) return
+    root.selectAbsolute(index)
+    root.quickPasteIndex = index
+  }
+
   function digitRowIndex(event) {
     if (event.key >= Qt.Key_1 && event.key <= Qt.Key_9) return event.key - Qt.Key_1
     if (event.nativeScanCode >= 10 && event.nativeScanCode <= 18) return event.nativeScanCode - 10
@@ -574,6 +584,14 @@ Item {
         focus: true
 
         Keys.priority: Keys.BeforeItem
+        Keys.onReleased: function(event) {
+          if (event.key === Qt.Key_Control && root.quickPasteIndex >= 0) {
+            var index = root.quickPasteIndex
+            root.quickPasteIndex = -1
+            root.activateIndex(index)
+            event.accepted = true
+          }
+        }
         Keys.onPressed: function(event) {
           if (root.clearConfirmOpen) {
             if (clearConfirm.handleKey(event)) event.accepted = true
@@ -598,7 +616,7 @@ Item {
             root.setFilter(Util.editedFilter(event, root.filterText))
             event.accepted = true
           } else if (control && root.digitRowIndex(event) >= 0) {
-            root.activateIndex(root.digitRowIndex(event))
+            root.queueQuickPaste(root.digitRowIndex(event))
             event.accepted = true
           } else if (control && event.key === Qt.Key_P) {
             root.openPinPicker(false)
