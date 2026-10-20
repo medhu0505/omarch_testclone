@@ -94,19 +94,89 @@ function fuzzyScore(entry, query) {
   return 4000 - name.length
 }
 
+// These clients use Categories=Game too, but belong with the tools that open
+// and manage games. Match desktop IDs rather than translated display names.
+var gameClients = [
+  "steam", "steam-native", "com.valvesoftware.steam",
+  "heroic", "com.heroicgameslauncher.hgl",
+  "lutris", "net.lutris.lutris", "battlenet",
+  "retroarch", "org.libretro.retroarch",
+  "moonlight", "com.moonlight_stream.moonlight"
+]
+
+function entryCategory(entry) {
+  var id = String((entry && entry.id) || "").replace(/\.desktop$/, "").toLowerCase()
+  if (gameClients.indexOf(id) >= 0) return "apps"
+  var categories = (entry && entry.categories) || []
+  for (var i = 0; i < categories.length; i++) {
+    if (categories[i] === "Game") return "games"
+  }
+  return "apps"
+}
+
+function gameIdentity(entry) {
+  var command = String((entry && entry.execString) || "") || ((entry && entry.command) || []).join(" ")
+  command = command.replace(/%%/g, "%")
+  var steam = command.match(/\bsteam:\/\/(?:rungameid|run)\/(\d+)(?:[\/\s"']|$)/i) || command.match(/(?:^|\s)-applaunch\s+(\d+)(?:\s|$)/)
+  if (steam) return "steam:" + steam[1]
+  var heroic = command.match(/\bheroic:\/\/launch(?:\?([^\s"']+)|\/([^\/\s"']+)\/([^\s"']+))/i)
+  if (!heroic) return ""
+  try {
+    if (heroic[2]) return "heroic:" + heroic[2] + ":" + decodeURIComponent(heroic[3])
+    var query = ({})
+    heroic[1].split("&").forEach(function(pair) {
+      var equal = pair.indexOf("=")
+      if (equal >= 0) query[pair.slice(0, equal)] = decodeURIComponent(pair.slice(equal + 1).replace(/\+/g, " "))
+    })
+    return query.runner && query.appName ? "heroic:" + query.runner + ":" + query.appName : ""
+  } catch (e) {
+    return ""
+  }
+}
+
+// Imported IDs remain resolvable after a client adds its own shortcut. Prefer
+// the client entry in lists and resolve old dock pins to the same visible ID.
+function clientGameIds(values) {
+  var clients = ({})
+  for (var i = 0; i < values.length; i++) {
+    var entry = values[i]
+    if (!entry) continue
+    var id = String(entry.id || "")
+    if (id.indexOf("omarchy-game-") === 0) continue
+    var key = gameIdentity(entry)
+    if (key && (!clients[key] || id < clients[key])) clients[key] = id
+  }
+  return clients
+}
+
+function gameAliases(values) {
+  var clients = clientGameIds(values)
+  var aliases = ({})
+  for (var i = 0; i < values.length; i++) {
+    var entry = values[i]
+    var id = String((entry && entry.id) || "")
+    if (id.indexOf("omarchy-game-") !== 0) continue
+    var clientId = clients[gameIdentity(entry)]
+    if (clientId) aliases[id] = clientId
+  }
+  return aliases
+}
+
 function sortedEntries(values, query, hiddenCallback) {
   var q = String(query || "").trim()
   var rows = []
+  var aliases = gameAliases(values)
 
   for (var i = 0; i < values.length; i++) {
     var entry = values[i]
     if (!entry || entry.noDisplay) continue
+    if (aliases[String(entry.id || "")]) continue
     if (hiddenCallback && hiddenCallback(entry)) continue
     var name = entryName(entry)
     if (!name) continue
     var score = fuzzyScore(entry, q)
     if (score < 0) continue
-    rows.push({ entry: entry, score: score, key: entrySortKey(entry), name: name.toLowerCase() })
+    rows.push({ entry: entry, category: entryCategory(entry), score: score, key: entrySortKey(entry), name: name.toLowerCase() })
   }
 
   rows.sort(function(a, b) {
@@ -129,6 +199,10 @@ if (typeof module !== "undefined") {
     entrySearchText: entrySearchText,
     entryAcronym: entryAcronym,
     fuzzyScore: fuzzyScore,
+    entryCategory: entryCategory,
+    gameIdentity: gameIdentity,
+    clientGameIds: clientGameIds,
+    gameAliases: gameAliases,
     sortedEntries: sortedEntries
   }
 }

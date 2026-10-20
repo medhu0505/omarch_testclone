@@ -4,6 +4,14 @@ Omarchy isn't just for _pRoDUcTiVItY_, it's also for having fun, and what's more
 
 Thanks to Valve's incredible work on [the proton compatibility layer](https://en.wikipedia.org/wiki/Proton_(software)), there are now tens of thousands of playable modern games on Linux. Oh, and did you know that the [Steam Deck](https://store.steampowered.com/steamdeck/) actually runs Arch!
 
+## Finding your games
+
+Open _Games_ from the Omarchy menu (`Super + Space`) to browse your games. It uses the same grid and controls as Apps: type to search, use the arrow keys to select, and press Enter to play. Games appear here, while Steam, Heroic, RetroArch, and other tools stay in Apps. Searching from the main menu finds both apps and games.
+
+Installed Steam games and Heroic games from Epic, GOG, and Amazon are discovered when you open Games or search from the main menu, including native and Flatpak installations. Discovery uses local client data and works offline; Steam needs its local game metadata cache. Existing menu shortcuts and RetroArch game launchers also appear here. After installing or removing a game, reopen Games to refresh the list.
+
+Removing an imported launcher entry removes its shortcut, leaving the installed game alone. The shortcut stays removed on later refreshes. Uninstall the game through Steam or Heroic to remove the game itself.
+
 All gaming installers live under _Install > Gaming_ in the Omarchy menu (`Super + Space`). If you ever want to undo one, use _Remove > Gaming_.
 
 ## Steam

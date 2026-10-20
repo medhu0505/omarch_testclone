@@ -79,7 +79,11 @@ fi
 
 if is_user_desktop_file; then
   display_name="${entry_name:-$desktop_name}"
-  rm -f "$desktop_file"
+  if [[ $desktop_file_name == omarchy-game-*.desktop ]]; then
+    /usr/bin/python3 "$OMARCHY_PATH/default/games/shortcuts.py" --remove "$desktop_file_name"
+  else
+    rm -f "$desktop_file"
+  fi
   update-desktop-database "${desktop_file%/*}" &>/dev/null || true
   exit 0
 fi

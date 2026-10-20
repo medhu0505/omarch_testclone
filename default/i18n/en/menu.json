@@ -5,6 +5,9 @@
   "apps": {
     "label": "Apps"
   },
+  "games": {
+    "label": "Games"
+  },
   "learn": {
     "label": "Learn"
   },

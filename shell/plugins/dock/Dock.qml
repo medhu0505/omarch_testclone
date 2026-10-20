@@ -46,7 +46,7 @@ Item {
 
   function entryForAppId(appId) {
     var entry = DesktopEntries.heuristicLookup(appId)
-    if (entry) return entry
+    if (entry) return root.appLibrary ? DesktopEntries.byId(root.appLibrary.canonicalId(entry.id)) : entry
     var id = DockModel.claimingEntryId(appId, root.terminalEntries)
     return id ? DesktopEntries.byId(id) : null
   }
@@ -55,7 +55,7 @@ Item {
   // out until it is. Windows are matched to the desktop entry that claims them.
   readonly property var items: {
     var appsRevision = DesktopEntries.applications.values.length
-    var pinned = (root.pendingPins || DockModel.pinnedIds(dockConfig, defaultDockConfig)).filter(function(id) {
+    var pinned = root.pinnedKeys.filter(function(id) {
       return !!DesktopEntries.byId(id)
     })
 
@@ -68,7 +68,7 @@ Item {
       var workspace = toplevels[i].workspace
       windows.push({
         key: entry ? entry.id : toplevel.appId,
-        hasEntry: !!entry && !entry.noDisplay,
+        hasEntry: !!entry && (!entry.noDisplay || pinned.indexOf(entry.id) >= 0),
         workspaceId: workspace ? workspace.id : -1,
         minimized: !!workspace && DockModel.isMinimizedWorkspace(workspace.name),
         address: toplevels[i].address,
@@ -76,7 +76,8 @@ Item {
       })
     }
 
-    return DockModel.orderItems(DockModel.buildItems(pinned, windows), root.order)
+    var order = root.order.map(function(id) { return root.appLibrary ? root.appLibrary.canonicalId(id) : id })
+    return DockModel.orderItems(DockModel.buildItems(pinned, windows), order)
   }
 
   readonly property var itemsByKey: {
@@ -223,7 +224,17 @@ Item {
     appGrid.open()
   }
 
-  readonly property var pinnedKeys: root.pendingPins || DockModel.pinnedIds(root.dockConfig, root.defaultDockConfig)
+  readonly property var pinnedKeys: root.resolvePinnedIds()
+
+  function resolvePinnedIds() {
+    var pins = root.pendingPins || DockModel.pinnedIds(root.dockConfig, root.defaultDockConfig)
+    var resolved = []
+    for (var i = 0; i < pins.length; i++) {
+      var id = root.appLibrary ? root.appLibrary.canonicalId(pins[i]) : pins[i]
+      if (resolved.indexOf(id) < 0) resolved.push(id)
+    }
+    return resolved
+  }
 
   function isPinned(key) {
     return root.pinnedKeys.indexOf(key) >= 0
@@ -234,17 +245,32 @@ Item {
   // its own.
   function placeAt(key, index) {
     if (!key) return
-    root.order = DockModel.orderWithKeyAt(root.shownKeys(), key, index)
+    var order = DockModel.orderWithKeyAt(root.shownKeys(), key, index)
+    root.order = root.storedPinIds(order)
     var pinned = {}
     root.pinnedKeys.forEach(function(other) { pinned[other] = true })
     pinned[key] = true
-    root.savePins(DockModel.pinsInOrder(root.order, pinned, root.pinnedKeys))
+    root.savePins(DockModel.pinsInOrder(order, pinned, root.pinnedKeys))
+  }
+
+  function storedPinIds(pins) {
+    var previous = root.pendingPins || DockModel.pinnedIds(root.dockConfig, root.defaultDockConfig)
+    return pins.map(function(id) {
+      for (var i = 0; i < previous.length; i++) {
+        var canonical = root.appLibrary ? root.appLibrary.canonicalId(previous[i]) : previous[i]
+        if (canonical === id) return previous[i]
+      }
+      return id
+    })
   }
 
   // A reorder shows at once; the saved config catches up after.
   function savePins(pins) {
-    root.pendingPins = pins
-    Util.execDetached("omarchy-dock pinned " + pins.map(function(id) { return Util.shellQuote(id) }).join(" "))
+    // Keep a previously pinned imported ID on disk. The client shortcut may
+    // disappear on uninstall and return under a different name on reinstall.
+    var stored = root.storedPinIds(pins)
+    root.pendingPins = stored
+    Util.execDetached("omarchy-dock pinned " + stored.map(function(id) { return Util.shellQuote(id) }).join(" "))
   }
 
   function moveItem(fromIndex, toIndex) {
@@ -264,8 +290,7 @@ Item {
     if (pinned) {
       root.placeAt(key, root.shownKeys().length)
     } else {
-      root.pendingPins = root.pinnedKeys.filter(function(other) { return other !== key })
-      Util.execDetached("omarchy-dock unpin " + Util.shellQuote(key))
+      root.savePins(root.pinnedKeys.filter(function(other) { return other !== key }))
     }
   }
 
@@ -349,7 +374,8 @@ Item {
 
     // The layout commands call this after changing a workspace's mode.
     function refresh(): void { root.refresh() }
-    function apps(): void { appGrid.toggle() }
+    function apps(): void { appGrid.toggle("apps") }
+    function games(): void { appGrid.toggle("games") }
   }
 
   // An app dragged out of the app grid: the grid holds the pointer and
