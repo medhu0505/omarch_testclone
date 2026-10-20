@@ -5,7 +5,9 @@
 set -e
 
 echo "Installing REA..."
-mise use -g rea
+# Like the other agent tools, take REA's newest release without waiting out a
+# release cooldown.
+MISE_MINIMUM_RELEASE_AGE=0 mise use -g rea
 version=$(rea --version)
 
 # Setup registers the command it was launched from, and mise's shim launches
@@ -20,5 +22,6 @@ if npx -y "rea-agents@$version" setup; then
 else
   echo ""
   echo "REA has been installed, but no agent was set up."
-  echo "Run 'npx -y rea-agents@$version setup' to register it with your agents."
+  echo "Run 'npx -y rea-agents@$version setup' to register it with your agents;"
+  echo "the AI chapter of the manual has this command too."
 fi
