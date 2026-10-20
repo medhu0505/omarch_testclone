@@ -42,10 +42,3 @@ if omarchy-font-cjk cn 2>/dev/null; then
 fi
 pass "an unknown variant is refused"
 
-# Every Appearance > Font row sets the variant its check reads.
-while IFS=$'\t' read -r id checked action; do
-  value=${action#omarchy-font-cjk }
-  [[ $checked == "[[ \$(omarchy-font-cjk) == $value ]]" ]] || fail "$id checks the value it sets" "$checked / $action"
-done < <(sed -n 's/^  "\(appearance\.font\.cjk\.[a-z]*\)": {.*"checked":"\([^"]*\)","action":"\([^"]*\)".*/\1\t\2\t\3/p' "$ROOT/default/omarchy/omarchy-menu.jsonc")
-[[ $(grep -c '"appearance\.font\.cjk\.' "$ROOT/default/omarchy/omarchy-menu.jsonc") == 6 ]] || fail "Appearance > Font offers the default and all five variants"
-pass "each Appearance > Font CJK row checks the variant it sets"

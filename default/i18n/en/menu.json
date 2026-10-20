@@ -89,28 +89,6 @@
   "appearance.font": {
     "label": "Font"
   },
-  "appearance.font.cjk": {
-    "label": "Chinese, Japanese, Korean",
-    "title": "Chinese, Japanese, and Korean Glyphs"
-  },
-  "appearance.font.cjk.auto": {
-    "label": "Automatic"
-  },
-  "appearance.font.cjk.jp": {
-    "label": "Japanese"
-  },
-  "appearance.font.cjk.kr": {
-    "label": "Korean"
-  },
-  "appearance.font.cjk.sc": {
-    "label": "Simplified Chinese"
-  },
-  "appearance.font.cjk.tc": {
-    "label": "Taiwan"
-  },
-  "appearance.font.cjk.hk": {
-    "label": "Hong Kong"
-  },
   "appearance.top-bar": {
     "label": "Menu Bar"
   },
