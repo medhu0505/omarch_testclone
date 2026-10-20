@@ -17,8 +17,21 @@ Item {
   property bool cursorActive: false
   property bool clearConfirmOpen: false
   property var history: []
+  // Pinboards are named tabs of pinned entries; "" is the history tab.
+  property var pinboards: []
+  property string currentPinboard: ""
+  property string kindFilter: "all"
+  // The pin picker names a board to pin the selected entry to, or the new
+  // name of the current board when renaming.
+  property bool pinPickerOpen: false
+  property bool pinPickerRenames: false
+  property string pinPickerText: ""
+  property int pinPickerIndex: 0
+  property bool deletePinboardConfirmOpen: false
+  readonly property bool dialogOpen: root.clearConfirmOpen || root.deletePinboardConfirmOpen
 
   property string historyPath: Quickshell.env("HOME") + "/.local/state/omarchy/clipboard-history.json"
+  property string pinboardsPath: Quickshell.env("HOME") + "/.local/state/omarchy/clipboard-pinboards.json"
   property string captureScript: root.omarchyPath + "/shell/plugins/clipboard/capture.sh"
   // Shares the [menu] surface tokens — themes that style the menu also
   // style the clipboard. Selected-row colors composed in the
@@ -38,6 +51,7 @@ Item {
   property int cardWidth: Math.min(Style.space(875), panel.width - Style.gapsOut * 2)
   property int cardHeight: Math.min(Style.space(600), panel.height - Style.gapsOut * 2)
   property int rowHeight: Math.max(Style.space(50), Style.font.body + Style.font.caption + Style.spacing.rowPaddingX * 2)
+  property int chipHeight: Style.font.body + Style.spacing.controlPaddingY * 2
   property int historyLimit: 500
 
   function open(payloadJson) {
@@ -45,6 +59,9 @@ Item {
     root.filterText = ""
     root.selectedIndex = 0
     root.cursorActive = true
+    root.pinPickerOpen = false
+    root.deletePinboardConfirmOpen = false
+    if (root.pinboards.indexOf(root.currentPinboard) < 0) root.currentPinboard = ""
     root.disarmPointer()
     root.rebuildDisplay()
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
@@ -52,6 +69,8 @@ Item {
 
   function close() {
     root.cancelClearHistory()
+    root.pinPickerOpen = false
+    root.deletePinboardConfirmOpen = false
     root.opened = false
   }
 
@@ -70,7 +89,21 @@ Item {
 
   function loadHistory(raw) {
     root.history = ClipboardHistory.parseHistory(raw)
+    root.pinboards = ClipboardHistory.pinboardList(root.pinboards, root.history)
     if (root.opened) root.rebuildDisplay()
+  }
+
+  function loadPinboards(raw) {
+    root.pinboards = ClipboardHistory.pinboardList(ClipboardHistory.parsePinboards(raw), root.history)
+    if (root.opened) root.rebuildDisplay()
+  }
+
+  function savePinboards() {
+    pinboardsFile.setText(JSON.stringify(root.pinboards, null, 2) + "\n")
+  }
+
+  function label(key) {
+    return ClipboardHistory.label(Commons.I18n.t, key)
   }
 
   function saveHistory() {
@@ -80,6 +113,12 @@ Item {
   function addClipboardEntry(entry) {
     var normalized = ClipboardHistory.normalizeEntry(entry)
     if (!normalized) return
+
+    // The focused window is where the copy came from; a re-copy keeps the app
+    // the entry first came from.
+    var active = ToplevelManager.activeToplevel
+    if (active && active.appId) normalized.app = String(active.appId)
+    normalized.copiedAt = Date.now()
 
     root.history = ClipboardHistory.addEntry(root.history, normalized, root.historyLimit)
     root.saveHistory()
@@ -103,7 +142,7 @@ Item {
   }
 
   function confirmClearHistory() {
-    root.history = ClipboardHistory.clearHistory()
+    root.history = ClipboardHistory.clearHistory(root.history)
     root.saveHistory()
     root.selectedIndex = 0
     root.cursorActive = false
@@ -117,7 +156,8 @@ Item {
     if (index < 0 || index >= displayModel.count) return
 
     var row = displayModel.get(index)
-    root.history = ClipboardHistory.removeEntryAt(root.history, row.historyIndex)
+    if (root.currentPinboard) root.history = ClipboardHistory.unpinEntryAt(root.history, row.historyIndex)
+    else root.history = ClipboardHistory.removeEntryAt(root.history, row.historyIndex)
     root.saveHistory()
 
     if (displayModel.count <= 1) {
@@ -132,7 +172,7 @@ Item {
   }
 
   function rebuildDisplay() {
-    var rows = ClipboardHistory.displayRows(root.history, root.filterText, 50, Commons.I18n.t, Commons.I18n.tn, Commons.I18n.formatNumber)
+    var rows = ClipboardHistory.displayRows(root.history, root.filterText, 50, Commons.I18n.t, Commons.I18n.tn, Commons.I18n.formatNumber, { pinboard: root.currentPinboard, kind: root.kindFilter })
 
     displayModel.clear()
     for (var i = 0; i < rows.length; i++) {
@@ -144,6 +184,11 @@ Item {
         previewImage: row.previewImage ? Util.fileUrl(row.previewImage) : "",
         path: row.path,
         mime: row.mime,
+        kind: row.kind,
+        pinboard: row.pinboard,
+        app: row.app,
+        copiedAt: row.copiedAt,
+        textLength: row.textLength,
         historyIndex: row.index
       })
     }
@@ -190,6 +235,162 @@ Item {
     root.cursorActive = true
     root.disarmPointer()
     root.rebuildDisplay()
+  }
+
+  function showTab(pinboard) {
+    root.currentPinboard = pinboard
+    root.selectedIndex = 0
+    root.cursorActive = true
+    root.disarmPointer()
+    root.rebuildDisplay()
+  }
+
+  // History is the first tab, then each pinboard in order.
+  function switchTab(delta) {
+    var tabs = [""].concat(root.pinboards)
+    var index = Math.max(0, tabs.indexOf(root.currentPinboard))
+    root.showTab(tabs[(index + delta + tabs.length) % tabs.length])
+  }
+
+  function setKind(kind) {
+    root.kindFilter = kind
+    root.selectedIndex = 0
+    root.cursorActive = true
+    root.disarmPointer()
+    root.rebuildDisplay()
+  }
+
+  // Boards the picker offers for the typed text: matching boards first, then
+  // a row that creates a board named after the text when none has that name.
+  function pinPickerRows() {
+    var needle = root.pinPickerText.trim().toLowerCase()
+    var rows = []
+    if (!root.pinPickerRenames) {
+      for (var i = 0; i < root.pinboards.length; i++) {
+        if (!needle || root.pinboards[i].toLowerCase().indexOf(needle) >= 0) rows.push({ name: root.pinboards[i], create: false })
+      }
+    }
+    var typed = root.pinPickerText.trim()
+    if (typed && root.pinboards.indexOf(typed) < 0) rows.push({ name: typed, create: true })
+    return rows
+  }
+
+  function openPinPicker(renames) {
+    if (renames ? !root.currentPinboard : (!root.cursorActive || displayModel.count === 0)) return
+    root.pinPickerRenames = renames
+    root.pinPickerText = renames ? root.currentPinboard : ""
+    root.pinPickerIndex = 0
+    root.pinPickerOpen = true
+  }
+
+  function closePinPicker() {
+    root.pinPickerOpen = false
+    root.disarmPointer()
+    Qt.callLater(function() { keyCatcher.forceActiveFocus() })
+  }
+
+  function choosePinPickerRow(index) {
+    var rows = root.pinPickerRows()
+    if (index < 0 || index >= rows.length) return
+    var name = rows[index].name
+    if (root.pinPickerRenames) root.renameCurrentPinboard(name)
+    else root.pinSelectedTo(name)
+    root.closePinPicker()
+  }
+
+  function pinSelectedTo(name) {
+    if (!root.cursorActive || root.selectedIndex < 0 || root.selectedIndex >= displayModel.count) return
+    var row = displayModel.get(root.selectedIndex)
+    root.history = ClipboardHistory.pinEntryAt(root.history, row.historyIndex, name)
+    if (root.pinboards.indexOf(name) < 0) {
+      root.pinboards = root.pinboards.concat([name])
+      root.savePinboards()
+    }
+    root.saveHistory()
+    root.rebuildDisplay()
+  }
+
+  function renameCurrentPinboard(name) {
+    var from = root.currentPinboard
+    if (!from || !name || name === from || root.pinboards.indexOf(name) >= 0) return
+    root.history = ClipboardHistory.renamePinboard(root.history, from, name)
+    root.pinboards = root.pinboards.map(function(board) { return board === from ? name : board })
+    root.currentPinboard = name
+    root.saveHistory()
+    root.savePinboards()
+    root.rebuildDisplay()
+  }
+
+  function requestDeletePinboard() {
+    if (!root.currentPinboard) return
+    deletePinboardConfirm.selectedIndex = 1
+    root.deletePinboardConfirmOpen = true
+  }
+
+  function cancelDeletePinboard() {
+    root.deletePinboardConfirmOpen = false
+    root.disarmPointer()
+    Qt.callLater(function() { keyCatcher.forceActiveFocus() })
+  }
+
+  function confirmDeletePinboard() {
+    var board = root.currentPinboard
+    root.history = ClipboardHistory.removePinboard(root.history, board)
+    root.pinboards = root.pinboards.filter(function(name) { return name !== board })
+    root.saveHistory()
+    root.savePinboards()
+    root.deletePinboardConfirmOpen = false
+    root.showTab("")
+    Qt.callLater(function() { keyCatcher.forceActiveFocus() })
+  }
+
+  function handlePinPickerKey(event) {
+    var rows = root.pinPickerRows()
+    if (event.key === Qt.Key_Escape) {
+      root.closePinPicker()
+    } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+      root.choosePinPickerRow(root.pinPickerIndex)
+    } else if (event.key === Qt.Key_Up) {
+      if (rows.length > 0) root.pinPickerIndex = (root.pinPickerIndex - 1 + rows.length) % rows.length
+    } else if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab) {
+      if (rows.length > 0) root.pinPickerIndex = (root.pinPickerIndex + 1) % rows.length
+    } else if (Util.editsFilter(event, root.pinPickerText)) {
+      root.pinPickerText = Util.editedFilter(event, root.pinPickerText)
+      root.pinPickerIndex = 0
+    } else if (event.text && event.text.length === 1 && event.text.charCodeAt(0) >= 32 && event.text.charCodeAt(0) !== 127 && !(event.modifiers & Qt.ControlModifier)) {
+      root.pinPickerText = root.pinPickerText + event.text
+      root.pinPickerIndex = 0
+    } else {
+      return false
+    }
+    return true
+  }
+
+  // Name of the app an entry was copied from, from its desktop entry when one
+  // claims the window's app id.
+  function appName(appId) {
+    if (!appId) return ""
+    var entry = DesktopEntries.heuristicLookup(appId)
+    return entry && entry.name ? String(entry.name) : String(appId)
+  }
+
+  function copiedAtText(ms) {
+    if (!ms) return ""
+    var date = new Date(ms)
+    var locale = Qt.locale(Commons.I18n.formatLocale)
+    var time = date.toLocaleTimeString(locale, Locale.ShortFormat)
+    if (date.toDateString() === new Date().toDateString()) return root.label("clipboard.today").arg(time)
+    return date.toLocaleString(locale, Locale.ShortFormat)
+  }
+
+  function detailsText(row) {
+    if (!row) return ""
+    var parts = []
+    if (row.pinboard && !root.currentPinboard) parts.push("\uDB81\uDC03 " + row.pinboard)
+    if (row.app) parts.push(root.appName(row.app))
+    if (row.copiedAt) parts.push(root.copiedAtText(row.copiedAt))
+    if (row.textLength > 0) parts.push(ClipboardHistory.characterCount(row.textLength, Commons.I18n.tn, Commons.I18n.formatNumber))
+    return parts.join("  ·  ")
   }
 
   function disarmPointer() {
@@ -263,6 +464,17 @@ Item {
     printErrors: false
     onLoaded: root.loadHistory(text())
     onLoadFailed: root.loadHistory("[]")
+    onFileChanged: reload()
+  }
+
+  FileView {
+    id: pinboardsFile
+    path: root.pinboardsPath
+    watchChanges: true
+    atomicWrites: true
+    printErrors: false
+    onLoaded: root.loadPinboards(text())
+    onLoadFailed: root.loadPinboards("[]")
     onFileChanged: reload()
   }
 
@@ -349,7 +561,7 @@ Item {
       Item {
         id: keyCatcher
         anchors.fill: parent
-        z: root.clearConfirmOpen ? 20 : 0
+        z: root.dialogOpen || root.pinPickerOpen ? 20 : 0
         focus: true
 
         Keys.priority: Keys.BeforeItem
@@ -358,6 +570,16 @@ Item {
             if (clearConfirm.handleKey(event)) event.accepted = true
             return
           }
+          if (root.deletePinboardConfirmOpen) {
+            if (deletePinboardConfirm.handleKey(event)) event.accepted = true
+            return
+          }
+          if (root.pinPickerOpen) {
+            if (root.handlePinPickerKey(event)) event.accepted = true
+            return
+          }
+
+          var control = (event.modifiers & Qt.ControlModifier) !== 0
 
           if (event.key === Qt.Key_Escape) {
             if (root.filterText) root.setFilter("")
@@ -366,8 +588,27 @@ Item {
           } else if (Util.editsFilter(event, root.filterText)) {
             root.setFilter(Util.editedFilter(event, root.filterText))
             event.accepted = true
+          } else if (control && event.key >= Qt.Key_1 && event.key <= Qt.Key_9) {
+            root.activateIndex(event.key - Qt.Key_1)
+            event.accepted = true
+          } else if (control && event.key === Qt.Key_P) {
+            root.openPinPicker(false)
+            event.accepted = true
+          } else if (control && event.key === Qt.Key_T) {
+            root.setKind(ClipboardHistory.nextKind(root.kindFilter, (event.modifiers & Qt.ShiftModifier) ? -1 : 1))
+            event.accepted = true
+          } else if (event.key === Qt.Key_F2) {
+            root.openPinPicker(true)
+            event.accepted = true
+          } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+            root.switchTab(event.key === Qt.Key_Backtab ? -1 : 1)
+            event.accepted = true
+          } else if (!control && (Util.readingKey(event) === Qt.Key_Left || Util.readingKey(event) === Qt.Key_Right)) {
+            root.switchTab(Util.readingKey(event) === Qt.Key_Left ? -1 : 1)
+            event.accepted = true
           } else if (event.key === Qt.Key_Delete) {
-            if (event.modifiers & Qt.ShiftModifier) root.requestClearHistory()
+            if ((event.modifiers & Qt.ShiftModifier) && root.currentPinboard) root.requestDeletePinboard()
+            else if (event.modifiers & Qt.ShiftModifier) root.requestClearHistory()
             else root.removeDisplayIndex(root.selectedIndex)
             event.accepted = true
           } else if (event.key === Qt.Key_Up) {
@@ -418,6 +659,25 @@ Item {
           onCanceled: root.cancelClearHistory()
           onConfirmed: root.confirmClearHistory()
         }
+
+        ConfirmDialog {
+          id: deletePinboardConfirm
+
+          anchors.fill: parent
+          opened: root.deletePinboardConfirmOpen
+          z: 10
+          message: root.label("clipboard.deletePinboard").arg(root.currentPinboard)
+          confirmText: Commons.I18n.t("common.delete")
+          background: root.background
+          foreground: root.foreground
+          scrim: root.scrim
+          selectedBackground: root.selectedBackground
+          selectedText: root.selectedText
+          fontFamily: root.fontFamily
+          cornerRadius: root.cornerRadius
+          onCanceled: root.cancelDeletePinboard()
+          onConfirmed: root.confirmDeletePinboard()
+        }
       }
 
       Column {
@@ -434,10 +694,29 @@ Item {
           radius: root.cornerRadius
           color: "transparent"
 
+          Row {
+            id: kindChips
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: Style.space(4)
+
+            Repeater {
+              model: ClipboardHistory.kindOptions(Commons.I18n.t)
+
+              Chip {
+                required property var modelData
+                label: modelData.label
+                active: root.kindFilter === modelData.value
+                onClicked: root.setKind(modelData.value)
+              }
+            }
+          }
+
           Text {
             textFormat: Text.PlainText
             anchors.left: parent.left
-            anchors.right: parent.right
+            anchors.right: kindChips.left
+            anchors.rightMargin: root.contentSpacing
             anchors.verticalCenter: parent.verticalCenter
             text: root.filterText || Commons.I18n.t("clipboard.search")
             color: root.foreground
@@ -448,9 +727,41 @@ Item {
           }
         }
 
+        Flickable {
+          id: tabBar
+          width: parent.width
+          height: root.chipHeight
+          contentWidth: tabRow.width
+          clip: true
+          boundsBehavior: Flickable.StopAtBounds
+          interactive: contentWidth > width
+
+          Row {
+            id: tabRow
+            spacing: Style.space(4)
+
+            Chip {
+              label: root.label("clipboard.history")
+              active: root.currentPinboard === ""
+              onClicked: root.showTab("")
+            }
+
+            Repeater {
+              model: root.pinboards
+
+              Chip {
+                required property string modelData
+                label: "\uDB81\uDC03 " + modelData
+                active: root.currentPinboard === modelData
+                onClicked: root.showTab(modelData)
+              }
+            }
+          }
+        }
+
         Item {
           width: parent.width
-          height: parent.height - root.headerHeight - root.contentSpacing
+          height: parent.height - root.headerHeight - root.chipHeight - hintsText.height - root.contentSpacing * 3
 
           Row {
             anchors.fill: parent
@@ -477,6 +788,7 @@ Item {
                   required property string previewText
                   required property string fullText
                   required property string previewImage
+                  required property string pinboard
 
                   readonly property bool hasCursor: root.cursorActive && index === root.selectedIndex
 
@@ -504,7 +816,7 @@ Item {
 
                     Text {
                       textFormat: Text.PlainText
-                      width: parent.width - (parent.parent.previewImage.length > 0 ? parent.height + parent.spacing : 0)
+                      width: parent.width - (parent.parent.previewImage.length > 0 ? parent.height + parent.spacing : 0) - rowBadge.width - parent.spacing
                       height: parent.height
                       text: parent.parent.previewText
                       color: parent.parent.hasCursor ? root.selectedText : root.foreground
@@ -513,6 +825,22 @@ Item {
                       opacity: parent.parent.entryType === "image" || parent.parent.entryType === "file" ? 0.72 : 1.0
                       elide: Text.ElideRight
                       wrapMode: Text.NoWrap
+                      verticalAlignment: Text.AlignVCenter
+                    }
+
+                    // Ctrl+number pastes the first nine rows; a pin marks
+                    // pinned entries in history.
+                    Text {
+                      id: rowBadge
+                      textFormat: Text.PlainText
+                      width: Style.space(36)
+                      height: parent.height
+                      text: (row.pinboard && !root.currentPinboard ? "\uDB81\uDC03" : "") + (row.index < 9 ? " " + (row.index + 1) : "")
+                      color: row.hasCursor ? root.selectedText : root.foreground
+                      opacity: 0.5
+                      font.family: root.fontFamily
+                      font.pixelSize: Style.font.body
+                      horizontalAlignment: Text.AlignRight
                       verticalAlignment: Text.AlignVCenter
                     }
                   }
@@ -550,13 +878,28 @@ Item {
               }
 
               Text {
+                id: detailsText
+                textFormat: Text.PlainText
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.leftMargin: root.contentMargin
+                text: root.detailsText(parent.activeRow)
+                color: root.foreground
+                opacity: 0.58
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.body
+                elide: Text.ElideRight
+              }
+
+              Text {
                 textFormat: Text.PlainText
                 visible: parent.activeRow && !parent.activeRow.previewImage
                 anchors.fill: parent
                 anchors.leftMargin: root.contentMargin
                 anchors.rightMargin: 0
                 anchors.topMargin: 0
-                anchors.bottomMargin: 0
+                anchors.bottomMargin: detailsText.height + root.contentSpacing
                 text: parent.activeRow ? parent.activeRow.fullText : ""
                 color: root.foreground
                 font.family: root.fontFamily
@@ -572,7 +915,7 @@ Item {
                 anchors.leftMargin: root.contentMargin
                 anchors.rightMargin: 0
                 anchors.topMargin: 0
-                anchors.bottomMargin: 0
+                anchors.bottomMargin: detailsText.height + root.contentSpacing
                 url: parent.activeRow ? parent.activeRow.previewImage : ""
                 verticalAlignment: Image.AlignTop
                 asynchronous: true
@@ -598,7 +941,7 @@ Item {
 
             Text {
               textFormat: Text.PlainText
-              text: root.history.length === 0 ? Commons.I18n.t("clipboard.empty") : Commons.I18n.t("common.noMatchesFor").arg(root.filterText)
+              text: root.filterText ? Commons.I18n.t("common.noMatchesFor").arg(root.filterText) : (root.currentPinboard ? root.label("clipboard.pinboardEmpty") : Commons.I18n.t("clipboard.empty"))
               color: root.foreground
               opacity: 0.7
               font.family: root.fontFamily
@@ -608,7 +951,149 @@ Item {
             }
           }
         }
+
+        Text {
+          id: hintsText
+          textFormat: Text.PlainText
+          width: parent.width
+          text: root.currentPinboard ? root.label("clipboard.pinboardHints") : root.label("clipboard.hints")
+          color: root.foreground
+          opacity: 0.45
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.caption
+          elide: Text.ElideRight
+          horizontalAlignment: Text.AlignHCenter
+        }
       }
+
+      // Names the pinboard to pin the selected entry to: pick a board or type
+      // a new name. F2 reuses it to rename the current board.
+      Item {
+        anchors.fill: parent
+        visible: root.pinPickerOpen
+        z: 15
+
+        Rectangle {
+          anchors.fill: parent
+          radius: root.cornerRadius
+          color: root.scrim
+        }
+
+        MouseArea { anchors.fill: parent; onClicked: root.closePinPicker() }
+
+        BorderSurface {
+          id: pinPicker
+          readonly property var rows: root.pinPickerOpen ? root.pinPickerRows() : []
+          width: Math.min(Style.space(420), parent.width - root.contentMargin * 2)
+          height: pinPickerColumn.implicitHeight + pinPicker.contentTopInset + pinPicker.contentBottomInset
+          anchors.centerIn: parent
+          radius: root.cornerRadius
+          color: root.background
+          borderSpec: root.borderSpec
+          padding: root.contentMargin
+
+          MouseArea { anchors.fill: parent; onClicked: {} }
+
+          Column {
+            id: pinPickerColumn
+            anchors.fill: parent
+            anchors.topMargin: pinPicker.contentTopInset
+            anchors.rightMargin: pinPicker.contentRightInset
+            anchors.bottomMargin: pinPicker.contentBottomInset
+            anchors.leftMargin: pinPicker.contentLeftInset
+            spacing: Style.space(6)
+
+            Text {
+              textFormat: Text.PlainText
+              width: parent.width
+              text: root.pinPickerRenames ? root.label("clipboard.renamePinboard") : root.label("clipboard.pinTo")
+              color: root.foreground
+              opacity: 0.58
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.body
+            }
+
+            Text {
+              textFormat: Text.PlainText
+              width: parent.width
+              text: root.pinPickerText || root.label("clipboard.pinboardName")
+              color: root.foreground
+              opacity: root.pinPickerText ? 1 : 0.58
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.heading
+              elide: Text.ElideRight
+            }
+
+            Repeater {
+              model: pinPicker.rows
+
+              Rectangle {
+                id: pinRow
+                required property var modelData
+                required property int index
+                readonly property bool hasCursor: index === root.pinPickerIndex
+                width: pinPickerColumn.width
+                height: root.chipHeight + Style.space(8)
+                radius: root.cornerRadius
+                color: hasCursor ? root.selectedBackground : "transparent"
+
+                Text {
+                  textFormat: Text.PlainText
+                  anchors.fill: parent
+                  anchors.leftMargin: Style.space(10)
+                  anchors.rightMargin: Style.space(10)
+                  text: pinRow.modelData.create ? root.label("clipboard.newPinboard").arg(pinRow.modelData.name) : "\uDB81\uDC03 " + pinRow.modelData.name
+                  color: pinRow.hasCursor ? root.selectedText : root.foreground
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.title
+                  elide: Text.ElideRight
+                  verticalAlignment: Text.AlignVCenter
+                }
+
+                MouseArea {
+                  anchors.fill: parent
+                  cursorShape: Qt.PointingHandCursor
+                  onClicked: root.choosePinPickerRow(pinRow.index)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // A tab or type filter: a rounded label that lights up when selected.
+  component Chip: Rectangle {
+    id: chip
+    property string label: ""
+    property bool active: false
+    signal clicked()
+
+    width: chipText.implicitWidth + Style.space(20)
+    height: root.chipHeight
+    radius: root.cornerRadius
+    color: active ? root.selectedBackground : (chipMouse.containsMouse ? Util.alpha(root.foreground, 0.06) : "transparent")
+    border.width: active ? 0 : Style.normalBorderWidth
+    border.color: Util.alpha(root.border, 0.28)
+
+    Text {
+      id: chipText
+      textFormat: Text.PlainText
+      anchors.centerIn: parent
+      text: chip.label
+      color: chip.active ? root.selectedText : root.foreground
+      opacity: chip.active ? 1 : 0.72
+      font.family: root.fontFamily
+      font.pixelSize: Style.font.body
+    }
+
+    MouseArea {
+      id: chipMouse
+      anchors.fill: parent
+      hoverEnabled: true
+      cursorShape: Qt.PointingHandCursor
+      onClicked: chip.clicked()
     }
   }
 }
