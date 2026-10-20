@@ -879,7 +879,12 @@ BarWidget {
 
     TrayIcon {
       x: (parent.width - width) / 2
-      y: (parent.height - height) / 2
+      // Tray icons are images while the widgets beside them are glyphs.
+      // Both center in their 27px slot on a 26px horizontal bar, but the
+      // bitmap paints its top row solid where the glyph's curve fades in,
+      // so the images read a pixel higher; nudge them down to line up.
+      // A vertical bar stacks the icons in a Column, so they stay put.
+      y: (parent.height - height) / 2 + (root.vertical ? 0 : 1)
       width: Style.bar.iconSize
       height: Style.bar.iconSize
       icon: trayItemRoot.modelData.icon
