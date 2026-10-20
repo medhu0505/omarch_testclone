@@ -342,7 +342,9 @@ Panel {
               id: fileList
               visible: dropbox.files.length > 0
               width: parent.width
-              height: Math.min(contentHeight, Style.space(340))
+              implicitHeight: Math.min(contentHeight, Style.space(340))
+              height: Math.max(0, Math.min(implicitHeight,
+                panel.contentHeight - panel.verticalContentInset - (column.implicitHeight - implicitHeight)))
               spacing: Style.space(6)
               clip: true
               boundsBehavior: Flickable.StopAtBounds
