@@ -94,6 +94,8 @@
   "drive.select": "Select drive",
   "files.selectFile": "Select file",
   "font.cjkChanged": "Chinese, Japanese, and Korean glyph forms changed",
+  "font.mapleInvitation": "Use Maple Mono CN",
+  "font.mapleInvitationBody": "A monospace font that draws Chinese in the terminal. Click to install it.",
   "font.restartAppsToSeeChange": "Restart open apps to see the change",
   "font.restartToSeeChange": "You must restart %1 to see font change",
   "games.corePrompt": "RetroArch core",

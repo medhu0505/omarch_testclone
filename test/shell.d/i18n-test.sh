@@ -302,6 +302,12 @@ cat >"$work/stubs/omarchy-restart-shell" <<'STUB'
 #!/bin/bash
 echo "restart" >>"$SESSION_ENV_LOG"
 STUB
+# Records the Maple Mono invitation, which would otherwise mark it sent in the
+# real home of whoever runs the test.
+cat >"$work/stubs/omarchy-font-invite-maple" <<'STUB'
+#!/bin/bash
+echo "invited" >>"$FONT_LOG"
+STUB
 # sudo and pkexec record which one elevated and what it ran, then run it
 # as-is. sudo answers the long listing (`sudo -n -l -l`) with the
 # passwordless grant only when TEST_SUDO_GRANT is set, the way a machine with
@@ -324,7 +330,7 @@ exec "$@"
 STUB
 chmod +x "$work/stubs/"*
 export PATH="$work/stubs:$PATH"
-export LOCALE_GEN_LOG=$work/locale-gen.log NOTIFY_LOG=$work/notify.log ELEVATE_LOG=$work/elevate.log SESSION_ENV_LOG=$work/session-env.log
+export FONT_LOG=$work/font.log LOCALE_GEN_LOG=$work/locale-gen.log NOTIFY_LOG=$work/notify.log ELEVATE_LOG=$work/elevate.log SESSION_ENV_LOG=$work/session-env.log
 export HYPRLAND_INSTANCE_SIGNATURE=test
 : >"$LOCALE_GEN_LOG"; : >"$NOTIFY_LOG"; : >"$ELEVATE_LOG"; : >"$SESSION_ENV_LOG"
 
@@ -447,6 +453,8 @@ assert_bash_equal "$(cat "$OMARCHY_LANGUAGE_FILE")" "ja" "a CJK language switche
 grep -q 'Noto Sans CJK JP' "$cjk_font" && pass "Japanese seeds Japanese glyph forms" || fail "Japanese seeds Japanese glyph forms"
 TEST_SUDO_GRANT=1 omarchy-language ko </dev/null 2>/dev/null
 grep -q 'Noto Sans CJK JP' "$cjk_font" && pass "a second CJK language keeps the glyph forms already chosen" || fail "a second CJK language keeps the glyph forms already chosen"
+TEST_SUDO_GRANT=1 omarchy-language zh-CN </dev/null 2>/dev/null
+assert_bash_equal "$(cat "$FONT_LOG" 2>/dev/null)" "invited" "Chinese, and neither Japanese nor Korean, invites to Maple Mono"
 rm -f "$work/stubs/busctl" "$work/stubs/fcitx5-remote" "$cjk_font"
 
 # A cancelled polkit prompt must not persist the choice, or the interface

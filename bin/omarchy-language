@@ -131,6 +131,15 @@ seed_typing() {
   /usr/bin/python3 "$OMARCHY_PATH/default/input-methods/typing_setup.py" seed-language "$method" || true
 }
 
+# Chinese lines up in the terminal only in a font that draws Han itself. Sent
+# after the shell restart above, which would take the toast down with it.
+# Not Japanese: Maple draws kanji in Chinese forms.
+invite_font() {
+  case $1 in
+  zh-CN | zh-TW) omarchy-font-invite-maple || true ;;
+  esac
+}
+
 set_language() {
   local code=$1
   if ! known_language "$code"; then
@@ -154,6 +163,7 @@ set_language() {
   apply_session_locale "$locale"
 
   omarchy-notification-send -g  "$(omarchy-i18n language.changed "$name")" "$(omarchy-i18n language.newApps)"
+  invite_font "$code"
 }
 
 case "${1:-}" in
