@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "نوار راست"
   },
-  "appearance.branding.screensaver": {
-    "label": "محافظ صفحه"
-  },
-  "appearance.branding.about": {
-    "label": "درباره"
-  },
-  "appearance.branding.about.text": {
-    "label": "ویرایش متن"
-  },
-  "appearance.branding.about.image": {
-    "label": "تنظیم از تصویر"
-  },
-  "appearance.branding.about.default": {
-    "label": "بازیابی پیش‌فرض"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "ویرایش متن"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "تنظیم از تصویر"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "بازیابی پیش‌فرض"
-  },
-  "appearance.animations": {
-    "label": "پویانمایی"
-  },
-  "appearance.dock": {
-    "label": "داک"
-  },
-  "appearance.dock.autohide": {
-    "label": "پنهان‌شدن خودکار داک"
-  },
-  "appearance.dock.always-on": {
-    "label": "داک همیشه روشن"
-  },
-  "appearance.dock.position": {
-    "label": "موقعیت داک"
-  },
-  "appearance.dock.position.top": {
-    "label": "داک بالا"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "داک پایین"
-  },
-  "appearance.dock.position.left": {
-    "label": "داک چپ"
-  },
-  "appearance.dock.position.right": {
-    "label": "داک راست"
-  },
   "appearance.windows.gaps": {
     "label": "فاصله پنجره‌ها"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "نسبت 1 پنجره"
   },
+  "appearance.branding.screensaver": {
+    "label": "محافظ صفحه"
+  },
+  "appearance.branding.about": {
+    "label": "درباره"
+  },
+  "appearance.branding.about.text": {
+    "label": "ویرایش متن"
+  },
+  "appearance.branding.about.image": {
+    "label": "تنظیم از تصویر"
+  },
+  "appearance.branding.about.default": {
+    "label": "بازیابی پیش‌فرض"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "ویرایش متن"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "تنظیم از تصویر"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "بازیابی پیش‌فرض"
+  },
+  "appearance.dock": {
+    "label": "داک"
+  },
+  "appearance.dock.autohide": {
+    "label": "پنهان‌شدن خودکار داک"
+  },
+  "appearance.dock.always-on": {
+    "label": "داک همیشه روشن"
+  },
+  "appearance.dock.position": {
+    "label": "موقعیت داک"
+  },
+  "appearance.dock.position.top": {
+    "label": "داک بالا"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "داک پایین"
+  },
+  "appearance.dock.position.left": {
+    "label": "داک چپ"
+  },
+  "appearance.dock.position.right": {
+    "label": "داک راست"
+  },
   "appearance.workspace-layout": {
     "label": "چیدمان فضای کاری",
     "title": "چیدمان پیش‌فرض فضای کاری"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "شناور"
   },
+  "appearance.animations": {
+    "label": "پویانمایی"
+  },
   "appearance.unlock": {
     "label": "باز کردن قفل"
-  },
-  "appearance.theme-sync": {
-    "label": "همگام‌سازی تم Herdr"
   },
   "trigger.toggle": {
     "label": "روشن/خاموش"

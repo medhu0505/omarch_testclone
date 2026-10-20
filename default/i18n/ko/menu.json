@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "오른쪽 막대"
   },
-  "appearance.branding.screensaver": {
-    "label": "화면 보호기"
-  },
-  "appearance.branding.about": {
-    "label": "정보"
-  },
-  "appearance.branding.about.text": {
-    "label": "텍스트 편집"
-  },
-  "appearance.branding.about.image": {
-    "label": "이미지에서 설정"
-  },
-  "appearance.branding.about.default": {
-    "label": "기본값 복원"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "텍스트 편집"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "이미지에서 설정"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "기본값 복원"
-  },
-  "appearance.animations": {
-    "label": "애니메이션"
-  },
-  "appearance.dock": {
-    "label": "독"
-  },
-  "appearance.dock.autohide": {
-    "label": "독 자동 숨기기"
-  },
-  "appearance.dock.always-on": {
-    "label": "독 항상 표시"
-  },
-  "appearance.dock.position": {
-    "label": "독 위치"
-  },
-  "appearance.dock.position.top": {
-    "label": "상단 독"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "하단 독"
-  },
-  "appearance.dock.position.left": {
-    "label": "왼쪽 독"
-  },
-  "appearance.dock.position.right": {
-    "label": "오른쪽 독"
-  },
   "appearance.windows.gaps": {
     "label": "창 간격"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1-창 비율"
   },
+  "appearance.branding.screensaver": {
+    "label": "화면 보호기"
+  },
+  "appearance.branding.about": {
+    "label": "정보"
+  },
+  "appearance.branding.about.text": {
+    "label": "텍스트 편집"
+  },
+  "appearance.branding.about.image": {
+    "label": "이미지에서 설정"
+  },
+  "appearance.branding.about.default": {
+    "label": "기본값 복원"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "텍스트 편집"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "이미지에서 설정"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "기본값 복원"
+  },
+  "appearance.dock": {
+    "label": "독"
+  },
+  "appearance.dock.autohide": {
+    "label": "독 자동 숨기기"
+  },
+  "appearance.dock.always-on": {
+    "label": "독 항상 표시"
+  },
+  "appearance.dock.position": {
+    "label": "독 위치"
+  },
+  "appearance.dock.position.top": {
+    "label": "상단 독"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "하단 독"
+  },
+  "appearance.dock.position.left": {
+    "label": "왼쪽 독"
+  },
+  "appearance.dock.position.right": {
+    "label": "오른쪽 독"
+  },
   "appearance.workspace-layout": {
     "label": "워크스페이스 레이아웃",
     "title": "기본 워크스페이스 레이아웃"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "플로팅"
   },
+  "appearance.animations": {
+    "label": "애니메이션"
+  },
   "appearance.unlock": {
     "label": "잠금 해제"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr 테마 동기화"
   },
   "trigger.toggle": {
     "label": "토글"

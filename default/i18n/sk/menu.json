@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Pravá lišta"
   },
-  "appearance.branding.screensaver": {
-    "label": "Šetrič obrazovky"
-  },
-  "appearance.branding.about": {
-    "label": "Informácie"
-  },
-  "appearance.branding.about.text": {
-    "label": "Upraviť text"
-  },
-  "appearance.branding.about.image": {
-    "label": "Nastaviť z obrázka"
-  },
-  "appearance.branding.about.default": {
-    "label": "Obnoviť predvolené"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Upraviť text"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Nastaviť z obrázka"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Obnoviť predvolené"
-  },
-  "appearance.animations": {
-    "label": "Animácie"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Skrývať dock"
-  },
-  "appearance.dock.always-on": {
-    "label": "Vždy viditeľný dock"
-  },
-  "appearance.dock.position": {
-    "label": "Poloha docku"
-  },
-  "appearance.dock.position.top": {
-    "label": "Horný dock"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dolný dock"
-  },
-  "appearance.dock.position.left": {
-    "label": "Ľavý dock"
-  },
-  "appearance.dock.position.right": {
-    "label": "Pravý dock"
-  },
   "appearance.windows.gaps": {
     "label": "Medzery okien"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Pomer 1 okna"
   },
+  "appearance.branding.screensaver": {
+    "label": "Šetrič obrazovky"
+  },
+  "appearance.branding.about": {
+    "label": "Informácie"
+  },
+  "appearance.branding.about.text": {
+    "label": "Upraviť text"
+  },
+  "appearance.branding.about.image": {
+    "label": "Nastaviť z obrázka"
+  },
+  "appearance.branding.about.default": {
+    "label": "Obnoviť predvolené"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Upraviť text"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Nastaviť z obrázka"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Obnoviť predvolené"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Skrývať dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "Vždy viditeľný dock"
+  },
+  "appearance.dock.position": {
+    "label": "Poloha docku"
+  },
+  "appearance.dock.position.top": {
+    "label": "Horný dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dolný dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "Ľavý dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "Pravý dock"
+  },
   "appearance.workspace-layout": {
     "label": "Rozloženie plôch",
     "title": "Predvolené rozloženie plôch"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Plávajúce"
   },
+  "appearance.animations": {
+    "label": "Animácie"
+  },
   "appearance.unlock": {
     "label": "Odomknúť"
-  },
-  "appearance.theme-sync": {
-    "label": "Synchronizácia témy Herdr"
   },
   "trigger.toggle": {
     "label": "Prepnúť"

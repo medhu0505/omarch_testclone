@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "شريط أيمن"
   },
-  "appearance.branding.screensaver": {
-    "label": "شاشة التوقف"
-  },
-  "appearance.branding.about": {
-    "label": "حول"
-  },
-  "appearance.branding.about.text": {
-    "label": "تعديل النص"
-  },
-  "appearance.branding.about.image": {
-    "label": "تعيين من صورة"
-  },
-  "appearance.branding.about.default": {
-    "label": "استعادة الافتراضي"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "تعديل النص"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "تعيين من صورة"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "استعادة الافتراضي"
-  },
-  "appearance.animations": {
-    "label": "الرسوم المتحركة"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "إخفاء Dock تلقائيًا"
-  },
-  "appearance.dock.always-on": {
-    "label": "Dock دائم الظهور"
-  },
-  "appearance.dock.position": {
-    "label": "موضع Dock"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock علوي"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock سفلي"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock أيسر"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock أيمن"
-  },
   "appearance.windows.gaps": {
     "label": "فواصل النوافذ"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "نسبة النافذة الواحدة"
   },
+  "appearance.branding.screensaver": {
+    "label": "شاشة التوقف"
+  },
+  "appearance.branding.about": {
+    "label": "حول"
+  },
+  "appearance.branding.about.text": {
+    "label": "تعديل النص"
+  },
+  "appearance.branding.about.image": {
+    "label": "تعيين من صورة"
+  },
+  "appearance.branding.about.default": {
+    "label": "استعادة الافتراضي"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "تعديل النص"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "تعيين من صورة"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "استعادة الافتراضي"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "إخفاء Dock تلقائيًا"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock دائم الظهور"
+  },
+  "appearance.dock.position": {
+    "label": "موضع Dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock علوي"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock سفلي"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock أيسر"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock أيمن"
+  },
   "appearance.workspace-layout": {
     "label": "تخطيط مساحة العمل",
     "title": "تخطيط مساحة العمل الافتراضي"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "عائم"
   },
+  "appearance.animations": {
+    "label": "الرسوم المتحركة"
+  },
   "appearance.unlock": {
     "label": "فتح القفل"
-  },
-  "appearance.theme-sync": {
-    "label": "مزامنة سمة Herdr"
   },
   "trigger.toggle": {
     "label": "تبديل"

@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "右侧栏"
   },
-  "appearance.branding.screensaver": {
-    "label": "屏保"
-  },
-  "appearance.branding.about": {
-    "label": "关于"
-  },
-  "appearance.branding.about.text": {
-    "label": "编辑文本"
-  },
-  "appearance.branding.about.image": {
-    "label": "从图片设置"
-  },
-  "appearance.branding.about.default": {
-    "label": "恢复默认"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "编辑文本"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "从图片设置"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "恢复默认"
-  },
-  "appearance.animations": {
-    "label": "动画"
-  },
-  "appearance.dock": {
-    "label": "程序坞"
-  },
-  "appearance.dock.autohide": {
-    "label": "自动隐藏程序坞"
-  },
-  "appearance.dock.always-on": {
-    "label": "常显程序坞"
-  },
-  "appearance.dock.position": {
-    "label": "程序坞位置"
-  },
-  "appearance.dock.position.top": {
-    "label": "顶部程序坞"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "底部程序坞"
-  },
-  "appearance.dock.position.left": {
-    "label": "左侧程序坞"
-  },
-  "appearance.dock.position.right": {
-    "label": "右侧程序坞"
-  },
   "appearance.windows.gaps": {
     "label": "窗口间距"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "单窗口比例"
   },
+  "appearance.branding.screensaver": {
+    "label": "屏保"
+  },
+  "appearance.branding.about": {
+    "label": "关于"
+  },
+  "appearance.branding.about.text": {
+    "label": "编辑文本"
+  },
+  "appearance.branding.about.image": {
+    "label": "从图片设置"
+  },
+  "appearance.branding.about.default": {
+    "label": "恢复默认"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "编辑文本"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "从图片设置"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "恢复默认"
+  },
+  "appearance.dock": {
+    "label": "程序坞"
+  },
+  "appearance.dock.autohide": {
+    "label": "自动隐藏程序坞"
+  },
+  "appearance.dock.always-on": {
+    "label": "常显程序坞"
+  },
+  "appearance.dock.position": {
+    "label": "程序坞位置"
+  },
+  "appearance.dock.position.top": {
+    "label": "顶部程序坞"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "底部程序坞"
+  },
+  "appearance.dock.position.left": {
+    "label": "左侧程序坞"
+  },
+  "appearance.dock.position.right": {
+    "label": "右侧程序坞"
+  },
   "appearance.workspace-layout": {
     "label": "工作区布局",
     "title": "默认工作区布局"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "浮动"
   },
+  "appearance.animations": {
+    "label": "动画"
+  },
   "appearance.unlock": {
     "label": "解锁"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr 主题同步"
   },
   "trigger.toggle": {
     "label": "开关"

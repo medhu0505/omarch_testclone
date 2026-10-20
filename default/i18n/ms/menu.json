@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Bar Kanan"
   },
-  "appearance.branding.screensaver": {
-    "label": "Tabir Skrin"
-  },
-  "appearance.branding.about": {
-    "label": "Perihal"
-  },
-  "appearance.branding.about.text": {
-    "label": "Sunting Teks"
-  },
-  "appearance.branding.about.image": {
-    "label": "Tetapkan dari Imej"
-  },
-  "appearance.branding.about.default": {
-    "label": "Pulihkan Lalai"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Sunting Teks"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Tetapkan dari Imej"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Pulihkan Lalai"
-  },
-  "appearance.animations": {
-    "label": "Animasi"
-  },
-  "appearance.dock": {
-    "label": "Dok"
-  },
-  "appearance.dock.autohide": {
-    "label": "Dok Auto-sembunyi"
-  },
-  "appearance.dock.always-on": {
-    "label": "Dok Sentiasa Papar"
-  },
-  "appearance.dock.position": {
-    "label": "Kedudukan Dok"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dok Atas"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dok Bawah"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dok Kiri"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dok Kanan"
-  },
   "appearance.windows.gaps": {
     "label": "Jurang Tetingkap"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Nisbah 1-Tetingkap"
   },
+  "appearance.branding.screensaver": {
+    "label": "Tabir Skrin"
+  },
+  "appearance.branding.about": {
+    "label": "Perihal"
+  },
+  "appearance.branding.about.text": {
+    "label": "Sunting Teks"
+  },
+  "appearance.branding.about.image": {
+    "label": "Tetapkan dari Imej"
+  },
+  "appearance.branding.about.default": {
+    "label": "Pulihkan Lalai"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Sunting Teks"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Tetapkan dari Imej"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Pulihkan Lalai"
+  },
+  "appearance.dock": {
+    "label": "Dok"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dok Auto-sembunyi"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dok Sentiasa Papar"
+  },
+  "appearance.dock.position": {
+    "label": "Kedudukan Dok"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dok Atas"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dok Bawah"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dok Kiri"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dok Kanan"
+  },
   "appearance.workspace-layout": {
     "label": "Susun Atur Ruang Kerja",
     "title": "Susun Atur Ruang Kerja Lalai"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Terapung"
   },
+  "appearance.animations": {
+    "label": "Animasi"
+  },
   "appearance.unlock": {
     "label": "Buka Kunci"
-  },
-  "appearance.theme-sync": {
-    "label": "Segerak Tema Herdr"
   },
   "trigger.toggle": {
     "label": "Togol"

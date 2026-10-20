@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Oikea palkki"
   },
-  "appearance.branding.screensaver": {
-    "label": "Näytönsäästäjä"
-  },
-  "appearance.branding.about": {
-    "label": "Tietoja"
-  },
-  "appearance.branding.about.text": {
-    "label": "Muokkaa tekstiä"
-  },
-  "appearance.branding.about.image": {
-    "label": "Aseta kuvasta"
-  },
-  "appearance.branding.about.default": {
-    "label": "Palauta oletus"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Muokkaa tekstiä"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Aseta kuvasta"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Palauta oletus"
-  },
-  "appearance.animations": {
-    "label": "Animaatiot"
-  },
-  "appearance.dock": {
-    "label": "Telakka"
-  },
-  "appearance.dock.autohide": {
-    "label": "Piilota Dock automaattisesti"
-  },
-  "appearance.dock.always-on": {
-    "label": "Dock aina näkyvissä"
-  },
-  "appearance.dock.position": {
-    "label": "Dockin sijainti"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock ylhäällä"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock alhaalla"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock vasemmalla"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock oikealla"
-  },
   "appearance.windows.gaps": {
     "label": "Ikkunoiden välit"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1 ikkunan suhde"
   },
+  "appearance.branding.screensaver": {
+    "label": "Näytönsäästäjä"
+  },
+  "appearance.branding.about": {
+    "label": "Tietoja"
+  },
+  "appearance.branding.about.text": {
+    "label": "Muokkaa tekstiä"
+  },
+  "appearance.branding.about.image": {
+    "label": "Aseta kuvasta"
+  },
+  "appearance.branding.about.default": {
+    "label": "Palauta oletus"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Muokkaa tekstiä"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Aseta kuvasta"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Palauta oletus"
+  },
+  "appearance.dock": {
+    "label": "Telakka"
+  },
+  "appearance.dock.autohide": {
+    "label": "Piilota Dock automaattisesti"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock aina näkyvissä"
+  },
+  "appearance.dock.position": {
+    "label": "Dockin sijainti"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock ylhäällä"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock alhaalla"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock vasemmalla"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock oikealla"
+  },
   "appearance.workspace-layout": {
     "label": "Työtilan asettelu",
     "title": "Oletustyötilan asettelu"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Kelluva"
   },
+  "appearance.animations": {
+    "label": "Animaatiot"
+  },
   "appearance.unlock": {
     "label": "Avaa lukitus"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr-teeman synkronointi"
   },
   "trigger.toggle": {
     "label": "Kytke"

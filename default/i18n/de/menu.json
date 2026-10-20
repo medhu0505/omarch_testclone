@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Leiste rechts"
   },
-  "appearance.branding.screensaver": {
-    "label": "Bildschirmschoner"
-  },
-  "appearance.branding.about": {
-    "label": "Über"
-  },
-  "appearance.branding.about.text": {
-    "label": "Text bearbeiten"
-  },
-  "appearance.branding.about.image": {
-    "label": "Aus Bild setzen"
-  },
-  "appearance.branding.about.default": {
-    "label": "Standard wiederherstellen"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Text bearbeiten"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Aus Bild setzen"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Standard wiederherstellen"
-  },
-  "appearance.animations": {
-    "label": "Animationen"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Dock auto-ausblenden"
-  },
-  "appearance.dock.always-on": {
-    "label": "Dock immer sichtbar"
-  },
-  "appearance.dock.position": {
-    "label": "Dock-Position"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock oben"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock unten"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock links"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock rechts"
-  },
   "appearance.windows.gaps": {
     "label": "Fensterabstände"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1-Fenster-Verhältnis"
   },
+  "appearance.branding.screensaver": {
+    "label": "Bildschirmschoner"
+  },
+  "appearance.branding.about": {
+    "label": "Über"
+  },
+  "appearance.branding.about.text": {
+    "label": "Text bearbeiten"
+  },
+  "appearance.branding.about.image": {
+    "label": "Aus Bild setzen"
+  },
+  "appearance.branding.about.default": {
+    "label": "Standard wiederherstellen"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Text bearbeiten"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Aus Bild setzen"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Standard wiederherstellen"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dock auto-ausblenden"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock immer sichtbar"
+  },
+  "appearance.dock.position": {
+    "label": "Dock-Position"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock oben"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock unten"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock links"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock rechts"
+  },
   "appearance.workspace-layout": {
     "label": "Arbeitsflächenlayout",
     "title": "Standard-Arbeitsflächenlayout"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Schwebend"
   },
+  "appearance.animations": {
+    "label": "Animationen"
+  },
   "appearance.unlock": {
     "label": "Entsperren"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr-Design-Sync"
   },
   "trigger.toggle": {
     "label": "Umschalten"

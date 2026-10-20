@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Panel vpravo"
   },
-  "appearance.branding.screensaver": {
-    "label": "Spořič obrazovky"
-  },
-  "appearance.branding.about": {
-    "label": "O aplikaci"
-  },
-  "appearance.branding.about.text": {
-    "label": "Upravit text"
-  },
-  "appearance.branding.about.image": {
-    "label": "Nastavit z obrázku"
-  },
-  "appearance.branding.about.default": {
-    "label": "Obnovit výchozí"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Upravit text"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Nastavit z obrázku"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Obnovit výchozí"
-  },
-  "appearance.animations": {
-    "label": "Animace"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Automaticky skrýt Dock"
-  },
-  "appearance.dock.always-on": {
-    "label": "Vždy viditelný Dock"
-  },
-  "appearance.dock.position": {
-    "label": "Poloha Docku"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock nahoře"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock dole"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock vlevo"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock vpravo"
-  },
   "appearance.windows.gaps": {
     "label": "Mezery oken"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Poměr pro 1 okno"
   },
+  "appearance.branding.screensaver": {
+    "label": "Spořič obrazovky"
+  },
+  "appearance.branding.about": {
+    "label": "O aplikaci"
+  },
+  "appearance.branding.about.text": {
+    "label": "Upravit text"
+  },
+  "appearance.branding.about.image": {
+    "label": "Nastavit z obrázku"
+  },
+  "appearance.branding.about.default": {
+    "label": "Obnovit výchozí"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Upravit text"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Nastavit z obrázku"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Obnovit výchozí"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Automaticky skrýt Dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "Vždy viditelný Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Poloha Docku"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock nahoře"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock dole"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock vlevo"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock vpravo"
+  },
   "appearance.workspace-layout": {
     "label": "Rozložení plochy",
     "title": "Výchozí rozložení plochy"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Plovoucí"
   },
+  "appearance.animations": {
+    "label": "Animace"
+  },
   "appearance.unlock": {
     "label": "Odemknout"
-  },
-  "appearance.theme-sync": {
-    "label": "Synchronizace motivu Herdr"
   },
   "trigger.toggle": {
     "label": "Přepnout"

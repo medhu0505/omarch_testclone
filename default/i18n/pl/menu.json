@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Pasek prawy"
   },
-  "appearance.branding.screensaver": {
-    "label": "Wygaszacz"
-  },
-  "appearance.branding.about": {
-    "label": "Informacje"
-  },
-  "appearance.branding.about.text": {
-    "label": "Edytuj tekst"
-  },
-  "appearance.branding.about.image": {
-    "label": "Ustaw z obrazu"
-  },
-  "appearance.branding.about.default": {
-    "label": "Przywróć domyślne"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Edytuj tekst"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Ustaw z obrazu"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Przywróć domyślne"
-  },
-  "appearance.animations": {
-    "label": "Animacje"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Ukrywaj dock"
-  },
-  "appearance.dock.always-on": {
-    "label": "Zawsze widoczny dock"
-  },
-  "appearance.dock.position": {
-    "label": "Położenie docka"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock górny"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock dolny"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock lewy"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock prawy"
-  },
   "appearance.windows.gaps": {
     "label": "Odstępy okien"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Proporcje 1 okna"
   },
+  "appearance.branding.screensaver": {
+    "label": "Wygaszacz"
+  },
+  "appearance.branding.about": {
+    "label": "Informacje"
+  },
+  "appearance.branding.about.text": {
+    "label": "Edytuj tekst"
+  },
+  "appearance.branding.about.image": {
+    "label": "Ustaw z obrazu"
+  },
+  "appearance.branding.about.default": {
+    "label": "Przywróć domyślne"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Edytuj tekst"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Ustaw z obrazu"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Przywróć domyślne"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Ukrywaj dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "Zawsze widoczny dock"
+  },
+  "appearance.dock.position": {
+    "label": "Położenie docka"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock górny"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock dolny"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock lewy"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock prawy"
+  },
   "appearance.workspace-layout": {
     "label": "Układ obszarów",
     "title": "Domyślny układ obszarów"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Pływające"
   },
+  "appearance.animations": {
+    "label": "Animacje"
+  },
   "appearance.unlock": {
     "label": "Odblokuj"
-  },
-  "appearance.theme-sync": {
-    "label": "Synchronizacja Herdr"
   },
   "trigger.toggle": {
     "label": "Przełącz"

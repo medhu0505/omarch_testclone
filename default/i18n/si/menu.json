@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "දකුණු තීරුව"
   },
-  "appearance.branding.screensaver": {
-    "label": "තිර ආරක්ෂකය"
-  },
-  "appearance.branding.about": {
-    "label": "ගැන"
-  },
-  "appearance.branding.about.text": {
-    "label": "පෙළ සංස්කරණය"
-  },
-  "appearance.branding.about.image": {
-    "label": "රූපයෙන් සකසන්න"
-  },
-  "appearance.branding.about.default": {
-    "label": "පෙරනිමිය යළි පිහිටුවන්න"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "පෙළ සංස්කරණය"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "රූපයෙන් සකසන්න"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "පෙරනිමිය යළි පිහිටුවන්න"
-  },
-  "appearance.animations": {
-    "label": "සජීවිකරණ"
-  },
-  "appearance.dock": {
-    "label": "ඩොක්"
-  },
-  "appearance.dock.autohide": {
-    "label": "Dock ස්වයං-සඟවන්න"
-  },
-  "appearance.dock.always-on": {
-    "label": "සැමවිට පෙනෙන Dock"
-  },
-  "appearance.dock.position": {
-    "label": "Dock පිහිටුම"
-  },
-  "appearance.dock.position.top": {
-    "label": "ඉහළ Dock"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "පහළ Dock"
-  },
-  "appearance.dock.position.left": {
-    "label": "වම් Dock"
-  },
-  "appearance.dock.position.right": {
-    "label": "දකුණු Dock"
-  },
   "appearance.windows.gaps": {
     "label": "කවුළු හිඩැස්"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "කවුළු 1 අනුපාතය"
   },
+  "appearance.branding.screensaver": {
+    "label": "තිර ආරක්ෂකය"
+  },
+  "appearance.branding.about": {
+    "label": "ගැන"
+  },
+  "appearance.branding.about.text": {
+    "label": "පෙළ සංස්කරණය"
+  },
+  "appearance.branding.about.image": {
+    "label": "රූපයෙන් සකසන්න"
+  },
+  "appearance.branding.about.default": {
+    "label": "පෙරනිමිය යළි පිහිටුවන්න"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "පෙළ සංස්කරණය"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "රූපයෙන් සකසන්න"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "පෙරනිමිය යළි පිහිටුවන්න"
+  },
+  "appearance.dock": {
+    "label": "ඩොක්"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dock ස්වයං-සඟවන්න"
+  },
+  "appearance.dock.always-on": {
+    "label": "සැමවිට පෙනෙන Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Dock පිහිටුම"
+  },
+  "appearance.dock.position.top": {
+    "label": "ඉහළ Dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "පහළ Dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "වම් Dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "දකුණු Dock"
+  },
   "appearance.workspace-layout": {
     "label": "වැඩබිම් සැකැස්ම",
     "title": "පෙරනිමි වැඩබිම් සැකැස්ම"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "පාවෙන"
   },
+  "appearance.animations": {
+    "label": "සජීවිකරණ"
+  },
   "appearance.unlock": {
     "label": "අගුලු හරින්න"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr තේමා සමමුහුර්තය"
   },
   "trigger.toggle": {
     "label": "සක්‍රිය/අක්‍රිය"

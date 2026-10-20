@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Barre de droite"
   },
-  "appearance.branding.screensaver": {
-    "label": "Écran de veille"
-  },
-  "appearance.branding.about": {
-    "label": "À propos"
-  },
-  "appearance.branding.about.text": {
-    "label": "Modifier le texte"
-  },
-  "appearance.branding.about.image": {
-    "label": "Depuis une image"
-  },
-  "appearance.branding.about.default": {
-    "label": "Restaurer défaut"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Modifier le texte"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Depuis une image"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Restaurer défaut"
-  },
-  "appearance.animations": {
-    "label": "Animations"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Dock auto-masqué"
-  },
-  "appearance.dock.always-on": {
-    "label": "Dock toujours visible"
-  },
-  "appearance.dock.position": {
-    "label": "Position du dock"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock du haut"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock du bas"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock de gauche"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock de droite"
-  },
   "appearance.windows.gaps": {
     "label": "Espacements fenêtres"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Ratio 1 fenêtre"
   },
+  "appearance.branding.screensaver": {
+    "label": "Écran de veille"
+  },
+  "appearance.branding.about": {
+    "label": "À propos"
+  },
+  "appearance.branding.about.text": {
+    "label": "Modifier le texte"
+  },
+  "appearance.branding.about.image": {
+    "label": "Depuis une image"
+  },
+  "appearance.branding.about.default": {
+    "label": "Restaurer défaut"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Modifier le texte"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Depuis une image"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Restaurer défaut"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dock auto-masqué"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock toujours visible"
+  },
+  "appearance.dock.position": {
+    "label": "Position du dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock du haut"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock du bas"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock de gauche"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock de droite"
+  },
   "appearance.workspace-layout": {
     "label": "Disposition des espaces",
     "title": "Disposition d'espace par défaut"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Flottant"
   },
+  "appearance.animations": {
+    "label": "Animations"
+  },
   "appearance.unlock": {
     "label": "Déverrouiller"
-  },
-  "appearance.theme-sync": {
-    "label": "Synchro thème Herdr"
   },
   "trigger.toggle": {
     "label": "Basculer"

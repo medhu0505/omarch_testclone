@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Juosta dešinėje"
   },
-  "appearance.branding.screensaver": {
-    "label": "Ekrano užsklanda"
-  },
-  "appearance.branding.about": {
-    "label": "Apie"
-  },
-  "appearance.branding.about.text": {
-    "label": "Redaguoti tekstą"
-  },
-  "appearance.branding.about.image": {
-    "label": "Nustatyti iš paveikslėlio"
-  },
-  "appearance.branding.about.default": {
-    "label": "Atkurti numatytąjį"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Redaguoti tekstą"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Nustatyti iš paveikslėlio"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Atkurti numatytąjį"
-  },
-  "appearance.animations": {
-    "label": "Animacijos"
-  },
-  "appearance.dock": {
-    "label": "Dokas"
-  },
-  "appearance.dock.autohide": {
-    "label": "Slėpti Dock automatiškai"
-  },
-  "appearance.dock.always-on": {
-    "label": "Visada rodyti Dock"
-  },
-  "appearance.dock.position": {
-    "label": "Dock padėtis"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock viršuje"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock apačioje"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock kairėje"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock dešinėje"
-  },
   "appearance.windows.gaps": {
     "label": "Langų tarpai"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1 lango santykis"
   },
+  "appearance.branding.screensaver": {
+    "label": "Ekrano užsklanda"
+  },
+  "appearance.branding.about": {
+    "label": "Apie"
+  },
+  "appearance.branding.about.text": {
+    "label": "Redaguoti tekstą"
+  },
+  "appearance.branding.about.image": {
+    "label": "Nustatyti iš paveikslėlio"
+  },
+  "appearance.branding.about.default": {
+    "label": "Atkurti numatytąjį"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Redaguoti tekstą"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Nustatyti iš paveikslėlio"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Atkurti numatytąjį"
+  },
+  "appearance.dock": {
+    "label": "Dokas"
+  },
+  "appearance.dock.autohide": {
+    "label": "Slėpti Dock automatiškai"
+  },
+  "appearance.dock.always-on": {
+    "label": "Visada rodyti Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Dock padėtis"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock viršuje"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock apačioje"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock kairėje"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock dešinėje"
+  },
   "appearance.workspace-layout": {
     "label": "Darbo srities išdėstymas",
     "title": "Numatytasis darbo srities išdėstymas"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Plūduriuojantys"
   },
+  "appearance.animations": {
+    "label": "Animacijos"
+  },
   "appearance.unlock": {
     "label": "Atrakinti"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr temos sinchronizacija"
   },
   "trigger.toggle": {
     "label": "Perjungti"

@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Upau wa kulia"
   },
-  "appearance.branding.screensaver": {
-    "label": "Kiokozi cha skrini"
-  },
-  "appearance.branding.about": {
-    "label": "Kuhusu"
-  },
-  "appearance.branding.about.text": {
-    "label": "Hariri maandishi"
-  },
-  "appearance.branding.about.image": {
-    "label": "Weka kutoka picha"
-  },
-  "appearance.branding.about.default": {
-    "label": "Rejesha chaguomsingi"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Hariri maandishi"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Weka kutoka picha"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Rejesha chaguomsingi"
-  },
-  "appearance.animations": {
-    "label": "Uhuishaji"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Ficha Dock kiotomatiki"
-  },
-  "appearance.dock.always-on": {
-    "label": "Dock wa daima"
-  },
-  "appearance.dock.position": {
-    "label": "Nafasi ya Dock"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock wa juu"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock wa chini"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock wa kushoto"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock wa kulia"
-  },
   "appearance.windows.gaps": {
     "label": "Mapengo ya madirisha"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Uwiano wa dirisha 1"
   },
+  "appearance.branding.screensaver": {
+    "label": "Kiokozi cha skrini"
+  },
+  "appearance.branding.about": {
+    "label": "Kuhusu"
+  },
+  "appearance.branding.about.text": {
+    "label": "Hariri maandishi"
+  },
+  "appearance.branding.about.image": {
+    "label": "Weka kutoka picha"
+  },
+  "appearance.branding.about.default": {
+    "label": "Rejesha chaguomsingi"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Hariri maandishi"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Weka kutoka picha"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Rejesha chaguomsingi"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Ficha Dock kiotomatiki"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock wa daima"
+  },
+  "appearance.dock.position": {
+    "label": "Nafasi ya Dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock wa juu"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock wa chini"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock wa kushoto"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock wa kulia"
+  },
   "appearance.workspace-layout": {
     "label": "Mpangilio wa nafasi ya kazi",
     "title": "Mpangilio chaguomsingi wa nafasi ya kazi"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Kuelea"
   },
+  "appearance.animations": {
+    "label": "Uhuishaji"
+  },
   "appearance.unlock": {
     "label": "Fungua"
-  },
-  "appearance.theme-sync": {
-    "label": "Usawazishaji wa mandhari ya Herdr"
   },
   "trigger.toggle": {
     "label": "Badilisha"

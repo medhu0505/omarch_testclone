@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Barra ar dheis"
   },
-  "appearance.branding.screensaver": {
-    "label": "Coigilteoir scáileáin"
-  },
-  "appearance.branding.about": {
-    "label": "Faisnéis"
-  },
-  "appearance.branding.about.text": {
-    "label": "Cuir téacs in eagar"
-  },
-  "appearance.branding.about.image": {
-    "label": "Socraigh ó íomhá"
-  },
-  "appearance.branding.about.default": {
-    "label": "Athchóirigh réamhshocrú"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Cuir téacs in eagar"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Socraigh ó íomhá"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Athchóirigh réamhshocrú"
-  },
-  "appearance.animations": {
-    "label": "Beochana"
-  },
-  "appearance.dock": {
-    "label": "Duga"
-  },
-  "appearance.dock.autohide": {
-    "label": "Uathfholaigh duga"
-  },
-  "appearance.dock.always-on": {
-    "label": "Duga i gcónaí air"
-  },
-  "appearance.dock.position": {
-    "label": "Suíomh duga"
-  },
-  "appearance.dock.position.top": {
-    "label": "Duga barr"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Duga bun"
-  },
-  "appearance.dock.position.left": {
-    "label": "Duga ar chlé"
-  },
-  "appearance.dock.position.right": {
-    "label": "Duga ar dheis"
-  },
   "appearance.windows.gaps": {
     "label": "Bearnaí fuinneog"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Cóimheas 1-fhuinneog"
   },
+  "appearance.branding.screensaver": {
+    "label": "Coigilteoir scáileáin"
+  },
+  "appearance.branding.about": {
+    "label": "Faisnéis"
+  },
+  "appearance.branding.about.text": {
+    "label": "Cuir téacs in eagar"
+  },
+  "appearance.branding.about.image": {
+    "label": "Socraigh ó íomhá"
+  },
+  "appearance.branding.about.default": {
+    "label": "Athchóirigh réamhshocrú"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Cuir téacs in eagar"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Socraigh ó íomhá"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Athchóirigh réamhshocrú"
+  },
+  "appearance.dock": {
+    "label": "Duga"
+  },
+  "appearance.dock.autohide": {
+    "label": "Uathfholaigh duga"
+  },
+  "appearance.dock.always-on": {
+    "label": "Duga i gcónaí air"
+  },
+  "appearance.dock.position": {
+    "label": "Suíomh duga"
+  },
+  "appearance.dock.position.top": {
+    "label": "Duga barr"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Duga bun"
+  },
+  "appearance.dock.position.left": {
+    "label": "Duga ar chlé"
+  },
+  "appearance.dock.position.right": {
+    "label": "Duga ar dheis"
+  },
   "appearance.workspace-layout": {
     "label": "Leagan amach oibre",
     "title": "Leagan amach réamhshocraithe"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Foluaineach"
   },
+  "appearance.animations": {
+    "label": "Beochana"
+  },
   "appearance.unlock": {
     "label": "Díghlasáil"
-  },
-  "appearance.theme-sync": {
-    "label": "Sionc téama Herdr"
   },
   "trigger.toggle": {
     "label": "Scoránaigh"

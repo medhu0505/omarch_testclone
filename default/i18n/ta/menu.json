@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "வலது பட்டை"
   },
-  "appearance.branding.screensaver": {
-    "label": "திரைசேமிப்பு"
-  },
-  "appearance.branding.about": {
-    "label": "பற்றி"
-  },
-  "appearance.branding.about.text": {
-    "label": "உரையைத் திருத்து"
-  },
-  "appearance.branding.about.image": {
-    "label": "படத்திலிருந்து அமை"
-  },
-  "appearance.branding.about.default": {
-    "label": "இயல்புநிலையை மீட்டமை"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "உரையைத் திருத்து"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "படத்திலிருந்து அமை"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "இயல்புநிலையை மீட்டமை"
-  },
-  "appearance.animations": {
-    "label": "அசைவூட்டங்கள்"
-  },
-  "appearance.dock": {
-    "label": "டாக்"
-  },
-  "appearance.dock.autohide": {
-    "label": "தானாக மறையும் Dock"
-  },
-  "appearance.dock.always-on": {
-    "label": "எப்போதும் தெரியும் Dock"
-  },
-  "appearance.dock.position": {
-    "label": "Dock நிலை"
-  },
-  "appearance.dock.position.top": {
-    "label": "மேல் Dock"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "கீழ் Dock"
-  },
-  "appearance.dock.position.left": {
-    "label": "இடது Dock"
-  },
-  "appearance.dock.position.right": {
-    "label": "வலது Dock"
-  },
   "appearance.windows.gaps": {
     "label": "சாளர இடைவெளி"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1-சாளர விகிதம்"
   },
+  "appearance.branding.screensaver": {
+    "label": "திரைசேமிப்பு"
+  },
+  "appearance.branding.about": {
+    "label": "பற்றி"
+  },
+  "appearance.branding.about.text": {
+    "label": "உரையைத் திருத்து"
+  },
+  "appearance.branding.about.image": {
+    "label": "படத்திலிருந்து அமை"
+  },
+  "appearance.branding.about.default": {
+    "label": "இயல்புநிலையை மீட்டமை"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "உரையைத் திருத்து"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "படத்திலிருந்து அமை"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "இயல்புநிலையை மீட்டமை"
+  },
+  "appearance.dock": {
+    "label": "டாக்"
+  },
+  "appearance.dock.autohide": {
+    "label": "தானாக மறையும் Dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "எப்போதும் தெரியும் Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Dock நிலை"
+  },
+  "appearance.dock.position.top": {
+    "label": "மேல் Dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "கீழ் Dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "இடது Dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "வலது Dock"
+  },
   "appearance.workspace-layout": {
     "label": "பணியிட அமைப்பு",
     "title": "இயல்புநிலை பணியிட அமைப்பு"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "மிதக்கும்"
   },
+  "appearance.animations": {
+    "label": "அசைவூட்டங்கள்"
+  },
   "appearance.unlock": {
     "label": "திற"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr தீம் ஒத்திசைவு"
   },
   "trigger.toggle": {
     "label": "மாற்று"

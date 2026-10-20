@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Parem riba"
   },
-  "appearance.branding.screensaver": {
-    "label": "Ekraanisäästja"
-  },
-  "appearance.branding.about": {
-    "label": "Teave"
-  },
-  "appearance.branding.about.text": {
-    "label": "Muuda teksti"
-  },
-  "appearance.branding.about.image": {
-    "label": "Sea pildist"
-  },
-  "appearance.branding.about.default": {
-    "label": "Taasta vaikimisi"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Muuda teksti"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Sea pildist"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Taasta vaikimisi"
-  },
-  "appearance.animations": {
-    "label": "Animatsioonid"
-  },
-  "appearance.dock": {
-    "label": "Dokk"
-  },
-  "appearance.dock.autohide": {
-    "label": "Doki autopeitmine"
-  },
-  "appearance.dock.always-on": {
-    "label": "Alati nähtav dokk"
-  },
-  "appearance.dock.position": {
-    "label": "Doki asukoht"
-  },
-  "appearance.dock.position.top": {
-    "label": "Ülemine dokk"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Alumine dokk"
-  },
-  "appearance.dock.position.left": {
-    "label": "Vasak dokk"
-  },
-  "appearance.dock.position.right": {
-    "label": "Parem dokk"
-  },
   "appearance.windows.gaps": {
     "label": "Aknavahed"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1 akna suhe"
   },
+  "appearance.branding.screensaver": {
+    "label": "Ekraanisäästja"
+  },
+  "appearance.branding.about": {
+    "label": "Teave"
+  },
+  "appearance.branding.about.text": {
+    "label": "Muuda teksti"
+  },
+  "appearance.branding.about.image": {
+    "label": "Sea pildist"
+  },
+  "appearance.branding.about.default": {
+    "label": "Taasta vaikimisi"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Muuda teksti"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Sea pildist"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Taasta vaikimisi"
+  },
+  "appearance.dock": {
+    "label": "Dokk"
+  },
+  "appearance.dock.autohide": {
+    "label": "Doki autopeitmine"
+  },
+  "appearance.dock.always-on": {
+    "label": "Alati nähtav dokk"
+  },
+  "appearance.dock.position": {
+    "label": "Doki asukoht"
+  },
+  "appearance.dock.position.top": {
+    "label": "Ülemine dokk"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Alumine dokk"
+  },
+  "appearance.dock.position.left": {
+    "label": "Vasak dokk"
+  },
+  "appearance.dock.position.right": {
+    "label": "Parem dokk"
+  },
   "appearance.workspace-layout": {
     "label": "Tööala paigutus",
     "title": "Vaikimisi tööala paigutus"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Ujuv"
   },
+  "appearance.animations": {
+    "label": "Animatsioonid"
+  },
   "appearance.unlock": {
     "label": "Ava lukk"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr teema sünk"
   },
   "trigger.toggle": {
     "label": "Lülita"

@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Høyre linje"
   },
-  "appearance.branding.screensaver": {
-    "label": "Skjermsparer"
-  },
-  "appearance.branding.about": {
-    "label": "Om"
-  },
-  "appearance.branding.about.text": {
-    "label": "Rediger tekst"
-  },
-  "appearance.branding.about.image": {
-    "label": "Sett fra bilde"
-  },
-  "appearance.branding.about.default": {
-    "label": "Gjenopprett standard"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Rediger tekst"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Sett fra bilde"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Gjenopprett standard"
-  },
-  "appearance.animations": {
-    "label": "Animasjoner"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Skjul dock automatisk"
-  },
-  "appearance.dock.always-on": {
-    "label": "Alltid synlig dock"
-  },
-  "appearance.dock.position": {
-    "label": "Dockplassering"
-  },
-  "appearance.dock.position.top": {
-    "label": "Øverste dock"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Nederste dock"
-  },
-  "appearance.dock.position.left": {
-    "label": "Venstre dock"
-  },
-  "appearance.dock.position.right": {
-    "label": "Høyre dock"
-  },
   "appearance.windows.gaps": {
     "label": "Vindusmellomrom"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1-vindus-forhold"
   },
+  "appearance.branding.screensaver": {
+    "label": "Skjermsparer"
+  },
+  "appearance.branding.about": {
+    "label": "Om"
+  },
+  "appearance.branding.about.text": {
+    "label": "Rediger tekst"
+  },
+  "appearance.branding.about.image": {
+    "label": "Sett fra bilde"
+  },
+  "appearance.branding.about.default": {
+    "label": "Gjenopprett standard"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Rediger tekst"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Sett fra bilde"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Gjenopprett standard"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Skjul dock automatisk"
+  },
+  "appearance.dock.always-on": {
+    "label": "Alltid synlig dock"
+  },
+  "appearance.dock.position": {
+    "label": "Dockplassering"
+  },
+  "appearance.dock.position.top": {
+    "label": "Øverste dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Nederste dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "Venstre dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "Høyre dock"
+  },
   "appearance.workspace-layout": {
     "label": "Arbeidsområdeoppsett",
     "title": "Standard arbeidsområdeoppsett"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Flytende"
   },
+  "appearance.animations": {
+    "label": "Animasjoner"
+  },
   "appearance.unlock": {
     "label": "Lås opp"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr-temasynk"
   },
   "trigger.toggle": {
     "label": "Av/på"

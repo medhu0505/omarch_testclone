@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "แถบขวา"
   },
-  "appearance.branding.screensaver": {
-    "label": "พักหน้าจอ"
-  },
-  "appearance.branding.about": {
-    "label": "เกี่ยวกับ"
-  },
-  "appearance.branding.about.text": {
-    "label": "แก้ข้อความ"
-  },
-  "appearance.branding.about.image": {
-    "label": "ตั้งจากภาพ"
-  },
-  "appearance.branding.about.default": {
-    "label": "คืนค่าเริ่มต้น"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "แก้ข้อความ"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "ตั้งจากภาพ"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "คืนค่าเริ่มต้น"
-  },
-  "appearance.animations": {
-    "label": "แอนิเมชัน"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "ซ่อน Dock อัตโนมัติ"
-  },
-  "appearance.dock.always-on": {
-    "label": "แสดง Dock เสมอ"
-  },
-  "appearance.dock.position": {
-    "label": "ตำแหน่ง Dock"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock บน"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock ล่าง"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock ซ้าย"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock ขวา"
-  },
   "appearance.windows.gaps": {
     "label": "ช่องว่างหน้าต่าง"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "อัตราส่วน 1 หน้าต่าง"
   },
+  "appearance.branding.screensaver": {
+    "label": "พักหน้าจอ"
+  },
+  "appearance.branding.about": {
+    "label": "เกี่ยวกับ"
+  },
+  "appearance.branding.about.text": {
+    "label": "แก้ข้อความ"
+  },
+  "appearance.branding.about.image": {
+    "label": "ตั้งจากภาพ"
+  },
+  "appearance.branding.about.default": {
+    "label": "คืนค่าเริ่มต้น"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "แก้ข้อความ"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "ตั้งจากภาพ"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "คืนค่าเริ่มต้น"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "ซ่อน Dock อัตโนมัติ"
+  },
+  "appearance.dock.always-on": {
+    "label": "แสดง Dock เสมอ"
+  },
+  "appearance.dock.position": {
+    "label": "ตำแหน่ง Dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock บน"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock ล่าง"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock ซ้าย"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock ขวา"
+  },
   "appearance.workspace-layout": {
     "label": "เค้าโครงพื้นที่งาน",
     "title": "เค้าโครงพื้นที่งานเริ่มต้น"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "ลอย"
   },
+  "appearance.animations": {
+    "label": "แอนิเมชัน"
+  },
   "appearance.unlock": {
     "label": "ปลดล็อก"
-  },
-  "appearance.theme-sync": {
-    "label": "ซิงก์ธีม Herdr"
   },
   "trigger.toggle": {
     "label": "สลับ"

@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "دائیں بار"
   },
-  "appearance.branding.screensaver": {
-    "label": "اسکرین سیور"
-  },
-  "appearance.branding.about": {
-    "label": "بارے میں"
-  },
-  "appearance.branding.about.text": {
-    "label": "متن بدلیں"
-  },
-  "appearance.branding.about.image": {
-    "label": "تصویر سے لگائیں"
-  },
-  "appearance.branding.about.default": {
-    "label": "طے شدہ بحال کریں"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "متن بدلیں"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "تصویر سے لگائیں"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "طے شدہ بحال کریں"
-  },
-  "appearance.animations": {
-    "label": "اینیمیشنز"
-  },
-  "appearance.dock": {
-    "label": "ڈاک"
-  },
-  "appearance.dock.autohide": {
-    "label": "خودکار چھپتا Dock"
-  },
-  "appearance.dock.always-on": {
-    "label": "ہمیشہ ظاہر Dock"
-  },
-  "appearance.dock.position": {
-    "label": "Dock کی جگہ"
-  },
-  "appearance.dock.position.top": {
-    "label": "بالائی Dock"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "نچلا Dock"
-  },
-  "appearance.dock.position.left": {
-    "label": "بایاں Dock"
-  },
-  "appearance.dock.position.right": {
-    "label": "دایاں Dock"
-  },
   "appearance.windows.gaps": {
     "label": "ونڈو فاصلے"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1-ونڈو تناسب"
   },
+  "appearance.branding.screensaver": {
+    "label": "اسکرین سیور"
+  },
+  "appearance.branding.about": {
+    "label": "بارے میں"
+  },
+  "appearance.branding.about.text": {
+    "label": "متن بدلیں"
+  },
+  "appearance.branding.about.image": {
+    "label": "تصویر سے لگائیں"
+  },
+  "appearance.branding.about.default": {
+    "label": "طے شدہ بحال کریں"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "متن بدلیں"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "تصویر سے لگائیں"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "طے شدہ بحال کریں"
+  },
+  "appearance.dock": {
+    "label": "ڈاک"
+  },
+  "appearance.dock.autohide": {
+    "label": "خودکار چھپتا Dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "ہمیشہ ظاہر Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Dock کی جگہ"
+  },
+  "appearance.dock.position.top": {
+    "label": "بالائی Dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "نچلا Dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "بایاں Dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "دایاں Dock"
+  },
   "appearance.workspace-layout": {
     "label": "ورک اسپیس لے آؤٹ",
     "title": "طے شدہ ورک اسپیس لے آؤٹ"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "تیرتا"
   },
+  "appearance.animations": {
+    "label": "اینیمیشنز"
+  },
   "appearance.unlock": {
     "label": "کھولیں"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr تھیم سنک"
   },
   "trigger.toggle": {
     "label": "ٹوگل"

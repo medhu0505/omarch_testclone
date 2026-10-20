@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Thanh phải"
   },
-  "appearance.branding.screensaver": {
-    "label": "Bảo vệ màn hình"
-  },
-  "appearance.branding.about": {
-    "label": "Giới thiệu"
-  },
-  "appearance.branding.about.text": {
-    "label": "Sửa văn bản"
-  },
-  "appearance.branding.about.image": {
-    "label": "Đặt từ hình ảnh"
-  },
-  "appearance.branding.about.default": {
-    "label": "Khôi phục mặc định"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Sửa văn bản"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Đặt từ hình ảnh"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Khôi phục mặc định"
-  },
-  "appearance.animations": {
-    "label": "Hiệu ứng"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Tự ẩn Dock"
-  },
-  "appearance.dock.always-on": {
-    "label": "Dock luôn hiện"
-  },
-  "appearance.dock.position": {
-    "label": "Vị trí Dock"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock trên"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock dưới"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock trái"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock phải"
-  },
   "appearance.windows.gaps": {
     "label": "Khoảng cách cửa sổ"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Tỷ lệ 1 cửa sổ"
   },
+  "appearance.branding.screensaver": {
+    "label": "Bảo vệ màn hình"
+  },
+  "appearance.branding.about": {
+    "label": "Giới thiệu"
+  },
+  "appearance.branding.about.text": {
+    "label": "Sửa văn bản"
+  },
+  "appearance.branding.about.image": {
+    "label": "Đặt từ hình ảnh"
+  },
+  "appearance.branding.about.default": {
+    "label": "Khôi phục mặc định"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Sửa văn bản"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Đặt từ hình ảnh"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Khôi phục mặc định"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Tự ẩn Dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock luôn hiện"
+  },
+  "appearance.dock.position": {
+    "label": "Vị trí Dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock trên"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock dưới"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock trái"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock phải"
+  },
   "appearance.workspace-layout": {
     "label": "Bố cục không gian làm việc",
     "title": "Bố cục không gian làm việc mặc định"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Nổi"
   },
+  "appearance.animations": {
+    "label": "Hiệu ứng"
+  },
   "appearance.unlock": {
     "label": "Mở khóa"
-  },
-  "appearance.theme-sync": {
-    "label": "Đồng bộ chủ đề Herdr"
   },
   "trigger.toggle": {
     "label": "Bật/tắt"

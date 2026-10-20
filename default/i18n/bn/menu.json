@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "ডান বার"
   },
-  "appearance.branding.screensaver": {
-    "label": "স্ক্রিনসেভার"
-  },
-  "appearance.branding.about": {
-    "label": "সম্পর্কে"
-  },
-  "appearance.branding.about.text": {
-    "label": "টেক্সট সম্পাদনা"
-  },
-  "appearance.branding.about.image": {
-    "label": "ছবি থেকে সেট"
-  },
-  "appearance.branding.about.default": {
-    "label": "ডিফল্ট পুনরুদ্ধার"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "টেক্সট সম্পাদনা"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "ছবি থেকে সেট"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "ডিফল্ট পুনরুদ্ধার"
-  },
-  "appearance.animations": {
-    "label": "অ্যানিমেশন"
-  },
-  "appearance.dock": {
-    "label": "ডক"
-  },
-  "appearance.dock.autohide": {
-    "label": "ডক স্বয়ংক্রিয় লুকান"
-  },
-  "appearance.dock.always-on": {
-    "label": "ডক সবসময় চালু"
-  },
-  "appearance.dock.position": {
-    "label": "ডকের অবস্থান"
-  },
-  "appearance.dock.position.top": {
-    "label": "উপরের ডক"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "নিচের ডক"
-  },
-  "appearance.dock.position.left": {
-    "label": "বাম ডক"
-  },
-  "appearance.dock.position.right": {
-    "label": "ডান ডক"
-  },
   "appearance.windows.gaps": {
     "label": "উইন্ডোর ফাঁক"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1-উইন্ডো অনুপাত"
   },
+  "appearance.branding.screensaver": {
+    "label": "স্ক্রিনসেভার"
+  },
+  "appearance.branding.about": {
+    "label": "সম্পর্কে"
+  },
+  "appearance.branding.about.text": {
+    "label": "টেক্সট সম্পাদনা"
+  },
+  "appearance.branding.about.image": {
+    "label": "ছবি থেকে সেট"
+  },
+  "appearance.branding.about.default": {
+    "label": "ডিফল্ট পুনরুদ্ধার"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "টেক্সট সম্পাদনা"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "ছবি থেকে সেট"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "ডিফল্ট পুনরুদ্ধার"
+  },
+  "appearance.dock": {
+    "label": "ডক"
+  },
+  "appearance.dock.autohide": {
+    "label": "ডক স্বয়ংক্রিয় লুকান"
+  },
+  "appearance.dock.always-on": {
+    "label": "ডক সবসময় চালু"
+  },
+  "appearance.dock.position": {
+    "label": "ডকের অবস্থান"
+  },
+  "appearance.dock.position.top": {
+    "label": "উপরের ডক"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "নিচের ডক"
+  },
+  "appearance.dock.position.left": {
+    "label": "বাম ডক"
+  },
+  "appearance.dock.position.right": {
+    "label": "ডান ডক"
+  },
   "appearance.workspace-layout": {
     "label": "ওয়ার্কস্পেস লেআউট",
     "title": "ডিফল্ট ওয়ার্কস্পেস লেআউট"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "ভাসমান"
   },
+  "appearance.animations": {
+    "label": "অ্যানিমেশন"
+  },
   "appearance.unlock": {
     "label": "আনলক"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr থিম সিঙ্ক"
   },
   "trigger.toggle": {
     "label": "টগল"

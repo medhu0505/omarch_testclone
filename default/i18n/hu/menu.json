@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Jobb sáv"
   },
-  "appearance.branding.screensaver": {
-    "label": "Képernyővédő"
-  },
-  "appearance.branding.about": {
-    "label": "Névjegy"
-  },
-  "appearance.branding.about.text": {
-    "label": "Szöveg szerkesztése"
-  },
-  "appearance.branding.about.image": {
-    "label": "Képből beállítás"
-  },
-  "appearance.branding.about.default": {
-    "label": "Alap visszaállítása"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Szöveg szerkesztése"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Képből beállítás"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Alap visszaállítása"
-  },
-  "appearance.animations": {
-    "label": "Animációk"
-  },
-  "appearance.dock": {
-    "label": "Dokk"
-  },
-  "appearance.dock.autohide": {
-    "label": "Automatikus dokk"
-  },
-  "appearance.dock.always-on": {
-    "label": "Állandó dokk"
-  },
-  "appearance.dock.position": {
-    "label": "Dokk helye"
-  },
-  "appearance.dock.position.top": {
-    "label": "Felső dokk"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Alsó dokk"
-  },
-  "appearance.dock.position.left": {
-    "label": "Bal dokk"
-  },
-  "appearance.dock.position.right": {
-    "label": "Jobb dokk"
-  },
   "appearance.windows.gaps": {
     "label": "Ablakközök"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1 ablak aránya"
   },
+  "appearance.branding.screensaver": {
+    "label": "Képernyővédő"
+  },
+  "appearance.branding.about": {
+    "label": "Névjegy"
+  },
+  "appearance.branding.about.text": {
+    "label": "Szöveg szerkesztése"
+  },
+  "appearance.branding.about.image": {
+    "label": "Képből beállítás"
+  },
+  "appearance.branding.about.default": {
+    "label": "Alap visszaállítása"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Szöveg szerkesztése"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Képből beállítás"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Alap visszaállítása"
+  },
+  "appearance.dock": {
+    "label": "Dokk"
+  },
+  "appearance.dock.autohide": {
+    "label": "Automatikus dokk"
+  },
+  "appearance.dock.always-on": {
+    "label": "Állandó dokk"
+  },
+  "appearance.dock.position": {
+    "label": "Dokk helye"
+  },
+  "appearance.dock.position.top": {
+    "label": "Felső dokk"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Alsó dokk"
+  },
+  "appearance.dock.position.left": {
+    "label": "Bal dokk"
+  },
+  "appearance.dock.position.right": {
+    "label": "Jobb dokk"
+  },
   "appearance.workspace-layout": {
     "label": "Munkaterület-kiosztás",
     "title": "Alapértelmezett munkaterület-kiosztás"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Lebegő"
   },
+  "appearance.animations": {
+    "label": "Animációk"
+  },
   "appearance.unlock": {
     "label": "Feloldás"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr témaszinkron"
   },
   "trigger.toggle": {
     "label": "Kapcsoló"

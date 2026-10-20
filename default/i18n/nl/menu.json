@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Balk rechts"
   },
-  "appearance.branding.screensaver": {
-    "label": "Schermbeveiliging"
-  },
-  "appearance.branding.about": {
-    "label": "Over"
-  },
-  "appearance.branding.about.text": {
-    "label": "Tekst bewerken"
-  },
-  "appearance.branding.about.image": {
-    "label": "Uit afbeelding instellen"
-  },
-  "appearance.branding.about.default": {
-    "label": "Standaard herstellen"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Tekst bewerken"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Uit afbeelding instellen"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Standaard herstellen"
-  },
-  "appearance.animations": {
-    "label": "Animaties"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Dock auto-verbergen"
-  },
-  "appearance.dock.always-on": {
-    "label": "Dock altijd zichtbaar"
-  },
-  "appearance.dock.position": {
-    "label": "Dockpositie"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock boven"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock onder"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock links"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock rechts"
-  },
   "appearance.windows.gaps": {
     "label": "Vensterafstand"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1-venster verhouding"
   },
+  "appearance.branding.screensaver": {
+    "label": "Schermbeveiliging"
+  },
+  "appearance.branding.about": {
+    "label": "Over"
+  },
+  "appearance.branding.about.text": {
+    "label": "Tekst bewerken"
+  },
+  "appearance.branding.about.image": {
+    "label": "Uit afbeelding instellen"
+  },
+  "appearance.branding.about.default": {
+    "label": "Standaard herstellen"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Tekst bewerken"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Uit afbeelding instellen"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Standaard herstellen"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dock auto-verbergen"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock altijd zichtbaar"
+  },
+  "appearance.dock.position": {
+    "label": "Dockpositie"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock boven"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock onder"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock links"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock rechts"
+  },
   "appearance.workspace-layout": {
     "label": "Werkbladindeling",
     "title": "Standaard werkbladindeling"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Zwevend"
   },
+  "appearance.animations": {
+    "label": "Animaties"
+  },
   "appearance.unlock": {
     "label": "Ontgrendelen"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr-themasync"
   },
   "trigger.toggle": {
     "label": "Schakelen"

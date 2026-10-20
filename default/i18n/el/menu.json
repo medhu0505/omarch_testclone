@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Δεξιά γραμμή"
   },
-  "appearance.branding.screensaver": {
-    "label": "Προφύλαξη οθόνης"
-  },
-  "appearance.branding.about": {
-    "label": "Σχετικά"
-  },
-  "appearance.branding.about.text": {
-    "label": "Επεξεργασία κειμένου"
-  },
-  "appearance.branding.about.image": {
-    "label": "Ορισμός από εικόνα"
-  },
-  "appearance.branding.about.default": {
-    "label": "Επαναφορά προεπιλογής"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Επεξεργασία κειμένου"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Ορισμός από εικόνα"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Επαναφορά προεπιλογής"
-  },
-  "appearance.animations": {
-    "label": "Κινήσεις"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Αυτόματη απόκρυψη dock"
-  },
-  "appearance.dock.always-on": {
-    "label": "Πάντα ορατό dock"
-  },
-  "appearance.dock.position": {
-    "label": "Θέση dock"
-  },
-  "appearance.dock.position.top": {
-    "label": "Πάνω dock"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Κάτω dock"
-  },
-  "appearance.dock.position.left": {
-    "label": "Αριστερό dock"
-  },
-  "appearance.dock.position.right": {
-    "label": "Δεξί dock"
-  },
   "appearance.windows.gaps": {
     "label": "Κενά παραθύρων"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Λόγος 1 παραθύρου"
   },
+  "appearance.branding.screensaver": {
+    "label": "Προφύλαξη οθόνης"
+  },
+  "appearance.branding.about": {
+    "label": "Σχετικά"
+  },
+  "appearance.branding.about.text": {
+    "label": "Επεξεργασία κειμένου"
+  },
+  "appearance.branding.about.image": {
+    "label": "Ορισμός από εικόνα"
+  },
+  "appearance.branding.about.default": {
+    "label": "Επαναφορά προεπιλογής"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Επεξεργασία κειμένου"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Ορισμός από εικόνα"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Επαναφορά προεπιλογής"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Αυτόματη απόκρυψη dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "Πάντα ορατό dock"
+  },
+  "appearance.dock.position": {
+    "label": "Θέση dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Πάνω dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Κάτω dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "Αριστερό dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "Δεξί dock"
+  },
   "appearance.workspace-layout": {
     "label": "Διάταξη χώρου",
     "title": "Προεπιλεγμένη διάταξη χώρου"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Αιωρούμενα"
   },
+  "appearance.animations": {
+    "label": "Κινήσεις"
+  },
   "appearance.unlock": {
     "label": "Ξεκλείδωμα"
-  },
-  "appearance.theme-sync": {
-    "label": "Συγχρονισμός θέματος Herdr"
   },
   "trigger.toggle": {
     "label": "Εναλλαγή"

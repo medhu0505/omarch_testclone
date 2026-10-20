@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Bar sa Kanan"
   },
-  "appearance.branding.screensaver": {
-    "label": "Screensaver"
-  },
-  "appearance.branding.about": {
-    "label": "Tungkol"
-  },
-  "appearance.branding.about.text": {
-    "label": "I-edit ang Teksto"
-  },
-  "appearance.branding.about.image": {
-    "label": "Itakda mula sa Larawan"
-  },
-  "appearance.branding.about.default": {
-    "label": "Ibalik ang Default"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "I-edit ang Teksto"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Itakda mula sa Larawan"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Ibalik ang Default"
-  },
-  "appearance.animations": {
-    "label": "Animasyon"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Awtomatikong Itago ang Dock"
-  },
-  "appearance.dock.always-on": {
-    "label": "Laging Kita ang Dock"
-  },
-  "appearance.dock.position": {
-    "label": "Posisyon ng Dock"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock sa Itaas"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock sa Ibaba"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock sa Kaliwa"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock sa Kanan"
-  },
   "appearance.windows.gaps": {
     "label": "Pagitan ng Bintana"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Ratio ng 1 Bintana"
   },
+  "appearance.branding.screensaver": {
+    "label": "Screensaver"
+  },
+  "appearance.branding.about": {
+    "label": "Tungkol"
+  },
+  "appearance.branding.about.text": {
+    "label": "I-edit ang Teksto"
+  },
+  "appearance.branding.about.image": {
+    "label": "Itakda mula sa Larawan"
+  },
+  "appearance.branding.about.default": {
+    "label": "Ibalik ang Default"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "I-edit ang Teksto"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Itakda mula sa Larawan"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Ibalik ang Default"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Awtomatikong Itago ang Dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "Laging Kita ang Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Posisyon ng Dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock sa Itaas"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock sa Ibaba"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock sa Kaliwa"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock sa Kanan"
+  },
   "appearance.workspace-layout": {
     "label": "Layout ng Workspace",
     "title": "Default na Layout ng Workspace"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Lumulutang"
   },
+  "appearance.animations": {
+    "label": "Animasyon"
+  },
   "appearance.unlock": {
     "label": "I-unlock"
-  },
-  "appearance.theme-sync": {
-    "label": "Sync ng Tema ng Herdr"
   },
   "trigger.toggle": {
     "label": "I-toggle"

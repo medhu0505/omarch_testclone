@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Sağ Çubuk"
   },
-  "appearance.branding.screensaver": {
-    "label": "Ekran Koruyucu"
-  },
-  "appearance.branding.about": {
-    "label": "Hakkında"
-  },
-  "appearance.branding.about.text": {
-    "label": "Metni Düzenle"
-  },
-  "appearance.branding.about.image": {
-    "label": "Görüntüden Ayarla"
-  },
-  "appearance.branding.about.default": {
-    "label": "Varsayılanı Geri Yükle"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Metni Düzenle"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Görüntüden Ayarla"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Varsayılanı Geri Yükle"
-  },
-  "appearance.animations": {
-    "label": "Animasyonlar"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Otomatik Gizle"
-  },
-  "appearance.dock.always-on": {
-    "label": "Her Zaman Açık"
-  },
-  "appearance.dock.position": {
-    "label": "Dock Konumu"
-  },
-  "appearance.dock.position.top": {
-    "label": "Üst Dock"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Alt Dock"
-  },
-  "appearance.dock.position.left": {
-    "label": "Sol Dock"
-  },
-  "appearance.dock.position.right": {
-    "label": "Sağ Dock"
-  },
   "appearance.windows.gaps": {
     "label": "Pencere Boşlukları"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1-Pencere Oranı"
   },
+  "appearance.branding.screensaver": {
+    "label": "Ekran Koruyucu"
+  },
+  "appearance.branding.about": {
+    "label": "Hakkında"
+  },
+  "appearance.branding.about.text": {
+    "label": "Metni Düzenle"
+  },
+  "appearance.branding.about.image": {
+    "label": "Görüntüden Ayarla"
+  },
+  "appearance.branding.about.default": {
+    "label": "Varsayılanı Geri Yükle"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Metni Düzenle"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Görüntüden Ayarla"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Varsayılanı Geri Yükle"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Otomatik Gizle"
+  },
+  "appearance.dock.always-on": {
+    "label": "Her Zaman Açık"
+  },
+  "appearance.dock.position": {
+    "label": "Dock Konumu"
+  },
+  "appearance.dock.position.top": {
+    "label": "Üst Dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Alt Dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "Sol Dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "Sağ Dock"
+  },
   "appearance.workspace-layout": {
     "label": "Çalışma Alanı Düzeni",
     "title": "Varsayılan Çalışma Alanı Düzeni"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Yüzen"
   },
+  "appearance.animations": {
+    "label": "Animasyonlar"
+  },
   "appearance.unlock": {
     "label": "Kilidi Aç"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr Tema Eşitlemesi"
   },
   "trigger.toggle": {
     "label": "Aç/Kapat"

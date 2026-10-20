@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "右バー"
   },
-  "appearance.branding.screensaver": {
-    "label": "スクリーンセーバー"
-  },
-  "appearance.branding.about": {
-    "label": "情報"
-  },
-  "appearance.branding.about.text": {
-    "label": "テキストを編集"
-  },
-  "appearance.branding.about.image": {
-    "label": "画像から設定"
-  },
-  "appearance.branding.about.default": {
-    "label": "デフォルトに戻す"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "テキストを編集"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "画像から設定"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "デフォルトに戻す"
-  },
-  "appearance.animations": {
-    "label": "アニメーション"
-  },
-  "appearance.dock": {
-    "label": "ドック"
-  },
-  "appearance.dock.autohide": {
-    "label": "ドックを自動で隠す"
-  },
-  "appearance.dock.always-on": {
-    "label": "ドックを常に表示"
-  },
-  "appearance.dock.position": {
-    "label": "ドックの位置"
-  },
-  "appearance.dock.position.top": {
-    "label": "上部ドック"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "下部ドック"
-  },
-  "appearance.dock.position.left": {
-    "label": "左ドック"
-  },
-  "appearance.dock.position.right": {
-    "label": "右ドック"
-  },
   "appearance.windows.gaps": {
     "label": "ウィンドウ間隔"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "単一ウィンドウ比率"
   },
+  "appearance.branding.screensaver": {
+    "label": "スクリーンセーバー"
+  },
+  "appearance.branding.about": {
+    "label": "情報"
+  },
+  "appearance.branding.about.text": {
+    "label": "テキストを編集"
+  },
+  "appearance.branding.about.image": {
+    "label": "画像から設定"
+  },
+  "appearance.branding.about.default": {
+    "label": "デフォルトに戻す"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "テキストを編集"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "画像から設定"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "デフォルトに戻す"
+  },
+  "appearance.dock": {
+    "label": "ドック"
+  },
+  "appearance.dock.autohide": {
+    "label": "ドックを自動で隠す"
+  },
+  "appearance.dock.always-on": {
+    "label": "ドックを常に表示"
+  },
+  "appearance.dock.position": {
+    "label": "ドックの位置"
+  },
+  "appearance.dock.position.top": {
+    "label": "上部ドック"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "下部ドック"
+  },
+  "appearance.dock.position.left": {
+    "label": "左ドック"
+  },
+  "appearance.dock.position.right": {
+    "label": "右ドック"
+  },
   "appearance.workspace-layout": {
     "label": "ワークスペース配置",
     "title": "既定のワークスペース配置"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "フロート型"
   },
+  "appearance.animations": {
+    "label": "アニメーション"
+  },
   "appearance.unlock": {
     "label": "ロック画面"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdrテーマ同期"
   },
   "trigger.toggle": {
     "label": "切り替え"

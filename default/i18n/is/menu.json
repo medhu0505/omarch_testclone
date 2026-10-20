@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Hægri stika"
   },
-  "appearance.branding.screensaver": {
-    "label": "Skjáverji"
-  },
-  "appearance.branding.about": {
-    "label": "Um"
-  },
-  "appearance.branding.about.text": {
-    "label": "Breyta texta"
-  },
-  "appearance.branding.about.image": {
-    "label": "Stilla frá mynd"
-  },
-  "appearance.branding.about.default": {
-    "label": "Endurheimta sjálfgildi"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Breyta texta"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Stilla frá mynd"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Endurheimta sjálfgildi"
-  },
-  "appearance.animations": {
-    "label": "Hreyfingar"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Fela dock sjálfkrafa"
-  },
-  "appearance.dock.always-on": {
-    "label": "Alltaf sýnilegt dock"
-  },
-  "appearance.dock.position": {
-    "label": "Staðsetning docks"
-  },
-  "appearance.dock.position.top": {
-    "label": "Efsta dock"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Neðsta dock"
-  },
-  "appearance.dock.position.left": {
-    "label": "Vinstri dock"
-  },
-  "appearance.dock.position.right": {
-    "label": "Hægri dock"
-  },
   "appearance.windows.gaps": {
     "label": "Gluggabil"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1-gluggahlutfall"
   },
+  "appearance.branding.screensaver": {
+    "label": "Skjáverji"
+  },
+  "appearance.branding.about": {
+    "label": "Um"
+  },
+  "appearance.branding.about.text": {
+    "label": "Breyta texta"
+  },
+  "appearance.branding.about.image": {
+    "label": "Stilla frá mynd"
+  },
+  "appearance.branding.about.default": {
+    "label": "Endurheimta sjálfgildi"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Breyta texta"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Stilla frá mynd"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Endurheimta sjálfgildi"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Fela dock sjálfkrafa"
+  },
+  "appearance.dock.always-on": {
+    "label": "Alltaf sýnilegt dock"
+  },
+  "appearance.dock.position": {
+    "label": "Staðsetning docks"
+  },
+  "appearance.dock.position.top": {
+    "label": "Efsta dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Neðsta dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "Vinstri dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "Hægri dock"
+  },
   "appearance.workspace-layout": {
     "label": "Vinnusvæðaskipun",
     "title": "Sjálfgefin vinnusvæðaskipun"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Fljótandi"
   },
+  "appearance.animations": {
+    "label": "Hreyfingar"
+  },
   "appearance.unlock": {
     "label": "Opna"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr þemasamstilling"
   },
   "trigger.toggle": {
     "label": "Víxla"

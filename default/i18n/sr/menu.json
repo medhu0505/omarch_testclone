@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Десна трака"
   },
-  "appearance.branding.screensaver": {
-    "label": "Чувар екрана"
-  },
-  "appearance.branding.about": {
-    "label": "О програму"
-  },
-  "appearance.branding.about.text": {
-    "label": "Измени текст"
-  },
-  "appearance.branding.about.image": {
-    "label": "Подеси са слике"
-  },
-  "appearance.branding.about.default": {
-    "label": "Врати подразумевано"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Измени текст"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Подеси са слике"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Врати подразумевано"
-  },
-  "appearance.animations": {
-    "label": "Анимације"
-  },
-  "appearance.dock": {
-    "label": "Док"
-  },
-  "appearance.dock.autohide": {
-    "label": "Аутоматски сакриј Dock"
-  },
-  "appearance.dock.always-on": {
-    "label": "Увек видљив Dock"
-  },
-  "appearance.dock.position": {
-    "label": "Положај Dock-а"
-  },
-  "appearance.dock.position.top": {
-    "label": "Горњи Dock"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Доњи Dock"
-  },
-  "appearance.dock.position.left": {
-    "label": "Леви Dock"
-  },
-  "appearance.dock.position.right": {
-    "label": "Десни Dock"
-  },
   "appearance.windows.gaps": {
     "label": "Размаци прозора"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Однос 1 прозора"
   },
+  "appearance.branding.screensaver": {
+    "label": "Чувар екрана"
+  },
+  "appearance.branding.about": {
+    "label": "О програму"
+  },
+  "appearance.branding.about.text": {
+    "label": "Измени текст"
+  },
+  "appearance.branding.about.image": {
+    "label": "Подеси са слике"
+  },
+  "appearance.branding.about.default": {
+    "label": "Врати подразумевано"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Измени текст"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Подеси са слике"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Врати подразумевано"
+  },
+  "appearance.dock": {
+    "label": "Док"
+  },
+  "appearance.dock.autohide": {
+    "label": "Аутоматски сакриј Dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "Увек видљив Dock"
+  },
+  "appearance.dock.position": {
+    "label": "Положај Dock-а"
+  },
+  "appearance.dock.position.top": {
+    "label": "Горњи Dock"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Доњи Dock"
+  },
+  "appearance.dock.position.left": {
+    "label": "Леви Dock"
+  },
+  "appearance.dock.position.right": {
+    "label": "Десни Dock"
+  },
   "appearance.workspace-layout": {
     "label": "Распоред радног простора",
     "title": "Подразумевани распоред радног простора"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Плутајући"
   },
+  "appearance.animations": {
+    "label": "Анимације"
+  },
   "appearance.unlock": {
     "label": "Откључај"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr синхронизација теме"
   },
   "trigger.toggle": {
     "label": "Укључи/искључи"

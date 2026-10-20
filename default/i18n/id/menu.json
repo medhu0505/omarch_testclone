@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Bilah Kanan"
   },
-  "appearance.branding.screensaver": {
-    "label": "Penghemat Layar"
-  },
-  "appearance.branding.about": {
-    "label": "Tentang"
-  },
-  "appearance.branding.about.text": {
-    "label": "Edit Teks"
-  },
-  "appearance.branding.about.image": {
-    "label": "Setel dari Gambar"
-  },
-  "appearance.branding.about.default": {
-    "label": "Pulihkan Bawaan"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Edit Teks"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Setel dari Gambar"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Pulihkan Bawaan"
-  },
-  "appearance.animations": {
-    "label": "Animasi"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Dock Sembunyi Otomatis"
-  },
-  "appearance.dock.always-on": {
-    "label": "Dock Selalu Tampil"
-  },
-  "appearance.dock.position": {
-    "label": "Posisi Dock"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock Atas"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock Bawah"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock Kiri"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock Kanan"
-  },
   "appearance.windows.gaps": {
     "label": "Celah Jendela"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Rasio 1 Jendela"
   },
+  "appearance.branding.screensaver": {
+    "label": "Penghemat Layar"
+  },
+  "appearance.branding.about": {
+    "label": "Tentang"
+  },
+  "appearance.branding.about.text": {
+    "label": "Edit Teks"
+  },
+  "appearance.branding.about.image": {
+    "label": "Setel dari Gambar"
+  },
+  "appearance.branding.about.default": {
+    "label": "Pulihkan Bawaan"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Edit Teks"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Setel dari Gambar"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Pulihkan Bawaan"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Dock Sembunyi Otomatis"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock Selalu Tampil"
+  },
+  "appearance.dock.position": {
+    "label": "Posisi Dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock Atas"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock Bawah"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock Kiri"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock Kanan"
+  },
   "appearance.workspace-layout": {
     "label": "Tata Letak Ruang Kerja",
     "title": "Tata Letak Ruang Kerja Bawaan"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Melayang"
   },
+  "appearance.animations": {
+    "label": "Animasi"
+  },
   "appearance.unlock": {
     "label": "Buka Kunci"
-  },
-  "appearance.theme-sync": {
-    "label": "Sinkron Tema Herdr"
   },
   "trigger.toggle": {
     "label": "Alihkan"

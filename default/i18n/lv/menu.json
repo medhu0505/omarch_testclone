@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Labā josla"
   },
-  "appearance.branding.screensaver": {
-    "label": "Ekrānsaudzētājs"
-  },
-  "appearance.branding.about": {
-    "label": "Par"
-  },
-  "appearance.branding.about.text": {
-    "label": "Rediģēt tekstu"
-  },
-  "appearance.branding.about.image": {
-    "label": "Uzlikt no attēla"
-  },
-  "appearance.branding.about.default": {
-    "label": "Atjaunot noklusējumu"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Rediģēt tekstu"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Uzlikt no attēla"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Atjaunot noklusējumu"
-  },
-  "appearance.animations": {
-    "label": "Animācijas"
-  },
-  "appearance.dock": {
-    "label": "Doks"
-  },
-  "appearance.dock.autohide": {
-    "label": "Paslēpt doku automātiski"
-  },
-  "appearance.dock.always-on": {
-    "label": "Vienmēr redzams doks"
-  },
-  "appearance.dock.position": {
-    "label": "Doka vieta"
-  },
-  "appearance.dock.position.top": {
-    "label": "Augšējais doks"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Apakšējais doks"
-  },
-  "appearance.dock.position.left": {
-    "label": "Kreisais doks"
-  },
-  "appearance.dock.position.right": {
-    "label": "Labais doks"
-  },
   "appearance.windows.gaps": {
     "label": "Logu atstarpes"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "1 loga attiecība"
   },
+  "appearance.branding.screensaver": {
+    "label": "Ekrānsaudzētājs"
+  },
+  "appearance.branding.about": {
+    "label": "Par"
+  },
+  "appearance.branding.about.text": {
+    "label": "Rediģēt tekstu"
+  },
+  "appearance.branding.about.image": {
+    "label": "Uzlikt no attēla"
+  },
+  "appearance.branding.about.default": {
+    "label": "Atjaunot noklusējumu"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Rediģēt tekstu"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Uzlikt no attēla"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Atjaunot noklusējumu"
+  },
+  "appearance.dock": {
+    "label": "Doks"
+  },
+  "appearance.dock.autohide": {
+    "label": "Paslēpt doku automātiski"
+  },
+  "appearance.dock.always-on": {
+    "label": "Vienmēr redzams doks"
+  },
+  "appearance.dock.position": {
+    "label": "Doka vieta"
+  },
+  "appearance.dock.position.top": {
+    "label": "Augšējais doks"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Apakšējais doks"
+  },
+  "appearance.dock.position.left": {
+    "label": "Kreisais doks"
+  },
+  "appearance.dock.position.right": {
+    "label": "Labais doks"
+  },
   "appearance.workspace-layout": {
     "label": "Darbvietas izkārtojums",
     "title": "Noklusējuma darbvietas izkārtojums"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Peldošs"
   },
+  "appearance.animations": {
+    "label": "Animācijas"
+  },
   "appearance.unlock": {
     "label": "Atbloķēt"
-  },
-  "appearance.theme-sync": {
-    "label": "Herdr tēmu sinhronizācija"
   },
   "trigger.toggle": {
     "label": "Pārslēgt"

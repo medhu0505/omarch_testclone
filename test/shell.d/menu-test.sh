@@ -555,11 +555,11 @@ assertDeepEqual(
 )
 const triggerIds = triggerItems.map(item => item.id)
 const windowLabels = ['Window Gaps', 'Window Corners', 'Window Opacity', '1-Window Ratio']
-const appearanceLabels = ['Animations', 'Menu Bar', 'Dock', 'Windows', 'Workspace Layout', 'Herdr Theme Sync', ...windowLabels]
+const appearanceLabels = ['Animations', 'Menu Bar', 'Dock', 'Windows', 'Workspace Layout', ...windowLabels]
 assertEqual(triggerIds[0], 'trigger.toggle', 'menu lists Toggle first under Trigger')
 assertDeepEqual(
   defaultItems.filter(item => item.parent === 'appearance').map(item => item.label),
-  ['Theme', 'Background', 'Font', 'Menu Bar', 'Branding', 'Animations', 'Dock', 'Windows', 'Workspace Layout', 'Unlock', 'Herdr Theme Sync'],
+  ['Theme', 'Background', 'Font', 'Menu Bar', 'Windows', 'Branding', 'Dock', 'Workspace Layout', 'Animations', 'Unlock'],
   'menu gathers the style and look of the desktop under Appearance'
 )
 assertDeepEqual(

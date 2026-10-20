@@ -176,57 +176,6 @@
   "appearance.top-bar.position.right": {
     "label": "Barra dreta"
   },
-  "appearance.branding.screensaver": {
-    "label": "Salvapantalles"
-  },
-  "appearance.branding.about": {
-    "label": "Quant a"
-  },
-  "appearance.branding.about.text": {
-    "label": "Edita el text"
-  },
-  "appearance.branding.about.image": {
-    "label": "Des d'una imatge"
-  },
-  "appearance.branding.about.default": {
-    "label": "Restableix el defecte"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Edita el text"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Des d'una imatge"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Restableix el defecte"
-  },
-  "appearance.animations": {
-    "label": "Animacions"
-  },
-  "appearance.dock": {
-    "label": "Dock"
-  },
-  "appearance.dock.autohide": {
-    "label": "Amaga el Dock"
-  },
-  "appearance.dock.always-on": {
-    "label": "Dock sempre visible"
-  },
-  "appearance.dock.position": {
-    "label": "Posició del Dock"
-  },
-  "appearance.dock.position.top": {
-    "label": "Dock superior"
-  },
-  "appearance.dock.position.bottom": {
-    "label": "Dock inferior"
-  },
-  "appearance.dock.position.left": {
-    "label": "Dock esquerre"
-  },
-  "appearance.dock.position.right": {
-    "label": "Dock dret"
-  },
   "appearance.windows.gaps": {
     "label": "Separació de finestres"
   },
@@ -257,6 +206,54 @@
   "appearance.windows.one-window-ratio": {
     "label": "Proporció 1 finestra"
   },
+  "appearance.branding.screensaver": {
+    "label": "Salvapantalles"
+  },
+  "appearance.branding.about": {
+    "label": "Quant a"
+  },
+  "appearance.branding.about.text": {
+    "label": "Edita el text"
+  },
+  "appearance.branding.about.image": {
+    "label": "Des d'una imatge"
+  },
+  "appearance.branding.about.default": {
+    "label": "Restableix el defecte"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Edita el text"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Des d'una imatge"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Restableix el defecte"
+  },
+  "appearance.dock": {
+    "label": "Dock"
+  },
+  "appearance.dock.autohide": {
+    "label": "Amaga el Dock"
+  },
+  "appearance.dock.always-on": {
+    "label": "Dock sempre visible"
+  },
+  "appearance.dock.position": {
+    "label": "Posició del Dock"
+  },
+  "appearance.dock.position.top": {
+    "label": "Dock superior"
+  },
+  "appearance.dock.position.bottom": {
+    "label": "Dock inferior"
+  },
+  "appearance.dock.position.left": {
+    "label": "Dock esquerre"
+  },
+  "appearance.dock.position.right": {
+    "label": "Dock dret"
+  },
   "appearance.workspace-layout": {
     "label": "Disposició dels espais",
     "title": "Disposició per defecte dels espais"
@@ -270,11 +267,11 @@
   "appearance.workspace-layout.floating": {
     "label": "Flotant"
   },
+  "appearance.animations": {
+    "label": "Animacions"
+  },
   "appearance.unlock": {
     "label": "Desbloqueja"
-  },
-  "appearance.theme-sync": {
-    "label": "Sincronització de tema Herdr"
   },
   "trigger.toggle": {
     "label": "Commuta"
