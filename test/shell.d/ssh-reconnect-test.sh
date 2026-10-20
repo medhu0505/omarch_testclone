@@ -102,6 +102,18 @@ out=$(run_case "0 255" host)
 [[ $out == *"$disarm"* ]] || fail "stray terminal modes are reset after ssh exits" "$out"
 pass "stray terminal modes are reset after ssh exits"
 
+# A remote session can arm modes the local terminal only learns about from the
+# bytes it receives: bracketed paste, the kitty keyboard protocol, xterm
+# modifyOtherKeys, and the application cursor and keypad. A dropped session
+# leaves them armed, so a pasted passphrase arrives wrapped in paste markers
+# and Ctrl-C arrives as a keycode the terminal never raises SIGINT for.
+for mode in $'\e[?2004l:bracketed paste' $'\e[<99u:the kitty keyboard flags' $'\e[=0;1u:the kitty keyboard mode' $'\e[>4;0m:modifyOtherKeys' $'\e[?1l\e>:the application cursor and keypad'; do
+  sequence=${mode%%:*}
+  name=${mode#*:}
+  [[ $out == *"$sequence"* ]] || fail "$name is reset after ssh exits" "$out"
+done
+pass "the terminal modes a remote session arms are reset after ssh exits"
+
 [[ $out == *"rc=255"* ]] && (( $(attempts) == 1 )) ||
   fail "fast connection failure does not reconnect" "$out"
 pass "fast connection failure does not reconnect"
