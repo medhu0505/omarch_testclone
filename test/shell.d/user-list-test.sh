@@ -12,7 +12,7 @@ mkdir -p "$mock_bin"
 cat >"$mock_bin/getent" <<'SH'
 #!/bin/bash
 case "$1" in
-passwd) cat "$OMARCHY_TEST_PASSWD" ;;
+passwd) if [[ -n ${2:-} ]]; then grep "^$2:" "$OMARCHY_TEST_PASSWD"; else cat "$OMARCHY_TEST_PASSWD"; fi ;;
 group) grep "^$2:" "$OMARCHY_TEST_GROUP" ;;
 *) exit 2 ;;
 esac
@@ -64,7 +64,7 @@ run_list() {
   TZ=UTC PATH="$mock_bin:$PATH" \
     OMARCHY_TEST_PASSWD="$test_tmp/passwd" OMARCHY_TEST_GROUP="$test_tmp/group" \
     OMARCHY_TEST_SESSIONS="$test_tmp/sessions" OMARCHY_TEST_LASTLOG="$test_tmp/lastlog" \
-    OMARCHY_LOGIN_DEFS="$test_tmp/login.defs" \
+    OMARCHY_LOGIN_DEFS="$test_tmp/login.defs" OMARCHY_PATH="$ROOT" \
     "$ROOT/bin/omarchy-user-list" "$@"
 }
 

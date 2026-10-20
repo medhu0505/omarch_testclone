@@ -24,25 +24,9 @@ while (( $# > 0 )); do
   shift
 done
 
-login_defs=${OMARCHY_LOGIN_DEFS:-/etc/login.defs}
-
-login_def() {
-  local value
-  value=$(awk -v key="$1" '$1 == key { print $2; exit }' "$login_defs" 2>/dev/null || true)
-  if [[ $value =~ ^[0-9]+$ ]]; then
-    printf '%s\n' "$value"
-  else
-    printf '%s\n' "$2"
-  fi
-}
-
-uid_min=$(login_def UID_MIN 1000)
-uid_max=$(login_def UID_MAX 60000)
-
-# Administrators are the members of wheel: the group sudo and polkit trust.
-wheel=$(getent group wheel || true)
-wheel_gid=$(cut -d: -f3 <<<"$wheel")
-wheel_members=",$(cut -d: -f4 <<<"$wheel"),"
+# What counts as a login account and as an administrator (a member of wheel,
+# the group sudo and polkit trust) is defined once, with the other commands.
+source "$OMARCHY_PATH/install/helpers/user-accounts.sh"
 
 # One call each for sessions and last logins, so the cost stays flat however
 # many accounts there are.
@@ -53,14 +37,9 @@ last_logins=$(lastlog2 2>/dev/null | awk 'NR > 1 && NF >= 7 {
 }' || true)
 
 rows=$(
-  getent passwd | while IFS=: read -r name _ uid gid _ _ shell; do
-    (( uid >= uid_min && uid <= uid_max )) || continue
-    [[ $shell == */nologin || $shell == */false ]] && continue
-
+  user_accounts_login_users | while IFS=$'\t' read -r name uid _; do
     admin="false"
-    if [[ $wheel_members == *",$name,"* || $gid == "$wheel_gid" ]]; then
-      admin="true"
-    fi
+    user_accounts_is_admin "$name" && admin="true"
 
     online="false"
     [[ $signed_in == *" $name "* ]] && online="true"
