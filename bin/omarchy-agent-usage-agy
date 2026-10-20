@@ -5,6 +5,7 @@
 """Collect Google Antigravity usage into one display-ready JSON record.
 
 Parses local sessions and conversation logs from ~/.gemini/antigravity-cli/brain/
+(and ~/.gemini/antigravity/brain/ when present)
 and prints a JSON record matching the Omarchy agents panel contract.
 """
 
@@ -21,45 +22,68 @@ AGENT_NAME = "Antigravity"
 AUTH_HELP = "Run `agy` to authenticate."
 
 
+def prompt_date(entry):
+  raw = entry.get("created_at")
+  if not isinstance(raw, str):
+    return None
+  try:
+    parsed = dt.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+  except ValueError:
+    return None
+  if parsed.tzinfo is None:
+    parsed = parsed.replace(tzinfo=dt.timezone.utc)
+  return parsed.astimezone().date().isoformat()
+
+
 def main():
   now = dt.datetime.now(dt.timezone.utc)
-  today = dt.date.today()
-  today_str = today.strftime("%Y-%m-%d")
+  today = dt.datetime.now().astimezone().date()
+  today_str = today.isoformat()
 
   recent_dates = [
-      (today - dt.timedelta(days=i)).strftime("%Y-%m-%d")
+      (today - dt.timedelta(days=i)).isoformat()
       for i in range(6, -1, -1)
   ]
   daily_prompts = {d: 0 for d in recent_dates}
   active_dates = set()
+  today_sessions = set()
 
-  brain_dir = Path.home() / ".gemini" / "antigravity-cli" / "brain"
+  gemini_dir = Path.home() / ".gemini"
+  brain_dirs = [d for d in (gemini_dir / "antigravity-cli" / "brain", gemini_dir / "antigravity" / "brain") if d.is_dir()]
   total_prompts = 0
   total_sessions = 0
-  today_sessions = 0
 
-  if brain_dir.is_dir():
+  for brain_dir in brain_dirs:
     for conv_dir in brain_dir.iterdir():
       if not conv_dir.is_dir():
         continue
       total_sessions += 1
       transcript_file = conv_dir / ".system_generated" / "logs" / "transcript.jsonl"
-      if transcript_file.is_file():
-        try:
-          mtime = dt.date.fromtimestamp(transcript_file.stat().st_mtime)
-          mtime_str = mtime.strftime("%Y-%m-%d")
-          active_dates.add(mtime_str)
-          if mtime_str == today_str:
-            today_sessions += 1
+      if not transcript_file.is_file():
+        continue
+      try:
+        with open(transcript_file, "r", encoding="utf-8", errors="ignore") as f:
+          for line in f:
+            if "USER_INPUT" not in line:
+              continue
+            try:
+              entry = json.loads(line)
+            except ValueError:
+              continue
+            if not isinstance(entry, dict) or entry.get("type") != "USER_INPUT":
+              continue
 
-          with open(transcript_file, "r", encoding="utf-8", errors="ignore") as f:
-            for line in f:
-              if '"type":"USER_INPUT"' in line:
-                total_prompts += 1
-                if mtime_str in daily_prompts:
-                  daily_prompts[mtime_str] += 1
-        except Exception:
-          pass
+            total_prompts += 1
+            day = prompt_date(entry)
+            if day is None:
+              continue
+            active_dates.add(day)
+            if day in daily_prompts:
+              daily_prompts[day] += 1
+            if day == today_str:
+              today_sessions.add(conv_dir)
+      except OSError:
+        pass
 
   today_prompts = daily_prompts.get(today_str, 0)
   recent_days = [{"date": d, "messageCount": daily_prompts[d]} for d in recent_dates]
@@ -70,10 +94,10 @@ def main():
       "id": AGENT_ID,
       "name": AGENT_NAME,
       "updatedAt": now.isoformat(),
-      "ready": True,
+      "ready": bool(brain_dirs),
       "hasLocalStats": True,
       "todayPrompts": today_prompts,
-      "todaySessions": today_sessions,
+      "todaySessions": len(today_sessions),
       "todayTotalTokens": 0,
       "todayTokensByModel": {},
       "recentDays": recent_days,
@@ -85,7 +109,7 @@ def main():
       "limits": [],
       "tierLabel": "",
       "usageStatusText": "",
-      "authHelpText": AUTH_HELP,
+      "authHelpText": "" if brain_dirs else AUTH_HELP,
   }
 
   print(json.dumps(record, separators=(",", ":")))
