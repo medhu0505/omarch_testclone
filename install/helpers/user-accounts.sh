@@ -321,7 +321,15 @@ user_accounts_go_multi() {
     choice=$(gum choose --header "$(omarchy-i18n user.whichPassword)" "$share" "$own") || return 1
     if [[ $choice == "$share" ]]; then
       new=$(user_accounts_ask_new_password "$(omarchy-i18n user.newDiskPassword)" _user_accounts_not_this_one "$mine") || return 1
-      printf '%s\n%s\n' "$mine" "$new" | omarchy-drive-password --system-stdin || return 1
+      # An earlier change that stopped part way must be finished by a person
+      # (omarchy-drive-password keeps a record of it and refuses until then):
+      # status 2, so the caller can say what to do.
+      if ! output=$(printf '%s\n%s\n' "$mine" "$new" | omarchy-drive-password --system-stdin 2>&1); then
+        printf '%s\n' "$output" >&2
+        [[ $output != *"stopped part way"* ]] || return 2
+        return 1
+      fi
+      [[ -z $output ]] || printf '%s\n' "$output"
       if user_accounts_opens_disk "$disk" "$mine" || ! user_accounts_opens_disk "$disk" "$new"; then
         echo "The disk password didn't change." >&2
         return 1

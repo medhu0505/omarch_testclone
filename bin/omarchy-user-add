@@ -151,8 +151,13 @@ fi
 # account and less. Every step of the switch can be repeated, so running this
 # again continues where it stopped.
 if (( second_account )); then
-  user_accounts_go_multi "$(user_accounts_self)" "$mine" ||
+  status=0
+  user_accounts_go_multi "$(user_accounts_self)" "$mine" || status=$?
+  if (( status == 2 )); then
+    fail "an earlier disk password change stopped part way, so '$name' was not added; run omarchy-drive-password to finish it, then run this again"
+  elif (( status != 0 )); then
     fail "the switch to several accounts didn't finish, so '$name' was not added; run this again to continue"
+  fi
 fi
 
 # A UID that owns nothing under /home, so a kept home folder never passes on.

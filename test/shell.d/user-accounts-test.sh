@@ -137,6 +137,11 @@ cat >"$mock_bin/omarchy-drive-password" <<'SH'
 #!/bin/bash
 echo "omarchy-drive-password $*" >>"$OMARCHY_TEST_DIR/calls.log"
 [[ $1 == "--system-stdin" ]] || exit 9
+# The real one refuses while a change it recorded earlier is unfinished.
+if [[ -n ${OMARCHY_TEST_DRIVE_PENDING:-} ]]; then
+  echo "The last password change for /dev/vda2 stopped part way. Run omarchy-drive-password to finish it first."
+  exit 1
+fi
 IFS= read -r current
 IFS= read -r new
 [[ -z ${OMARCHY_TEST_DRIVE_FAIL:-} && $current == "$(cat "$OMARCHY_TEST_DIR/disk_password")" ]] || exit 1
@@ -891,6 +896,18 @@ if output=$(OMARCHY_TEST_DRIVE_NOOP=1 run_tty add carol); then fail "a stopped s
 ! has_user carol && ! grep -q "useradd" "$test_tmp/calls.log" && [[ $output == *"run this again to continue"* ]] ||
   fail "a stopped switch adds no account" "$output; $(cat "$test_tmp/calls.log")"
 pass "a stopped switch adds no account, and says to run again"
+
+# A disk password change stopped part way earlier (a killed terminal, a power
+# cut) must be finished by a person before the disk takes another; the add
+# says so instead of promising that running it again continues.
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers yes alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
+if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty add carol); then fail "an unfinished disk password change stops the add"; fi
+! has_user carol && [[ $output == *"stopped part way"* && $output == *"run omarchy-drive-password to finish it, then run this again"* && $output != *"run this again to continue"* ]] ||
+  fail "an unfinished disk password change tells the administrator to finish it first" "$output"
+pass "an unfinished disk password change is pointed at omarchy-drive-password"
 
 # The lock file is root's alone, so only an administrator can hold the lock.
 reset_fixtures
