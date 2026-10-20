@@ -617,6 +617,35 @@ function dmenuValue(option) {
   return parts.join("\t")
 }
 
+// Picker search: every word of the query must match the option text, in any
+// order and ignoring punctuation, so "super o" finds "SUPER + O". Returns -1
+// for no match, else a score where lower is better: whole-word matches beat
+// word prefixes, which beat bare substrings, and earlier words break ties.
+function dmenuMatchScore(query, text) {
+  var terms = String(query || "").toLowerCase().trim().split(/\s+/)
+  var haystack = String(text || "").toLowerCase()
+  var words = haystack.split(/[^0-9a-z\u00c0-\u2000]+/).filter(Boolean)
+  var score = 0
+
+  for (var i = 0; i < terms.length; i++) {
+    var term = terms[i]
+    if (!term) continue
+
+    var exact = words.indexOf(term)
+    var prefix = -1
+    for (var w = 0; prefix < 0 && w < words.length; w++) {
+      if (words[w].indexOf(term) === 0) prefix = w
+    }
+
+    if (exact >= 0) score += exact
+    else if (prefix >= 0) score += 1000 + prefix
+    else if (haystack.indexOf(term) >= 0) score += 2000
+    else return -1
+  }
+
+  return score
+}
+
 function dmenuSelections(options, selected, preserveOrder) {
   var available = options.map(dmenuValue)
   return (preserveOrder ? selected : available).filter(function(value, index, values) {
@@ -697,6 +726,7 @@ if (typeof module !== "undefined") {
     matchesQuery: matchesQuery,
     searchScore: searchScore,
     dmenuValue: dmenuValue,
+    dmenuMatchScore: dmenuMatchScore,
     dmenuSelections: dmenuSelections,
     toggleDmenuSelection: toggleDmenuSelection,
     displayRow: displayRow,
