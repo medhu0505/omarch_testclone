@@ -393,6 +393,15 @@ Item {
     return parts.join("  ·  ")
   }
 
+  // Which of the keys 1–9 on the number row was pressed, or -1. AZERTY and
+  // other layouts put symbols there unshifted (Ctrl+2 arrives as Ctrl+é), so
+  // fall back to the key's position: XKB keycodes 10–18 are that row.
+  function digitRowIndex(event) {
+    if (event.key >= Qt.Key_1 && event.key <= Qt.Key_9) return event.key - Qt.Key_1
+    if (event.nativeScanCode >= 10 && event.nativeScanCode <= 18) return event.nativeScanCode - 10
+    return -1
+  }
+
   function disarmPointer() {
     pointerGate.reset()
   }
@@ -588,8 +597,8 @@ Item {
           } else if (Util.editsFilter(event, root.filterText)) {
             root.setFilter(Util.editedFilter(event, root.filterText))
             event.accepted = true
-          } else if (control && event.key >= Qt.Key_1 && event.key <= Qt.Key_9) {
-            root.activateIndex(event.key - Qt.Key_1)
+          } else if (control && root.digitRowIndex(event) >= 0) {
+            root.activateIndex(root.digitRowIndex(event))
             event.accepted = true
           } else if (control && event.key === Qt.Key_P) {
             root.openPinPicker(false)
@@ -635,7 +644,7 @@ Item {
             else if (root.cursorActive) root.activateIndex(root.selectedIndex)
             else if (displayModel.count > 0) root.cursorActive = true
             event.accepted = true
-          } else if (event.text && event.text.length === 1 && event.text.charCodeAt(0) >= 32 && event.text.charCodeAt(0) !== 127) {
+          } else if (!control && event.text && event.text.length === 1 && event.text.charCodeAt(0) >= 32 && event.text.charCodeAt(0) !== 127) {
             root.setFilter(root.filterText + event.text)
             event.accepted = true
           }
