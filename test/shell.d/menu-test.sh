@@ -948,7 +948,8 @@ assertDeepEqual(pickerMatches('menu', ['Toggle menu', 'Omarchy menu']), ['Toggle
 assertEqual(pickerMatches('super+o', keybindingRows)[0], 'SUPER + O → Pop window out (float & pin)', 'picker search splits query words on punctuation like the rows')
 assertDeepEqual(pickerMatches('+', ['SUPER + K', 'SUPER K']), ['SUPER + K'], 'picker search still finds symbol-only keys')
 assertDeepEqual(pickerMatches('猫', ['山猫.png', '猫.png']), ['猫.png', '山猫.png'], 'picker search ranks exact non-Latin words first')
-assertDeepEqual(pickerMatches('café', ['Le café', 'Cafétéria']), ['Le café', 'Cafétéria'], 'picker search keeps accented letters inside words')
+assertDeepEqual(pickerMatches('cat', ['catfish.png', '🐱cat.png', '❤️cat.png']), ['🐱cat.png', '❤️cat.png', 'catfish.png'], 'picker search treats emoji as word separators')
+assertDeepEqual(pickerMatches('café',['Le café', 'Cafétéria']), ['Le café', 'Cafétéria'], 'picker search keeps accented letters inside words')
 assertEqual(menu.dmenuMatchScore('zzz', 'SUPER + K → Keybindings'), -1, 'picker search rejects rows missing a query word')
 assert(
   /var match = query \? MenuModel\.dmenuMatchScore\(query, label \+ " " \+ detail\) : 0/.test(menuQml),

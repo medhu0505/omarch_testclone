@@ -617,9 +617,9 @@ function dmenuValue(option) {
   return parts.join("\t")
 }
 
-// Punctuation, symbols and spaces separate words; letters in any script and
-// digits make them up.
-var dmenuWordSeparator = /[\s\x00-\x2f\x3a-\x40\x5b-\x60\x7b-\x7f\u00a0-\u00bf\u2000-\u2bff\u3000-\u303f\uff00-\uff0f]+/
+// Punctuation, symbols, emoji and spaces separate words; letters in any script
+// and digits make them up.
+var dmenuWordSeparator = /[\s\x00-\x2f\x3a-\x40\x5b-\x60\x7b-\x7f\u00a0-\u00bf\u2000-\u2bff\u3000-\u303f\ufe00-\ufe0f\uff00-\uff0f\ud800-\udfff]+/
 
 function dmenuWords(value) {
   return String(value || "").split(dmenuWordSeparator).filter(Boolean)
