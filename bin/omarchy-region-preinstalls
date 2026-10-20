@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# omarchy:summary=Leave out the preinstalled apps a region cannot reach, for this user
+# omarchy:summary=Leave out the preinstalled apps a region cannot reach, and set its font, for this user
 # omarchy:args=<region>
 # omarchy:hidden=true
 
@@ -12,23 +12,34 @@ if [[ ! $region =~ ^[a-z]{2}$ ]]; then
   exit 1
 fi
 
-skip_list="$OMARCHY_PATH/default/regions/$region/apps-skip"
-[[ -r $skip_list ]] || exit 0
+profile="$OMARCHY_PATH/default/regions/$region"
 
-# The record outlives the install: launcher refreshes and the key bindings read
-# it, so a later region switch never brings these back or takes others away.
-state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy"
-mkdir -p "$state_dir"
-sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' -e '/\//d' "$skip_list" >"$state_dir/preinstalls-skipped"
+if [[ -r $profile/apps-skip ]]; then
+  # The record outlives the install: launcher refreshes and the key bindings read
+  # it, so a later region switch never brings these back or takes others away.
+  state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy"
+  mkdir -p "$state_dir"
+  sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' -e '/\//d' "$profile/apps-skip" >"$state_dir/preinstalls-skipped"
 
-pinned=$(omarchy-dock pinned 2>/dev/null || true)
-while IFS= read -r name; do
-  rm -f "$HOME/.local/share/applications/$name.desktop"
-  if grep -qxF -- "$name" <<<"$pinned"; then
-    omarchy-dock unpin "$name" >/dev/null
+  pinned=$(omarchy-dock pinned 2>/dev/null || true)
+  while IFS= read -r name; do
+    rm -f "$HOME/.local/share/applications/$name.desktop"
+    if grep -qxF -- "$name" <<<"$pinned"; then
+      omarchy-dock unpin "$name" >/dev/null
+    fi
+  done <"$state_dir/preinstalls-skipped"
+
+  if [[ -d $HOME/.local/share/applications ]]; then
+    update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
   fi
-done <"$state_dir/preinstalls-skipped"
+fi
 
-if [[ -d $HOME/.local/share/applications ]]; then
-  update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+# The region's monospace font, when the install carries it. Installs run with no
+# session, so the font is written without restarting a shell that is not there.
+font=
+[[ -r $profile/font ]] && font=$(sed -e '/^#/d' -e '/^[[:space:]]*$/d' "$profile/font" | head -n1)
+if [[ -n $font ]] && grep -qxF -- "$font" <<<"$(fc-list : family | tr ',' '\n')"; then
+  headless=0
+  [[ ${OMARCHY_SETUP_CONTEXT:-runtime} == "runtime" ]] || headless=1
+  OMARCHY_FONT_HEADLESS=$headless omarchy-font-set "$font" >/dev/null || echo "Could not set the region's font, $font" >&2
 fi

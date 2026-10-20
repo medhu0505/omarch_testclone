@@ -129,7 +129,7 @@ from pathlib import Path
 region = Path(os.environ["ROOT"]) / "default/regions/cn"
 files = sorted(str(path.relative_to(region)) for path in region.rglob("*") if path.is_file())
 expected = ["pacman/" + f"{kind}-{channel}.prepend" for kind in ("mirrorlist", "omarchy") for channel in ("edge", "rc", "stable")]
-assert files == sorted(expected + ["timezones", "environment", "cargo.toml", "gemrc", "maven-settings.xml", "apps-skip", "packages-add"]), files
+assert files == sorted(expected + ["timezones", "environment", "cargo.toml", "gemrc", "maven-settings.xml", "apps-skip", "packages-add", "font"]), files
 # Mirrors of the same repositories only: no new repository, so no new signing keys.
 for fragment in region.glob("pacman/*.prepend"):
     for line in fragment.read_text().splitlines():

@@ -32,9 +32,11 @@ A region can change what a new install comes with, as data in its profile. `apps
 
 The installer applies the package lists while it installs the defaults. It adds only the packages its offline mirror carries and skips the rest, so a package with no build for the machine, or not yet published, never fails an install; ISOs built for one region bundle that region's additions. For each user a regional install finalizes, `omarchy-region-preinstalls` removes the skipped launchers, unpins them from the dock, and records the list in `~/.local/state/omarchy/preinstalls-skipped`. `omarchy-refresh-applications` and the preinstalled key bindings read that record, so a later refresh or migration does not bring the apps back. Deleting the record and running `omarchy-refresh-applications` restores them. Other users of the same machine get the defaults, as with the cargo block, until they run `omarchy-region-preinstalls cn` themselves.
 
+A profile's `font` names a monospace family the same step sets with `omarchy-font-set`, only when the font is installed, and without restarting a shell during an install, which has none. China sets Maple Mono NF CN, which draws Han two cells wide so Chinese lines up with Latin in a terminal, and adds `maplemono-nf-cn` to carry it; since the font is already current at first login, the one-time Maple invitation for Chinese readers does not appear.
+
 Preinstalls are decided once, at install. Switching region later changes where packages and developer tools come from, never which apps are installed: a switch that removed apps would take away ones the user may still reach, and one that installed them would add software nobody chose. The record stays as it was, so a China install switched to World keeps its China apps and leaves out the same web apps until the user restores them.
 
-The China profile leaves out the launchers, dock pins and bindings for YouTube, X (and its post binding), Discord, WhatsApp, Google Contacts, Maps, Messages and Photos, ChatGPT, Grok, Signal and the Spotify music binding, and adds WeChat (`wechat-bin`), QQ (`linuxqq`), WPS Office (`wps-office-cn`, x86_64 only), DingTalk (`dingtalk-bin`) and Feishu (`feishu-bin`, once published).
+The China profile leaves out the launchers, dock pins and bindings for YouTube, X (and its post binding), Discord, WhatsApp, Google Contacts, Maps, Messages and Photos, ChatGPT, Grok, Signal and the Spotify music binding, and adds WeChat (`wechat-bin`), QQ (`linuxqq`), WPS Office (`wps-office-cn`, x86_64 only), DingTalk (`dingtalk-bin`), Feishu (`feishu-bin`) and Maple Mono NF CN (`maplemono-nf-cn`).
 
 ## Profile layout
 
@@ -43,6 +45,7 @@ Each profile lives in `default/regions/<code>/`:
 - `timezones`: the timezones that select this region, one per line, with blank lines and `#` comments allowed. List tzdata's backward-compatible names too, since the installer's timezone list includes them. A timezone may belong to at most one profile.
 - `environment`: optional shell assignments exported while the region is active, each kept if the user set it first.
 - `apps-skip`: optional launcher names and preinstalled binding descriptions the region leaves out, one per line.
+- `font`: optional monospace font family the region's first user gets, when the install carries it.
 - `packages-skip`, `packages-add`: optional package names the installer leaves out of or adds to the defaults, one per line.
 - `pacman/`: per channel (`stable`, `rc`, `edge`), `omarchy-<channel>.prepend`, placed first in the `[omarchy]` section of `pacman.conf`, and `mirrorlist-<channel>.prepend`, placed ahead of the channel's mirrorlist, so the regional mirrors are tried first.
 
