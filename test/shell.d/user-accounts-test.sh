@@ -244,7 +244,7 @@ EOF
 run_user() {
   local command="$1"
   shift
-  PATH="$mock_bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_TEST_DIR="$test_tmp" \
+  PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_LANGUAGE_FILE=/nonexistent OMARCHY_TEST_DIR="$test_tmp" \
     SUDO_USER=${RUN_AS:-alice} OMARCHY_LOGIN_DEFS=/dev/null OMARCHY_SUDOERS_DIR="$test_tmp/sudoers.d" \
     OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" \
     "$ROOT/bin/omarchy-user-$command" "$@"
@@ -497,7 +497,7 @@ run_tty() {
   local command="$1" cmd status
   shift
   printf -v cmd '%q ' "$ROOT/bin/omarchy-user-$command" "$@"
-  PATH="$mock_bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_TEST_DIR="$test_tmp" \
+  PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_LANGUAGE_FILE=/nonexistent OMARCHY_TEST_DIR="$test_tmp" \
     SUDO_USER=${RUN_AS:-alice} OMARCHY_LOGIN_DEFS=/dev/null OMARCHY_SUDOERS_DIR="$test_tmp/sudoers.d" \
     OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" \
     script -qefc "$cmd" /dev/null </dev/null >"$test_tmp/tty.out" 2>&1
@@ -541,7 +541,7 @@ has_user carol &&
   fail "a second account with a new shared disk password: disk changed, root locked, autologin off" "$output"
 [[ $output == *"Give carol the disk password"* ]] || fail "the administrator is reminded to share the disk password" "$output"
 grep -q "Your password also unlocks the disk" "$test_tmp/gum.log" || fail "the administrator is asked which password to change" "$(cat "$test_tmp/gum.log")"
-grep -q "confirm Continue?" "$test_tmp/gum.log" && [[ $output == *"the disk password is shared"* ]] ||
+grep -q "confirm .*Continue?$" "$test_tmp/gum.log" && [[ $output == *"the disk password is shared"* ]] ||
   fail "the administrator is told what changes and asked to continue" "$output"
 grep -q "disk password changed by alice" "$test_tmp/journal" && grep -q "root account locked by alice" "$test_tmp/journal" &&
   grep -q "automatic login turned off by alice" "$test_tmp/journal" || fail "each change writes a journal line" "$(cat "$test_tmp/journal")"

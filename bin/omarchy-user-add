@@ -92,7 +92,7 @@ if [[ -n $name ]]; then
 else
   interactive || fail "a name is required (e.g. omarchy user add alice)"
   while true; do
-    name=$(gum input --prompt "Username: " --placeholder "lowercase, e.g. alice") || fail "cancelled"
+    name=$(gum input --prompt "$(omarchy-i18n user.namePrompt)" --placeholder "$(omarchy-i18n user.namePlaceholder)") || fail "cancelled"
     problem=$(name_problem "$name")
     if [[ -z $problem ]]; then
       break
@@ -102,7 +102,7 @@ else
 fi
 
 if [[ -z $admin ]]; then
-  if interactive && gum confirm --default=false "Make $name an administrator?"; then
+  if interactive && gum confirm --default=false --affirmative "$(omarchy-i18n common.yes)" --negative "$(omarchy-i18n common.no)" "$(omarchy-i18n user.makeAdmin "$name")"; then
     admin="yes"
   else
     admin="no"
@@ -115,12 +115,12 @@ if (( password_stdin )); then
   IFS= read -r password || true
 elif interactive; then
   while true; do
-    password=$(gum input --password --prompt "Password for $name: ") || fail "cancelled"
+    password=$(gum input --password --prompt "$(omarchy-i18n user.passwordFor "$name")") || fail "cancelled"
     if [[ -z $password ]]; then
       echo "The password can't be empty."
       continue
     fi
-    confirmation=$(gum input --password --prompt "Repeat the password: ") || fail "cancelled"
+    confirmation=$(gum input --password --prompt "$(omarchy-i18n user.repeatPassword)") || fail "cancelled"
     if [[ $password == "$confirmation" ]]; then
       break
     fi

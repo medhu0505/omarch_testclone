@@ -35,7 +35,7 @@ confirm() {
   local prompt="$1"
   (( ASSUME_YES )) && return 0
   if interactive; then
-    gum confirm --default=false "$prompt"
+    gum confirm --default=false --affirmative "$(omarchy-i18n common.yes)" --negative "$(omarchy-i18n common.no)" "$prompt"
   else
     fail "refusing to continue without confirmation; pass --yes"
   fi
@@ -97,14 +97,14 @@ fi
 
 home=$(getent passwd "$name" | cut -d: -f6)
 if (( delete_home )); then
-  confirm "Remove $name and delete $home?" || fail "cancelled"
+  confirm "$(omarchy-i18n user.removeAndDelete "$name" "$home")" || fail "cancelled"
 else
-  confirm "Remove $name? Their home folder $home is kept." || fail "cancelled"
+  confirm "$(omarchy-i18n user.removeKeepHome "$name" "$home")" || fail "cancelled"
 fi
 
 # userdel refuses while the account has programs running.
 if user_accounts_has_programs "$name"; then
-  confirm "$name is signed in or has programs running. Sign them out now? Unsaved work is lost." || fail "cancelled"
+  confirm "$(omarchy-i18n user.signOutRunning "$name")" || fail "cancelled"
   as_root loginctl disable-linger "$name" 2>/dev/null || true
   user_accounts_sign_out "$name" || fail "'$name' still has programs running; try again in a moment"
 fi

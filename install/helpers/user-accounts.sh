@@ -198,7 +198,7 @@ user_accounts_root_locked() {
 user_accounts_ask_own_password() {
   local password
   while true; do
-    password=$(gum input --password --prompt "Your password ($1): ") || return 1
+    password=$(gum input --password --prompt "$(omarchy-i18n user.yourPassword "$1")") || return 1
     if printf '%s\n' "$password" | sudo -S -p '' true 2>/dev/null && user_accounts_password_is "$1" "$password"; then
       printf '%s\n' "$password"
       return 0
@@ -212,8 +212,8 @@ user_accounts_ask_own_password() {
 user_accounts_ask_new_password() {
   local prompt=$1 check=$2 password confirmation
   while true; do
-    password=$(gum input --password --prompt "$prompt: ") || return 1
-    confirmation=$(gum input --password --prompt "Repeat it: ") || return 1
+    password=$(gum input --password --prompt "$prompt") || return 1
+    confirmation=$(gum input --password --prompt "$(omarchy-i18n user.repeatIt)") || return 1
     if [[ -z $password ]]; then
       echo "The password can't be empty." >&2
     elif [[ $password != "$confirmation" ]]; then
@@ -233,7 +233,7 @@ user_accounts_explain_multi() {
   fi
   echo "  • the login screen asks who is logging in, instead of logging you in automatically"
   echo "  • root is locked; administrators use sudo"
-  gum confirm "Continue?"
+  gum confirm --affirmative "$(omarchy-i18n common.yes)" --negative "$(omarchy-i18n common.no)" "$(omarchy-i18n user.continue)"
 }
 
 # Before the second login account: one person no longer owns everything. The
@@ -242,16 +242,17 @@ user_accounts_explain_multi() {
 # asks who is logging in instead of logging the owner in automatically. $2 is
 # the administrator's password, already checked.
 user_accounts_go_multi() {
-  local self=$1 mine=$2 disk choice new
+  local self=$1 mine=$2 disk choice new share own
   disk=$(user_accounts_root_luks)
   if [[ -n $disk ]] && user_accounts_opens_disk "$disk" "$mine"; then
-    choice=$(gum choose --header "Your password also unlocks the disk. Which one do you want to change?" \
-      "A new disk password, to share" "A new password for me") || return 1
-    if [[ $choice == "A new disk password, to share" ]]; then
+    share=$(omarchy-i18n user.choiceShareDisk)
+    own=$(omarchy-i18n user.choiceNewOwn)
+    choice=$(gum choose --header "$(omarchy-i18n user.whichPassword)" "$share" "$own") || return 1
+    if [[ $choice == "$share" ]]; then
       _user_accounts_not_mine() {
         [[ $1 != "$mine" ]] || { echo "That's your own password; the disk needs a different one." >&2; return 1; }
       }
-      new=$(user_accounts_ask_new_password "New disk password, to share" _user_accounts_not_mine) || return 1
+      new=$(user_accounts_ask_new_password "$(omarchy-i18n user.newDiskPassword)" _user_accounts_not_mine) || return 1
       printf '%s\n%s\n' "$mine" "$new" | omarchy-drive-password --system-stdin || return 1
       if user_accounts_opens_disk "$disk" "$mine" || ! user_accounts_opens_disk "$disk" "$new"; then
         echo "The disk password didn't change." >&2
@@ -262,7 +263,7 @@ user_accounts_go_multi() {
       _user_accounts_not_disk() {
         ! user_accounts_opens_disk "$disk" "$1" || { echo "That one unlocks the disk; choose one that doesn't." >&2; return 1; }
       }
-      new=$(user_accounts_ask_new_password "Your new password" _user_accounts_not_disk) || return 1
+      new=$(user_accounts_ask_new_password "$(omarchy-i18n user.newOwnPassword)" _user_accounts_not_disk) || return 1
       printf '%s:%s\n' "$self" "$new" | as_root chpasswd || return 1
       user_accounts_log "login password of $self changed, so it no longer matches the disk password"
     fi
@@ -287,7 +288,7 @@ user_accounts_go_single() {
   disk=$(user_accounts_root_luks)
   if [[ -n $disk ]] && ! user_accounts_opens_disk "$disk" "$mine"; then
     while true; do
-      current=$(gum input --password --prompt "Current disk password: ") || return 1
+      current=$(gum input --password --prompt "$(omarchy-i18n user.currentDiskPassword)") || return 1
       user_accounts_opens_disk "$disk" "$current" && break
       echo "That doesn't unlock the disk. Try again." >&2
     done

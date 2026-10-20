@@ -71,10 +71,10 @@ fi
 if [[ -z $state ]]; then
   interactive || fail "say on or off (e.g. omarchy user admin $name on)"
   if [[ $current == "on" ]]; then
-    gum confirm --default=false "$name is an administrator. Take administrator rights away?" || fail "cancelled"
+    gum confirm --default=false --affirmative "$(omarchy-i18n common.yes)" --negative "$(omarchy-i18n common.no)" "$(omarchy-i18n user.takeAdminAway "$name")" || fail "cancelled"
     state="off"
   else
-    gum confirm --default=false "$name isn't an administrator. Make $name an administrator?" || fail "cancelled"
+    gum confirm --default=false --affirmative "$(omarchy-i18n common.yes)" --negative "$(omarchy-i18n common.no)" "$(omarchy-i18n user.giveAdmin "$name")" || fail "cancelled"
     state="on"
   fi
 fi
@@ -120,7 +120,7 @@ else
   # session that is already open.
   if user_accounts_has_programs "$name"; then
     echo "$name has programs running, and they keep sudo until $name logs out."
-    if interactive && gum confirm --default=false "Sign $name out now? Unsaved work is lost."; then
+    if interactive && gum confirm --default=false --affirmative "$(omarchy-i18n common.yes)" --negative "$(omarchy-i18n common.no)" "$(omarchy-i18n user.signOutNow "$name")"; then
       user_accounts_sign_out "$name" || fail "some of $name's programs are still running and keep sudo"
       user_accounts_log "login user '$name' signed out by $self after losing administrator rights"
       echo "Signed $name out."
