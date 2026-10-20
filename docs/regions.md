@@ -26,12 +26,24 @@ cargo has no environment setting for source replacement, and `cargo install` rea
 
 Not covered: tools mise installs from GitHub releases or other upstream URLs, the AUR, the arch-mact2 hardware repository, and Google services. Other users of the same machine get the registries through their shells but add the cargo block themselves with `omarchy-region-user cn`.
 
+## Preinstalls
+
+A region can change what a new install comes with, as data in its profile. `apps-skip` names launchers (`applications/<name>.desktop`) and preinstalled key bindings (by their description in `default/hypr/bindings/applications.lua`) that the region leaves out, because their services cannot be reached there. `packages-skip` and `packages-add` name packages the installer leaves out of or adds to the default set. A region without these files, and World, installs exactly the defaults.
+
+The installer applies the package lists while it installs the defaults. It adds only the packages its offline mirror carries and skips the rest, so a package with no build for the machine, or not yet published, never fails an install; ISOs built for one region bundle that region's additions. For each user a regional install finalizes, `omarchy-region-preinstalls` removes the skipped launchers, unpins them from the dock, and records the list in `~/.local/state/omarchy/preinstalls-skipped`. `omarchy-refresh-applications` and the preinstalled key bindings read that record, so a later refresh or migration does not bring the apps back. Deleting the record and running `omarchy-refresh-applications` restores them. Other users of the same machine get the defaults, as with the cargo block, until they run `omarchy-region-preinstalls cn` themselves.
+
+Preinstalls are decided once, at install. Switching region later changes where packages and developer tools come from, never which apps are installed: a switch that removed apps would take away ones the user may still reach, and one that installed them would add software nobody chose. The record stays as it was, so a China install switched to World keeps its China apps and leaves out the same web apps until the user restores them.
+
+The China profile leaves out the launchers, dock pins and bindings for YouTube, X (and its post binding), Discord, WhatsApp, Google Contacts, Maps, Messages and Photos, ChatGPT, Grok, Signal and the Spotify music binding, and adds WeChat (`wechat-bin`), QQ (`linuxqq`), WPS Office (`wps-office-cn`, x86_64 only), DingTalk (`dingtalk-bin`) and Feishu (`feishu-bin`, once published).
+
 ## Profile layout
 
 Each profile lives in `default/regions/<code>/`:
 
 - `timezones`: the timezones that select this region, one per line, with blank lines and `#` comments allowed. List tzdata's backward-compatible names too, since the installer's timezone list includes them. A timezone may belong to at most one profile.
 - `environment`: optional shell assignments exported while the region is active, each kept if the user set it first.
+- `apps-skip`: optional launcher names and preinstalled binding descriptions the region leaves out, one per line.
+- `packages-skip`, `packages-add`: optional package names the installer leaves out of or adds to the defaults, one per line.
 - `pacman/`: per channel (`stable`, `rc`, `edge`), `omarchy-<channel>.prepend`, placed first in the `[omarchy]` section of `pacman.conf`, and `mirrorlist-<channel>.prepend`, placed ahead of the channel's mirrorlist, so the regional mirrors are tried first.
 
 A profile adds mirrors of repositories every install already uses, never a repository or a signing key of its own. Hong Kong, Macau and Taiwan belong to no profile under any timezone name, and a test keeps it that way.
@@ -40,14 +52,14 @@ A profile adds mirrors of repositories every install already uses, never a repos
 
 There is one ISO for every region. The companion `omarchy-iso` repository reads the profiles from the runtime it bundles, so a region and its repository defaults can never disagree.
 
-- **Build:** the builder bundles the profiles with the runtime; it adds no repository, key or package for them.
-- **Install:** the installer maps the timezone the user picked to a region through the `timezones` files; a timezone no profile lists means `global`. It shows the result on the summary screen. Unattended installs can set the region explicitly instead. For a regional install it writes `/etc/omarchy/region`; the runtime finalizer then applies the fragments.
+- **Build:** the builder bundles the profiles with the runtime; it adds no repository or key for them. A build for one region also bundles the packages that region's `packages-add` names.
+- **Install:** the installer maps the timezone the user picked to a region through the `timezones` files; a timezone no profile lists means `global`. It shows the result on the summary screen. Unattended installs can set the region explicitly instead. For a regional install it writes `/etc/omarchy/region`, applies the region's `packages-skip` and `packages-add` to the default packages, and the runtime finalizer then applies the fragments and `apps-skip`.
 - **Deferred installs** have no timezone until first boot, so they are `global` unless the unattended configuration sets a region.
 
 
 ## Scope of the China profile
 
-The China profile provides mirror and registry defaults only. Language is a separate installer choice, not part of a region: a Chinese speaker outside China keeps global mirrors, and a China install in English still gets the regional ones.
+The China profile provides mirror and registry defaults and the preinstall changes above. Language is a separate installer choice, not part of a region: a Chinese speaker outside China keeps global mirrors, and a China install in English still gets the regional ones.
 
 ## Remaining release validation
 

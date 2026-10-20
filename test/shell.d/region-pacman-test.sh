@@ -120,8 +120,8 @@ cmp "$ROOT/default/pacman/pacman-stable.conf" "$TARGET_ROOT/etc/pacman.conf"
 cmp "$ROOT/default/pacman/mirrorlist-stable" "$TARGET_ROOT/etc/pacman.d/mirrorlist"
 pass "users can opt out of regional repository defaults"
 
-# The shipped China profile is repository defaults only. Language, locale, and
-# input methods follow the installer's language choice, not the region.
+# The shipped China profile is repository defaults and preinstall lists only. Language,
+# locale, and input methods follow the installer's language choice, not the region.
 python3 - <<'PY'
 import os
 from pathlib import Path
@@ -129,7 +129,7 @@ from pathlib import Path
 region = Path(os.environ["ROOT"]) / "default/regions/cn"
 files = sorted(str(path.relative_to(region)) for path in region.rglob("*") if path.is_file())
 expected = ["pacman/" + f"{kind}-{channel}.prepend" for kind in ("mirrorlist", "omarchy") for channel in ("edge", "rc", "stable")]
-assert files == sorted(expected + ["timezones", "environment", "cargo.toml", "gemrc", "maven-settings.xml"]), files
+assert files == sorted(expected + ["timezones", "environment", "cargo.toml", "gemrc", "maven-settings.xml", "apps-skip", "packages-add"]), files
 # Mirrors of the same repositories only: no new repository, so no new signing keys.
 for fragment in region.glob("pacman/*.prepend"):
     for line in fragment.read_text().splitlines():
