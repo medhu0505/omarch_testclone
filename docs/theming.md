@@ -6,7 +6,7 @@ Omarchy themes live under `themes/<name>/` in the source tree (installed at
 `colors.toml`; Omarchy generates the active theme files from
 `default/themed/*.tpl` when `omarchy-theme-set <name>` runs.
 
-Beyond `colors.toml` and hand-written config overrides, a first-party theme can ship `backgrounds/` (users overlay their own via `~/.config/omarchy/backgrounds/<name>/`; the active image is the `~/.local/state/omarchy/current/background` symlink), `preview.png` and `preview-unlock.png` for the theme switcher, `icons.theme`, `keyboard.rgb`, `unlock.png`, and a `light.mode` marker file.
+Beyond `colors.toml` and hand-written config overrides, a first-party theme can ship `backgrounds/` (users overlay their own via `~/.config/omarchy/backgrounds/<name>/`; the active image is the `~/.local/state/omarchy/current/background` symlink), `preview.png` and `preview-unlock.png` for the theme switcher, `icons.theme`, `keyboard.rgb`, `unlock.png`, a `light.mode` marker file, and the screensaver's `screensaver.txt` / `screensaver.conf` (see [The screensaver](#the-screensaver) below).
 
 A theme can pair a still background with a silent intro video using matching filenames: `backgrounds/0-winding-road.webp` and `backgrounds/intros/0-winding-road.mp4`. The video plays automatically at login and when switching to that theme with this background selected. No registration, checksum file or manual setting is needed. Supported video extensions are `mp4`, `m4v`, `mov`, `webm`, `mkv` and `avi`. Intro videos stay inside the nested `intros/` directory so the background picker does not list them as looping wallpapers. An image selected from another directory looks for its intro in that directory's own `intros/`, so a same-named custom image cannot inherit a theme's video.
 
@@ -367,6 +367,42 @@ For a gradient it renders:
 
 ```lua
 local active_border_color = { colors = { "rgba(33ccffee)", "rgba(00ff99ee)" }, angle = 45 }
+```
+
+## The screensaver
+
+`omarchy-screensaver` reads `~/.config/omarchy/branding/screensaver.txt` as the ASCII art it feeds to `ttfx --random-effect`, and that file is global: set once via `omarchy branding screensaver`, it does not vary by theme.
+
+A theme can opt into its own art by shipping `screensaver.txt` at the root of `themes/<name>/`. When present, it takes precedence over the global branding file; when absent, behavior is unchanged. It is kept as-is by `omarchy-theme-set` for both first-party and installed themes — it is plain data, not one of the files listed in [What an installed theme may not ship](#what-an-installed-theme-may-not-ship) — so it lands at `~/.local/state/omarchy/current/theme/screensaver.txt` the same way `colors.toml` does.
+
+A theme can also ship `screensaver.conf`: extra `ttfx` arguments, one per line, blank lines and lines starting with `#` ignored. These are appended to the invocation in `bin/omarchy-screensaver`, and any flag a theme sets there drops the script's own default for that same flag, since `ttfx` (clap) errors out if a flag is passed twice. This covers which effects `--random-effect` may pick (`--include-effects`/`--exclude-effects`), frame rate, canvas size, and the rest of `ttfx`'s top-level options. The input file comes from `screensaver.txt` (or the branding file), so don't pass `-i` in `screensaver.conf`: `ttfx` rejects it as a duplicate.
+
+Two directives are read by the script itself and not passed on to `ttfx`:
+
+- `mode=random|single|first`: `random` (the default) picks random effects as before, `single` always runs one effect, `first` runs that effect once and random effects afterwards.
+- `effect=<name>`: the effect for `single`/`first`. Every line after it is an argument for that effect, such as its colors, which is how a theme can fix the screensaver's look. Per-effect flags like `--rain-color-gradient` only work here, since `ttfx` rejects them alongside `--random-effect`.
+
+Without `effect=`, or with an unknown mode or effect name, the screensaver uses random effects. The effect arguments are ignored in `random` mode.
+
+```
+# themes/<name>/screensaver.conf: Matrix rain in green, then the logo
+mode=single
+--frame-rate
+60
+effect=matrix
+--rain-color-gradient
+00ff41
+00a328
+004a12
+--rain-time
+45
+```
+
+```
+# themes/<name>/screensaver.conf: random effects, limited to a few
+--include-effects
+matrix
+rain
 ```
 
 ## Fcitx candidate window
