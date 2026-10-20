@@ -114,6 +114,13 @@ for mode in $'\e[?2004l:bracketed paste' $'\e[<99u:the kitty keyboard flags' $'\
 done
 pass "the terminal modes a remote session arms are reset after ssh exits"
 
+# The kitty reset is order sensitive: popping the pushed flags after the reset
+# would restore the flags the reset had just cleared, so the pair is reset in
+# one assertion that only holds in the order the disarm needs.
+[[ $out == *$'\e[<99u\e[=0;1u'* ]] ||
+  fail "the kitty keyboard flags are popped before they are cleared" "$out"
+pass "the kitty keyboard flags are popped before they are cleared"
+
 [[ $out == *"rc=255"* ]] && (( $(attempts) == 1 )) ||
   fail "fast connection failure does not reconnect" "$out"
 pass "fast connection failure does not reconnect"
