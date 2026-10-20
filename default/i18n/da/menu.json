@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Baggrund"
   },
-  "appearance.unlock": {
-    "label": "Lås op"
-  },
   "appearance.font": {
     "label": "Skrifttype"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Pauseskærm"
-  },
-  "appearance.branding.about": {
-    "label": "Om"
-  },
-  "appearance.branding.about.text": {
-    "label": "Rediger tekst"
-  },
-  "appearance.branding.about.image": {
-    "label": "Sæt fra billede"
-  },
-  "appearance.branding.about.default": {
-    "label": "Gendan standard"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Rediger tekst"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Sæt fra billede"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Gendan standard"
-  },
-  "appearance.animations": {
-    "label": "Animationer"
   },
   "appearance.top-bar": {
     "label": "Menulinje"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Højre linje"
   },
+  "appearance.branding.screensaver": {
+    "label": "Pauseskærm"
+  },
+  "appearance.branding.about": {
+    "label": "Om"
+  },
+  "appearance.branding.about.text": {
+    "label": "Rediger tekst"
+  },
+  "appearance.branding.about.image": {
+    "label": "Sæt fra billede"
+  },
+  "appearance.branding.about.default": {
+    "label": "Gendan standard"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Rediger tekst"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Sæt fra billede"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Gendan standard"
+  },
+  "appearance.animations": {
+    "label": "Animationer"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Flydende"
+  },
+  "appearance.unlock": {
+    "label": "Lås op"
   },
   "appearance.theme-sync": {
     "label": "Herdr-temasynk"

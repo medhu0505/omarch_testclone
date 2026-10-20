@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Фон"
   },
-  "appearance.unlock": {
-    "label": "Розблокувати"
-  },
   "appearance.font": {
     "label": "Шрифт"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Заставка"
-  },
-  "appearance.branding.about": {
-    "label": "Про програму"
-  },
-  "appearance.branding.about.text": {
-    "label": "Редагувати текст"
-  },
-  "appearance.branding.about.image": {
-    "label": "Встановити зображення"
-  },
-  "appearance.branding.about.default": {
-    "label": "Відновити типові"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Редагувати текст"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Встановити зображення"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Відновити типові"
-  },
-  "appearance.animations": {
-    "label": "Анімації"
   },
   "appearance.top-bar": {
     "label": "Панель меню"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Панель праворуч"
   },
+  "appearance.branding.screensaver": {
+    "label": "Заставка"
+  },
+  "appearance.branding.about": {
+    "label": "Про програму"
+  },
+  "appearance.branding.about.text": {
+    "label": "Редагувати текст"
+  },
+  "appearance.branding.about.image": {
+    "label": "Встановити зображення"
+  },
+  "appearance.branding.about.default": {
+    "label": "Відновити типові"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Редагувати текст"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Встановити зображення"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Відновити типові"
+  },
+  "appearance.animations": {
+    "label": "Анімації"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Плаваючі"
+  },
+  "appearance.unlock": {
+    "label": "Розблокувати"
   },
   "appearance.theme-sync": {
     "label": "Синхронізація теми Herdr"

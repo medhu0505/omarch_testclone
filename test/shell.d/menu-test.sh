@@ -559,7 +559,7 @@ const appearanceLabels = ['Animations', 'Menu Bar', 'Dock', 'Windows', 'Workspac
 assertEqual(triggerIds[0], 'trigger.toggle', 'menu lists Toggle first under Trigger')
 assertDeepEqual(
   defaultItems.filter(item => item.parent === 'appearance').map(item => item.label),
-  ['Theme', 'Background', 'Unlock', 'Font', 'Branding', ...appearanceLabels.slice(0, 6)],
+  ['Theme', 'Background', 'Font', 'Menu Bar', 'Branding', 'Animations', 'Dock', 'Windows', 'Workspace Layout', 'Unlock', 'Herdr Theme Sync'],
   'menu gathers the style and look of the desktop under Appearance'
 )
 assertDeepEqual(

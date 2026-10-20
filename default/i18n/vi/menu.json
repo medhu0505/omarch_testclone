@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Hình nền"
   },
-  "appearance.unlock": {
-    "label": "Mở khóa"
-  },
   "appearance.font": {
     "label": "Phông chữ"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Bảo vệ màn hình"
-  },
-  "appearance.branding.about": {
-    "label": "Giới thiệu"
-  },
-  "appearance.branding.about.text": {
-    "label": "Sửa văn bản"
-  },
-  "appearance.branding.about.image": {
-    "label": "Đặt từ hình ảnh"
-  },
-  "appearance.branding.about.default": {
-    "label": "Khôi phục mặc định"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Sửa văn bản"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Đặt từ hình ảnh"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Khôi phục mặc định"
-  },
-  "appearance.animations": {
-    "label": "Hiệu ứng"
   },
   "appearance.top-bar": {
     "label": "Thanh menu"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Thanh phải"
   },
+  "appearance.branding.screensaver": {
+    "label": "Bảo vệ màn hình"
+  },
+  "appearance.branding.about": {
+    "label": "Giới thiệu"
+  },
+  "appearance.branding.about.text": {
+    "label": "Sửa văn bản"
+  },
+  "appearance.branding.about.image": {
+    "label": "Đặt từ hình ảnh"
+  },
+  "appearance.branding.about.default": {
+    "label": "Khôi phục mặc định"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Sửa văn bản"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Đặt từ hình ảnh"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Khôi phục mặc định"
+  },
+  "appearance.animations": {
+    "label": "Hiệu ứng"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Nổi"
+  },
+  "appearance.unlock": {
+    "label": "Mở khóa"
   },
   "appearance.theme-sync": {
     "label": "Đồng bộ chủ đề Herdr"

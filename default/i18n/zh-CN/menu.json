@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "背景"
   },
-  "appearance.unlock": {
-    "label": "解锁"
-  },
   "appearance.font": {
     "label": "字体"
-  },
-  "appearance.branding.screensaver": {
-    "label": "屏保"
-  },
-  "appearance.branding.about": {
-    "label": "关于"
-  },
-  "appearance.branding.about.text": {
-    "label": "编辑文本"
-  },
-  "appearance.branding.about.image": {
-    "label": "从图片设置"
-  },
-  "appearance.branding.about.default": {
-    "label": "恢复默认"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "编辑文本"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "从图片设置"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "恢复默认"
-  },
-  "appearance.animations": {
-    "label": "动画"
   },
   "appearance.top-bar": {
     "label": "菜单栏"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "右侧栏"
   },
+  "appearance.branding.screensaver": {
+    "label": "屏保"
+  },
+  "appearance.branding.about": {
+    "label": "关于"
+  },
+  "appearance.branding.about.text": {
+    "label": "编辑文本"
+  },
+  "appearance.branding.about.image": {
+    "label": "从图片设置"
+  },
+  "appearance.branding.about.default": {
+    "label": "恢复默认"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "编辑文本"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "从图片设置"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "恢复默认"
+  },
+  "appearance.animations": {
+    "label": "动画"
+  },
   "appearance.dock": {
     "label": "程序坞"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "浮动"
+  },
+  "appearance.unlock": {
+    "label": "解锁"
   },
   "appearance.theme-sync": {
     "label": "Herdr 主题同步"

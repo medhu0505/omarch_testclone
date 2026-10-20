@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "پس‌زمینه"
   },
-  "appearance.unlock": {
-    "label": "باز کردن قفل"
-  },
   "appearance.font": {
     "label": "قلم"
-  },
-  "appearance.branding.screensaver": {
-    "label": "محافظ صفحه"
-  },
-  "appearance.branding.about": {
-    "label": "درباره"
-  },
-  "appearance.branding.about.text": {
-    "label": "ویرایش متن"
-  },
-  "appearance.branding.about.image": {
-    "label": "تنظیم از تصویر"
-  },
-  "appearance.branding.about.default": {
-    "label": "بازیابی پیش‌فرض"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "ویرایش متن"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "تنظیم از تصویر"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "بازیابی پیش‌فرض"
-  },
-  "appearance.animations": {
-    "label": "پویانمایی"
   },
   "appearance.top-bar": {
     "label": "نوار منو"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "نوار راست"
   },
+  "appearance.branding.screensaver": {
+    "label": "محافظ صفحه"
+  },
+  "appearance.branding.about": {
+    "label": "درباره"
+  },
+  "appearance.branding.about.text": {
+    "label": "ویرایش متن"
+  },
+  "appearance.branding.about.image": {
+    "label": "تنظیم از تصویر"
+  },
+  "appearance.branding.about.default": {
+    "label": "بازیابی پیش‌فرض"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "ویرایش متن"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "تنظیم از تصویر"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "بازیابی پیش‌فرض"
+  },
+  "appearance.animations": {
+    "label": "پویانمایی"
+  },
   "appearance.dock": {
     "label": "داک"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "شناور"
+  },
+  "appearance.unlock": {
+    "label": "باز کردن قفل"
   },
   "appearance.theme-sync": {
     "label": "همگام‌سازی تم Herdr"

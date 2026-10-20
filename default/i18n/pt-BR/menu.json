@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Plano de fundo"
   },
-  "appearance.unlock": {
-    "label": "Desbloquear"
-  },
   "appearance.font": {
     "label": "Fonte"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Proteção de tela"
-  },
-  "appearance.branding.about": {
-    "label": "Sobre"
-  },
-  "appearance.branding.about.text": {
-    "label": "Editar texto"
-  },
-  "appearance.branding.about.image": {
-    "label": "Definir da imagem"
-  },
-  "appearance.branding.about.default": {
-    "label": "Restaurar padrão"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Editar texto"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Definir da imagem"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Restaurar padrão"
-  },
-  "appearance.animations": {
-    "label": "Animações"
   },
   "appearance.top-bar": {
     "label": "Barra de menu"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Barra direita"
   },
+  "appearance.branding.screensaver": {
+    "label": "Proteção de tela"
+  },
+  "appearance.branding.about": {
+    "label": "Sobre"
+  },
+  "appearance.branding.about.text": {
+    "label": "Editar texto"
+  },
+  "appearance.branding.about.image": {
+    "label": "Definir da imagem"
+  },
+  "appearance.branding.about.default": {
+    "label": "Restaurar padrão"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Editar texto"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Definir da imagem"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Restaurar padrão"
+  },
+  "appearance.animations": {
+    "label": "Animações"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Flutuante"
+  },
+  "appearance.unlock": {
+    "label": "Desbloquear"
   },
   "appearance.theme-sync": {
     "label": "Sincronização de tema Herdr"

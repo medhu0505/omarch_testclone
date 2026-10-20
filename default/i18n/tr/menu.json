@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Arka Plan"
   },
-  "appearance.unlock": {
-    "label": "Kilidi Aç"
-  },
   "appearance.font": {
     "label": "Yazı Tipi"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Ekran Koruyucu"
-  },
-  "appearance.branding.about": {
-    "label": "Hakkında"
-  },
-  "appearance.branding.about.text": {
-    "label": "Metni Düzenle"
-  },
-  "appearance.branding.about.image": {
-    "label": "Görüntüden Ayarla"
-  },
-  "appearance.branding.about.default": {
-    "label": "Varsayılanı Geri Yükle"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Metni Düzenle"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Görüntüden Ayarla"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Varsayılanı Geri Yükle"
-  },
-  "appearance.animations": {
-    "label": "Animasyonlar"
   },
   "appearance.top-bar": {
     "label": "Menü Çubuğu"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Sağ Çubuk"
   },
+  "appearance.branding.screensaver": {
+    "label": "Ekran Koruyucu"
+  },
+  "appearance.branding.about": {
+    "label": "Hakkında"
+  },
+  "appearance.branding.about.text": {
+    "label": "Metni Düzenle"
+  },
+  "appearance.branding.about.image": {
+    "label": "Görüntüden Ayarla"
+  },
+  "appearance.branding.about.default": {
+    "label": "Varsayılanı Geri Yükle"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Metni Düzenle"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Görüntüden Ayarla"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Varsayılanı Geri Yükle"
+  },
+  "appearance.animations": {
+    "label": "Animasyonlar"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Yüzen"
+  },
+  "appearance.unlock": {
+    "label": "Kilidi Aç"
   },
   "appearance.theme-sync": {
     "label": "Herdr Tema Eşitlemesi"

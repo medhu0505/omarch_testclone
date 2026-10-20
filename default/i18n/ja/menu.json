@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "壁紙"
   },
-  "appearance.unlock": {
-    "label": "ロック画面"
-  },
   "appearance.font": {
     "label": "フォント"
-  },
-  "appearance.branding.screensaver": {
-    "label": "スクリーンセーバー"
-  },
-  "appearance.branding.about": {
-    "label": "情報"
-  },
-  "appearance.branding.about.text": {
-    "label": "テキストを編集"
-  },
-  "appearance.branding.about.image": {
-    "label": "画像から設定"
-  },
-  "appearance.branding.about.default": {
-    "label": "デフォルトに戻す"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "テキストを編集"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "画像から設定"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "デフォルトに戻す"
-  },
-  "appearance.animations": {
-    "label": "アニメーション"
   },
   "appearance.top-bar": {
     "label": "メニューバー"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "右バー"
   },
+  "appearance.branding.screensaver": {
+    "label": "スクリーンセーバー"
+  },
+  "appearance.branding.about": {
+    "label": "情報"
+  },
+  "appearance.branding.about.text": {
+    "label": "テキストを編集"
+  },
+  "appearance.branding.about.image": {
+    "label": "画像から設定"
+  },
+  "appearance.branding.about.default": {
+    "label": "デフォルトに戻す"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "テキストを編集"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "画像から設定"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "デフォルトに戻す"
+  },
+  "appearance.animations": {
+    "label": "アニメーション"
+  },
   "appearance.dock": {
     "label": "ドック"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "フロート型"
+  },
+  "appearance.unlock": {
+    "label": "ロック画面"
   },
   "appearance.theme-sync": {
     "label": "Herdrテーマ同期"

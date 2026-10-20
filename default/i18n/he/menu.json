@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "רקע"
   },
-  "appearance.unlock": {
-    "label": "ביטול נעילה"
-  },
   "appearance.font": {
     "label": "גופן"
-  },
-  "appearance.branding.screensaver": {
-    "label": "שומר מסך"
-  },
-  "appearance.branding.about": {
-    "label": "אודות"
-  },
-  "appearance.branding.about.text": {
-    "label": "עריכת טקסט"
-  },
-  "appearance.branding.about.image": {
-    "label": "הגדרה מתמונה"
-  },
-  "appearance.branding.about.default": {
-    "label": "שחזור ברירת מחדל"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "עריכת טקסט"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "הגדרה מתמונה"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "שחזור ברירת מחדל"
-  },
-  "appearance.animations": {
-    "label": "הנפשות"
   },
   "appearance.top-bar": {
     "label": "שורת תפריט"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "שורה ימנית"
   },
+  "appearance.branding.screensaver": {
+    "label": "שומר מסך"
+  },
+  "appearance.branding.about": {
+    "label": "אודות"
+  },
+  "appearance.branding.about.text": {
+    "label": "עריכת טקסט"
+  },
+  "appearance.branding.about.image": {
+    "label": "הגדרה מתמונה"
+  },
+  "appearance.branding.about.default": {
+    "label": "שחזור ברירת מחדל"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "עריכת טקסט"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "הגדרה מתמונה"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "שחזור ברירת מחדל"
+  },
+  "appearance.animations": {
+    "label": "הנפשות"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "צף"
+  },
+  "appearance.unlock": {
+    "label": "ביטול נעילה"
   },
   "appearance.theme-sync": {
     "label": "סנכרון ערכה של Herdr"

@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Bakgrund"
   },
-  "appearance.unlock": {
-    "label": "Lås upp"
-  },
   "appearance.font": {
     "label": "Typsnitt"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Skärmsläckare"
-  },
-  "appearance.branding.about": {
-    "label": "Om"
-  },
-  "appearance.branding.about.text": {
-    "label": "Redigera text"
-  },
-  "appearance.branding.about.image": {
-    "label": "Från bild"
-  },
-  "appearance.branding.about.default": {
-    "label": "Återställ standard"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Redigera text"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Från bild"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Återställ standard"
-  },
-  "appearance.animations": {
-    "label": "Animeringar"
   },
   "appearance.top-bar": {
     "label": "Menyfält"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Högerfält"
   },
+  "appearance.branding.screensaver": {
+    "label": "Skärmsläckare"
+  },
+  "appearance.branding.about": {
+    "label": "Om"
+  },
+  "appearance.branding.about.text": {
+    "label": "Redigera text"
+  },
+  "appearance.branding.about.image": {
+    "label": "Från bild"
+  },
+  "appearance.branding.about.default": {
+    "label": "Återställ standard"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Redigera text"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Från bild"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Återställ standard"
+  },
+  "appearance.animations": {
+    "label": "Animeringar"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Flytande"
+  },
+  "appearance.unlock": {
+    "label": "Lås upp"
   },
   "appearance.theme-sync": {
     "label": "Herdr-temasynk"

@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Background"
   },
-  "appearance.unlock": {
-    "label": "I-unlock"
-  },
   "appearance.font": {
     "label": "Font"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Screensaver"
-  },
-  "appearance.branding.about": {
-    "label": "Tungkol"
-  },
-  "appearance.branding.about.text": {
-    "label": "I-edit ang Teksto"
-  },
-  "appearance.branding.about.image": {
-    "label": "Itakda mula sa Larawan"
-  },
-  "appearance.branding.about.default": {
-    "label": "Ibalik ang Default"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "I-edit ang Teksto"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Itakda mula sa Larawan"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Ibalik ang Default"
-  },
-  "appearance.animations": {
-    "label": "Animasyon"
   },
   "appearance.top-bar": {
     "label": "Menu Bar"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Bar sa Kanan"
   },
+  "appearance.branding.screensaver": {
+    "label": "Screensaver"
+  },
+  "appearance.branding.about": {
+    "label": "Tungkol"
+  },
+  "appearance.branding.about.text": {
+    "label": "I-edit ang Teksto"
+  },
+  "appearance.branding.about.image": {
+    "label": "Itakda mula sa Larawan"
+  },
+  "appearance.branding.about.default": {
+    "label": "Ibalik ang Default"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "I-edit ang Teksto"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Itakda mula sa Larawan"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Ibalik ang Default"
+  },
+  "appearance.animations": {
+    "label": "Animasyon"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Lumulutang"
+  },
+  "appearance.unlock": {
+    "label": "I-unlock"
   },
   "appearance.theme-sync": {
     "label": "Sync ng Tema ng Herdr"

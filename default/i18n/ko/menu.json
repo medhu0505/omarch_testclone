@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "배경"
   },
-  "appearance.unlock": {
-    "label": "잠금 해제"
-  },
   "appearance.font": {
     "label": "글꼴"
-  },
-  "appearance.branding.screensaver": {
-    "label": "화면 보호기"
-  },
-  "appearance.branding.about": {
-    "label": "정보"
-  },
-  "appearance.branding.about.text": {
-    "label": "텍스트 편집"
-  },
-  "appearance.branding.about.image": {
-    "label": "이미지에서 설정"
-  },
-  "appearance.branding.about.default": {
-    "label": "기본값 복원"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "텍스트 편집"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "이미지에서 설정"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "기본값 복원"
-  },
-  "appearance.animations": {
-    "label": "애니메이션"
   },
   "appearance.top-bar": {
     "label": "메뉴 막대"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "오른쪽 막대"
   },
+  "appearance.branding.screensaver": {
+    "label": "화면 보호기"
+  },
+  "appearance.branding.about": {
+    "label": "정보"
+  },
+  "appearance.branding.about.text": {
+    "label": "텍스트 편집"
+  },
+  "appearance.branding.about.image": {
+    "label": "이미지에서 설정"
+  },
+  "appearance.branding.about.default": {
+    "label": "기본값 복원"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "텍스트 편집"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "이미지에서 설정"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "기본값 복원"
+  },
+  "appearance.animations": {
+    "label": "애니메이션"
+  },
   "appearance.dock": {
     "label": "독"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "플로팅"
+  },
+  "appearance.unlock": {
+    "label": "잠금 해제"
   },
   "appearance.theme-sync": {
     "label": "Herdr 테마 동기화"

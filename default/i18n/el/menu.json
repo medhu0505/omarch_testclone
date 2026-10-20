@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Φόντο"
   },
-  "appearance.unlock": {
-    "label": "Ξεκλείδωμα"
-  },
   "appearance.font": {
     "label": "Γραμματοσειρά"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Προφύλαξη οθόνης"
-  },
-  "appearance.branding.about": {
-    "label": "Σχετικά"
-  },
-  "appearance.branding.about.text": {
-    "label": "Επεξεργασία κειμένου"
-  },
-  "appearance.branding.about.image": {
-    "label": "Ορισμός από εικόνα"
-  },
-  "appearance.branding.about.default": {
-    "label": "Επαναφορά προεπιλογής"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Επεξεργασία κειμένου"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Ορισμός από εικόνα"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Επαναφορά προεπιλογής"
-  },
-  "appearance.animations": {
-    "label": "Κινήσεις"
   },
   "appearance.top-bar": {
     "label": "Γραμμή μενού"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Δεξιά γραμμή"
   },
+  "appearance.branding.screensaver": {
+    "label": "Προφύλαξη οθόνης"
+  },
+  "appearance.branding.about": {
+    "label": "Σχετικά"
+  },
+  "appearance.branding.about.text": {
+    "label": "Επεξεργασία κειμένου"
+  },
+  "appearance.branding.about.image": {
+    "label": "Ορισμός από εικόνα"
+  },
+  "appearance.branding.about.default": {
+    "label": "Επαναφορά προεπιλογής"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Επεξεργασία κειμένου"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Ορισμός από εικόνα"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Επαναφορά προεπιλογής"
+  },
+  "appearance.animations": {
+    "label": "Κινήσεις"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Αιωρούμενα"
+  },
+  "appearance.unlock": {
+    "label": "Ξεκλείδωμα"
   },
   "appearance.theme-sync": {
     "label": "Συγχρονισμός θέματος Herdr"

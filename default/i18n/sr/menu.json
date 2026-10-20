@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Позадина"
   },
-  "appearance.unlock": {
-    "label": "Откључај"
-  },
   "appearance.font": {
     "label": "Фонт"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Чувар екрана"
-  },
-  "appearance.branding.about": {
-    "label": "О програму"
-  },
-  "appearance.branding.about.text": {
-    "label": "Измени текст"
-  },
-  "appearance.branding.about.image": {
-    "label": "Подеси са слике"
-  },
-  "appearance.branding.about.default": {
-    "label": "Врати подразумевано"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Измени текст"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Подеси са слике"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Врати подразумевано"
-  },
-  "appearance.animations": {
-    "label": "Анимације"
   },
   "appearance.top-bar": {
     "label": "Трака менија"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Десна трака"
   },
+  "appearance.branding.screensaver": {
+    "label": "Чувар екрана"
+  },
+  "appearance.branding.about": {
+    "label": "О програму"
+  },
+  "appearance.branding.about.text": {
+    "label": "Измени текст"
+  },
+  "appearance.branding.about.image": {
+    "label": "Подеси са слике"
+  },
+  "appearance.branding.about.default": {
+    "label": "Врати подразумевано"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Измени текст"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Подеси са слике"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Врати подразумевано"
+  },
+  "appearance.animations": {
+    "label": "Анимације"
+  },
   "appearance.dock": {
     "label": "Док"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Плутајући"
+  },
+  "appearance.unlock": {
+    "label": "Откључај"
   },
   "appearance.theme-sync": {
     "label": "Herdr синхронизација теме"

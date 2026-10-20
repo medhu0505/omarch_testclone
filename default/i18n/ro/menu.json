@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Fundal"
   },
-  "appearance.unlock": {
-    "label": "Deblochează"
-  },
   "appearance.font": {
     "label": "Font"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Economizor ecran"
-  },
-  "appearance.branding.about": {
-    "label": "Despre"
-  },
-  "appearance.branding.about.text": {
-    "label": "Editează textul"
-  },
-  "appearance.branding.about.image": {
-    "label": "Setează din imagine"
-  },
-  "appearance.branding.about.default": {
-    "label": "Restabilește implicit"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Editează textul"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Setează din imagine"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Restabilește implicit"
-  },
-  "appearance.animations": {
-    "label": "Animații"
   },
   "appearance.top-bar": {
     "label": "Bară de meniu"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Bară dreapta"
   },
+  "appearance.branding.screensaver": {
+    "label": "Economizor ecran"
+  },
+  "appearance.branding.about": {
+    "label": "Despre"
+  },
+  "appearance.branding.about.text": {
+    "label": "Editează textul"
+  },
+  "appearance.branding.about.image": {
+    "label": "Setează din imagine"
+  },
+  "appearance.branding.about.default": {
+    "label": "Restabilește implicit"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Editează textul"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Setează din imagine"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Restabilește implicit"
+  },
+  "appearance.animations": {
+    "label": "Animații"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Plutitor"
+  },
+  "appearance.unlock": {
+    "label": "Deblochează"
   },
   "appearance.theme-sync": {
     "label": "Sincronizare temă Herdr"

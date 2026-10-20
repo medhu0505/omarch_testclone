@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Fondo"
   },
-  "appearance.unlock": {
-    "label": "Desbloquear"
-  },
   "appearance.font": {
     "label": "Fuente"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Protector de pantalla"
-  },
-  "appearance.branding.about": {
-    "label": "Acerca de"
-  },
-  "appearance.branding.about.text": {
-    "label": "Editar texto"
-  },
-  "appearance.branding.about.image": {
-    "label": "Desde imagen"
-  },
-  "appearance.branding.about.default": {
-    "label": "Restablecer predeterminado"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Editar texto"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Desde imagen"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Restablecer predeterminado"
-  },
-  "appearance.animations": {
-    "label": "Animaciones"
   },
   "appearance.top-bar": {
     "label": "Barra de menú"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Barra derecha"
   },
+  "appearance.branding.screensaver": {
+    "label": "Protector de pantalla"
+  },
+  "appearance.branding.about": {
+    "label": "Acerca de"
+  },
+  "appearance.branding.about.text": {
+    "label": "Editar texto"
+  },
+  "appearance.branding.about.image": {
+    "label": "Desde imagen"
+  },
+  "appearance.branding.about.default": {
+    "label": "Restablecer predeterminado"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Editar texto"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Desde imagen"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Restablecer predeterminado"
+  },
+  "appearance.animations": {
+    "label": "Animaciones"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Flotante"
+  },
+  "appearance.unlock": {
+    "label": "Desbloquear"
   },
   "appearance.theme-sync": {
     "label": "Sincronizar tema Herdr"

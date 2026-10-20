@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Taust"
   },
-  "appearance.unlock": {
-    "label": "Ava lukk"
-  },
   "appearance.font": {
     "label": "Kirjatüüp"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Ekraanisäästja"
-  },
-  "appearance.branding.about": {
-    "label": "Teave"
-  },
-  "appearance.branding.about.text": {
-    "label": "Muuda teksti"
-  },
-  "appearance.branding.about.image": {
-    "label": "Sea pildist"
-  },
-  "appearance.branding.about.default": {
-    "label": "Taasta vaikimisi"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Muuda teksti"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Sea pildist"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Taasta vaikimisi"
-  },
-  "appearance.animations": {
-    "label": "Animatsioonid"
   },
   "appearance.top-bar": {
     "label": "Menüüriba"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Parem riba"
   },
+  "appearance.branding.screensaver": {
+    "label": "Ekraanisäästja"
+  },
+  "appearance.branding.about": {
+    "label": "Teave"
+  },
+  "appearance.branding.about.text": {
+    "label": "Muuda teksti"
+  },
+  "appearance.branding.about.image": {
+    "label": "Sea pildist"
+  },
+  "appearance.branding.about.default": {
+    "label": "Taasta vaikimisi"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Muuda teksti"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Sea pildist"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Taasta vaikimisi"
+  },
+  "appearance.animations": {
+    "label": "Animatsioonid"
+  },
   "appearance.dock": {
     "label": "Dokk"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Ujuv"
+  },
+  "appearance.unlock": {
+    "label": "Ava lukk"
   },
   "appearance.theme-sync": {
     "label": "Herdr teema sünk"

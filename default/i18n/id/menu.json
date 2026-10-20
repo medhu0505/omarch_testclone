@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Latar Belakang"
   },
-  "appearance.unlock": {
-    "label": "Buka Kunci"
-  },
   "appearance.font": {
     "label": "Font"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Penghemat Layar"
-  },
-  "appearance.branding.about": {
-    "label": "Tentang"
-  },
-  "appearance.branding.about.text": {
-    "label": "Edit Teks"
-  },
-  "appearance.branding.about.image": {
-    "label": "Setel dari Gambar"
-  },
-  "appearance.branding.about.default": {
-    "label": "Pulihkan Bawaan"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Edit Teks"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Setel dari Gambar"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Pulihkan Bawaan"
-  },
-  "appearance.animations": {
-    "label": "Animasi"
   },
   "appearance.top-bar": {
     "label": "Bilah Menu"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Bilah Kanan"
   },
+  "appearance.branding.screensaver": {
+    "label": "Penghemat Layar"
+  },
+  "appearance.branding.about": {
+    "label": "Tentang"
+  },
+  "appearance.branding.about.text": {
+    "label": "Edit Teks"
+  },
+  "appearance.branding.about.image": {
+    "label": "Setel dari Gambar"
+  },
+  "appearance.branding.about.default": {
+    "label": "Pulihkan Bawaan"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Edit Teks"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Setel dari Gambar"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Pulihkan Bawaan"
+  },
+  "appearance.animations": {
+    "label": "Animasi"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Melayang"
+  },
+  "appearance.unlock": {
+    "label": "Buka Kunci"
   },
   "appearance.theme-sync": {
     "label": "Sinkron Tema Herdr"

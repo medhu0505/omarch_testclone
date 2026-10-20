@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Tausta"
   },
-  "appearance.unlock": {
-    "label": "Avaa lukitus"
-  },
   "appearance.font": {
     "label": "Fontti"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Näytönsäästäjä"
-  },
-  "appearance.branding.about": {
-    "label": "Tietoja"
-  },
-  "appearance.branding.about.text": {
-    "label": "Muokkaa tekstiä"
-  },
-  "appearance.branding.about.image": {
-    "label": "Aseta kuvasta"
-  },
-  "appearance.branding.about.default": {
-    "label": "Palauta oletus"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Muokkaa tekstiä"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Aseta kuvasta"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Palauta oletus"
-  },
-  "appearance.animations": {
-    "label": "Animaatiot"
   },
   "appearance.top-bar": {
     "label": "Valikkopalkki"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Oikea palkki"
   },
+  "appearance.branding.screensaver": {
+    "label": "Näytönsäästäjä"
+  },
+  "appearance.branding.about": {
+    "label": "Tietoja"
+  },
+  "appearance.branding.about.text": {
+    "label": "Muokkaa tekstiä"
+  },
+  "appearance.branding.about.image": {
+    "label": "Aseta kuvasta"
+  },
+  "appearance.branding.about.default": {
+    "label": "Palauta oletus"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Muokkaa tekstiä"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Aseta kuvasta"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Palauta oletus"
+  },
+  "appearance.animations": {
+    "label": "Animaatiot"
+  },
   "appearance.dock": {
     "label": "Telakka"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Kelluva"
+  },
+  "appearance.unlock": {
+    "label": "Avaa lukitus"
   },
   "appearance.theme-sync": {
     "label": "Herdr-teeman synkronointi"

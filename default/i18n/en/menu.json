@@ -86,9 +86,6 @@
   "appearance.background": {
     "label": "Background"
   },
-  "appearance.unlock": {
-    "label": "Unlock"
-  },
   "appearance.font": {
     "label": "Font"
   },
@@ -113,36 +110,6 @@
   },
   "appearance.font.cjk.hk": {
     "label": "Hong Kong"
-  },
-  "appearance.branding": {
-    "label": "Branding"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Screensaver"
-  },
-  "appearance.branding.about": {
-    "label": "About"
-  },
-  "appearance.branding.about.text": {
-    "label": "Edit Text"
-  },
-  "appearance.branding.about.image": {
-    "label": "Set From Image"
-  },
-  "appearance.branding.about.default": {
-    "label": "Restore Default"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Edit Text"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Set From Image"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Restore Default"
-  },
-  "appearance.animations": {
-    "label": "Animations"
   },
   "appearance.top-bar": {
     "label": "Menu Bar"
@@ -231,6 +198,36 @@
   "appearance.top-bar.position.right": {
     "label": "Right Bar"
   },
+  "appearance.branding": {
+    "label": "Branding"
+  },
+  "appearance.branding.screensaver": {
+    "label": "Screensaver"
+  },
+  "appearance.branding.about": {
+    "label": "About"
+  },
+  "appearance.branding.about.text": {
+    "label": "Edit Text"
+  },
+  "appearance.branding.about.image": {
+    "label": "Set From Image"
+  },
+  "appearance.branding.about.default": {
+    "label": "Restore Default"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Edit Text"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Set From Image"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Restore Default"
+  },
+  "appearance.animations": {
+    "label": "Animations"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -300,6 +297,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Floating"
+  },
+  "appearance.unlock": {
+    "label": "Unlock"
   },
   "appearance.theme-sync": {
     "label": "Herdr Theme Sync"

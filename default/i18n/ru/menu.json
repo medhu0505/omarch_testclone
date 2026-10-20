@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Фон"
   },
-  "appearance.unlock": {
-    "label": "Разблокировать"
-  },
   "appearance.font": {
     "label": "Шрифт"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Заставка"
-  },
-  "appearance.branding.about": {
-    "label": "О программе"
-  },
-  "appearance.branding.about.text": {
-    "label": "Изменить текст"
-  },
-  "appearance.branding.about.image": {
-    "label": "Задать из изображения"
-  },
-  "appearance.branding.about.default": {
-    "label": "Восстановить по умолчанию"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Изменить текст"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Задать из изображения"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Восстановить по умолчанию"
-  },
-  "appearance.animations": {
-    "label": "Анимации"
   },
   "appearance.top-bar": {
     "label": "Панель меню"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Панель справа"
   },
+  "appearance.branding.screensaver": {
+    "label": "Заставка"
+  },
+  "appearance.branding.about": {
+    "label": "О программе"
+  },
+  "appearance.branding.about.text": {
+    "label": "Изменить текст"
+  },
+  "appearance.branding.about.image": {
+    "label": "Задать из изображения"
+  },
+  "appearance.branding.about.default": {
+    "label": "Восстановить по умолчанию"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Изменить текст"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Задать из изображения"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Восстановить по умолчанию"
+  },
+  "appearance.animations": {
+    "label": "Анимации"
+  },
   "appearance.dock": {
     "label": "Док"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Плавающий"
+  },
+  "appearance.unlock": {
+    "label": "Разблокировать"
   },
   "appearance.theme-sync": {
     "label": "Синхронизация темы Herdr"

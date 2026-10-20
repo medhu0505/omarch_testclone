@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Фон"
   },
-  "appearance.unlock": {
-    "label": "Отключи"
-  },
   "appearance.font": {
     "label": "Шрифт"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Скрийнсейвър"
-  },
-  "appearance.branding.about": {
-    "label": "За"
-  },
-  "appearance.branding.about.text": {
-    "label": "Редактирай текст"
-  },
-  "appearance.branding.about.image": {
-    "label": "От изображение"
-  },
-  "appearance.branding.about.default": {
-    "label": "Възстанови"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Редактирай текст"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "От изображение"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Възстанови"
-  },
-  "appearance.animations": {
-    "label": "Анимации"
   },
   "appearance.top-bar": {
     "label": "Лента"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Дясна лента"
   },
+  "appearance.branding.screensaver": {
+    "label": "Скрийнсейвър"
+  },
+  "appearance.branding.about": {
+    "label": "За"
+  },
+  "appearance.branding.about.text": {
+    "label": "Редактирай текст"
+  },
+  "appearance.branding.about.image": {
+    "label": "От изображение"
+  },
+  "appearance.branding.about.default": {
+    "label": "Възстанови"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Редактирай текст"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "От изображение"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Възстанови"
+  },
+  "appearance.animations": {
+    "label": "Анимации"
+  },
   "appearance.dock": {
     "label": "Док"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Плаващо"
+  },
+  "appearance.unlock": {
+    "label": "Отключи"
   },
   "appearance.theme-sync": {
     "label": "Синхронизация с Herdr"

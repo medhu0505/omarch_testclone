@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Achtergrond"
   },
-  "appearance.unlock": {
-    "label": "Ontgrendelen"
-  },
   "appearance.font": {
     "label": "Lettertype"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Schermbeveiliging"
-  },
-  "appearance.branding.about": {
-    "label": "Over"
-  },
-  "appearance.branding.about.text": {
-    "label": "Tekst bewerken"
-  },
-  "appearance.branding.about.image": {
-    "label": "Uit afbeelding instellen"
-  },
-  "appearance.branding.about.default": {
-    "label": "Standaard herstellen"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Tekst bewerken"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Uit afbeelding instellen"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Standaard herstellen"
-  },
-  "appearance.animations": {
-    "label": "Animaties"
   },
   "appearance.top-bar": {
     "label": "Menubalk"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Balk rechts"
   },
+  "appearance.branding.screensaver": {
+    "label": "Schermbeveiliging"
+  },
+  "appearance.branding.about": {
+    "label": "Over"
+  },
+  "appearance.branding.about.text": {
+    "label": "Tekst bewerken"
+  },
+  "appearance.branding.about.image": {
+    "label": "Uit afbeelding instellen"
+  },
+  "appearance.branding.about.default": {
+    "label": "Standaard herstellen"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Tekst bewerken"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Uit afbeelding instellen"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Standaard herstellen"
+  },
+  "appearance.animations": {
+    "label": "Animaties"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Zwevend"
+  },
+  "appearance.unlock": {
+    "label": "Ontgrendelen"
   },
   "appearance.theme-sync": {
     "label": "Herdr-themasync"

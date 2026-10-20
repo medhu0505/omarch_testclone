@@ -86,38 +86,8 @@
   "appearance.background": {
     "label": "Pozadí"
   },
-  "appearance.unlock": {
-    "label": "Odemknout"
-  },
   "appearance.font": {
     "label": "Písmo"
-  },
-  "appearance.branding.screensaver": {
-    "label": "Spořič obrazovky"
-  },
-  "appearance.branding.about": {
-    "label": "O aplikaci"
-  },
-  "appearance.branding.about.text": {
-    "label": "Upravit text"
-  },
-  "appearance.branding.about.image": {
-    "label": "Nastavit z obrázku"
-  },
-  "appearance.branding.about.default": {
-    "label": "Obnovit výchozí"
-  },
-  "appearance.branding.screensaver.text": {
-    "label": "Upravit text"
-  },
-  "appearance.branding.screensaver.image": {
-    "label": "Nastavit z obrázku"
-  },
-  "appearance.branding.screensaver.default": {
-    "label": "Obnovit výchozí"
-  },
-  "appearance.animations": {
-    "label": "Animace"
   },
   "appearance.top-bar": {
     "label": "Panel"
@@ -206,6 +176,33 @@
   "appearance.top-bar.position.right": {
     "label": "Panel vpravo"
   },
+  "appearance.branding.screensaver": {
+    "label": "Spořič obrazovky"
+  },
+  "appearance.branding.about": {
+    "label": "O aplikaci"
+  },
+  "appearance.branding.about.text": {
+    "label": "Upravit text"
+  },
+  "appearance.branding.about.image": {
+    "label": "Nastavit z obrázku"
+  },
+  "appearance.branding.about.default": {
+    "label": "Obnovit výchozí"
+  },
+  "appearance.branding.screensaver.text": {
+    "label": "Upravit text"
+  },
+  "appearance.branding.screensaver.image": {
+    "label": "Nastavit z obrázku"
+  },
+  "appearance.branding.screensaver.default": {
+    "label": "Obnovit výchozí"
+  },
+  "appearance.animations": {
+    "label": "Animace"
+  },
   "appearance.dock": {
     "label": "Dock"
   },
@@ -272,6 +269,9 @@
   },
   "appearance.workspace-layout.floating": {
     "label": "Plovoucí"
+  },
+  "appearance.unlock": {
+    "label": "Odemknout"
   },
   "appearance.theme-sync": {
     "label": "Synchronizace motivu Herdr"
