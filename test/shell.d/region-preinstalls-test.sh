@@ -8,11 +8,12 @@ require_command lua
 scratch=$(mktemp -d)
 trap 'rm -rf "$scratch"' EXIT
 mkdir -p "$scratch/bin"
-for command in omarchy-shell update-desktop-database mise omarchy-mise-install pkill pgrep; do
+for command in omarchy-shell update-desktop-database mise omarchy-mise-install pgrep; do
   printf '#!/bin/bash\nexit 0\n' >"$scratch/bin/$command"
 done
 # A shell restart has no session to reach during an install; record any attempt.
 printf '#!/bin/bash\necho restart >>"$RESTART_LOG"\n' >"$scratch/bin/omarchy-restart-shell"
+printf '#!/bin/bash\necho "pkill $*" >>"$RESTART_LOG"\n' >"$scratch/bin/pkill"
 # The fonts installed on this machine; Maple Mono NF CN only where the test says so.
 printf '#!/bin/bash\nprintf "JetBrainsMono Nerd Font,JetBrainsMono NF\\n"\n[[ -z ${FONTS_EXTRA:-} ]] || printf "%%s\\n" "$FONTS_EXTRA"\n' >"$scratch/bin/fc-list"
 export RESTART_LOG="$scratch/restarts"
@@ -91,8 +92,12 @@ grep -qx 'font=Maple Mono NF CN:size=9' "$china/.config/foot/foot.ini" || fail "
 grep -qF 'bold = { family = "Maple Mono NF CN", style = "Bold" }' "$china/.config/alacritty/alacritty.toml" || fail "China sets Maple in alacritty and keeps each style"
 grep -qx 'font_family Maple Mono NF CN' "$china/.config/kitty/kitty.conf" || fail "China sets Maple in kitty"
 grep -q '<string>Maple Mono NF CN</string>' "$china/.config/fontconfig/fonts.conf" || fail "China makes Maple the fontconfig monospace"
-[[ ! -e $RESTART_LOG ]] || fail "an install sets the font without restarting a shell"
-pass "a China install sets Maple Mono NF CN in every terminal and fontconfig, with no shell restart"
+[[ ! -e $RESTART_LOG ]] || fail "an install sets the font without restarting a shell or signalling terminals" "$(cat "$RESTART_LOG")"
+owner=$(new_home owner)
+HOME="$owner" FONTS_EXTRA="Maple Mono NF CN" OMARCHY_SETUP_CONTEXT=provision-owner omarchy-region-preinstalls cn
+grep -q '<string>Maple Mono NF CN</string>' "$owner/.config/fontconfig/fonts.conf" && [[ ! -e $RESTART_LOG ]] ||
+  fail "first-boot owner setup sets Maple the same way, headless"
+pass "a China install sets Maple Mono NF CN in every terminal and fontconfig, with no shell restart or terminal signal"
 
 no_maple=$(new_home no-maple)
 HOME="$no_maple" OMARCHY_SETUP_CONTEXT=iso-chroot omarchy-region-preinstalls cn
