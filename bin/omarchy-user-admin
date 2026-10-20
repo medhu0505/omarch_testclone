@@ -85,8 +85,12 @@ if [[ $state == "off" && $current == "off" ]]; then
   exit 0
 fi
 
+[[ $state == "on" || $name != "$self" ]] || fail "you can't take away your own administrator rights; ask another administrator"
+
+as_root true || fail "couldn't get administrator rights (sudo)"
+user_accounts_lock || fail "another account change is in progress; try again when it's done"
+
 if [[ $state == "off" ]]; then
-  [[ $name != "$self" ]] || fail "you can't take away your own administrator rights; ask another administrator"
   other_admins=$(user_accounts_admins | grep -vxF -- "$name" || true)
   [[ -n $other_admins ]] || fail "'$name' is the last administrator; make someone else an administrator first"
   # Membership through the primary group can't be dropped with gpasswd.
@@ -95,8 +99,6 @@ if [[ $state == "off" ]]; then
     fail "wheel is $name's primary group; change it first (sudo usermod -g $name $name)"
   fi
 fi
-
-as_root true || fail "couldn't get administrator rights (sudo)"
 
 if [[ $state == "on" ]]; then
   # Also for a wheel member: wheel alone gives no sudo on an install that
@@ -112,6 +114,7 @@ if [[ $state == "on" ]]; then
 else
   as_root gpasswd -d "$name" wheel >/dev/null
   user_accounts_drop_installer_grants "$name"
+  user_accounts_drop_passwordless_grants "$name" "$(getent passwd "$name" | cut -d: -f3)"
   user_accounts_log "administrator rights taken from login user '$name' by $self"
   if user_accounts_has_full_sudo "$name"; then
     fail "$name is out of wheel, but another sudo rule still gives them full sudo; see sudo -l -U $name"

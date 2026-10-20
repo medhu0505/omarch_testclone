@@ -154,6 +154,43 @@ user_accounts_login_count() {
   user_accounts_login_users | wc -l
 }
 
+# One change to the accounts at a time: what a command checks (how many
+# accounts there are, who the administrators are) must still hold when it
+# acts, so the checks and the changes happen under one machine-wide lock.
+# The file is root's; holding the lock only needs it open, so this comes
+# after sudo is open and before any check.
+user_accounts_lock() {
+  local lock=${OMARCHY_USER_LOCK:-/run/lock/omarchy-user.lock}
+  if ! as_root test -e "$lock"; then
+    as_root sh -c 'umask 022 && : >"$1"' _ "$lock" || return 1
+  fi
+  exec {user_accounts_lock_fd}<"$lock" || return 1
+  flock -n "$user_accounts_lock_fd"
+}
+
+# The lowest free UID that owns nothing under /home, so the files of an
+# account whose home folder was kept never pass to a later account.
+user_accounts_free_uid() {
+  local uid_min uid_max
+  uid_min=$(user_accounts_login_def UID_MIN 1000)
+  uid_max=$(user_accounts_login_def UID_MAX 60000)
+  { getent passwd | cut -d: -f3; stat -c '%u' "${OMARCHY_HOME_ROOT:-/home}"/* 2>/dev/null; } |
+    awk -v min="$uid_min" -v max="$uid_max" '{ taken[$1] = 1 } END { for (uid = min; uid <= max; uid++) if (!(uid in taken)) { print uid; exit } }' |
+    grep .
+}
+
+# Omarchy's passwordless-sudo grants (omarchy-sudo-passwordless) name the
+# account by UID, so a UID handed to a later account would carry them along.
+user_accounts_drop_passwordless_grants() { # NAME UID
+  local file
+  for file in "$(user_accounts_sudoers_dir)/99-omarchy-nopasswd-$2" "$(user_accounts_sudoers_dir)/99-omarchy-permanent-nopasswd-$2"; do
+    if as_root test -e "$file"; then
+      as_root rm -f "$file"
+      user_accounts_log "removed the passwordless sudo grant of '$1' ($file)"
+    fi
+  done
+}
+
 # The LUKS device holding /, or nothing on an unencrypted install: the walk
 # omarchy-drive-password does. Like it, this fails when / sits on an encryption
 # layer whose LUKS device can't be told, because then nobody can say which

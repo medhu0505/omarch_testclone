@@ -87,6 +87,13 @@ if (( $(user_accounts_login_count) == 1 )); then
 else
   as_root true || fail "couldn't get administrator rights (sudo)"
 fi
+user_accounts_lock || fail "another account change is in progress; try again when it's done"
+# The count was read before the lock; it decides the whole course, so it must
+# still hold.
+count=$(user_accounts_login_count)
+if (( second_account ? count != 1 : count == 1 )); then
+  fail "the accounts changed meanwhile; run this again"
+fi
 
 if [[ -n $name ]]; then
   problem=$(name_problem "$name")
@@ -133,21 +140,29 @@ else
 fi
 [[ -n $password ]] || fail "the password can't be empty"
 
-if (( second_account )); then
-  user_accounts_go_multi "$(user_accounts_self)" "$mine" || fail "the second account couldn't be set up, so '$name' was not added"
-fi
-
 groups=()
 if [[ $admin == "yes" ]]; then
   user_accounts_ensure_wheel_sudo || fail "couldn't give the wheel group sudo, so '$name' was not added"
   groups=(-G wheel)
 fi
 
-as_root useradd -m -s /bin/bash "${groups[@]}" "$name"
+# The account first: creating it is cheap and undone with one command, so if
+# the switch to several accounts stops partway, the account is taken away
+# again and the machine isn't left switched for an account that doesn't exist.
+# A UID that owns nothing under /home, so a kept home folder never passes on.
+uid=$(user_accounts_free_uid) || fail "no free UID for '$name'"
+as_root useradd -m -s /bin/bash -u "$uid" "${groups[@]}" "$name" || fail "couldn't create '$name'"
 
 if ! printf '%s:%s\n' "$name" "$password" | as_root chpasswd; then
   as_root userdel -r "$name" 2>/dev/null || true
   fail "couldn't set the password, so '$name' was not added"
+fi
+
+# Every step of the switch can be repeated, so running this again after a
+# stop continues where it left off.
+if (( second_account )) && ! user_accounts_go_multi "$(user_accounts_self)" "$mine"; then
+  as_root userdel -r "$name" 2>/dev/null || true
+  fail "the switch to several accounts didn't finish, so '$name' was not added; run this again to continue"
 fi
 
 user_accounts_log "login user '$name' added by $(user_accounts_self) (administrator: $admin)"

@@ -100,15 +100,36 @@ if (( $(user_accounts_login_count) == 2 )); then
 else
   as_root true || fail "couldn't get administrator rights (sudo)"
 fi
+user_accounts_lock || fail "another account change is in progress; try again when it's done"
+# What was checked before the lock must still hold.
+getent passwd "$name" >/dev/null || fail "there is no user '$name'"
+if user_accounts_is_admin "$name" && [[ -z $(user_accounts_admins | grep -vxF -- "$name" || true) ]]; then
+  fail "'$name' is the last administrator; make someone else an administrator first"
+fi
+count=$(user_accounts_login_count)
+if [[ -n $last_password ]]; then
+  (( count == 2 )) || fail "the accounts changed meanwhile; run this again"
+else
+  (( count != 2 )) || fail "the accounts changed meanwhile; run this again"
+fi
 
 home=$(getent passwd "$name" | cut -d: -f6)
+uid=$(getent passwd "$name" | cut -d: -f3)
 if (( delete_home )); then
   confirm "$(omarchy-i18n user.removeAndDelete "$name" "$home")" || fail "cancelled"
 else
   confirm "$(omarchy-i18n user.removeKeepHome "$name" "$home")" || fail "cancelled"
 fi
 
-# Switch back to one account before anything is signed out or removed. Every
+# userdel refuses while the account has programs running. Ask now, so every
+# question is answered before anything changes.
+sign_out=0
+if user_accounts_has_programs "$name"; then
+  confirm "$(omarchy-i18n user.signOutRunning "$name")" || fail "cancelled"
+  sign_out=1
+fi
+
+# Switch back to one account before anyone is signed out or removed. Every
 # step of the switch can be repeated, and the account is still there until it's
 # done, so if anything stops this midway (a closed terminal, a wrong disk
 # password, a power cut), running the same command again finishes the job.
@@ -117,9 +138,7 @@ if [[ -n $last_password ]]; then
     fail "couldn't switch back to one account, so '$name' was not removed; run this again to finish"
 fi
 
-# userdel refuses while the account has programs running.
-if user_accounts_has_programs "$name"; then
-  confirm "$(omarchy-i18n user.signOutRunning "$name")" || fail "cancelled"
+if (( sign_out )); then
   as_root loginctl disable-linger "$name" 2>/dev/null || true
   user_accounts_sign_out "$name" || fail "'$name' still has programs running; try again in a moment"
 fi
@@ -137,8 +156,10 @@ if [[ -n $output ]]; then
   grep -v 'mail spool' <<<"$output" >&2 || true
 fi
 
-# A sudo grant naming the account would pass to a later user given the name.
+# A sudo grant naming the account would pass to a later user given the name,
+# and a passwordless grant naming its UID to one given the UID.
 user_accounts_drop_installer_grants "$name"
+user_accounts_drop_passwordless_grants "$name" "$uid"
 
 if (( delete_home )); then
   user_accounts_log "login user '$name' removed by $self, home folder deleted"

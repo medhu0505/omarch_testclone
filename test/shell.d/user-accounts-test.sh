@@ -55,23 +55,41 @@ SH
 cat >"$mock_bin/useradd" <<'SH'
 #!/bin/bash
 echo "useradd $*" >>"$OMARCHY_TEST_DIR/calls.log"
-groups="" shell=""
+groups="" shell="" uid=""
 while (( $# > 1 )); do
   case "$1" in
   -m) ;;
   -s) shell="$2"; shift ;;
   -G) groups="$2"; shift ;;
+  -u) uid="$2"; shift ;;
   esac
   shift
 done
 name="$1"
-uid=$(awk -F: '$3 >= 1000 && $3 < 60000 && $3 > max { max = $3 } END { print max + 1 }' "$OMARCHY_TEST_DIR/passwd")
+[[ -z ${OMARCHY_TEST_USERADD_FAIL:-} ]] || { echo "useradd: cannot create $name" >&2; exit 1; }
+# Like the real one: the lowest free UID.
+[[ -n $uid ]] || uid=$(awk -F: '$3 >= 1000 && $3 < 60000 { taken[$3] = 1 } END { for (u = 1000; u in taken; u++); print u }' "$OMARCHY_TEST_DIR/passwd")
 mkdir -p "$OMARCHY_TEST_DIR/home/$name"
+echo "$name $uid" >>"$OMARCHY_TEST_DIR/home_owners"
 echo "$name:x:$uid:$uid::$OMARCHY_TEST_DIR/home/$name:$shell" >>"$OMARCHY_TEST_DIR/passwd"
 echo "$name:x:$uid:" >>"$OMARCHY_TEST_DIR/group"
 if [[ $groups == "wheel" ]]; then
   sed -i -E "/^wheel:/ { s/:$/:$name/; t; s/$/,$name/ }" "$OMARCHY_TEST_DIR/group"
 fi
+SH
+
+# Home folders keep their owner's UID (recorded in home_owners) after the
+# account is gone; anything else stat answers for real.
+cat >"$mock_bin/stat" <<'SH'
+#!/bin/bash
+if [[ $1 == "-c" && $2 == "%u" ]]; then
+  shift 2
+  for dir in "$@"; do
+    awk -v name="${dir##*/}" '$1 == name { print $2; found = 1 } END { if (!found) print 0 }' "$OMARCHY_TEST_DIR/home_owners"
+  done
+  exit 0
+fi
+exec /usr/bin/stat "$@"
 SH
 
 cat >"$mock_bin/chpasswd" <<'SH'
@@ -221,6 +239,7 @@ reset_fixtures() {
   echo "alice ALL=(ALL) ALL" >"$test_tmp/sudoers.d/04_alice"
   : >"$test_tmp/calls.log"
   : >"$test_tmp/journal"
+  printf 'alice 1000\nbob 1001\n' >"$test_tmp/home_owners"
   : >"$test_tmp/procs"
   : >"$test_tmp/outside_session"
   : >"$test_tmp/answers"
@@ -258,7 +277,7 @@ run_user() {
   shift
   PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_LANGUAGE_FILE=/nonexistent OMARCHY_TEST_DIR="$test_tmp" \
     SUDO_USER=${RUN_AS:-alice} OMARCHY_LOGIN_DEFS=/dev/null OMARCHY_SUDOERS_DIR="$test_tmp/sudoers.d" \
-    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" \
+    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" OMARCHY_USER_LOCK="$test_tmp/user.lock" OMARCHY_HOME_ROOT="$test_tmp/home" \
     "$ROOT/bin/omarchy-user-$command" "$@"
 }
 
@@ -511,7 +530,7 @@ run_tty() {
   printf -v cmd '%q ' "$ROOT/bin/omarchy-user-$command" "$@"
   PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_LANGUAGE_FILE=/nonexistent OMARCHY_TEST_DIR="$test_tmp" \
     SUDO_USER=${RUN_AS:-alice} OMARCHY_LOGIN_DEFS=/dev/null OMARCHY_SUDOERS_DIR="$test_tmp/sudoers.d" \
-    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" \
+    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" OMARCHY_USER_LOCK="$test_tmp/user.lock" OMARCHY_HOME_ROOT="$test_tmp/home" \
     script -qefc "$cmd" /dev/null </dev/null >"$test_tmp/tty.out" 2>&1
   status=$?
   tr -d '\r' <"$test_tmp/tty.out"
@@ -796,3 +815,74 @@ output=$(run_tty remove bob) || fail "back to one account on an unencrypted inst
 [[ $output == *"root will have your password again"* && $output != *"logged in automatically"* ]] ||
   fail "an unencrypted install is told only about root" "$output"
 pass "an unencrypted install is promised only what happens"
+
+# One account change at a time: a held lock turns the commands away.
+reset_fixtures
+exec 8<>"$test_tmp/user.lock"
+flock -x 8
+for command in "add carol --password-stdin" "remove bob --yes" "admin bob on"; do
+  if output=$(run_user $command <<<"carolpw" 2>&1); then fail "$command runs while another account change holds the lock"; fi
+  [[ $output == *"another account change is in progress"* ]] || fail "$command says another change is in progress" "$output"
+done
+exec 8<&-
+! has_user carol && has_user bob && ! grep -q "useradd\|userdel\|gpasswd" "$test_tmp/calls.log" ||
+  fail "a held lock stops every change" "$(cat "$test_tmp/calls.log")"
+pass "one account change at a time"
+
+# A kept home folder keeps its owner's UID, so a later account never gets
+# that UID (and with it the files).
+reset_fixtures
+output=$(run_user remove bob --yes 2>&1) || fail "remove keeps the home folder" "$output"
+[[ -d $test_tmp/home/bob ]] || fail "remove keeps the home folder"
+output=$(run_user add carol --password-stdin <<<"carolpw" 2>&1) || fail "add after a kept home" "$output"
+[[ $(grep "^carol:" "$test_tmp/passwd" | cut -d: -f3) == "1003" ]] ||
+  fail "a new account never gets the UID of a kept home folder" "$(cat "$test_tmp/passwd")"
+grep -q "useradd .*-u 1003 " "$test_tmp/calls.log" || fail "the UID is chosen by omarchy user add" "$(cat "$test_tmp/calls.log")"
+pass "a new account never gets the UID of a kept home folder"
+
+# Passwordless-sudo grants name the account by UID and would pass on with it.
+for command in "remove bob --delete-home --yes" "admin bob off"; do
+  reset_fixtures
+  sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
+  echo "bob ALL=(ALL) NOPASSWD: ALL" >"$test_tmp/sudoers.d/99-omarchy-nopasswd-1001"
+  echo "bob ALL=(ALL) NOPASSWD: ALL" >"$test_tmp/sudoers.d/99-omarchy-permanent-nopasswd-1001"
+  echo "carl ALL=(ALL) NOPASSWD: ALL" >"$test_tmp/sudoers.d/99-omarchy-nopasswd-1004"
+  output=$(run_user $command 2>&1) || fail "$command with passwordless grants" "$output"
+  [[ ! -e $test_tmp/sudoers.d/99-omarchy-nopasswd-1001 && ! -e $test_tmp/sudoers.d/99-omarchy-permanent-nopasswd-1001 ]] ||
+    fail "$command drops bob's passwordless sudo grants" "$(ls "$test_tmp/sudoers.d")"
+  [[ -e $test_tmp/sudoers.d/99-omarchy-nopasswd-1004 ]] || fail "$command leaves other accounts' grants alone"
+  grep -q "passwordless sudo grant of 'bob'" "$test_tmp/journal" || fail "$command logs the dropped grant" "$(cat "$test_tmp/journal")"
+done
+pass "removal and demotion drop the account's passwordless sudo grants"
+
+# Every question is answered before anything changes: declining to sign the
+# other account out leaves the machine as it was, still multi-user.
+two_accounts
+touch "$test_tmp/encrypted"
+echo bob >"$test_tmp/procs"
+answers alicepw yes no
+if output=$(run_tty remove bob); then fail "declining the sign-out stops the removal"; fi
+has_user bob && [[ $(cat "$test_tmp/root_status") == "L" && ! -e $test_tmp/autologin.conf && $(cat "$test_tmp/disk_password") == "sharedpw" ]] &&
+  ! grep -q "terminate-user\|userdel" "$test_tmp/calls.log" ||
+  fail "declining the sign-out changes nothing" "$output; $(cat "$test_tmp/calls.log")"
+pass "declining the sign-out leaves the machine multi-user"
+
+# The account comes first and the switch second, so a failed creation leaves
+# the machine as it was, and a stopped switch takes the account away again.
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers yes alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
+if output=$(OMARCHY_TEST_USERADD_FAIL=1 run_tty add carol); then fail "a failed useradd fails the command"; fi
+[[ $(cat "$test_tmp/root_status") == "P" && -e $test_tmp/autologin.conf && $(cat "$test_tmp/disk_password") == "alicepw" ]] &&
+  ! grep -q "omarchy-drive-password" "$test_tmp/calls.log" ||
+  fail "a failed useradd leaves the machine unswitched" "$output; $(cat "$test_tmp/calls.log")"
+pass "an account that can't be created leaves the machine as it was"
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers yes alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
+if output=$(OMARCHY_TEST_DRIVE_NOOP=1 run_tty add carol); then fail "a stopped switch fails the command"; fi
+! has_user carol && grep -q "userdel -r carol" "$test_tmp/calls.log" && [[ $output == *"run this again to continue"* ]] ||
+  fail "a stopped switch takes the account away again" "$output; $(cat "$test_tmp/calls.log")"
+pass "a stopped switch takes the new account away again"
