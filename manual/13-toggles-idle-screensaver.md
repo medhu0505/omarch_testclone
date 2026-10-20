@@ -38,7 +38,7 @@ The flags are named for the off state — `screensaver-off`, `suspend-off`, `bar
 
 When a mode is on, you get a small glyph in the middle of the top bar next to the clock. That's the indicators widget, and it carries dictation, screen recording, pending reminders, night light, do not disturb, and stay awake.
 
-Inactive indicators are hidden. Hover the area around them and they fade in dimmed, so you can click one to turn it on without knowing its hotkey. Clicking an active one turns it back off. If you'd rather see all of them all the time, set `alwaysShow` to `true` on the `omarchy.indicators` entry in `~/.config/omarchy/shell.json` — see [the top bar](05-the-top-bar.md) for how bar widgets are configured.
+Inactive indicators are hidden. Hover anywhere on the bar and they fade in dimmed, so you can click one to turn it on without knowing its hotkey. Clicking an active one turns it back off. If you'd rather see all of them all the time, set `alwaysShow` to `true` on the `omarchy.indicators` entry in `~/.config/omarchy/shell.json` — see [the top bar](05-the-top-bar.md) for how bar widgets are configured.
 
 ### Night light
 
@@ -59,7 +59,7 @@ Then start hyprsunset at login by adding `o.launch_on_start("hyprsunset")` to `~
 
 `Super + Ctrl + ,` silences notifications. No toasts pop up while it's on, and the crossed-out bell indicator sits in the bar to remind you why the desktop has gone quiet.
 
-Nothing is lost, though. A silenced notification is written straight into your notification history, which is exactly the record you want when you come back and wonder what you missed. Open it with `Super + Shift + Alt + ,`. See [notices](10-notices.md) for the rest of the notification story.
+Nothing is lost, though. Silenced notifications are held back: right-click the bell to read what came in, or put the last few back on screen with `Super + Shift + Alt + ,`. See [notices](10-notices.md) for the rest, including snoozing just one app.
 
 Two kinds of message still get through: Omarchy's own confirmation toasts for something you just did ("Theme changed", "Screenshot saved"), and critical alerts sent from the command line. Chat apps that mark everything critical to force their way in front of you don't qualify.
 
