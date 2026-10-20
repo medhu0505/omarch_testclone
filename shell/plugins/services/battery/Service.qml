@@ -10,6 +10,7 @@ Item {
 
   property var shell: null
   property string omarchyPath: Quickshell.env("OMARCHY_PATH")
+  readonly property var notificationService: shell ? shell.firstPartyServiceFor("omarchy.notifications") : null
 
   readonly property int batteryThreshold: 10
   property string pendingPowerSource: ""
@@ -52,6 +53,10 @@ Item {
     warningProcess.running = true
   }
 
+  function dismissLowBatteryWarning() {
+    if (!UPower.onBattery && root.notificationService) root.notificationService.dismissLowBattery()
+  }
+
   function applyPowerProfile() {
     pendingPowerSource = UPower.onBattery ? "battery" : "ac"
     if (!powerProfileProcess.running) runPendingPowerProfile()
@@ -83,7 +88,10 @@ Item {
     }
   }
 
-  Process { id: warningProcess }
+  Process {
+    id: warningProcess
+    stdout: SplitParser { onRead: Qt.callLater(root.dismissLowBatteryWarning) }
+  }
 
   Process {
     id: powerProfileProcess
@@ -137,6 +145,7 @@ Item {
     target: UPower
     function onOnBatteryChanged() {
       root.checkBattery()
+      root.dismissLowBatteryWarning()
       root.applyPowerProfile()
       root.refreshPowerProfile()
     }

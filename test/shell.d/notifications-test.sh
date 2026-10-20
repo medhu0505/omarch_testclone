@@ -6,7 +6,9 @@ source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
 run_node_test <<'JS'
 const fs = require('fs')
+const vm = require('vm')
 const notifications = requireFromRoot('shell/plugins/notifications/NotificationLogic.js')
+const notificationServiceSource = fs.readFileSync(root + '/shell/plugins/notifications/Service.qml', 'utf8')
 
 assert(notifications.isChromiumDerived('Brave Browser', ''), 'notifications detect chromium-derived apps by name')
 assert(notifications.isChromiumDerived('', 'microsoft-edge'), 'notifications detect chromium-derived apps by icon')
@@ -190,9 +192,19 @@ assert(!notifications.shouldRenderCompactGlyph('K', 'file:///tmp/image.png', tru
 assert(notifications.shouldBypassDnd({ appName: 'omarchy-action', urgency: 1 }, 2), 'omarchy action toasts bypass DND')
 assert(notifications.shouldBypassDnd({ appName: 'notify-send', urgency: 2 }, 2), 'critical notify-send bypasses DND')
 assert(!notifications.shouldBypassDnd({ appName: 'notify-send', urgency: 1 }, 2), 'normal notify-send does not bypass DND')
+assert(notifications.shouldBypassDnd({ appName: 'omarchy-battery-low', urgency: 2 }, 2), 'critical low battery warnings bypass DND')
+assert(!notifications.shouldBypassDnd({ appName: 'omarchy-battery-low', urgency: 1 }, 2), 'noncritical low battery warnings remain silenced by DND')
 assert(!notifications.shouldBypassDnd({ appName: 'Slack', urgency: 2 }, 2), 'critical app notifications do not bypass DND')
+assert(notifications.isEphemeralApp('omarchy-battery-low'), 'DND-silenced low battery warnings do not add notification history')
 assert(!notifications.shouldBypassDnd({ appName: 'omarchy-menu-keybindings', urgency: 1 }, 2), 'omarchy command app names do not bypass DND')
 assert(!notifications.isEphemeralApp('omarchy-menu-keybindings'), 'notifications treat omarchy command app names as normal apps')
+
+const serviceBypassBody = /function shouldBypassDnd\(notification\) \{([\s\S]*?)\n  \}/.exec(notificationServiceSource)[1]
+const serviceBypass = vm.runInNewContext(`(function(notification) { ${serviceBypassBody} })`, {
+  NotificationLogic: notifications,
+  NotificationUrgency: { Critical: 2 }
+})
+assert(serviceBypass({ appName: 'omarchy-battery-low', urgency: 2 }), 'notification service applies its critical DND policy to the battery sender')
 
 // The click action's argv form: parsed from the persisted omarchy-exec-argv
 // JSON only when it is a non-empty array of strings whose program is present

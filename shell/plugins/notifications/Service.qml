@@ -88,6 +88,15 @@ Item {
     persisted.doNotDisturb = !!value
   }
 
+  function dismissLowBattery() {
+    for (var i = popupModel.count - 1; i >= 0; i--) {
+      var row = popupModel.get(i)
+      if (row && row.app === "omarchy-battery-low") {
+        service.dismissPopup(i)
+      }
+    }
+  }
+
   // popupModel feeds the on-screen toast stack — the only model the service
   // keeps. Everything a toast leaves behind lives on disk under historyDir.
   //
@@ -132,6 +141,7 @@ Item {
   //     Trusted because it's almost always omarchy or system shell scripts —
   //     chat apps set app_name to their brand (Discord/Slack/Vesktop), which
   //     falls outside this rule.
+  //   - urgency=critical AND app_name=omarchy-battery-low: the battery alert.
   function shouldBypassDnd(notification) {
     return NotificationLogic.shouldBypassDnd(notification, NotificationUrgency.Critical)
   }
@@ -147,6 +157,7 @@ Item {
   //     ephemeral test/feedback noise)
   //   - app_name is "omarchy-action" (Omarchy's own user-action toasts —
   //     the user just triggered them)
+  //   - app_name is "omarchy-battery-low" (the low battery warning)
   // Their toasts still land in history like any other once they've been on
   // screen; the distinction only decides whether a DND-silenced one is worth
   // recording at all.

@@ -118,12 +118,13 @@ function summaryStartsWithGlyph(summary) {
 function shouldBypassDnd(notification, criticalUrgency) {
   var appName = String((notification && notification.appName) || "")
   if (appName === "omarchy-action") return true
-  return appName === "notify-send" && notification && notification.urgency === criticalUrgency
+  return notification && notification.urgency === criticalUrgency
+    && (appName === "notify-send" || appName === "omarchy-battery-low")
 }
 
 function isEphemeralApp(appName) {
   var name = String(appName || "")
-  return name === "notify-send" || name === "omarchy-action"
+  return name === "notify-send" || name === "omarchy-action" || name === "omarchy-battery-low"
 }
 
 function stringHint(hints, name) {
