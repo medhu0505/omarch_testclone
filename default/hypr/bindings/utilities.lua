@@ -10,9 +10,6 @@ o.bind("XF86PowerOff", "Power menu", { menu = "system" }, { locked = true })
 o.bind("SUPER + K", "Keybindings", "omarchy-menu-keybindings")
 o.bind("SUPER + ALT + K", "Tmux keybindings", "omarchy-menu-tmux-keybindings")
 o.bind("SUPER + CTRL + K", "Herdr keybindings", "omarchy-menu-herdr-keybindings")
-o.bind("SUPER + CTRL + Q", "Calculator", "omacalc")
-o.bind("XF86Calculator", "Calculator", "omacalc")
-
 o.bind_toggle("SUPER + SHIFT + SPACE", "Toggle top bar", "bar")
 o.bind("SUPER + CTRL + SPACE", "Background switcher", { menu = "background" })
 o.bind("SUPER + SHIFT + CTRL + SPACE", "Theme menu", { menu = "theme" })
@@ -39,6 +36,7 @@ o.bind("switch:on:Apple SMC power/lid events", nil, "omarchy-system-lid-close", 
 o.bind("switch:off:Apple SMC power/lid events", nil, "omarchy-hyprland-monitor-clamshell", { locked = true })
 
 o.bind("PRINT", "Screenshot", "omarchy-capture-screenshot")
+o.bind("SUPER + CTRL + ALT + C", "Screenshot", "omarchy-capture-screenshot")
 o.bind("ALT + PRINT", "Screenrecording", "omarchy-capture-screenrecording --stop-recording || omarchy-menu toggle trigger.capture.screenrecord")
 o.bind("SUPER + ALT + code:34", "Make webcam overlay smaller", "omarchy-capture-webcam-resize smaller")
 o.bind("SUPER + ALT + code:35", "Make webcam overlay larger", "omarchy-capture-webcam-resize larger")
@@ -105,7 +103,7 @@ o.bind("SUPER + CTRL + ALT + D", "Calendar", { panel = "omarchy.clock" })
 o.bind("SUPER + CTRL + ALT + E", "World clock", { panel = "omarchy.elsewhen" })
 o.bind("SUPER + CTRL + W", "Network", { panel = "omarchy.network" })
 o.bind("SUPER + CTRL + P", "Power", { panel = "omarchy.power" })
-o.bind("SUPER + CTRL + T", "Activity", { tui = "btop" })
+o.bind("SUPER + SHIFT + T", "Activity", { tui = "btop" })
 
 -- The letters above name a panel; the numbers count them. 1 is the leftmost
 -- panel in the bar's right section, and a widget with no panel of its own (the

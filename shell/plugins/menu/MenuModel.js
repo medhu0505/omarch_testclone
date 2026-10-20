@@ -402,6 +402,7 @@ function displayRow(items, itemOrder, checkedResults, disabledResults, entry, de
 // memo never survives to the expression after it.
 var GUARD_READERS = [
   "omarchy-bar background",
+  "omarchy-bar get omarchy.power showPercentage",
   "omarchy-bar get omarchy.clock format",
   "omarchy-bar get omarchy.clock verticalFormat",
   "omarchy-bar position",
@@ -417,7 +418,9 @@ var GUARD_READERS = [
   "omarchy-hyprland-corners",
   "omarchy-hyprland-window-transparency",
   "omarchy-hyprland-workspace-layout-default",
-  "omarchy-region-current"
+  "omarchy-region-current",
+  "omarchy-shell notifications isDnd",
+  "omarchy-toggle-nightlight --status"
 ]
 
 // Package and command presence account for most of what the guards ask, and

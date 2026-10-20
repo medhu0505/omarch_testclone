@@ -11,6 +11,8 @@ if o.preinstalled_bindings_enabled() then
   -- Bindings for preinstalled Omarchy applications, TUIs, and web apps.
   o.bind_preinstalled("SUPER + ALT + RETURN", "Tmux", { omarchy = "terminal-tmux" })
   o.bind_preinstalled("SUPER + CTRL + RETURN", "Herdr", { omarchy = "terminal-herdr" })
+  o.bind_preinstalled("SUPER + SHIFT + Q", "Calculator", "omacalc")
+  o.bind_preinstalled("XF86Calculator", "Calculator", "omacalc")
   o.bind_preinstalled("SUPER + SHIFT + M", "Music", { omarchy = "spotify" })
   o.bind_preinstalled("SUPER + SHIFT + ALT + M", "Music TUI", { tui = "cliamp", focus = true })
   if o.cmd_present("lazydocker") then
