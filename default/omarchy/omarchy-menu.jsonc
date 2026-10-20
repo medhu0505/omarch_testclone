@@ -103,7 +103,7 @@
   "appearance.top-bar.position.bottom": {"icon":"󰁅","label":"Bottom Bar","action":"omarchy-bar position bottom"},
   "appearance.top-bar.position.left": {"icon":"󰁍","label":"Left Bar","action":"omarchy-bar position left"},
   "appearance.top-bar.position.right": {"icon":"󰁔","label":"Right Bar","action":"omarchy-bar position right"},
-  "appearance.dock": {"icon":"󱂩","label":"Dock"},
+  "appearance.dock": {"icon":"󱂩","label":"Dock","when":"[[ $(omarchy-hyprland-workspace-layout-current) == \"floating\" ]]"},
   "appearance.dock.autohide": {"icon":"󰈉","label":"Auto-hide Dock","when":"[[ $(omarchy-dock autohide) == \"off\" ]]","action":"omarchy-dock autohide on"},
   "appearance.dock.always-on": {"icon":"󰈈","label":"Always-on Dock","when":"[[ $(omarchy-dock autohide) == \"on\" ]]","action":"omarchy-dock autohide off"},
   "appearance.dock.position": {"icon":"","label":"Dock Position"},
