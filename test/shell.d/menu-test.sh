@@ -153,6 +153,10 @@ assert(
   /disabled: !prompt,/.test(menuQml) && /itemId: "agent\.prompt",/.test(menuQml),
   'menu keeps the agent row unselectable until a prompt is typed'
 )
+assert(
+  /function loadProvidersForSearch\(\) \{[^}]*?if \(root\.isAgentPromptQuery\(\)\) return/.test(menuQml),
+  'menu starts no provider work for an agent prompt, whichever path asks'
+)
 
 assertDeepEqual(
   menu.displayRow(merged.items, merged.itemOrder, {}, {}, entry, 'Style', 12, 'search'),

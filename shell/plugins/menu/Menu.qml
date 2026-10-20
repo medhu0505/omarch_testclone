@@ -505,6 +505,9 @@ Item {
   }
 
   function loadProvidersForSearch() {
+    // A "!" query launches the agent; it never lists rows, so the provider
+    // work search would start is work nothing will ever show.
+    if (root.isAgentPromptQuery()) return
     var active = root.item(root.activeMenu) ? root.activeMenu : "root"
 
     for (var i = 0; i < root.itemOrder.length; i++) {
@@ -847,7 +850,7 @@ Item {
     root.selectedIndex = 0
     root.cursorActive = root.mode !== "input"
     root.disarmPointer()
-    if (!root.dmenuActive && root.filterText.trim() && !root.isAgentPromptQuery()) root.loadProvidersForSearch()
+    if (!root.dmenuActive && root.filterText.trim()) root.loadProvidersForSearch()
     root.rebuildDisplay()
   }
 
