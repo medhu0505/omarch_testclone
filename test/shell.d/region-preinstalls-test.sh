@@ -13,6 +13,8 @@ for command in omarchy-shell update-desktop-database mise omarchy-mise-install; 
 done
 chmod +x "$scratch/bin"/*
 export OMARCHY_PATH="$ROOT" PATH="$scratch/bin:$ROOT/bin:$PATH"
+# Every command finds its state under the test home, never the caller's.
+unset XDG_STATE_HOME
 
 # A new user, as the settings package's skel seeds one.
 new_home() {
@@ -24,7 +26,7 @@ new_home() {
 }
 
 bindings() {
-  HOME="$1" XDG_STATE_HOME="$1/.local/state" lua <<'LUA'
+  HOME="$1" XDG_STATE_HOME="${2-}" lua <<'LUA'
 package.path = os.getenv("OMARCHY_PATH") .. "/?.lua;" .. package.path
 hl = {
   dsp = { exec_cmd = function(command) return { kind = "exec", arg = command } end },
@@ -67,7 +69,10 @@ done
 for name in Terminal Email Calendar Obsidian "Music TUI"; do
   grep -qxF "$name" <<<"$china_bindings" || fail "China keeps the $name binding"
 done
-pass "a China user's preinstalled bindings leave out the same apps"
+if grep -qxF YouTube <<<"$(bindings "$china" "$china/.local/state")"; then
+  fail "China leaves out the YouTube binding with XDG_STATE_HOME set"
+fi
+pass "a China user's preinstalled bindings leave out the same apps, with XDG_STATE_HOME empty or set"
 
 HOME="$china" omarchy-refresh-applications
 [[ ! -e $china/.local/share/applications/YouTube.desktop && -f $china/.local/share/applications/Basecamp.desktop ]] ||

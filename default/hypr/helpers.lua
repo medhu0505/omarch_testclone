@@ -141,7 +141,10 @@ local preinstalls_skipped = nil
 local function preinstall_skipped(description)
   if preinstalls_skipped == nil then
     preinstalls_skipped = {}
-    local state = os.getenv("XDG_STATE_HOME") or ((os.getenv("HOME") or "") .. "/.local/state")
+    local state = os.getenv("XDG_STATE_HOME")
+    if state == nil or state == "" then
+      state = (os.getenv("HOME") or "") .. "/.local/state"
+    end
     local file = io.open(state .. "/omarchy/preinstalls-skipped", "r")
     if file then
       for line in file:lines() do
