@@ -519,7 +519,7 @@ assertDeepEqual(
 }
 assertDeepEqual(
   defaultItems.filter(item => item.parent === 'appearance.top-bar.indicators').map(item => item.label),
-  ['Battery Percentage Shown', 'Battery Percentage Hidden', 'Clock'],
+  ['Show Battery Percentage', 'Hide Battery Percentage', 'Clock'],
   'menu gathers bar indicator options under Menu Bar > Bar Indicators'
 )
 const clockModel = requireFromRoot('shell/plugins/panels/clock/Model.js')
@@ -670,11 +670,11 @@ assert(
   ),
   'menu search never restarts a volatile provider'
 )
-// A toggle is a pair of rows named for the state it is in: the -on row shows
-// while the feature is on, the -off row while it is off, and both flip it.
+// A toggle is a pair of rows named for what picking them does: the -on row
+// shows while the feature is off and turns it on, the -off row the reverse.
 {
   const pairs = defaultItems.filter(item => item.id.endsWith('-on') && defaultById[item.id.replace(/-on$/, '-off')])
-  assert(pairs.length >= 14, 'menu names every toggle by the state it is in', String(pairs.length))
+  assert(pairs.length >= 14, 'menu names every toggle by what picking it does', String(pairs.length))
   for (const on of pairs) {
     const off = defaultById[on.id.replace(/-on$/, '-off')]
     assertEqual(off.action, on.action, `${on.id} and its -off row flip the same toggle`)
@@ -683,12 +683,12 @@ assert(
 }
 assertEqual(
   defaultById['trigger.hardware.laptop-display-on'].when,
-  'omarchy-hw-laptop && ! omarchy-hyprland-toggle-enabled internal-monitor-disable',
+  'omarchy-hw-laptop && omarchy-hyprland-toggle-enabled internal-monitor-disable',
   'menu only shows Laptop Display on laptops'
 )
 assertEqual(
   defaultById['trigger.hardware.mirror-display-on'].when,
-  'omarchy-hw-laptop && omarchy-hyprland-toggle-enabled internal-monitor-mirror',
+  'omarchy-hw-laptop && ! omarchy-hyprland-toggle-enabled internal-monitor-mirror',
   'menu only shows Mirror Display on laptops'
 )
 assertEqual(

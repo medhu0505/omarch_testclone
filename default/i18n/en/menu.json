@@ -117,10 +117,10 @@
     "label": "Bar Indicators"
   },
   "appearance.top-bar.indicators.battery-percentage-on": {
-    "label": "Battery Percentage Shown"
+    "label": "Show Battery Percentage"
   },
   "appearance.top-bar.indicators.battery-percentage-off": {
-    "label": "Battery Percentage Hidden"
+    "label": "Hide Battery Percentage"
   },
   "appearance.top-bar.indicators.clock": {
     "label": "Clock"
@@ -304,7 +304,7 @@
     "label": "Notifications On"
   },
   "trigger.toggle.notifications-off": {
-    "label": "Notifications Silenced"
+    "label": "Silence Notifications"
   },
   "trigger.toggle.nightlight-on": {
     "label": "Nightlight On"
@@ -391,16 +391,16 @@
     "label": "Display Mirroring Off"
   },
   "trigger.hardware.hybrid-gpu-on": {
-    "label": "Hybrid GPU Mode"
+    "label": "Switch to Hybrid GPU"
   },
   "trigger.hardware.hybrid-gpu-off": {
-    "label": "Integrated GPU Mode"
+    "label": "Switch to Integrated GPU"
   },
   "trigger.hardware.touchpad-on": {
-    "label": "Touchpad Enabled"
+    "label": "Enable Touchpad"
   },
   "trigger.hardware.touchpad-off": {
-    "label": "Touchpad Disabled"
+    "label": "Disable Touchpad"
   },
   "trigger.hardware.touchpad-haptics": {
     "label": "Touchpad Haptics"
@@ -415,10 +415,10 @@
     "label": "high"
   },
   "trigger.hardware.touchscreen-on": {
-    "label": "Touchscreen Enabled"
+    "label": "Enable Touchscreen"
   },
   "trigger.hardware.touchscreen-off": {
-    "label": "Touchscreen Disabled"
+    "label": "Disable Touchscreen"
   },
   "trigger.reminder.set": {
     "label": "Set one"
