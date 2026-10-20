@@ -7,7 +7,10 @@ Rectangle {
   height: 480
   color: "#1a1b26"
 
-  property string currentUser: userModel.lastUser
+  // The last user, when that account still exists (removing one doesn't
+  // clear SDDM's memory of it); with one account, that account.
+  property string currentUser: userNames.indexOf(userModel.lastUser) !== -1 ? userModel.lastUser
+    : (userNames.length === 1 ? userNames[0] : "")
   property bool loginFailed: false
   // With more than one account the screen asks who is logging in, starting
   // from the last user. A name is typed, not picked from a list, so it works
