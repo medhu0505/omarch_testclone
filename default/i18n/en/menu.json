@@ -212,6 +212,15 @@
   "trigger.appearance.window-corners.rounded": {
     "label": "Rounded Corners"
   },
+  "trigger.appearance.window-focus": {
+    "label": "Window Focus"
+  },
+  "trigger.appearance.window-focus.theme": {
+    "label": "Theme Borders"
+  },
+  "trigger.appearance.window-focus.dim": {
+    "label": "Dim Inactive"
+  },
   "trigger.appearance.window-transparency": {
     "label": "Window Opacity"
   },

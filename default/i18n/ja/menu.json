@@ -212,6 +212,15 @@
   "trigger.appearance.window-corners.rounded": {
     "label": "丸い角"
   },
+  "trigger.appearance.window-focus": {
+    "label": "ウィンドウのフォーカス"
+  },
+  "trigger.appearance.window-focus.theme": {
+    "label": "テーマの枠線"
+  },
+  "trigger.appearance.window-focus.dim": {
+    "label": "非アクティブを暗くする"
+  },
   "trigger.appearance.window-transparency": {
     "label": "ウィンドウ不透明度"
   },

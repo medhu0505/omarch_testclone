@@ -93,6 +93,8 @@
   "drive.passwordThatOpens": "現在 %1 を開く暗号化パスワード（変更が反映された場合は新しいもの）",
   "drive.select": "ドライブを選択",
   "files.selectFile": "ファイルを選択",
+  "focus.dim": "枠線なしで非アクティブなウィンドウを暗くする",
+  "focus.followTheme": "ウィンドウのフォーカスはテーマに従う",
   "font.restartToSeeChange": "フォントの変更を確認するには %1 を再起動してください",
   "games.corePrompt": "RetroArchコア",
   "games.installed": "%1 をインストールしました",
