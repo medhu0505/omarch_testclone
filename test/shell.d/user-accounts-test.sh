@@ -666,11 +666,26 @@ output=$(run_tty remove bob) || fail "back to one account re-couples disk, root 
   fail "back to one account re-couples disk, root and login" "$output; $(cat "$test_tmp/calls.log")"
 [[ $output == *"your password will unlock the disk and root again"* && $output == *"Your password unlocks the disk and root again"* ]] ||
   fail "back to one account says what it will do, and what it did" "$output"
-[[ $(head -n 1 "$test_tmp/journal") == "login user 'bob' removed by alice"* ]] || fail "the removal is logged before the switch back" "$(cat "$test_tmp/journal")"
+[[ $(tail -n 1 "$test_tmp/journal") == "login user 'bob' removed by alice"* ]] || fail "the account is removed, and logged, after the switch back" "$(cat "$test_tmp/journal")"
 pass "back to one account re-couples disk, root and login, and logs in automatically again"
 
 [[ $(password_prompts) == 2 ]] || fail "back to one account asks for two passwords: yours and the shared disk one" "$(cat "$test_tmp/gum.log")"
 pass "back to one account asks for two passwords: yours and the shared disk one"
+
+# The switch back comes first and every step of it can be repeated, so when it
+# stops midway (here the disk password prompt is dismissed) the account is
+# still there, and running the command again finishes the job.
+two_accounts
+touch "$test_tmp/encrypted"
+answers alicepw yes
+if output=$(run_tty remove bob); then fail "a dismissed disk password prompt stops the removal" "$output"; fi
+has_user bob && [[ $(cat "$test_tmp/disk_password") == "sharedpw" && $output == *"run this again to finish"* ]] ||
+  fail "a stopped switch back keeps the account and says how to finish" "$output"
+answers alicepw yes sharedpw
+output=$(run_tty remove bob) || fail "running the removal again finishes the job" "$output"
+! has_user bob && [[ $(cat "$test_tmp/disk_password") == "alicepw" ]] && grep -qx "User=alice" "$test_tmp/autologin.conf" ||
+  fail "running the removal again finishes the job" "$output; $(cat "$test_tmp/calls.log")"
+pass "a stopped switch back keeps the account, and running the removal again finishes it"
 
 two_accounts
 touch "$test_tmp/encrypted"

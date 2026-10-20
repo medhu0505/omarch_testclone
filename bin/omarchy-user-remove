@@ -109,13 +109,22 @@ if user_accounts_has_programs "$name"; then
   user_accounts_sign_out "$name" || fail "'$name' still has programs running; try again in a moment"
 fi
 
+# Switch back to one account before removing this one. Every step of the
+# switch can be repeated, and the account is still there until it's done, so if
+# anything stops this midway (a closed terminal, a wrong disk password, a power
+# cut), running the same command again finishes the job.
+if [[ -n $last_password ]]; then
+  user_accounts_go_single "$self" "$last_password" ||
+    fail "couldn't switch back to one account, so '$name' was not removed; run this again to finish"
+fi
+
 userdel_args=()
 if (( delete_home )); then
   userdel_args=(-r)
 fi
 if ! output=$(as_root userdel "${userdel_args[@]}" "$name" 2>&1); then
   printf '%s\n' "$output" >&2
-  fail "couldn't remove '$name'"
+  fail "couldn't remove '$name'; run this again to finish"
 fi
 # Omarchy has no local mail, so userdel's warning that there's no spool is noise.
 if [[ -n $output ]]; then
@@ -133,7 +142,3 @@ else
   echo "Removed $name. Their files stay in $home."
 fi
 
-if [[ -n $last_password ]]; then
-  user_accounts_go_single "$self" "$last_password" ||
-    fail "removed $name, but the passwords weren't brought back together; run omarchy-drive-password with your own password as the new one"
-fi
