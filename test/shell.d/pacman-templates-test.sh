@@ -61,7 +61,7 @@ for platform in $platforms; do
     list=$(repos "$templates" "$channel") || fail "$platform $channel: pacman reads the template"
     case $platform in
       x86) expected="omarchy core extra multilib " ;;
-      aarch64) expected="omarchy core extra alarm aur " ;;
+      aarch64) expected="omarchy core extra alarm " ;;
       aarch64-apple) expected="omarchy asahi-alarm core extra alarm aur " ;;
     esac
     [[ $list == "$expected" ]] || fail "$platform $channel: repositories in order" "$list"
