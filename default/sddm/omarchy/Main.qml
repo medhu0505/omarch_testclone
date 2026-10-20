@@ -15,7 +15,11 @@ Rectangle {
   // With more than one account the screen asks who is logging in, starting
   // from the last user. A name is typed, not picked from a list, so it works
   // for any number of accounts, also ones the list doesn't show.
-  property bool askUser: users.count > 1
+  // Also on request: SDDM lists only the accounts it is told to show
+  // (HideUsers, the UID range), so someone it doesn't list asks for the name
+  // box with Up or Shift+Tab from the password box.
+  property bool nameRequested: false
+  property bool askUser: users.count > 1 || nameRequested
   property var userNames: []
   // #ffffff is the theme's text color: omarchy-plymouth-set swaps it in.
   property color textColor: "#ffffff"
@@ -203,6 +207,10 @@ Rectangle {
           Keys.onPressed: {
             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
               sddm.login(root.loginUser(), password.text, root.sessionIndex)
+              event.accepted = true
+            } else if (!root.askUser && (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab)) {
+              root.nameRequested = true
+              username.forceActiveFocus()
               event.accepted = true
             }
           }
