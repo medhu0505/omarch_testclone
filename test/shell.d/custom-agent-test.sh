@@ -13,7 +13,7 @@ printf '%s\0' "$PWD" "$@" >"$CUSTOM_AGENT_RESULT"
 SH
 cat >"$tmp/bin/omarchy-launch-tui" <<'SH'
 #!/bin/bash
-[[ $1 == --app-id=org.omarchy.agent ]]
+[[ $1 == "--app-id=org.omarchy.agent" ]] || exit 1
 shift
 exec "$@"
 SH
@@ -47,6 +47,24 @@ for invalid in custom:missing custom:../example custom:; do
   fi
   [[ $(omarchy-default-agent) == custom:example ]]
 done
+# Relative symlink chains preserve even trailing-newline target names.
+agent_file="$HOME/.config/omarchy/defaults/agent"
+mkdir -p "$tmp/dotfiles"
+tracked_selection="$tmp/dotfiles/selection"$'\n'
+printf 'pi\n' >"$tracked_selection"
+ln -s $'selection\n' "$tmp/dotfiles/agent"
+rm "$agent_file"
+ln -s ../../../../dotfiles/agent "$agent_file"
+omarchy-default-agent custom:example
+[[ -L $agent_file && -L $tmp/dotfiles/agent ]]
+[[ $(cat "$tracked_selection") == custom:example ]]
+# A dangling final target is created without replacing either link.
+rm "$tracked_selection"
+omarchy-default-agent custom:example
+[[ -L $agent_file && -L $tmp/dotfiles/agent ]]
+[[ $(cat "$tracked_selection") == custom:example ]]
+rm "$agent_file"
+printf 'custom:example\n' >"$agent_file"
 # A failed defaults-file replacement must not launch an agent or damage the target.
 agent_file="$HOME/.config/omarchy/defaults/agent"
 mv "$agent_file" "$tmp/previous-agent"

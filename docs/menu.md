@@ -62,20 +62,11 @@ only comments, so the default state adds nothing.
 
 ### Custom coding agents
 
-Put an executable launcher at `~/.config/omarchy/agents/<name>`, where
-`<name>` contains only letters, digits, `_`, or `-`. Select it with
-`omarchy default agent custom:<name>`. Custom launchers are user-managed:
-Omarchy does not install a mise package or add approval flags.
+Put an executable launcher at `~/.config/omarchy/agents/<name>`, where `<name>` contains only letters, digits, `_`, or `-`. Select it with `omarchy default agent custom:<name>`. Custom launchers are user-managed: Omarchy does not install a mise package or add approval flags.
 
-The launcher follows the normal agent working-directory rule: launches from
-`$HOME` use `$HOME/Work` when that directory exists; other directories are
-preserved. It runs inside the normal agent terminal (`org.omarchy.agent`),
-or directly with `omarchy agent --inline`. `omarchy agent prompt "..."`
-passes a non-empty prompt as one positional argument; the existing CLI
-rejects an explicitly empty `--prompt`. The launcher is responsible
-for translating that argument to its driver's flags. Prompts are not
-evaluated as shell commands. Missing or non-executable launchers fail
-without changing the selected default.
+Saving a custom selection preserves symlink-managed defaults, updating the linked target rather than replacing the link.
+
+The launcher follows the normal agent working-directory rule: launches from `$HOME` use `$HOME/Work` when that directory exists; other directories are preserved. It runs inside the normal agent terminal (`org.omarchy.agent`), or directly with `omarchy agent --inline`. `omarchy agent prompt "..."` passes a non-empty prompt as one positional argument; the existing CLI rejects an explicitly empty `--prompt`. The launcher is responsible for translating that argument to its driver's flags. Prompts are not evaluated as shell commands. Missing or non-executable launchers fail without changing the selected default.
 
 For example, create `~/.config/omarchy/agents/my-agent`:
 
@@ -84,9 +75,7 @@ For example, create `~/.config/omarchy/agents/my-agent`:
 exec /path/to/my-agent --profile personal "$@"
 ```
 
-Make it executable with `chmod +x ~/.config/omarchy/agents/my-agent`.
-To expose it in Setup → Defaults → Agent, add this entry to the user menu
-extension:
+Make it executable with `chmod +x ~/.config/omarchy/agents/my-agent`. To expose it in Setup → Defaults → Agent, add this entry to the user menu extension:
 
 ```json
 {
@@ -99,8 +88,7 @@ extension:
 }
 ```
 
-The `custom:` namespace keeps user launchers separate from built-in agent
-names. Removing a launcher does not silently fall back to another agent.
+The `custom:` namespace keeps user launchers separate from built-in agent names. Removing a launcher does not silently fall back to another agent.
 
 ## Guards
 

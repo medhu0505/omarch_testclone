@@ -33,6 +33,8 @@ if [[ $1 == custom:* ]]; then
     exit 1
   fi
   mkdir -p "$(dirname "$agent_file")" || exit 1
+  # Resolve the destination so atomic replacement preserves dotfile symlinks.
+  IFS= read -r -d '' agent_file < <(readlink -fz -- "$agent_file") || exit 1
   pending=$(mktemp "$agent_file.XXXXXX") || exit 1
   if ! printf '%s\n' "$agent" >"$pending" || ! mv -T -- "$pending" "$agent_file"; then
     rm -f -- "$pending"
