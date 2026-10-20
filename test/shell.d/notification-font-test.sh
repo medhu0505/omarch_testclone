@@ -18,6 +18,7 @@ export OMARCHY_TEST_SHELL_ARGS="$tmpdir/shell-args"
 # Isolate shell.json writes: omarchy-shell-config resolves the user config
 # from $HOME, so point HOME at the scratch dir.
 export HOME="$tmpdir"
+export OMARCHY_PATH="$ROOT"
 export PATH="$tmpdir:$ROOT/bin:$PATH"
 
 font() {
