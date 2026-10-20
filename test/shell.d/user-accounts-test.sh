@@ -867,22 +867,34 @@ has_user bob && [[ $(cat "$test_tmp/root_status") == "L" && ! -e $test_tmp/autol
   fail "declining the sign-out changes nothing" "$output; $(cat "$test_tmp/calls.log")"
 pass "declining the sign-out leaves the machine multi-user"
 
-# The account comes first and the switch second, so a failed creation leaves
-# the machine as it was, and a stopped switch takes the account away again.
+# The switch comes first and the account second: a stop leaves one account
+# with more protection, never a second account with less, and the next run
+# continues. A creation that fails after the switch says so.
 reset_fixtures
 only_alice
 touch "$test_tmp/encrypted"
 answers yes alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
 if output=$(OMARCHY_TEST_USERADD_FAIL=1 run_tty add carol); then fail "a failed useradd fails the command"; fi
-[[ $(cat "$test_tmp/root_status") == "P" && -e $test_tmp/autologin.conf && $(cat "$test_tmp/disk_password") == "alicepw" ]] &&
-  ! grep -q "omarchy-drive-password" "$test_tmp/calls.log" ||
-  fail "a failed useradd leaves the machine unswitched" "$output; $(cat "$test_tmp/calls.log")"
-pass "an account that can't be created leaves the machine as it was"
+! has_user carol && [[ $(cat "$test_tmp/root_status") == "L" && ! -e $test_tmp/autologin.conf && $(cat "$test_tmp/disk_password") == "sharedpw" ]] &&
+  [[ $output == *"now set up for several accounts, so run this again"* ]] ||
+  fail "a creation that fails after the switch leaves the protections and says what to do" "$output; $(cat "$test_tmp/calls.log")"
+: >"$test_tmp/calls.log"
+answers yes alicepw no carolpw carolpw
+output=$(run_tty add carol) || fail "running the add again after a failed creation" "$output"
+has_user carol && ! grep -q "omarchy-drive-password\|passwd -l" "$test_tmp/calls.log" || fail "the next run adds the account without switching again" "$output; $(cat "$test_tmp/calls.log")"
+pass "a creation that fails after the switch keeps the protections, and the next run finishes"
 reset_fixtures
 only_alice
 touch "$test_tmp/encrypted"
 answers yes alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
 if output=$(OMARCHY_TEST_DRIVE_NOOP=1 run_tty add carol); then fail "a stopped switch fails the command"; fi
-! has_user carol && grep -q "userdel -r carol" "$test_tmp/calls.log" && [[ $output == *"run this again to continue"* ]] ||
-  fail "a stopped switch takes the account away again" "$output; $(cat "$test_tmp/calls.log")"
-pass "a stopped switch takes the new account away again"
+! has_user carol && ! grep -q "useradd" "$test_tmp/calls.log" && [[ $output == *"run this again to continue"* ]] ||
+  fail "a stopped switch adds no account" "$output; $(cat "$test_tmp/calls.log")"
+pass "a stopped switch adds no account, and says to run again"
+
+# The lock file is root's alone, so only an administrator can hold the lock.
+reset_fixtures
+rm -f "$test_tmp/user.lock"
+output=$(run_user add carol --password-stdin <<<"carolpw" 2>&1) || fail "add creates the lock file" "$output"
+[[ $(/usr/bin/stat -c '%a' "$test_tmp/user.lock") == "600" ]] || fail "the lock file is readable by nobody else" "$(ls -l "$test_tmp/user.lock")"
+pass "the lock file is root's alone"

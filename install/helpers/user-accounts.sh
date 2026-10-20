@@ -157,15 +157,15 @@ user_accounts_login_count() {
 # One change to the accounts at a time: what a command checks (how many
 # accounts there are, who the administrators are) must still hold when it
 # acts, so the checks and the changes happen under one machine-wide lock.
-# The file is root's; holding the lock only needs it open, so this comes
-# after sudo is open and before any check.
+# Only root can open the file, so only an administrator can hold the lock: a
+# root process holds it for as long as this command runs (it reads our pipe
+# and ends when the command does, however the command ends). This comes after
+# sudo is open and before any check.
 user_accounts_lock() {
-  local lock=${OMARCHY_USER_LOCK:-/run/lock/omarchy-user.lock}
-  if ! as_root test -e "$lock"; then
-    as_root sh -c 'umask 022 && : >"$1"' _ "$lock" || return 1
-  fi
-  exec {user_accounts_lock_fd}<"$lock" || return 1
-  flock -n "$user_accounts_lock_fd"
+  local lock=${OMARCHY_USER_LOCK:-/run/lock/omarchy-user.lock} held
+  as_root sh -c 'umask 077 && : >>"$1" && chmod 0600 "$1"' _ "$lock" || return 1
+  coproc user_accounts_lock_holder { as_root flock -n "$lock" sh -c 'echo held && cat >/dev/null'; }
+  read -r held <&"${user_accounts_lock_holder[0]}" 2>/dev/null && [[ $held == "held" ]]
 }
 
 # The lowest free UID that owns nothing under /home, so the files of an
