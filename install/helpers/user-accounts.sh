@@ -302,7 +302,7 @@ user_accounts_explain_multi() {
   if [[ -n $disk ]]; then
     echo "  • the disk password is shared with everyone who starts the computer, so it must differ from your password"
   fi
-  echo "  • the login screen asks who is logging in, instead of logging you in automatically"
+  echo "  • the login screen asks for a user name, instead of logging you in automatically"
   echo "  • root is locked; administrators use sudo"
   gum confirm --affirmative "$(omarchy-i18n common.yes)" --negative "$(omarchy-i18n common.no)" "$(omarchy-i18n user.continue)"
 }
