@@ -385,6 +385,7 @@
   "network.ping": "Ping",
   "network.receiving": "Receiving",
   "network.runSpeedTest": "Run a speed test",
+  "network.mobileHotspot": "Mobile hotspot",
   "network.scanningWifi": "SCANNING WI-FI…",
   "network.sending": "Sending",
   "network.setCustomDns": "Set custom DNS servers",
