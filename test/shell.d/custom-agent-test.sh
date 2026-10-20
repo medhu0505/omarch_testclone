@@ -47,6 +47,19 @@ for invalid in custom:missing custom:../example custom:; do
   fi
   [[ $(omarchy-default-agent) == custom:example ]]
 done
+# A failed defaults-file replacement must not launch an agent or damage the target.
+agent_file="$HOME/.config/omarchy/defaults/agent"
+mv "$agent_file" "$tmp/previous-agent"
+mkdir "$agent_file"
+printf 'preserve me\n' >"$agent_file/sentinel"
+rm "$CUSTOM_AGENT_RESULT"
+if omarchy-default-agent custom:example 2>/dev/null; then
+  fail "custom agent rejects failed selection persistence"
+fi
+[[ ! -e $CUSTOM_AGENT_RESULT && $(cat "$agent_file/sentinel") == "preserve me" ]]
+rm "$agent_file/sentinel"
+rmdir "$agent_file"
+mv "$tmp/previous-agent" "$agent_file"
 chmod -x "$HOME/.config/omarchy/agents/example"
 if omarchy-default-agent custom:example 2>/dev/null || omarchy-agent --inline 2>/dev/null; then
   fail "custom agent rejects non-executable launcher"
