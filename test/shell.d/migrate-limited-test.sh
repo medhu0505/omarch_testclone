@@ -100,6 +100,14 @@ if run_migrate no; then fail "a step naming a limited account as user:group fail
 grep -qx "Needs an administrator, for this account: sudo chown $(id -un):$(id -un) /var/lib/example" "$test_tmp/err" ||
   fail "a step naming a limited account as user:group says so" "$(cat "$test_tmp/err")"
 rm -f "$test_root/migrations/450-this-owner.sh"
+# A program that shares the account's name is still a machine-wide step.
+cat >"$test_root/migrations/460-program-named-like-the-account.sh" <<'SH'
+sudo -n "$USER" --check /etc/example
+SH
+if ! run_migrate no 2>/dev/null; then :; fi
+grep -qx "Left to an administrator: sudo -n $(id -un) --check /etc/example" "$test_tmp/err" ||
+  fail "a program that shares the account's name is left to an administrator" "$(cat "$test_tmp/err")"
+rm -f "$test_root/migrations/460-program-named-like-the-account.sh"
 if run_migrate no; then fail "a step about a limited account's home fails its migration"; fi
 grep -q "Needs an administrator, for this account: sudo chown root .*/.config/thing" "$test_tmp/err" ||
   fail "a step about a limited account's home says so" "$(cat "$test_tmp/err")"
