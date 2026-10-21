@@ -64,9 +64,8 @@ api_key() { # NAME [VAR=VALUE...]: the planted home must read as an API-key logi
 
 T_PROFILE='{"primaryApiKey":"sk-ant-test"}' api_key "the CLI's own key"
 T_SETTINGS='{"apiKeyHelper":"pass show anthropic"}' api_key "a key helper in the settings"
-T_SETTINGS_LOCAL='{"apiKeyHelper":"pass show anthropic"}' api_key "a key helper in the local settings"
 T_SETTINGS='{"env":{"ANTHROPIC_API_KEY":"sk-ant-test"}}' api_key "a key in the settings' env block"
-T_SETTINGS_LOCAL='{"env":{"ANTHROPIC_AUTH_TOKEN":"token"}}' api_key "an auth token in the local settings' env block"
+T_SETTINGS='{"env":{"ANTHROPIC_AUTH_TOKEN":"token"}}' api_key "an auth token in the settings' env block"
 api_key "a key in the environment" ANTHROPIC_API_KEY=sk-ant-test
 api_key "an auth token in the environment" ANTHROPIC_AUTH_TOKEN=token
 pass "an API key login shows as API key, without limits or a sign-in prompt, wherever the key is configured"
@@ -84,6 +83,11 @@ jq -e '.status == "Waiting for auth"' <<<"$result" >/dev/null ||
 result=$(T_SETTINGS='[1,2]' T_PROFILE='"text"' login)
 jq -e '.status == "Waiting for auth"' <<<"$result" >/dev/null ||
   fail "settings that aren't an object don't count as signed in" "$result"
+# settings.local.json in the config directory is a project's file: `claude auth
+# status` stays signed out with a key only there, so the panel must too.
+result=$(T_SETTINGS_LOCAL='{"apiKeyHelper":"pass show anthropic","env":{"ANTHROPIC_API_KEY":"sk-ant-test"}}' login)
+jq -e '.status == "Waiting for auth"' <<<"$result" >/dev/null ||
+  fail "a key only in settings.local.json doesn't count as signed in" "$result"
 pass "with neither a subscription nor an API key it still waits for a sign-in"
 
 # A subscription the CLI can still refresh leads, even beside a key.

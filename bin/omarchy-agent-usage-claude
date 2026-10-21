@@ -860,9 +860,10 @@ def profile_path(home: Path) -> Path:
 # Claude Code signed in with an API key (pay as you go through the Anthropic
 # Console) rather than a subscription: there are no plan limits to show, and it
 # is not waiting for a sign-in. The key is the CLI's own (primaryApiKey in its
-# profile), supplied by its settings (an apiKeyHelper, or a key in their env
-# block), or set in the environment the CLI starts with. Only whether a key is
-# configured is checked; the key itself is never read out.
+# profile), supplied by its user settings (an apiKeyHelper, or a key in their
+# env block), or set in the environment the CLI starts with. settings.local.json
+# beside them is a project's file, which the CLI doesn't sign in from. Only
+# whether a key is configured is checked; the key itself is never read out.
 API_KEY_PLAN = "API key"
 API_KEY_VARIABLES = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")
 
@@ -877,14 +878,11 @@ def api_key_login(claude_dir: Path) -> bool:
     return True
   if json_object(profile_path(claude_dir)).get("primaryApiKey"):
     return True
-  for name in ("settings.json", "settings.local.json"):
-    settings = json_object(claude_dir / name)
-    if settings.get("apiKeyHelper"):
-      return True
-    env = settings.get("env")
-    if isinstance(env, dict) and any(env.get(name) for name in API_KEY_VARIABLES):
-      return True
-  return False
+  settings = json_object(claude_dir / "settings.json")
+  if settings.get("apiKeyHelper"):
+    return True
+  env = settings.get("env")
+  return isinstance(env, dict) and any(env.get(name) for name in API_KEY_VARIABLES)
 
 
 # The plan label and limits for a home's login: a subscription's from the
