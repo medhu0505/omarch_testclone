@@ -8,12 +8,14 @@ SCRIPT="$ROOT/bin/omarchy-restart-shell"
 
 test_tmp=$(mktemp -d)
 registry_pid=
+unlisted_pid=
 
 cleanup() {
-  if [[ -n $registry_pid ]]; then
-    builtin kill -KILL "$registry_pid" 2>/dev/null || true
-    wait "$registry_pid" 2>/dev/null || true
-  fi
+  local pid
+  for pid in $registry_pid $unlisted_pid; do
+    builtin kill -KILL "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
+  done
   rm -rf "$test_tmp"
 }
 trap cleanup EXIT
@@ -136,7 +138,9 @@ quickshell() {
       fi
       calls=$((calls + 1))
       printf '%s\n' "$calls" >"$list_calls_file"
-      if [[ $test_scenario == "running" || $calls == 1 ]]; then
+      if [[ $test_scenario == "unlisted" ]]; then
+        printf '[]\n'
+      elif [[ $test_scenario == "running" || $calls == 1 ]]; then
         printf '[{"config_path":"%s/shell.qml","pid":%s}]\n' "$CONFIG_DIR" "$registry_pid"
       else
         printf '[]\n'
@@ -159,7 +163,11 @@ sleep() {
 
 pgrep() {
   printf '%s\n' "$*" >>"$pgrep_file"
-  printf '%s\n' "$registry_pid"
+  if [[ $test_scenario == "unlisted" ]]; then
+    printf '%s\n' "$unlisted_pid"
+  else
+    printf '%s\n' "$registry_pid"
+  fi
 }
 
 kill() {
@@ -192,6 +200,17 @@ test_scenario=exited
 : >"$signals_file"
 : >"$pgrep_file"
 stop_shell_instances
-[[ ! -s $signals_file && ! -s $pgrep_file ]] ||
+[[ ! -s $signals_file ]] ||
   fail "signal fallback does not run after the wait loop sees the instance exit"
 pass "signal fallback stays idle when the wait loop sees the instance exit"
+
+# A shell whose instance.lock is gone is missing from quickshell list but still
+# running; only its argv identifies it.
+bash -c 'command sleep 60; :' quickshell -p "$CONFIG_DIR" &
+unlisted_pid=$!
+test_scenario=unlisted
+: >"$signals_file"
+stop_shell_instances
+grep -F "TERM $unlisted_pid" "$signals_file" >/dev/null ||
+  fail "signal fallback reaches a shell the registry no longer lists" "$(cat "$signals_file")"
+pass "unlisted shell matching the config path is signalled"

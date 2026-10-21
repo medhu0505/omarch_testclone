@@ -83,7 +83,7 @@ shell_instance_running() {
 
 shell_instance_pids() {
   quickshell list -a -j 2>/dev/null |
-    jq -r --arg dir "$CONFIG_DIR/" '.[] | select(.config_path | startswith($dir)) | .pid'
+    jq -r --arg dir "$CONFIG_DIR/" '.[] | select(.config_path | startswith($dir)) | .pid' 2>/dev/null
 }
 
 shell_process_matches_config() {
@@ -140,30 +140,30 @@ stop_shell_instances() {
     sleep 0.1
   done
 
-  if shell_instance_running; then
-    mapfile -t qs_pids < <(matching_shell_pids)
-    if (( ${#qs_pids[@]} > 0 )); then
-      echo "Shell did not respond to IPC kill, falling back to signals." >&2
-      for pid in "${qs_pids[@]}"; do
-        kill -TERM "$pid" 2>/dev/null || true
-      done
+  # Search /proc even when the registry is empty: a shell whose instance.lock
+  # is gone is unlisted, yet still running beside the relaunch.
+  mapfile -t qs_pids < <(matching_shell_pids)
+  if (( ${#qs_pids[@]} > 0 )); then
+    echo "Shell did not respond to IPC kill, falling back to signals." >&2
+    for pid in "${qs_pids[@]}"; do
+      kill -TERM "$pid" 2>/dev/null || true
+    done
 
-      sleep 0.5
+    sleep 0.5
 
-      for pid in "${qs_pids[@]}"; do
-        if ! process_dead "$pid"; then
-          echo "Shell still alive after SIGTERM, sending SIGKILL to $pid" >&2
-          kill -KILL "$pid" 2>/dev/null || true
-        fi
-      done
+    for pid in "${qs_pids[@]}"; do
+      if ! process_dead "$pid"; then
+        echo "Shell still alive after SIGTERM, sending SIGKILL to $pid" >&2
+        kill -KILL "$pid" 2>/dev/null || true
+      fi
+    done
 
-      for pid in "${qs_pids[@]}"; do
-        for (( i = 0; i < 20; i++ )); do
-          process_dead "$pid" && break
-          sleep 0.05
-        done
+    for pid in "${qs_pids[@]}"; do
+      for (( i = 0; i < 20; i++ )); do
+        process_dead "$pid" && break
+        sleep 0.05
       done
-    fi
+    done
   fi
 }
 
