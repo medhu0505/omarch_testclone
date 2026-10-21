@@ -516,10 +516,21 @@ run_user admin root on >/dev/null 2>&1 && fail "admin refuses system accounts"
 pass "admin refuses system accounts"
 
 run_user admin bob >/dev/null 2>&1 && fail "admin without a terminal needs on or off"
-run_user admin on >/dev/null 2>&1 && fail "admin needs a name before on or off"
 run_user admin bob maybe >/dev/null 2>&1 && fail "admin rejects anything but on or off"
+run_user admin bob on off >/dev/null 2>&1 && fail "admin rejects a third word"
 grep -q gpasswd "$test_tmp/calls.log" && fail "admin changes nothing on bad arguments"
 pass "admin rejects incomplete or bad arguments"
+
+# on and off are valid names too, so the first word is always the name.
+reset_fixtures
+printf 'on:x:1005:1005::%s/home/on:/bin/bash\n' "$test_tmp" >>"$test_tmp/passwd"
+printf 'on:x:1005:\n' >>"$test_tmp/group"
+mkdir -p "$test_tmp/home/on"
+output=$(run_user admin on on 2>&1) || fail "an account named on can be made an administrator" "$output"
+[[ $(wheel_members) == "alice,on" ]] || fail "admin on on makes the account named on an administrator" "$(wheel_members)"
+output=$(run_user admin on off 2>&1) || fail "an account named on can lose administrator rights" "$output"
+[[ $(wheel_members) == "alice" ]] || fail "admin on off takes the account named on out of wheel" "$(wheel_members)"
+pass "an account named on is a name, not a state"
 
 # --- running as root ---
 

@@ -29,12 +29,10 @@ interactive() {
   [[ -t 0 && -t 1 ]]
 }
 
+# By position: the name, then on or off. Both are valid names too, so the
+# first word is always the name.
 while (( $# > 0 )); do
   case "$1" in
-  on | off)
-    [[ -n $name && -z $state ]] || fail "usage: omarchy user admin [name] [on|off]"
-    state="$1"
-    ;;
   -h | --help)
     echo "Usage: omarchy user admin [name] [on|off]"
     exit 0
@@ -43,8 +41,13 @@ while (( $# > 0 )); do
     fail "unknown option: $1"
     ;;
   *)
-    [[ -z $name ]] || fail "unexpected argument: $1"
-    name="$1"
+    if [[ -z $name ]]; then
+      name="$1"
+    elif [[ -z $state && ( $1 == "on" || $1 == "off" ) ]]; then
+      state="$1"
+    else
+      fail "usage: omarchy user admin [name] [on|off]"
+    fi
     ;;
   esac
   shift
