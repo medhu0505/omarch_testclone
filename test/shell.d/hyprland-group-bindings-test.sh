@@ -45,6 +45,8 @@ hl.dsp.group.active = function(options)
 end
 
 require("default.hypr.helpers")
+-- tiling.lua builds its workspace binds from monitor-workspaces.lua, which this test doesn't load.
+o.workspaces = proxy()
 require("default.hypr.bindings.tiling")
 
 active_window = { group = { size = 2 } }
