@@ -238,15 +238,28 @@ user_accounts_try_disk_password() {
 # finished. One that stopped part way can leave the old key opening the disk
 # beside the new one, which no password test shows, so the switches stop with
 # status 2 until a person finishes it, as they do when the change itself
-# refuses. Any other failure is status 1.
+# refuses. Each account records the changes it starts, so every login account
+# is asked, as itself. Any other failure is status 1.
 user_accounts_disk_change_finished() {
-  local answer
-  answer=$(omarchy-drive-password --system-pending) || { printf '%s\n' "$answer" >&2; return 1; }
-  case $answer in
-  none) return 0 ;;
-  pending) return 2 ;;
-  *) printf '%s\n' "$answer" >&2; return 1 ;;
-  esac
+  local self name home answer
+  self=$(user_accounts_self)
+  while IFS=$'\t' read -r name _; do
+    if [[ $name == "$self" ]]; then
+      answer=$(omarchy-drive-password --system-pending) || { printf '%s\n' "$answer" >&2; return 1; }
+    else
+      home=$(getent passwd "$name" | cut -d: -f6)
+      answer=$(as_root runuser -u "$name" -- env -u XDG_STATE_HOME HOME="$home" PATH="$PATH" OMARCHY_PATH="$OMARCHY_PATH" omarchy-drive-password --system-pending) ||
+        { printf '%s\n' "$answer" >&2; return 1; }
+    fi
+    case $answer in
+    none) ;;
+    pending)
+      [[ $name == "$self" ]] || echo "That change was started by '$name', who finishes it by running omarchy-drive-password." >&2
+      return 2
+      ;;
+    *) printf '%s\n' "$answer" >&2; return 1 ;;
+    esac
+  done < <(user_accounts_login_users)
 }
 
 # Whether the password is the user's login password, checked against its hash.

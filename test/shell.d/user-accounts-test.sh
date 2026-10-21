@@ -141,12 +141,28 @@ passphrase=$(cat)
 [[ $passphrase == "$(cat "$OMARCHY_TEST_DIR/disk_password")" ]] || exit 2
 SH
 
+# Root runs a command as another account.
+cat >"$mock_bin/runuser" <<'SH'
+#!/bin/bash
+[[ $1 == "-u" && $3 == "--" ]] || exit 9
+user=$2
+shift 3
+OMARCHY_TEST_RUNUSER=$user exec "$@"
+SH
+
 # The current and new disk passwords arrive on stdin, as with the real one.
 cat >"$mock_bin/omarchy-drive-password" <<'SH'
 #!/bin/bash
-# The query changes nothing, so only changes are logged.
+# The query changes nothing, so only changes are logged. OMARCHY_TEST_DRIVE_PENDING
+# is the caller's own unfinished change, OMARCHY_TEST_DRIVE_PENDING_FOR names
+# another account with one.
 if [[ $1 == "--system-pending" ]]; then
-  if [[ -n ${OMARCHY_TEST_DRIVE_PENDING:-} ]]; then echo pending; else echo none; fi
+  if [[ -z ${OMARCHY_TEST_RUNUSER:-} && -n ${OMARCHY_TEST_DRIVE_PENDING:-} ]] ||
+    [[ -n ${OMARCHY_TEST_RUNUSER:-} && $OMARCHY_TEST_RUNUSER == "${OMARCHY_TEST_DRIVE_PENDING_FOR:-}" ]]; then
+    echo pending
+  else
+    echo none
+  fi
   exit 0
 fi
 echo "omarchy-drive-password $*" >>"$OMARCHY_TEST_DIR/calls.log"
@@ -658,7 +674,7 @@ touch "$test_tmp/encrypted"
 printf 'otherdiskpw' >"$test_tmp/disk_password"
 answers yes alicepw no carolpw carolpw
 output=$(run_tty add carol) || fail "already separate passwords need no change" "$output"
-has_user carol && ! grep -q "choose" "$test_tmp/gum.log" && ! grep -q "omarchy-drive-password" "$test_tmp/calls.log" &&
+has_user carol && ! grep -q "choose" "$test_tmp/gum.log" && ! grep -q "omarchy-drive-password --system-stdin" "$test_tmp/calls.log" &&
   [[ $(cat "$test_tmp/root_status") == "L" ]] || fail "already separate passwords need no change, but root is still locked" "$output"
 pass "already separate passwords need no change, but root is still locked"
 
@@ -766,7 +782,7 @@ touch "$test_tmp/encrypted"
 printf 'alicepw' >"$test_tmp/disk_password"
 answers alicepw yes
 output=$(run_tty remove bob) || fail "a disk already on the administrator's password is left alone" "$output"
-! grep -q "omarchy-drive-password" "$test_tmp/calls.log" && grep -qx "root:alicepw" "$test_tmp/chpasswd.log" ||
+! grep -q "omarchy-drive-password --system-stdin" "$test_tmp/calls.log" && grep -qx "root:alicepw" "$test_tmp/chpasswd.log" ||
   fail "a disk already on the administrator's password is left alone" "$(cat "$test_tmp/calls.log")"
 pass "a disk already on the administrator's password is left alone"
 
@@ -941,7 +957,7 @@ if output=$(OMARCHY_TEST_USERADD_FAIL=1 run_tty add carol); then fail "a failed 
 : >"$test_tmp/calls.log"
 answers yes alicepw no carolpw carolpw
 output=$(run_tty add carol) || fail "running the add again after a failed creation" "$output"
-has_user carol && ! grep -q "omarchy-drive-password\|passwd -l" "$test_tmp/calls.log" || fail "the next run adds the account without switching again" "$output; $(cat "$test_tmp/calls.log")"
+has_user carol && ! grep -q "omarchy-drive-password --system-stdin\|passwd -l" "$test_tmp/calls.log" || fail "the next run adds the account without switching again" "$output; $(cat "$test_tmp/calls.log")"
 pass "a creation that fails after the switch keeps the protections, and the next run finishes"
 reset_fixtures
 only_alice
@@ -1005,6 +1021,16 @@ if output=$(run_tty add carol --admin); then fail "leaving the disk password que
   fail "cancelling the switch's questions writes no wheel rule" "$output; $(ls "$test_tmp/sudoers.d")"
 pass "the wheel rule for --admin waits until the switch's questions are answered"
 
+# Each account records the changes it starts, so one another administrator
+# left unfinished stops the switch too, and says whose it is.
+two_accounts
+touch "$test_tmp/encrypted"
+answers alicepw yes sharedpw
+if output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_tty remove bob); then fail "another account's unfinished change stops the removal"; fi
+has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"started by 'bob'"* ]] && ! grep -q "omarchy-drive-password --system-stdin" "$test_tmp/calls.log" ||
+  fail "another account's unfinished change stops the removal before anything changes, and names that account" "$output; $(cat "$test_tmp/calls.log")"
+pass "another account's unfinished disk password change stops the switch too"
+
 # cryptsetup reports a wrong passphrase as status 2. Any other failure is no
 # answer, so the switches stop rather than read it as one: as "doesn't open",
 # the add would skip the split and have the administrator share their own
@@ -1032,13 +1058,13 @@ touch "$test_tmp/encrypted"
 answers alicepw yes sharedpw
 if output=$(OMARCHY_TEST_CRYPTSETUP_ERROR_AT=1 run_tty remove bob); then fail "a cryptsetup error stops the removal"; fi
 has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"Couldn't check a password"* ]] &&
-  ! grep -q "chpasswd\|omarchy-drive-password" "$test_tmp/calls.log" ||
+  ! grep -q "chpasswd\|omarchy-drive-password --system-stdin" "$test_tmp/calls.log" ||
   fail "a cryptsetup error stops the removal before anything changes" "$output; $(cat "$test_tmp/calls.log")"
 two_accounts
 touch "$test_tmp/encrypted"
 answers alicepw yes sharedpw sharedpw
 if output=$(OMARCHY_TEST_CRYPTSETUP_ERROR_AT=2 run_tty remove bob); then fail "a cryptsetup error checking the current disk password stops the removal"; fi
-has_user bob && [[ $output == *"Couldn't check a password"* && $output != *"Try again"* ]] && ! grep -q "omarchy-drive-password" "$test_tmp/calls.log" ||
+has_user bob && [[ $output == *"Couldn't check a password"* && $output != *"Try again"* ]] && ! grep -q "omarchy-drive-password --system-stdin" "$test_tmp/calls.log" ||
   fail "a cryptsetup error checking the current disk password stops the removal without asking again" "$output; $(cat "$test_tmp/calls.log")"
 pass "a cryptsetup error stops the removal, rather than counting as a wrong password"
 
