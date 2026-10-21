@@ -82,6 +82,14 @@ wait_for_pacman_transaction() {
 
 wait_for_pacman_transaction
 
+# An account that isn't an administrator applies only its own part of each
+# migration. The machine-wide steps are an administrator's, done by their own
+# run of the same migration, so here sudo and pkexec run nothing and report
+# success instead of asking for a password sudo would refuse.
+if ! omarchy-sudo-allowed; then
+  PATH="$OMARCHY_PATH/default/omarchy/migrate-limited:$PATH"
+fi
+
 mkdir -p "$STATE_DIR"
 [[ -d $MIGRATIONS_DIR ]] || exit 0
 

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# On PATH only while omarchy-migrate runs migrations for an account that isn't
+# an administrator (see agents/skills/migrations.md). A migration's
+# machine-wide steps are an administrator's, done by their own run of it, so
+# this runs nothing, says what it left, and reports success, instead of asking
+# for a password sudo would refuse. pkexec is the same file.
+
+# Take what a pipe hands the command (printf ... | sudo tee), so the writer
+# doesn't fail on a closed pipe. Wait a moment for it and no longer: stdin may
+# be a pipe nothing writes to, and a terminal is left alone.
+if [[ ! -t 0 ]] && IFS= read -r -t 0.2 -n 1 _; then
+  cat >/dev/null
+fi
+echo "Left to an administrator: ${0##*/} $*" >&2
+exit 0
