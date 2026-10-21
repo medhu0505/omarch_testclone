@@ -60,6 +60,12 @@ ShellRoot {
     }
 
     Component.onCompleted: Qt.callLater(function() {
+      var expectedScale = Number(Quickshell.env("QT_SCALE_FACTOR"))
+      if (Math.abs(Quickshell.screens[0].devicePixelRatio - expectedScale) > 0.01) {
+        console.log("RESULT fail display scale was not applied")
+        Qt.quit()
+        return
+      }
       if (!checkCenters("playing")) return
       activePlayer.isPlaying = false
       Qt.callLater(function() {
@@ -74,16 +80,19 @@ ShellRoot {
 JS
 
 # No window or compositor is needed to measure QQuickItem geometry.
-output=$(env -u WAYLAND_DISPLAY -u DISPLAY -u HYPRLAND_INSTANCE_SIGNATURE \
-  -u QT_QPA_PLATFORMTHEME -u QT_STYLE_OVERRIDE \
-  HOME="$tmpdir/home" XDG_RUNTIME_DIR="$tmpdir/runtime" \
-  QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software \
-  timeout 15 quickshell -p "$tmpdir" --no-color 2>&1) || {
-  printf '%s\n' "$output" >&2
-  fail "media controls geometry fixture exits cleanly"
-}
-if ! grep -q "RESULT pass" <<<"$output"; then
-  printf '%s\n' "$output" >&2
-  fail "media controls share a vertical center while playing and paused"
-fi
-pass "media controls share a vertical center while playing and paused"
+for scale in 1 1.25 1.5 2; do
+  output=$(env -u WAYLAND_DISPLAY -u DISPLAY -u HYPRLAND_INSTANCE_SIGNATURE \
+    -u QT_QPA_PLATFORMTHEME -u QT_STYLE_OVERRIDE \
+    HOME="$tmpdir/home" XDG_RUNTIME_DIR="$tmpdir/runtime" \
+    QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software \
+    QT_SCALE_FACTOR=$scale QT_SCALE_FACTOR_ROUNDING_POLICY=PassThrough \
+    timeout 15 quickshell -p "$tmpdir" --no-color 2>&1) || {
+    printf '%s\n' "$output" >&2
+    fail "media controls geometry fixture exits cleanly at scale $scale"
+  }
+  if ! grep -q "RESULT pass" <<<"$output"; then
+    printf '%s\n' "$output" >&2
+    fail "media controls share a vertical center at scale $scale"
+  fi
+  pass "media controls share a vertical center while playing and paused at scale $scale"
+done
