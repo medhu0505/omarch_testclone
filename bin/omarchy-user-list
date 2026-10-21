@@ -63,14 +63,13 @@ if [[ $json == "true" ]]; then
       last_login: (if .[4] == "" then null else .[4] end)
     })
   ' <<<"$rows"
-  exit 0
+else
+  awk -F '\t' '
+    function yesno(value) { return value == "true" ? "yes" : "no" }
+    BEGIN { printf "%-24s %-6s %-10s %s\n", "USER", "ADMIN", "SIGNED IN", "LAST LOGIN" }
+    NF {
+      last = $5 == "" ? "never" : substr($5, 1, 10) " " substr($5, 12, 5)
+      printf "%-24s %-6s %-10s %s\n", $1, yesno($3), yesno($4), last
+    }
+  ' <<<"$rows"
 fi
-
-awk -F '\t' '
-  function yesno(value) { return value == "true" ? "yes" : "no" }
-  BEGIN { printf "%-24s %-6s %-10s %s\n", "USER", "ADMIN", "SIGNED IN", "LAST LOGIN" }
-  NF {
-    last = $5 == "" ? "never" : substr($5, 1, 10) " " substr($5, 12, 5)
-    printf "%-24s %-6s %-10s %s\n", $1, yesno($3), yesno($4), last
-  }
-' <<<"$rows"

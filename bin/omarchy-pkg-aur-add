@@ -7,8 +7,9 @@ if omarchy-pkg-missing "$@"; then
   if ! omarchy-sudo-allowed; then
     echo "Only an administrator can install software." >&2
     exit 1
+  else
+    yay -S --noconfirm --needed -- "$@" || exit 1
   fi
-  yay -S --noconfirm --needed -- "$@" || exit 1
 fi
 
 for pkg in "$@"; do

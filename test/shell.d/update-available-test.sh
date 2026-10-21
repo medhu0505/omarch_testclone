@@ -226,7 +226,7 @@ if capture_checker "$stdout" "$stderr" TEST_ADMIN=no TEST_CHECKUPDATES=updates T
 else
   status=$?
 fi
-[[ $status -eq 1 ]] || fail "update checker offers no update to an account that isn't an administrator"
+(( status == 1 )) || fail "update checker offers no update to an account that isn't an administrator"
 grep -Fx 'Omarchy updates are installed by an administrator' "$stdout" >/dev/null ||
   fail "update checker says who installs updates" "$(cat "$stdout")"
 [[ ! -s $git_log ]] || fail "update checker doesn't fetch for an account that can't update"

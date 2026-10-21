@@ -165,8 +165,9 @@ uid=$(user_accounts_free_uid) || fail "no free UID for '$name'"
 if ! as_root useradd -m -s /bin/bash -u "$uid" "${groups[@]}" "$name"; then
   if (( second_account )); then
     fail "couldn't create '$name'; this computer is now set up for several accounts, so run this again to add them"
+  else
+    fail "couldn't create '$name'"
   fi
-  fail "couldn't create '$name'"
 fi
 
 if ! printf '%s:%s\n' "$name" "$password" | as_root chpasswd; then
