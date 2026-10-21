@@ -173,12 +173,13 @@ omarchy_image_defer_hardware() {
 # with ERROR; limine-entry-tool, which copies the images to the boot partition,
 # prints most of its own as "Failed to ...", "Command failed: ...", "The file:
 # ... not found", "Invalid 'initrd=...", "Repeated hash mismatches...",
-# "Kernel name: ... is invalid" or "FAT32 boot partition not found...".
+# "Kernel name: ... is invalid" or "FAT32 boot partition not found...", and
+# crashes with Java's "Exception in thread ...".
 omarchy_image_limine_rebuild_confirmed() {
   local output uki initcpio built_uki built_initcpio
 
   output=$(sed 's/\x1b\[[0-9;]*m//g' <<<"$1")
-  ! grep -Eq '^((==> )?(ERROR|Error|error)\b|Failed to |Command failed:|The file: |Invalid '"'"'initrd=|Repeated hash mismatches|Kernel name: |FAT32 boot partition not found)' <<<"$output" ||
+  ! grep -Eq '^((==> )?(ERROR|Error|error)\b|Failed to |Command failed:|The file: |Invalid '"'"'initrd=|Repeated hash mismatches|Kernel name: |FAT32 boot partition not found|Exception in thread )' <<<"$output" ||
     return 1
   uki=$(grep -Ec '^Building UKI (fallback )?for ' <<<"$output") || true
   initcpio=$(grep -Ec '^Building (fallback )?initramfs for ' <<<"$output") || true

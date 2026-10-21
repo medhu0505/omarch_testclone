@@ -416,6 +416,15 @@ for entry_error in "${entry_tool_errors[@]}"; do
   assert_rebuild_unconfirmed "Limine's entry tool reporting '${entry_error:0:24}...' is left for owner setup to confirm"
 done
 
+# The entry tool crashing before it installs the image, as 1.40.0 does on a
+# limine.conf it can't decode, prints only Java's exception.
+owed_rebuild_root limine-entry-crash
+limine_built 'Building UKI for linux (6.18.0)' '==> Initcpio image generation successful' \
+  '==> Unified kernel image generation successful' \
+  'Exception in thread "main" java.nio.charset.MalformedInputException: Input length = 1' \
+  $'\tat org.limine.entry.tool.Main.addUki(Main.java:315)'
+assert_rebuild_unconfirmed "an image Limine's entry tool crashed before installing is left for owner setup to confirm"
+
 owed_rebuild_root limine-uki
 limine_built 'Building UKI for linux (6.18.0)' '==> Initcpio image generation successful' \
   '==> Unified kernel image generation successful' 'Building UKI fallback for linux (6.18.0)' \
