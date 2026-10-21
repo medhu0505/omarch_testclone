@@ -1,6 +1,4 @@
-#!/bin/bash
-
-set -euo pipefail
+echo "Repair a Qt5 SDDM theme selection whose greeter libraries are missing"
 
 sddm_conf="${OMARCHY_SDDM_CONF:-/etc/sddm.conf}"
 sddm_conf_dir="${OMARCHY_SDDM_CONF_DIR:-/etc/sddm.conf.d}"
@@ -10,6 +8,7 @@ greeter="${OMARCHY_SDDM_GREETER:-/usr/bin/sddm-greeter}"
 ldd_output=$(ldd "$greeter" 2>/dev/null) || exit 0
 [[ $ldd_output == *"not found"* ]] || exit 0
 
+export LC_ALL=C
 config_files=()
 for file in "$sddm_conf_dir"/*.conf; do
   [[ -f $file ]] || continue
@@ -18,14 +17,16 @@ done
 if [[ -f $sddm_conf ]]; then
   config_files+=("$sddm_conf")
 fi
-(( ${#config_files[@]} == 1 )) || exit 0
+(( ${#config_files[@]} > 0 )) || exit 0
 
-target_file=${config_files[0]}
-theme=$(LC_ALL=C awk '
+effective=$(LC_ALL=C awk '
   function trim(value) {
     sub(/^[[:space:]]+/, "", value)
     sub(/[[:space:]]+$/, "", value)
     return value
+  }
+  FNR == 1 {
+    section = 0
   }
   {
     line = $0
@@ -42,26 +43,25 @@ theme=$(LC_ALL=C awk '
       value = line
       sub(/^[[:space:]]*Current[[:space:]]*=[[:space:]]*/, "", value)
       value = trim(value)
-      if (value == "elarun" || value == "maldives" || value == "maya") {
-        theme = value
-      }
+      effective_file = FILENAME
+      effective_value = value
+      effective_line = FNR
     }
   }
   END {
-    if (assignments == 1 && theme != "") {
-      print theme
+    if (effective_file != "") {
+      printf "%s\t%s\t%d\n", effective_file, effective_value, effective_line
     }
   }
-' "$target_file" 2>/dev/null || true)
+' "${config_files[@]}" 2>/dev/null) || exit 0
+[[ -n $effective ]] || exit 0
+IFS=$'\t' read -r target_file theme target_line <<<"$effective"
 
 case $theme in
   elarun|maldives|maya) ;;
   *) exit 0 ;;
 esac
 
-sudo sed -i -E \
-  '/^[[:space:]]*\[Theme\][[:space:]]*$/,/^[[:space:]]*\[/ {
-    s/^[[:space:]]*Current[[:space:]]*=[[:space:]]*(elarun|maldives|maya)([[:space:]]*[#;].*)?[[:space:]]*$/Current=omarchy/
-  }' "$target_file"
+sudo sed -i "${target_line}s|.*|Current=omarchy|" "$target_file"
 
 echo "Changed SDDM theme from $theme to omarchy because the Qt5 greeter has missing libraries."

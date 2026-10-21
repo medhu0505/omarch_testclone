@@ -66,9 +66,38 @@ for theme in elarun maldives maya; do
   cmp -s "$test_dir/expected" "$test_dir/etc/sddm.conf.d/10-theme.conf" ||
     fail "missing Qt5 greeter libraries reset only Current from $theme"
 done
-grep -F 'sed -i -E' "$sudo_log" >/dev/null ||
+grep -F 'sed -i ' "$sudo_log" >/dev/null ||
   fail "the repair uses sudo sed -i"
 pass "missing Qt5 greeter libraries reset stock themes to omarchy"
+
+reset_state
+printf '[Theme]\nCurrent=maya\n' >"$test_dir/etc/sddm.conf.d/10-theme.conf"
+printf '[Wayland]\nSession=hyprland.desktop\n' >"$test_dir/etc/sddm.conf.d/10-wayland.conf"
+printf '[Users]\nHideUsers=true\n' >"$test_dir/etc/sddm.conf.d/99-omarchy-login.conf"
+printf '[Autologin]\nRelogin=false\n' >"$test_dir/etc/sddm.conf.d/autologin.conf"
+for file in 10-wayland.conf 99-omarchy-login.conf autologin.conf; do
+  cp "$test_dir/etc/sddm.conf.d/$file" "$test_dir/expected-$file"
+done
+run_migration missing >/dev/null
+grep -Fx 'Current=omarchy' "$test_dir/etc/sddm.conf.d/10-theme.conf" >/dev/null ||
+  fail "the stock multi-file layout repairs the theme drop-in"
+for file in 10-wayland.conf 99-omarchy-login.conf autologin.conf; do
+  cmp -s "$test_dir/expected-$file" "$test_dir/etc/sddm.conf.d/$file" ||
+    fail "the stock multi-file layout preserves $file"
+done
+pass "the stock multi-file layout repairs only the theme drop-in"
+
+reset_state
+printf '[Theme]\nCurrent=maya\n' >"$test_dir/etc/sddm.conf.d/10-theme.conf"
+printf '[Theme]\nCurrent=omarchy\n' >"$test_dir/etc/sddm.conf.d/99-override.conf"
+cp "$test_dir/etc/sddm.conf.d/10-theme.conf" "$test_dir/expected-first"
+cp "$test_dir/etc/sddm.conf.d/99-override.conf" "$test_dir/expected-second"
+run_migration missing >/dev/null
+cmp -s "$test_dir/expected-first" "$test_dir/etc/sddm.conf.d/10-theme.conf" &&
+  cmp -s "$test_dir/expected-second" "$test_dir/etc/sddm.conf.d/99-override.conf" ||
+  fail "a later omarchy drop-in overrides the Qt5 theme unchanged"
+[[ ! -s $sudo_log ]] || fail "an effective omarchy drop-in does not invoke sudo"
+pass "a later omarchy drop-in overrides an earlier Qt5 theme"
 
 reset_state
 printf '[Theme]\nCurrent=maya\n' >"$test_dir/etc/sddm.conf"
@@ -77,6 +106,17 @@ run_migration missing >/dev/null
 cmp -s "$test_dir/expected" "$test_dir/etc/sddm.conf" ||
   fail "the main SDDM configuration receives the same repair"
 pass "the main SDDM configuration is supported"
+
+reset_state
+printf '[Theme]\nCurrent=omarchy\n' >"$test_dir/etc/sddm.conf.d/10-theme.conf"
+printf '[Theme]\nCurrent=maya\n' >"$test_dir/etc/sddm.conf"
+cp "$test_dir/etc/sddm.conf.d/10-theme.conf" "$test_dir/expected-dropin"
+run_migration missing >/dev/null
+grep -Fx 'Current=omarchy' "$test_dir/etc/sddm.conf" >/dev/null ||
+  fail "the main configuration overrides and repairs the earlier drop-in"
+cmp -s "$test_dir/expected-dropin" "$test_dir/etc/sddm.conf.d/10-theme.conf" ||
+  fail "the main configuration repair leaves the earlier drop-in unchanged"
+pass "the main configuration takes precedence over drop-ins"
 
 sudo_calls=$(wc -l <"$sudo_log")
 run_migration missing >/dev/null
