@@ -120,6 +120,7 @@ High-level flow:
 
 ```text
 omarchy-update
+  ├─ stop unless the account is an administrator (omarchy-sudo-allowed), before any password prompt
   ├─ ensure transcript logging through script(1) → ${XDG_RUNTIME_DIR:-/tmp}/omarchy-update-$UID.log
   ├─ omarchy-update-lock
   │    └─ acquire the update lock and run omarchy-update inside it
@@ -259,7 +260,7 @@ tracking state.
 Exit codes:
 
 - `0` — Omarchy updates are available; stdout is the update list.
-- non-zero — no Omarchy updates are available; stdout says Omarchy is up to date.
+- non-zero — nothing for this account to install: Omarchy is up to date, or the account isn't an administrator and an administrator installs updates; stdout says which.
 
 The widget runs this check on shell startup and every six hours. Clicking the
 update icon launches `omarchy-update` in a floating terminal.
