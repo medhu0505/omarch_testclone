@@ -129,8 +129,9 @@ shortcut_chord() {
   fi
 }
 
-# Hyprland's live bindings as "chord<TAB>description", normalized like
-# shortcut_chord.
+# Hyprland's live bindings as chord, description, and submap, separated by
+# \x1f so an empty field survives read, normalized like shortcut_chord.
+# Submaps count: Hyprland unbinds keys in every submap.
 shortcut_live_bindings() {
   hyprctl binds -j 2>/dev/null | jq -r '
     def mods: [
@@ -145,11 +146,10 @@ shortcut_live_bindings() {
     ] | sort;
     .[]
     | select(.release | not)
-    | select((.submap // "") == "")
     | (if (.key // "") != "" then (.key | ascii_upcase) else "CODE:\(.keycode)" end) as $key
     | (if ($key | test("^(ALT|SUPER|CONTROL|SHIFT|META|HYPER)_[LR]$|^ISO_LEVEL3_SHIFT$")) then $key
        else ((mods + [$key]) | join("+")) end) as $chord
-    | "\($chord)\t\(.description // "")"
+    | "\($chord)\u001f\(.description // "")\u001f\(.submap // "")"
   '
 }
 

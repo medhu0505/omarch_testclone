@@ -101,31 +101,45 @@ while read -r other; do
     [[ -n $value ]] || continue
     chord=$(shortcut_chord "$value")
     if [[ -v chosen[$chord] ]]; then
-      conflicts+=("${chosen[$chord]}"$'\t'"$(omarchy-shortcut-get "$other" --json | jq -r '.description // ""')"$'\t'"$other")
+      conflicts+=("${chosen[$chord]}"$'\x1f'"$(omarchy-shortcut-get "$other" --json | jq -r '.description // ""')"$'\x1f'"$other")
       taken_from[$other]=1
       seen[$chord]=1
     fi
   done < <(shortcut_keys "$other")
 done < <(shortcut_ids)
 
-if shortcut_hyprland_running; then
-  while IFS=$'\t' read -r chord description; do
-    if [[ -v chosen[$chord] && ! -v owned[$chord] && ! -v seen[$chord] ]]; then
-      conflicts+=("${chosen[$chord]}"$'\t'"$description"$'\t')
-      seen[$chord]=1
-    fi
-  done < <(shortcut_live_bindings)
-fi
+# Keys used inside a submap can't be taken: unbinding them for a shortcut
+# would also remove them from that submap, which nothing would bring back.
+declare -a submap_conflicts=()
+while IFS=$'\x1f' read -r chord description submap; do
+  [[ -v chosen[$chord] && ! -v owned[$chord] ]] || continue
+  if [[ -n $submap ]]; then
+    submap_conflicts+=("${chosen[$chord]}"$'\x1f'"$description"$'\x1f'$'\x1f'"$submap")
+  elif [[ ! -v seen[$chord] ]]; then
+    conflicts+=("${chosen[$chord]}"$'\x1f'"$description"$'\x1f')
+    seen[$chord]=1
+  fi
+done < <(shortcut_live_bindings)
 
-if ((${#conflicts[@]})) && ((!force)); then
+if ((${#submap_conflicts[@]})) || { ((${#conflicts[@]})) && ((!force)); }; then
   if ((json)); then
-    printf '%s\n' "${conflicts[@]}" | jq -Rn '{ conflicts: [inputs | split("\t") | { keys: .[0], description: .[1], id: (if .[2] == "" then null else .[2] end) }] }'
+    printf '%s\n' "${conflicts[@]}" "${submap_conflicts[@]}" | sed '/^$/d' | jq -Rn '{ conflicts: [inputs | split("\u001f") | {
+      keys: .[0], description: .[1], id: (if .[2] == "" then null else .[2] end), submap: (if (.[3] // "") == "" then null else .[3] end)
+    }] }'
   else
     for conflict in "${conflicts[@]}"; do
-      IFS=$'\t' read -r value description other <<<"$conflict"
+      IFS=$'\x1f' read -r value description other <<<"$conflict"
       echo "$value is already used by \"${description:-a binding}\"${other:+ ($other)}" >&2
     done
-    echo "Choose other keys, or pass --force to take them." >&2
+    for conflict in "${submap_conflicts[@]}"; do
+      IFS=$'\x1f' read -r value description _ submap <<<"$conflict"
+      echo "$value is used by \"${description:-a binding}\" in the $submap submap and can't be taken" >&2
+    done
+    if ((${#submap_conflicts[@]})); then
+      echo "Choose other keys." >&2
+    else
+      echo "Choose other keys, or pass --force to take them." >&2
+    fi
   fi
   exit 2
 fi

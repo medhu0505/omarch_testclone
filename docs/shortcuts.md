@@ -29,6 +29,8 @@ Ids starting with `omarchy.` are Omarchy's. Their keys can change, but their des
 
 `set` refuses keys already in use and exits 2. That covers live Hyprland bindings (Omarchy defaults, the user's own, other apps') and other named shortcuts. Each conflict is printed as `<keys> is already used by "<description>" (<id>)`, or with `--json` as `{"conflicts": [{"keys", "description", "id"}]}`, so a shortcut recorder can show who holds the keys and offer to take them.
 
+Keys used inside a submap, such as `RETURN` in the screenshot picker, are refused even with `--force`: Hyprland unbinds a key in every submap at once, so taking it would break that submap.
+
 `--force` takes the keys. A named shortcut that held them keeps the rest of its keys. An Omarchy default binding stays unbound while the shortcut holds its keys, and it comes back when the shortcut moves off them. A personal binding from `~/.config/hypr/bindings.lua` is only unbound until the next config load, because that file loads after shortcuts and binds it again, so both would run.
 
 `set` needs Hyprland running: only the running config knows Omarchy's default keys and every other binding, so keys chosen without it could neither be checked nor be sure to bind. Without Hyprland, `get` and `list` show the keys someone chose, and `get` fails for an Omarchy shortcut still on its defaults.

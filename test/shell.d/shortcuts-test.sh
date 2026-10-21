@@ -233,7 +233,7 @@ cat >"$HYPRCTL_BINDS" <<'JSON'
   { "modmask": 8, "key": "Alt_R", "keycode": 0, "release": false, "submap": "", "description": "Start dictation (push-to-talk)" },
   { "modmask": 68, "key": "X", "keycode": 0, "release": false, "submap": "", "description": "Toggle dictation" },
   { "modmask": 64, "key": "", "keycode": 191, "release": false, "submap": "", "description": "Coded" },
-  { "modmask": 64, "key": "R", "keycode": 0, "release": false, "submap": "resize", "description": "In a submap" }
+  { "modmask": 64, "key": "Q", "keycode": 0, "release": false, "submap": "resize", "description": "In a submap" }
 ]
 JSON
 cat >"$HYPRCTL_SNAPSHOT" <<'JSON'
@@ -267,7 +267,7 @@ done
 pass "set refuses invalid changes"
 
 set +e
-output=$(omarchy-shortcut-set com.example.record "super + w" "SUPER + code:191" "SUPER + CTRL + X" "SUPER + R" "SUPER + SHIFT + R" --command "example record" --description "Record" 2>&1)
+output=$(omarchy-shortcut-set com.example.record "super + w" "SUPER + code:191" "SUPER + CTRL + X" "SUPER + R" "SUPER + SHIFT + R" "SUPER + Q" --command "example record" --description "Record" 2>&1)
 status=$?
 set -e
 ((status == 2)) || fail "conflicts exit 2" "$output"
@@ -276,12 +276,16 @@ set -e
 [[ $output == *'SUPER + CTRL + X is already used by "Toggle dictation" (omarchy.dictation.toggle)'* ]] || fail "conflicts name a shortcut's id" "$output"
 [[ $output == *'SUPER + R is already used by "Start dictation (push-to-talk)" (omarchy.dictation.hold)'* ]] || fail "conflicts include chosen keys not bound yet" "$output"
 [[ $output != *'SHIFT + R'* ]] || fail "free keys are not conflicts" "$output"
+[[ $output == *'SUPER + Q is used by "In a submap" in the resize submap'* ]] || fail "submap keys are conflicts" "$output"
 [[ ! -e $registry/com.example.record ]] || fail "a refused set changes nothing"
 
 json=$(omarchy-shortcut-set com.example.record "SUPER + W" --command x --json) && fail "json conflicts still fail"
 [[ $(jq -r '.conflicts[0].description' <<<"$json") == "Close window" ]] || fail "conflicts come as JSON" "$json"
 pass "set refuses keys another binding uses"
 
+if omarchy-shortcut-set com.example.record "SUPER + Q" --command x --force 2>/dev/null; then fail "force can't take a submap's keys"; fi
+[[ $(omarchy-shortcut-set com.example.record "SUPER + Q" --command x --json | jq -r '.conflicts[] | select(.submap) | .submap') == "resize" ]] ||
+  fail "json names the submap"
 omarchy-shortcut-set com.example.record "SUPER + R" "SUPER + SHIFT + R" --command "example record" --description "Record" --force ||
   fail "force takes conflicting keys"
 grep -qx 'o.shortcuts.apply({"com.example.record","omarchy.dictation.hold"})' "$HYPRCTL_LOG" ||
