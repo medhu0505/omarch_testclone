@@ -265,7 +265,10 @@ cat >"$HYPRCTL_BINDS" <<'JSON'
   { "modmask": 68, "key": "X", "keycode": 0, "release": false, "submap": "", "description": "Toggle dictation" },
   { "modmask": 64, "key": "", "keycode": 191, "release": false, "submap": "", "description": "Coded" },
   { "modmask": 64, "key": "Q", "keycode": 0, "release": false, "submap": "resize", "description": "In a submap" },
-  { "modmask": 64, "key": "P", "keycode": 0, "release": false, "submap": "", "description": "Personal" }
+  { "modmask": 64, "key": "P", "keycode": 0, "release": false, "submap": "", "description": "Personal" },
+  { "modmask": 0, "key": "Super_L", "keycode": 0, "release": true, "submap": "", "description": "Open the launcher" },
+  { "modmask": 64, "key": "V", "keycode": 0, "release": true, "submap": "", "description": "Stop talking" },
+  { "modmask": 64, "key": "V", "keycode": 0, "release": false, "submap": "", "description": "Start talking" }
 ]
 JSON
 cat >"$HYPRCTL_SNAPSHOT" <<'JSON'
@@ -313,6 +316,10 @@ set -e
 
 json=$(omarchy-shortcut-set com.example.record "SUPER + W" --command x --json) && fail "json conflicts still fail"
 [[ $(jq -r '.conflicts[0].description' <<<"$json") == "Close window" ]] || fail "conflicts come as JSON" "$json"
+if omarchy-shortcut-set com.example.record Super_L --command x 2>"$tmp/err"; then fail "a release-only binding holds its key"; fi
+grep -q 'Super_L is used by "Open the launcher"' "$tmp/err" || fail "a release-only binding is named" "$(cat "$tmp/err")"
+[[ $(omarchy-shortcut-set com.example.record "SUPER + V" --command x --json | jq -r '.conflicts[0].description') == "Start talking" ]] ||
+  fail "a hold is named by its press"
 pass "set refuses keys another binding uses"
 
 if omarchy-shortcut-set com.example.record "SUPER + Q" --command x --force 2>/dev/null; then fail "force can't take a submap's keys"; fi

@@ -154,8 +154,10 @@ shortcut_live_bindings() {
       (if (.modmask / 64 | floor) % 2 == 1 then "SUPER" else empty end),
       (if (.modmask / 128 | floor) % 2 == 1 then "MOD5" else empty end)
     ] | sort;
-    .[]
-    | select(.release | not)
+    # Release-only bindings take the key too; a press half comes first so a pair
+    # is named by what pressing it does.
+    sort_by(.release)
+    | .[]
     | (if (.key // "") != "" then (.key | ascii_upcase) else "CODE:\(.keycode)" end) as $key
     | (if ($key | test("^(ALT|SUPER|CONTROL|SHIFT|META|HYPER)_[LR]$|^ISO_LEVEL3_SHIFT$")) then $key
        else ((mods + [$key]) | join("+")) end) as $chord
