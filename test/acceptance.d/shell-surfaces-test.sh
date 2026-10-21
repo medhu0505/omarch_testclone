@@ -100,6 +100,16 @@ if window_present "(?i)omawrite" >/dev/null 2>&1; then
   fail "app launch test starts with no Omawrite window" "an Omawrite window is already open"
 fi
 
+# Owned only after the precondition, so a failure partway leaves no grid or
+# Omawrite window behind for the files that run after this one.
+cleanup_app_launch() {
+  if layer_present "omarchy-dock-apps" >/dev/null 2>&1; then
+    omarchy-shell omarchy.dock apps >/dev/null 2>&1 || true
+  fi
+  close_windows "(?i)omawrite"
+}
+trap cleanup_app_launch EXIT
+
 omarchy-menu summon apps >/dev/null
 wait_until "apps menu opens" 15 layer_on_overlay "omarchy-dock-apps"
 sleep 1
@@ -115,3 +125,5 @@ wait_until "apps menu closes after launching" 15 layer_absent "omarchy-dock-apps
 
 close_windows "(?i)omawrite"
 wait_until "Omawrite window closes" 30 window_absent "(?i)omawrite"
+
+trap - EXIT
