@@ -307,7 +307,11 @@ ShellRoot {
       try {
         root.probeTicks += 1
         if (root.probeTicks > 100) throw new Error("Deferred probe did not finish")
-        if (root.probeProcess.running) return
+        if (root.probeProcess.running) {
+          // The service's startup probe runs the real fprintd-list, which a slow reader can hold past this deadline.
+          if (root.probeStage === 0) root.probeProcess.running = false
+          return
+        }
         if (root.probeStage === 0) {
           root.probeProcess.command = ["printf", "deferred-probe-ran"]
           root.probeService.lockRequested = true
