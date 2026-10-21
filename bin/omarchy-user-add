@@ -118,10 +118,24 @@ if [[ -z $admin ]]; then
   fi
 fi
 
+# Everyone who starts the computer types the disk password, so no account may
+# log in with it: an administrator's would open root to all of them.
+disk=""
+disk=$(user_accounts_root_luks 2>/dev/null) || disk=""
+opens_disk() {
+  local result
+  [[ -n $disk ]] || return 1
+  result=$(user_accounts_try_disk_password "$disk" "$1") || fail "couldn't check the password against the disk, so '$name' was not added"
+  [[ $result == "opens" ]]
+}
+
 # The password reaches chpasswd on stdin, never a command line.
 password=""
 if (( password_stdin )); then
   IFS= read -r password || true
+  if [[ -n $password ]] && opens_disk "$password"; then
+    fail "that password unlocks the disk; give '$name' one that doesn't"
+  fi
 elif interactive; then
   while true; do
     password=$(gum input --password --prompt "$(omarchy-i18n user.passwordFor "$name")") || fail "cancelled"
@@ -130,10 +144,13 @@ elif interactive; then
       continue
     fi
     confirmation=$(gum input --password --prompt "$(omarchy-i18n user.repeatPassword)") || fail "cancelled"
-    if [[ $password == "$confirmation" ]]; then
+    if [[ $password != "$confirmation" ]]; then
+      echo "The passwords don't match. Try again."
+    elif opens_disk "$password"; then
+      echo "That one unlocks the disk; choose one that doesn't."
+    else
       break
     fi
-    echo "The passwords don't match. Try again."
   done
 else
   fail "no terminal to ask for a password; pass --password-stdin"
@@ -146,7 +163,7 @@ fi
 # again continues where it stopped.
 if (( second_account )); then
   status=0
-  user_accounts_go_multi "$(user_accounts_self)" "$mine" || status=$?
+  user_accounts_go_multi "$(user_accounts_self)" "$mine" "$password" || status=$?
   if (( status == 2 )); then
     fail "an earlier disk password change stopped part way, so '$name' was not added; once it's finished with omarchy-drive-password, run this again"
   elif (( status != 0 )); then

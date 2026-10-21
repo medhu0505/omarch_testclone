@@ -1065,6 +1065,25 @@ if output=$(run_tty add carol --admin); then fail "leaving the disk password que
   fail "cancelling the switch's questions writes no wheel rule" "$output; $(ls "$test_tmp/sudoers.d")"
 pass "the wheel rule for --admin waits until the switch's questions are answered"
 
+# Everyone who starts the computer knows the disk password, so no account may
+# be given it: not on its own, and not as the shared one chosen in the switch.
+reset_fixtures
+touch "$test_tmp/encrypted"
+if output=$(printf 'alicepw\n' | run_user add dave --password-stdin 2>&1); then fail "add takes the disk password for an account"; fi
+! has_user dave && [[ $output == *"unlocks the disk"* ]] || fail "add refuses the disk password for an account" "$output"
+answers no alicepw alicepw davepw davepw
+output=$(run_tty add dave) || fail "add asks again after the disk password" "$output"
+has_user dave && [[ $output == *"That one unlocks the disk"* ]] && grep -qx "dave:davepw" "$test_tmp/chpasswd.log" ||
+  fail "add asks again after the disk password, and takes the next one" "$output; $(cat "$test_tmp/chpasswd.log")"
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers yes alicepw no carolpw carolpw "A new disk password, to share" carolpw carolpw sharedpw sharedpw
+output=$(run_tty add carol) || fail "the switch asks again after the new account's password" "$output"
+has_user carol && [[ $output == *"That's the new account's password"* && $(cat "$test_tmp/disk_password") == "sharedpw" ]] ||
+  fail "the shared disk password can't be the new account's" "$output"
+pass "no account is given the disk password"
+
 # Each account records the changes it starts, so one another administrator
 # left unfinished stops the switch too, and says whose it is.
 two_accounts
@@ -1101,7 +1120,7 @@ reset_fixtures
 only_alice
 touch "$test_tmp/encrypted"
 answers yes alicepw no carolpw carolpw "A new password for me" newalicepw newalicepw newalicepw newalicepw
-if output=$(OMARCHY_TEST_CRYPTSETUP_ERROR_AT=2 run_tty add carol); then fail "a cryptsetup error while checking a new password stops the add"; fi
+if output=$(OMARCHY_TEST_CRYPTSETUP_ERROR_AT=3 run_tty add carol); then fail "a cryptsetup error while checking a new password stops the add"; fi
 ! has_user carol && [[ $output == *"Couldn't check a password"* ]] && ! grep -q "chpasswd" "$test_tmp/calls.log" &&
   [[ $(grep -c "input --password" "$test_tmp/gum.log") == 5 ]] ||
   fail "a cryptsetup error while checking a new password stops the add without asking again" "$output; $(cat "$test_tmp/calls.log")"

@@ -345,10 +345,11 @@ user_accounts_ask_new_password() {
 
 # What going from one login account to two changes, and the go-ahead for it.
 # The checks user_accounts_go_multi asks with: the shared disk password must
-# not be the administrator's own ($1), and a new own password must not open the
-# disk ($1).
+# be neither the administrator's own ($1) nor the new account's ($2), and a new
+# own password must not open the disk ($1).
 _user_accounts_not_this_one() {
-  [[ $2 != "$1" ]] || { echo "That's your own password; the disk needs a different one." >&2; return 1; }
+  [[ $3 != "$1" ]] || { echo "That's your own password; the disk needs a different one." >&2; return 1; }
+  [[ -z $2 || $3 != "$2" ]] || { echo "That's the new account's password; the disk needs a different one." >&2; return 1; }
 }
 
 _user_accounts_not_the_disk_key() {
@@ -373,9 +374,9 @@ user_accounts_explain_multi() {
 # disk password, which everyone who starts the computer types, must stop being
 # the first administrator's own password; root is locked; and the login screen
 # asks who is logging in instead of logging the owner in automatically. $2 is
-# the administrator's password, already checked.
+# the administrator's password, already checked, and $3 the new account's.
 user_accounts_go_multi() {
-  local self=$1 mine=$2 disk choice new share own output opens="" changed
+  local self=$1 mine=$2 theirs=${3:-} disk choice new share own output opens="" changed
   disk=$(user_accounts_root_luks_or_explain) || return 1
   if [[ -n $disk ]]; then
     user_accounts_disk_change_finished || return
@@ -386,7 +387,7 @@ user_accounts_go_multi() {
     own=$(omarchy-i18n user.choiceNewOwn)
     choice=$(gum choose --header "$(omarchy-i18n user.whichPassword)" "$share" "$own") || return 1
     if [[ $choice == "$share" ]]; then
-      new=$(user_accounts_ask_new_password "$(omarchy-i18n user.newDiskPassword)" _user_accounts_not_this_one "$mine") || return 1
+      new=$(user_accounts_ask_new_password "$(omarchy-i18n user.newDiskPassword)" _user_accounts_not_this_one "$mine" "$theirs") || return 1
       # An earlier change that stopped part way must be finished by a person
       # (omarchy-drive-password keeps a record of it and refuses until then):
       # status 2, so the caller can say what to do.
