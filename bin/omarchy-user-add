@@ -148,7 +148,7 @@ if (( second_account )); then
   status=0
   user_accounts_go_multi "$(user_accounts_self)" "$mine" || status=$?
   if (( status == 2 )); then
-    fail "an earlier disk password change stopped part way, so '$name' was not added; run omarchy-drive-password to finish it, then run this again"
+    fail "an earlier disk password change stopped part way, so '$name' was not added; once it's finished with omarchy-drive-password, run this again"
   elif (( status != 0 )); then
     fail "the switch to several accounts didn't finish, so '$name' was not added; run this again to continue"
   fi

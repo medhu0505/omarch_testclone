@@ -976,14 +976,14 @@ only_alice
 touch "$test_tmp/encrypted"
 answers yes alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
 if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty add carol); then fail "an unfinished disk password change stops the add"; fi
-! has_user carol && [[ $output == *"stopped part way"* && $output == *"run omarchy-drive-password to finish it, then run this again"* && $output != *"run this again to continue"* ]] ||
+! has_user carol && [[ $output == *"stopped part way"* && $output == *"once it's finished with omarchy-drive-password, run this again"* && $output != *"run this again to continue"* ]] ||
   fail "an unfinished disk password change tells the administrator to finish it first" "$output"
 pass "an unfinished disk password change is pointed at omarchy-drive-password"
 two_accounts
 touch "$test_tmp/encrypted"
 answers alicepw yes sharedpw
 if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty remove bob); then fail "an unfinished disk password change stops the removal"; fi
-has_user bob && [[ $output == *"run omarchy-drive-password to finish it, then run this again"* && $output != *"run this again to finish"* ]] ||
+has_user bob && [[ $output == *"once it's finished with omarchy-drive-password, run this again"* && $output != *"run this again to finish"* ]] ||
   fail "an unfinished disk password change stops the removal and points at omarchy-drive-password" "$output"
 pass "the removal points at omarchy-drive-password too"
 
@@ -996,7 +996,7 @@ touch "$test_tmp/encrypted"
 printf 'alicepw' >"$test_tmp/disk_password"
 answers alicepw yes
 if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty remove bob); then fail "an unfinished change stops the removal when your password already opens the disk"; fi
-has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"run omarchy-drive-password to finish it, then run this again"* ]] &&
+has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"once it's finished with omarchy-drive-password, run this again"* ]] &&
   ! grep -q "chpasswd" "$test_tmp/calls.log" ||
   fail "an unfinished change stops the removal before anything changes, when your password already opens the disk" "$output; $(cat "$test_tmp/calls.log")"
 pass "an unfinished disk password change stops the removal even when your password already opens the disk"
@@ -1007,7 +1007,7 @@ touch "$test_tmp/encrypted"
 printf 'otherpw' >"$test_tmp/disk_password"
 answers yes alicepw no carolpw carolpw
 if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty add carol); then fail "an unfinished change stops the add when your password no longer opens the disk"; fi
-! has_user carol && [[ $output == *"run omarchy-drive-password to finish it, then run this again"* ]] && ! grep -q "passwd -l" "$test_tmp/calls.log" ||
+! has_user carol && [[ $output == *"once it's finished with omarchy-drive-password, run this again"* ]] && ! grep -q "passwd -l" "$test_tmp/calls.log" ||
   fail "an unfinished change stops the add before anything changes, when your password no longer opens the disk" "$output; $(cat "$test_tmp/calls.log")"
 pass "an unfinished disk password change stops the add even when your password no longer opens the disk"
 
