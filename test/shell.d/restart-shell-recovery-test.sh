@@ -187,7 +187,7 @@ process_dead() {
 }
 
 mapfile -t matching_pids < <(matching_shell_pids)
-[[ ${#matching_pids[@]} == 1 && ${matching_pids[0]} == "$registry_pid" ]] ||
+(( ${#matching_pids[@]} == 1 )) && [[ ${matching_pids[0]} == $registry_pid ]] ||
   fail "registry finds a crash-restarted shell whose cmdline lacks -p" "${matching_pids[*]}"
 : >"$list_calls_file"
 stop_shell_instances

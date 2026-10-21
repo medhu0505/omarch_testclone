@@ -95,7 +95,7 @@ shell_process_matches_config() {
   for (( i = 0; i < ${#args[@]} - 1; i++ )); do
     case ${args[i]} in
       -p|--path|-c|--config)
-        [[ ${args[i+1]%/} == "${CONFIG_DIR%/}" ]] && return 0
+        [[ ${args[i+1]%/} == ${CONFIG_DIR%/} ]] && return 0
         ;;
     esac
   done
@@ -179,8 +179,8 @@ if [[ -d $runtime_dir/by-pid ]]; then
     pid=${d##*/}
     [[ $pid =~ ^[0-9]+$ ]] || continue
     if process_dead "$pid"; then
-      instance_dir=$(command -v realpath >/dev/null 2>&1 && realpath "$d" 2>/dev/null || readlink -f "$d" 2>/dev/null || true)
-      [[ -n $instance_dir && $instance_dir != "$d" ]] && rm -rf "$instance_dir"
+      instance_dir=$(realpath "$d" 2>/dev/null)
+      [[ -n $instance_dir && $instance_dir != $d ]] && rm -rf "$instance_dir"
       rm -f "$d"
     fi
   done
