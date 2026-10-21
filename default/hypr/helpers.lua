@@ -135,8 +135,16 @@ function o.preinstalled_bindings_enabled()
   return not file_exists((os.getenv("HOME") or "") .. "/.local/state/omarchy/preinstalls-removed")
 end
 
+-- Keys bound outside named shortcuts, so moving a shortcut off keys it took
+-- from one of these knows a reload must bring that binding back.
+o.bound_keys = {}
+
 function o.bind(keys, description, dispatcher, options)
   local opts = options or {}
+
+  if not (o.shortcuts and o.shortcuts.binding) then
+    o.bound_keys[keys] = true
+  end
 
   if description then
     opts.description = description

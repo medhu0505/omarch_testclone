@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# omarchy:summary=Print the keys a named shortcut is bound to, one per line
+# omarchy:args=<id> [--json]
+# omarchy:examples=omarchy shortcut get omarchy.dictation.hold | omarchy shortcut get com.example.app.record --json
+
+source omarchy-shortcut-functions
+
+id="${1:-}"
+json=0
+[[ ${2:-} == "--json" ]] && json=1
+
+if [[ -z $id ]] || ! shortcut_valid_id "$id" || (($# > 2)) || { (($# == 2)) && ((!json)); }; then
+  echo "Usage: omarchy-shortcut-get <id> [--json]" >&2
+  exit 1
+fi
+
+shortcut_known "$id" || shortcut_fail "no shortcut named $id"
+
+if ((json)); then
+  snapshot=$(shortcut_snapshot "$id")
+  shortcut_keys "$id" | jq -Rn --arg id "$id" --argjson snapshot "${snapshot:-null}" \
+    --arg description "$(shortcut_field "$id" description)" \
+    --arg command "$(shortcut_field "$id" command)" \
+    --arg release "$(shortcut_field "$id" release)" '
+      ($snapshot // { id: $id, source: "app" })
+      + { keys: [inputs] }
+      + (if $snapshot == null then
+          { description: $description, command: $command }
+          + (if $release != "" then { release: $release } else {} end)
+        else {} end)'
+else
+  shortcut_keys "$id"
+fi
