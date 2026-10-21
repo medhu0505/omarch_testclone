@@ -135,7 +135,7 @@ function o.preinstalled_bindings_enabled()
   return not file_exists((os.getenv("HOME") or "") .. "/.local/state/omarchy/preinstalls-removed")
 end
 
-local MODIFIERS = { CONTROL = "CTRL", MOD1 = "ALT", WIN = "SUPER", LOGO = "SUPER", MOD4 = "SUPER" }
+local MODIFIERS = { CONTROL = "CTRL", MOD1 = "ALT", WIN = "SUPER", LOGO = "SUPER", MOD4 = "SUPER", META = "SUPER" }
 local MODIFIER_KEYS = { ALT = true, SUPER = true, CONTROL = true, SHIFT = true, META = true, HYPER = true }
 
 -- A modifier pressed on its own changes the modifier mask between its press

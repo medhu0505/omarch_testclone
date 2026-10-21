@@ -22,10 +22,17 @@ shortcut_valid_value() {
 }
 
 # Hyprland reads `hl.unbind("all")` as removing every binding, and "catchall"
-# binds every key in a submap, so neither can be a shortcut's key.
+# binds every key in a submap, so neither can be a shortcut's key. Nor can a
+# chord with an empty part, such as "F9 + ", which Hyprland rejects.
 shortcut_valid_keys() {
-  local chord
+  local chord part
+  local -a parts=()
 
+  IFS='+' read -ra parts <<<"$1+"
+  [[ $1 != *+ ]] || return 1
+  for part in "${parts[@]}"; do
+    [[ $part == *[![:space:]]* ]] || return 1
+  done
   chord=$(shortcut_chord "$1")
   [[ ${chord##*+} != "ALL" && ${chord##*+} != "CATCHALL" ]]
 }
@@ -102,28 +109,31 @@ shortcut_ids() {
 # "CTRL + SUPER + X" compare equal. A modifier key pressed alone matches with
 # the mask ignored, so it reduces to the key itself.
 shortcut_chord() {
-  local -a parts=()
-  local part key
+  local -a raw=() parts=()
+  local part key i
 
-  IFS='+' read -ra parts <<<"${1^^}"
-  for i in "${!parts[@]}"; do
-    part=${parts[i]}
+  IFS='+' read -ra raw <<<"${1^^}"
+  for part in "${raw[@]}"; do
     part=${part#"${part%%[![:space:]]*}"}
     part=${part%"${part##*[![:space:]]}"}
-    case $part in
-      CONTROL) part=CTRL ;;
-      MOD1) part=ALT ;;
-      WIN | LOGO | MOD4) part=SUPER ;;
-    esac
-    parts[i]=$part
+    [[ -n $part ]] && parts+=("$part")
   done
+  ((${#parts[@]})) || return 0
 
   key=${parts[-1]}
   unset 'parts[-1]'
+  for i in "${!parts[@]}"; do
+    case ${parts[i]} in
+      CONTROL) parts[i]=CTRL ;;
+      MOD1) parts[i]=ALT ;;
+      WIN | LOGO | MOD4 | META) parts[i]=SUPER ;;
+    esac
+  done
+
   if [[ $key =~ ^(ALT|SUPER|CONTROL|SHIFT|META|HYPER)_[LR]$ || $key == "ISO_LEVEL3_SHIFT" ]]; then
     printf '%s\n' "$key"
   elif ((${#parts[@]})); then
-    printf '%s+%s\n' "$(printf '%s\n' "${parts[@]}" | sed '/^$/d' | LC_ALL=C sort | paste -sd+)" "$key"
+    printf '%s+%s\n' "$(printf '%s\n' "${parts[@]}" | LC_ALL=C sort | paste -sd+)" "$key"
   else
     printf '%s\n' "$key"
   fi

@@ -92,11 +92,29 @@ assert(o.bound_keys["SUPER+W"]["SUPER + W"] and not o.bound_keys["F9"], "only bi
 '
 pass "Omarchy shortcuts bind their default keys"
 
+# bash and Lua must agree on every chord, or a conflict check passes keys that
+# then never bind.
+chords=("SUPER + ctrl + x" "CTRL+SUPER+X" "META + R" "MOD4 + R" "control + mod1 + T" "ALT + Alt_R" "Super_R" "SUPER + code:191" "SUPER + mouse:275" "F9 + " "+F9" "META")
+lua_chords=$(run_lua "for _, keys in ipairs({ $(printf '"%s",' "${chords[@]}") }) do print(o.chord(keys)) end")
+# A subshell, so the helpers' snapshot and exit trap stay out of this test.
+(
+  source "$ROOT/bin/omarchy-shortcut-functions"
+  bash_chords=$(for keys in "${chords[@]}"; do shortcut_chord "$keys"; done)
+  [[ $lua_chords == "$bash_chords" ]] || fail "bash and Lua normalize chords alike" "$(paste <(echo "$lua_chords") <(echo "$bash_chords"))"
+  for keys in "F9 + " "+F9" "SUPER + + R" " " "all"; do
+    shortcut_valid_keys "$keys" && fail "\"$keys\" is not valid keys"
+  done
+  for keys in "F9" "SUPER + R" "Super_R" "SUPER + code:191"; do
+    shortcut_valid_keys "$keys" || fail "\"$keys\" is valid keys"
+  done
+)
+pass "bash and Lua agree on chords and on which keys are valid"
+
 printf '%s\n' 'keys=SUPER + R' 'keys=super + w' 'description=Ignored' 'command=ignored' >"$registry/omarchy.dictation.hold"
 printf '%s\n' 'description=Record' 'command=example record' 'keys=SUPER + ALT + R' 'keys=CTRL + SUPER + T' >"$registry/com.example.record"
 printf '%s\n' 'description=Talk' 'command=example start' 'release=example stop' 'keys=Super_R' >"$registry/com.example.talk"
 printf '%s\n' 'description=No command' 'keys=F1' >"$registry/com.example.orphan"
-printf '%s\n' 'description=Everything' 'command=x' 'keys=all' 'keys=SUPER + catchall' >"$registry/com.example.all"
+printf '%s\n' 'description=Everything' 'command=x' 'keys=all' 'keys=SUPER + catchall' 'keys=F10 + ' >"$registry/com.example.all"
 printf '%s\n' 'command=bad' 'keys=F2' >"$registry/.hidden"
 run_lua '
 o.bind("SUPER + W", "Close window", "close-window")
@@ -126,6 +144,7 @@ for _, keys in ipairs(unbound) do
   assert(keys ~= "all" and not keys:find("catchall"), "reserved keys never reach hl.unbind: " .. keys)
 end
 assert(#bound("SUPER + W") > 0, "a registry naming all keys does not clear the bindings")
+assert(#bound("F10") == 0, "keys with an empty part never bind")
 
 -- Moving off keys taken from a default needs the config to bring it back.
 local file = io.open(os.getenv("XDG_CONFIG_HOME") .. "/omarchy/shortcuts/omarchy.dictation.hold", "w")

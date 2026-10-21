@@ -17,10 +17,16 @@ local registry = paths.config_home .. "/omarchy/shortcuts"
 local normalize, modifier_key = o.chord, o.modifier_key
 
 -- Hyprland reads hl.unbind("all") as removing every binding, and "catchall"
--- binds every key in a submap, so neither ever comes from the registry.
+-- binds every key in a submap, so neither ever comes from the registry. Nor
+-- does a chord with an empty part, such as "F9 + ", which Hyprland rejects.
 local RESERVED_KEYS = { ALL = true, CATCHALL = true }
 
 local function valid_keys(keys)
+  for part in (keys .. "+"):gmatch("([^+]*)%+") do
+    if not part:find("%S") then
+      return false
+    end
+  end
   return not RESERVED_KEYS[normalize(keys):match("([^+]*)$")]
 end
 
