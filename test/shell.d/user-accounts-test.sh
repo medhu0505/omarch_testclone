@@ -1,6 +1,8 @@
 #!/bin/bash
 
-source "$(dirname "$0")/base-test.sh"
+set -euo pipefail
+
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
 test_tmp=$(mktemp -d) || fail "a temporary directory can be created"
 trap 'rm -rf "$test_tmp"' EXIT
