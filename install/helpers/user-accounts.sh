@@ -241,9 +241,9 @@ user_accounts_try_disk_password() {
 
 # Whether omarchy-drive-password's last change to the system disk's password
 # finished. One that stopped part way can leave the old key opening the disk
-# beside the new one, which no password test shows, so the switches stop with
-# status 2 until a person finishes it, as they do when the change itself
-# refuses. Each account records the changes it starts, so every login account
+# beside the new one, which no password test shows, so the account commands
+# stop with status 2 until a person finishes it, as they do when the change
+# itself refuses. Each account records the changes it starts, so every login account
 # is asked, as itself. Any other failure is status 1.
 user_accounts_disk_change_finished() {
   local self name home answer
@@ -422,8 +422,9 @@ user_accounts_go_multi() {
 user_accounts_go_single() {
   local self=$1 mine=$2 disk current output opens=""
   disk=$(user_accounts_root_luks_or_explain) || return 1
+  # omarchy-user-remove has checked that no disk password change is
+  # unfinished, as it does before every removal.
   if [[ -n $disk ]]; then
-    user_accounts_disk_change_finished || return
     opens=$(user_accounts_try_disk_password "$disk" "$mine") || return 1
   fi
   if [[ $opens == "refused" ]]; then

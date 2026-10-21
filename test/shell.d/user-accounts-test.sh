@@ -1050,6 +1050,16 @@ has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"started by 'bob
   fail "another account's unfinished change stops the removal before anything changes, and names that account" "$output; $(cat "$test_tmp/calls.log")"
 pass "another account's unfinished disk password change stops the switch too"
 
+# Every removal checks, not only the one back to a single account: with three
+# accounts, bob's record would otherwise go with him, and his key could still
+# open the disk.
+reset_fixtures
+touch "$test_tmp/encrypted"
+if output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_user remove bob --yes 2>&1); then fail "an unfinished change stops a removal that leaves several accounts"; fi
+has_user bob && [[ $output == *"started by 'bob'"* ]] && ! grep -q "userdel" "$test_tmp/calls.log" ||
+  fail "an unfinished change stops a removal that leaves several accounts, before anything changes" "$output; $(cat "$test_tmp/calls.log")"
+pass "an unfinished disk password change stops every removal"
+
 # cryptsetup reports a wrong passphrase as status 2. Any other failure is no
 # answer, so the switches stop rather than read it as one: as "doesn't open",
 # the add would skip the split and have the administrator share their own
