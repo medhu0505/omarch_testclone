@@ -22,8 +22,10 @@ require("default.hypr.looknfeel")
 require("default.hypr.qconsole")
 require("default.hypr.input")
 require("default.hypr.windows")
-require("default.hypr.dictation-backend")
+-- Before the dictation backend, whose own integration may unbind or replace
+-- Omarchy's dictation shortcuts.
 o.shortcuts.apply()
+require("default.hypr.dictation-backend")
 
 -- Current theme overrides.
 require_optional.module("omarchy.current.theme.hyprland")

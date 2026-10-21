@@ -178,49 +178,75 @@ function o.shortcuts.snapshot(path)
   file:close()
 end
 
--- Bind every shortcut, replacing what the previous apply bound. Moving a
--- shortcut off keys it took from a default needs a full reload to bring that
--- default back, since only the config knows what it was.
-function o.shortcuts.apply()
+-- Bind shortcuts. As the config loads, with no ids, every shortcut is bound.
+-- Live, the CLI names the ids it changed, and only those are rebound: every
+-- other shortcut stays as it is, along with anything a dictation backend or the
+-- user unbound since. Moving a shortcut off keys it took from a default needs a
+-- full reload to bring that default back, since only the config knows it.
+function o.shortcuts.apply(ids)
   local shortcuts = resolve()
+
+  local changed = nil
+  if ids then
+    changed = {}
+    for _, id in ipairs(ids) do
+      changed[id] = true
+    end
+  end
+  local function rebinding(id)
+    return changed == nil or changed[id] == true
+  end
+
+  local previous = {}
+  for _, shortcut in ipairs(o.shortcuts.current) do
+    previous[shortcut.id] = shortcut
+  end
 
   local wanted = {}
   for _, shortcut in ipairs(shortcuts) do
-    if shortcut.command then
+    if shortcut.command and rebinding(shortcut.id) then
       for _, keys in ipairs(shortcut.keys) do
         wanted[normalize(keys)] = valid_keys(keys) or nil
       end
     end
   end
-  for chord, keys in pairs(o.shortcuts.bound) do
-    if not wanted[chord] and o.bound_keys[chord] then
+  for chord, owner in pairs(o.shortcuts.bound) do
+    if rebinding(owner.id) and not wanted[chord] and o.bound_keys[chord] then
       hl.exec_cmd("hyprctl reload")
       return
     end
-    hl.unbind(keys)
   end
-  o.shortcuts.bound = {}
+  for chord, owner in pairs(o.shortcuts.bound) do
+    if rebinding(owner.id) then
+      hl.unbind(owner.keys)
+      o.shortcuts.bound[chord] = nil
+    end
+  end
 
   o.shortcuts.binding = true
   for _, shortcut in ipairs(shortcuts) do
-    shortcut.bound = {}
-    for _, keys in ipairs(shortcut.command and shortcut.keys or {}) do
-      local chord = normalize(keys)
-      if valid_keys(keys) and not o.shortcuts.bound[chord] then
-        -- Hyprland unbinds by the text a binding was made with, so a default
-        -- spelled "SUPER + CTRL + X" survives an unbind of "CTRL + SUPER + X".
-        for spelling in pairs(o.bound_keys[chord] or {}) do
-          hl.unbind(spelling)
+    if not rebinding(shortcut.id) then
+      shortcut.bound = previous[shortcut.id] and previous[shortcut.id].bound or {}
+    else
+      shortcut.bound = {}
+      for _, keys in ipairs(shortcut.command and shortcut.keys or {}) do
+        local chord = normalize(keys)
+        if valid_keys(keys) and not o.shortcuts.bound[chord] then
+          -- Hyprland unbinds by the text a binding was made with, so a default
+          -- spelled "SUPER + CTRL + X" survives an unbind of "CTRL + SUPER + X".
+          for spelling in pairs(o.bound_keys[chord] or {}) do
+            hl.unbind(spelling)
+          end
+          hl.unbind(keys)
+          local options = modifier_key(chord:match("([^+]*)$")) and { ignore_mods = true } or nil
+          if shortcut.release then
+            o.bind_hold(keys, shortcut.description, shortcut.command, shortcut.release_description or shortcut.description, shortcut.release, options)
+          else
+            o.bind(keys, shortcut.description, shortcut.command, options)
+          end
+          o.shortcuts.bound[chord] = { id = shortcut.id, keys = keys }
+          table.insert(shortcut.bound, keys)
         end
-        hl.unbind(keys)
-        local options = modifier_key(chord:match("([^+]*)$")) and { ignore_mods = true } or nil
-        if shortcut.release then
-          o.bind_hold(keys, shortcut.description, shortcut.command, shortcut.release_description or shortcut.description, shortcut.release, options)
-        else
-          o.bind(keys, shortcut.description, shortcut.command, options)
-        end
-        o.shortcuts.bound[chord] = keys
-        table.insert(shortcut.bound, keys)
       end
     end
   end

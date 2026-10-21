@@ -149,11 +149,15 @@ shortcut_live_bindings() {
   '
 }
 
-# Bind the registry now. A Hyprland config from before named shortcuts has no
-# o.shortcuts to call, so reload it instead.
+# Rebind the shortcuts with these ids now, leaving every other one alone. Ids
+# hold no characters Lua would need quoted. A Hyprland config from before named
+# shortcuts has no o.shortcuts to call, so reload it instead.
 shortcut_apply() {
+  local ids
+
   shortcut_hyprland_running || return 0
-  hyprctl eval "o.shortcuts.apply()" >/dev/null 2>&1 || hyprctl reload >/dev/null
+  ids=$(printf '"%s",' "$@")
+  hyprctl eval "o.shortcuts.apply({${ids%,}})" >/dev/null 2>&1 || hyprctl reload >/dev/null
 }
 
 shortcut_load_snapshot

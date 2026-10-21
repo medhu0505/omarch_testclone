@@ -165,4 +165,4 @@ else
 fi
 write_shortcut "$id" "${lines[@]}"
 
-shortcut_apply
+shortcut_apply "$id" "${!taken_from[@]}"

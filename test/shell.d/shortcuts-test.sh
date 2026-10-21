@@ -150,6 +150,26 @@ assert(#bound("F9") == 0, "an empty choice disables a default shortcut")
 '
 pass "an Omarchy shortcut can be turned off"
 
+rm -f "$registry/omarchy.dictation.hold"
+run_lua '
+o.shortcut("omarchy.dictation.toggle", { description = "Toggle dictation", keys = "SUPER + CTRL + X", command = "toggle" })
+o.shortcut("omarchy.dictation.hold", { description = "Dictate", keys = "F9", command = "start", release = "stop" })
+o.shortcuts.apply()
+-- The user or a dictation backend removes a key after the shortcuts bind.
+hl.unbind("SUPER + CTRL + X")
+local file = io.open(os.getenv("XDG_CONFIG_HOME") .. "/omarchy/shortcuts/omarchy.dictation.hold", "w")
+file:write("keys=F10\n")
+file:close()
+o.shortcuts.apply({ "omarchy.dictation.hold" })
+assert(#bound("SUPER + CTRL + X") == 0, "a live apply leaves keys someone unbound alone")
+assert(#bound("F9") == 0 and #bound("F10") == 2, "a live apply rebinds the shortcut it names")
+'
+rm -f "$registry/omarchy.dictation.hold"
+apply_line=$(grep -n '^o.shortcuts.apply()' "$ROOT/default/hypr/omarchy.lua" | cut -d: -f1)
+backend_line=$(grep -n 'require("default.hypr.dictation-backend")' "$ROOT/default/hypr/omarchy.lua" | cut -d: -f1)
+((apply_line < backend_line)) || fail "shortcuts bind before the dictation backend can replace them"
+pass "a live apply only touches the shortcuts it names"
+
 printf '%s\n' 'description=Quote "this" \ and	tab' 'command=x' 'keys=F3' >"$registry/com.example.record"
 run_lua '
 o.shortcuts.apply()
@@ -216,7 +236,7 @@ pass "get reads what Hyprland bound"
 omarchy-shortcut-set omarchy.dictation.hold F9 "Alt_R" "SUPER + R" || fail "keys a shortcut already holds are no conflict"
 [[ $(omarchy-shortcut-get omarchy.dictation.hold) == $'F9\nAlt_R\nSUPER + R' ]] || fail "get prints the chosen keys"
 [[ $(cat "$registry/omarchy.dictation.hold") == $'keys=F9\nkeys=Alt_R\nkeys=SUPER + R' ]] || fail "Omarchy's shortcut stores only keys"
-grep -qx 'o.shortcuts.apply()' "$HYPRCTL_LOG" || fail "set applies the change live"
+grep -qx 'o.shortcuts.apply({"omarchy.dictation.hold"})' "$HYPRCTL_LOG" || fail "set applies the change live, to that shortcut only" "$(cat "$HYPRCTL_LOG")"
 pass "set rebinds an Omarchy shortcut"
 
 if omarchy-shortcut-set omarchy.dictation.hold F9 --command evil 2>/dev/null; then fail "Omarchy shortcuts keep their command"; fi
@@ -247,6 +267,8 @@ pass "set refuses keys another binding uses"
 
 omarchy-shortcut-set com.example.record "SUPER + R" "SUPER + SHIFT + R" --command "example record" --description "Record" --force ||
   fail "force takes conflicting keys"
+grep -qx 'o.shortcuts.apply({"com.example.record","omarchy.dictation.hold"})' "$HYPRCTL_LOG" ||
+  fail "force rebinds the shortcut it took keys from" "$(cat "$HYPRCTL_LOG")"
 [[ $(omarchy-shortcut-get omarchy.dictation.hold) == $'F9\nAlt_R' ]] || fail "force takes keys from the shortcut that had them"
 [[ $(omarchy-shortcut-get com.example.record) == $'SUPER + R\nSUPER + SHIFT + R' ]] || fail "force binds the new shortcut"
 grep -qx 'description=Record' "$registry/com.example.record" && grep -qx 'command=example record' "$registry/com.example.record" ||

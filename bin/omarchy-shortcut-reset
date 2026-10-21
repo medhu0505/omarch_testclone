@@ -16,4 +16,4 @@ exec 9>"$SHORTCUTS_DIR/.lock"
 flock -w 5 9 || shortcut_fail "shortcuts are busy; try again"
 
 rm -f "$SHORTCUTS_DIR/$1"
-shortcut_apply
+shortcut_apply "$1"
