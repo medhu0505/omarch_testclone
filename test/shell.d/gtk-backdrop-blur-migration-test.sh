@@ -13,7 +13,7 @@ toggles_dir="$test_dir/.local/state/omarchy/toggles/hypr"
 import="@import url(\"file://$ROOT/default/gtk/glass.css\");"
 
 run_migration() {
-  HOME="$test_dir" XDG_STATE_HOME="" XDG_CONFIG_HOME="" OMARCHY_PATH="$ROOT" PATH="$ROOT/bin:$PATH" bash -euo pipefail "$migration" >/dev/null
+  HOME="$test_dir" XDG_RUNTIME_DIR="$test_dir" XDG_STATE_HOME="" XDG_CONFIG_HOME="" OMARCHY_PATH="$ROOT" PATH="$ROOT/bin:$PATH" bash -euo pipefail "$migration" >/dev/null
 }
 
 # See-through windows get the backdrop blur once, beside the user's own CSS.

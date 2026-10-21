@@ -6,4 +6,5 @@ echo "Give GTK apps the backdrop blur the see-through windows ask the compositor
 # only, so it missed every machine that chooses its own transparency; it
 # follows see-through windows now. Reapply it for the mode already in use,
 # which leaves an opaque machine and a theme that owns the file alone.
-omarchy-theme-set-glass
+# Theme switches and window mode changes rewrite the same files under this lock.
+flock "${XDG_RUNTIME_DIR:-/tmp}/omarchy-theme-set.lock" omarchy-theme-set-glass
