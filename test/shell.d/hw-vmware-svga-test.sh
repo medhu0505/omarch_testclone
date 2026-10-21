@@ -17,11 +17,11 @@ exec "$@"
 SH
 cat >"$mock_bin/uwsm-app" <<'SH'
 #!/bin/bash
-printf '%s\n' "$*" >"$OMARCHY_TEST_LAUNCH"
+printf '%s\n' "$@" >"$OMARCHY_TEST_LAUNCH"
 SH
 cat >"$mock_bin/omarchy-cmd-terminal-cwd" <<'SH'
 #!/bin/bash
-printf '%s\n' /tmp/project
+printf '%s\n' "/tmp/my project"
 SH
 chmod +x "$mock_bin"/*
 
@@ -38,12 +38,13 @@ write_device() {
 
 assert_launch() {
   local description="$1"
-  local expected="$2"
+  local launcher="$2"
+  local expected="$3"
   local launch_log="$tmp_dir/launch"
 
   rm -f "$launch_log"
-  OMARCHY_TEST_LAUNCH="$launch_log" bash "$ROOT/bin/omarchy-launch-nautilus"
-  [[ $(< "$launch_log") == "$expected" ]] || fail "$description" "expected $expected, got $(< "$launch_log")"
+  OMARCHY_TEST_LAUNCH="$launch_log" bash "$launcher"
+  [[ $(< "$launch_log") == $expected ]] || fail "$description" "expected $expected, got $(< "$launch_log")"
   pass "$description"
 }
 
@@ -65,18 +66,12 @@ status=0
 omarchy-hw-vmware-svga || status=$?
 [[ $status == 1 ]] || fail "Intel display is not VMware SVGA" "expected 1, got $status"
 pass "Intel display is not VMware SVGA"
-assert_launch "Files launches normally off VMware SVGA" "-- nautilus --new-window"
+assert_launch "Files launches normally off VMware SVGA" "$ROOT/bin/omarchy-launch-nautilus" $'--\nnautilus\n--new-window'
 
 write_device 2 0x15ad 0x030000
 status=0
 omarchy-hw-vmware-svga || status=$?
 [[ $status == 0 ]] || fail "VMware SVGA display" "expected 0, got $status"
 pass "VMware SVGA display"
-assert_launch "Files uses Cairo on VMware SVGA" "-- env -u GDK_BACKEND GSK_RENDERER=cairo nautilus --new-window"
-
-launch_log="$tmp_dir/launch"
-rm -f "$launch_log"
-OMARCHY_TEST_LAUNCH="$launch_log" bash "$ROOT/bin/omarchy-launch-nautilus-cwd"
-[[ $(< "$launch_log") == "-- env -u GDK_BACKEND GSK_RENDERER=cairo nautilus --new-window /tmp/project" ]] ||
-  fail "Files opens the terminal directory on VMware SVGA" "got $(< "$launch_log")"
-pass "Files opens the terminal directory on VMware SVGA"
+assert_launch "Files uses Cairo on VMware SVGA" "$ROOT/bin/omarchy-launch-nautilus" $'--\nenv\n-u\nGDK_BACKEND\nGSK_RENDERER=cairo\nnautilus\n--new-window'
+assert_launch "Files opens the terminal directory on VMware SVGA" "$ROOT/bin/omarchy-launch-nautilus-cwd" $'--\nenv\n-u\nGDK_BACKEND\nGSK_RENDERER=cairo\nnautilus\n--new-window\n/tmp/my project'
