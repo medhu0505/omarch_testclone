@@ -233,6 +233,21 @@ user_accounts_try_disk_password() {
   esac
 }
 
+# Whether omarchy-drive-password's last change to the system disk's password
+# finished. One that stopped part way can leave the old key opening the disk
+# beside the new one, which no password test shows, so the switches stop with
+# status 2 until a person finishes it, as they do when the change itself
+# refuses. Any other failure is status 1.
+user_accounts_disk_change_finished() {
+  local answer
+  answer=$(omarchy-drive-password --system-pending) || { printf '%s\n' "$answer" >&2; return 1; }
+  case $answer in
+  none) return 0 ;;
+  pending) return 2 ;;
+  *) printf '%s\n' "$answer" >&2; return 1 ;;
+  esac
+}
+
 # Whether the password is the user's login password, checked against its hash.
 user_accounts_password_is() {
   local hash
@@ -339,6 +354,7 @@ user_accounts_go_multi() {
   local self=$1 mine=$2 disk choice new share own output opens="" changed
   disk=$(user_accounts_root_luks_or_explain) || return 1
   if [[ -n $disk ]]; then
+    user_accounts_disk_change_finished || return
     opens=$(user_accounts_try_disk_password "$disk" "$mine") || return 1
   fi
   if [[ $opens == "opens" ]]; then
@@ -388,6 +404,7 @@ user_accounts_go_single() {
   local self=$1 mine=$2 disk current output opens=""
   disk=$(user_accounts_root_luks_or_explain) || return 1
   if [[ -n $disk ]]; then
+    user_accounts_disk_change_finished || return
     opens=$(user_accounts_try_disk_password "$disk" "$mine") || return 1
   fi
   if [[ $opens == "refused" ]]; then

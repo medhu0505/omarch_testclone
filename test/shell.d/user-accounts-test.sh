@@ -142,6 +142,11 @@ SH
 # The current and new disk passwords arrive on stdin, as with the real one.
 cat >"$mock_bin/omarchy-drive-password" <<'SH'
 #!/bin/bash
+# The query changes nothing, so only changes are logged.
+if [[ $1 == "--system-pending" ]]; then
+  if [[ -n ${OMARCHY_TEST_DRIVE_PENDING:-} ]]; then echo pending; else echo none; fi
+  exit 0
+fi
 echo "omarchy-drive-password $*" >>"$OMARCHY_TEST_DIR/calls.log"
 [[ $1 == "--system-stdin" ]] || exit 9
 # The real one refuses while a change it recorded earlier is unfinished.
@@ -922,6 +927,30 @@ if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty remove bob); then fail "an unfi
 has_user bob && [[ $output == *"run omarchy-drive-password to finish it, then run this again"* && $output != *"run this again to finish"* ]] ||
   fail "an unfinished disk password change stops the removal and points at omarchy-drive-password" "$output"
 pass "the removal points at omarchy-drive-password too"
+
+# A change that stopped between enrolling the new key and retiring the old one
+# leaves both opening the disk, so the remaining administrator's password
+# already works. The removal still stops: the old shared password would
+# otherwise boot into their desktop once automatic login is back.
+two_accounts
+touch "$test_tmp/encrypted"
+printf 'alicepw' >"$test_tmp/disk_password"
+answers alicepw yes
+if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty remove bob); then fail "an unfinished change stops the removal when your password already opens the disk"; fi
+has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"run omarchy-drive-password to finish it, then run this again"* ]] &&
+  ! grep -q "chpasswd" "$test_tmp/calls.log" ||
+  fail "an unfinished change stops the removal before anything changes, when your password already opens the disk" "$output; $(cat "$test_tmp/calls.log")"
+pass "an unfinished disk password change stops the removal even when your password already opens the disk"
+
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+printf 'otherpw' >"$test_tmp/disk_password"
+answers yes alicepw no carolpw carolpw
+if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty add carol); then fail "an unfinished change stops the add when your password no longer opens the disk"; fi
+! has_user carol && [[ $output == *"run omarchy-drive-password to finish it, then run this again"* ]] && ! grep -q "passwd -l" "$test_tmp/calls.log" ||
+  fail "an unfinished change stops the add before anything changes, when your password no longer opens the disk" "$output; $(cat "$test_tmp/calls.log")"
+pass "an unfinished disk password change stops the add even when your password no longer opens the disk"
 
 # cryptsetup reports a wrong passphrase as status 2. Any other failure is no
 # answer, so the switches stop rather than read it as one: as "doesn't open",
