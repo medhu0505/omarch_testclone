@@ -206,6 +206,25 @@ assert(ran[#ran] == "stop" and #ran == 2, "letting go afterwards does not stop i
 '
 pass "rebinding a held shortcut finishes the hold"
 
+printf '%s\n' 'description=Zed' 'command=zed' 'keys=F6' >"$registry/com.zed"
+printf '%s\n' 'description=Alpha' 'command=alpha' 'keys=F6' 'keys=F5' >"$registry/com.alpha"
+printf '%s\n' 'keys=F5' >"$registry/omarchy.second"
+run_lua '
+o.shortcut("omarchy.second", { description = "Second", keys = "F4", command = "second" })
+o.shortcut("omarchy.first", { description = "First", keys = "F5", command = "first" })
+o.shortcuts.apply()
+local ids = {}
+local wanted = { ["omarchy.second"] = true, ["omarchy.first"] = true, ["com.alpha"] = true, ["com.zed"] = true }
+for _, shortcut in ipairs(o.shortcuts.current) do
+  if wanted[shortcut.id] then table.insert(ids, shortcut.id) end
+end
+assert(table.concat(ids, " ") == "omarchy.second omarchy.first com.alpha com.zed", table.concat(ids, " "))
+assert(bound("F5")[1].opts.description == "Second", "the first declared keeps shared keys")
+assert(bound("F6")[1].opts.description == "Alpha", "apps share keys by id")
+'
+rm -f "$registry/com.zed" "$registry/com.alpha" "$registry/omarchy.second"
+pass "Omarchy shortcuts bind in declaration order, then apps by id"
+
 printf '%s\n' 'release=evil' 'release_description=Evil' 'command=evil' 'keys=F8' >"$registry/omarchy.dictation.toggle"
 printf '%s\n' 'description=Fake' 'command=fake' 'keys=F12' >"$registry/omarchy.fake"
 run_lua '

@@ -100,8 +100,9 @@ local function registered_ids()
   return ids
 end
 
--- Every shortcut with the registry laid over Omarchy's declarations, in
--- declaration order and then by id.
+-- Every shortcut with the registry laid over Omarchy's declarations: Omarchy's
+-- in the order they are declared, then apps' by id. Where two name the same
+-- keys, the first keeps them.
 local function resolve()
   local shortcuts, seen = {}, {}
 
@@ -129,17 +130,16 @@ local function resolve()
   end
   -- omarchy.* is Omarchy's own namespace: a file there names keys for one of
   -- its declared shortcuts and is never a shortcut of its own.
-  for id, entry in pairs(entries) do
+  local apps = {}
+  for id in pairs(entries) do
     if not seen[id] and not id:match("^omarchy%.") then
-      add(id, nil, entry)
+      table.insert(apps, id)
     end
   end
-  table.sort(shortcuts, function(a, b)
-    if (a.source == "omarchy") ~= (b.source == "omarchy") then
-      return a.source == "omarchy"
-    end
-    return a.id < b.id
-  end)
+  table.sort(apps)
+  for _, id in ipairs(apps) do
+    add(id, nil, entries[id])
+  end
 
   return shortcuts
 end
