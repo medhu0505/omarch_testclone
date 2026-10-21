@@ -26,9 +26,9 @@ elif lspci | grep -qi 'nvidia'; then
 
   omarchy-pkg-add "${PACKAGES[@]}"
 
-  # Enable Dynamic Boost on systems exposing NVIDIA's platform controller.
-  # Match the ACPI hardware ID without assuming a particular device instance.
-  if grep -qx 'NVDA0820' /sys/bus/acpi/devices/*/hid 2>/dev/null; then
+  # Enable Dynamic Boost on x86 laptops exposing NVIDIA's platform controller.
+  # The GB10 desktops expose the same ACPI ID, but Dynamic Boost is x86-only.
+  if omarchy-hw-x86 && grep -qx 'NVDA0820' /sys/bus/acpi/devices/*/hid 2>/dev/null; then
     systemctl enable nvidia-powerd
   fi
 
