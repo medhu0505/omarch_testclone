@@ -59,6 +59,8 @@ jq -e '.SearchSuggestEnabled == false
   and .AlternateErrorPagesEnabled == false
   and .SpellCheckServiceEnabled == false' "$write_dir/privacy.json" >/dev/null ||
   fail "privacy policy carries the hardened Chromium defaults"
+jq -e '[keys[] | select(startswith("PrivacySandbox"))] | length == 0' "$write_dir/privacy.json" >/dev/null ||
+  fail "privacy policy omits deprecated Privacy Sandbox keys"
 pass "privacy policy writes a hardened 0644 privacy.json"
 
 missing_dir=$test_tmp/not-created
@@ -126,6 +128,8 @@ browser_policy_setup_dir "$planted_dir"
 [[ -d $planted_dir ]] || fail "policy setup leaves the managed directory in place"
 mode=$(stat -c '%a' "$planted_dir")
 [[ $mode == "755" ]] || fail "policy setup leaves the managed directory 0755" "mode=$mode"
+[[ $(jq '.DefaultBrowserSettingEnabled' "$planted_dir/omarchy.json") == "false" ]] ||
+  fail "policy setup hides the default browser setting"
 pass "policy setup drops non-root files and non-empty subdirectories"
 
 owned=$test_tmp/not-root
@@ -351,15 +355,34 @@ grep -F 'browser_policy_firefox_policy_file_ok' "${migrations[0]}" >/dev/null ||
 grep -F '/opt/zen-browser/distribution' "$ROOT/install/helpers/browser-policy.sh" >/dev/null ||
   fail "the shared helper names the Zen distribution directory"
 pass "a migration locks existing policy directories"
-
 # The privacy policy has to be wired everywhere the colour policy is, not just
 # defined in the helper.
-grep -F 'browser_policy_install_privacy /etc/chromium/policies/managed' "$ROOT/install/config/browser-policy.sh" >/dev/null ||
-  fail "fresh installs ship the Chromium privacy policy"
+policy_hook="$ROOT/install/config/browser-policy.sh"
+setup_line=$(grep -n -F 'browser_policy_setup_dir /etc/chromium/policies/managed' "$policy_hook" | head -n 1 | cut -d: -f1 || true)
+privacy_line=$(grep -n -F 'browser_policy_install_privacy /etc/chromium/policies/managed' "$policy_hook" | head -n 1 | cut -d: -f1 || true)
+[[ -n $setup_line && -n $privacy_line ]] || fail "fresh installs set up the policy directory and install the privacy policy"
+(( privacy_line > setup_line )) || fail "fresh installs install the privacy policy after setting up its directory"
 grep -F 'browser_policy_install_privacy "$1"' "$ROOT/bin/omarchy-install-browser" >/dev/null ||
   fail "browser installs ship the privacy policy for managed directories"
 grep -F 'browser_policy_install_privacy "$dir"' "$ROOT/migrations/1790226946.sh" >/dev/null ||
   fail "the privacy migration installs into existing managed directories"
-grep -F '{color,privacy}.json' "$ROOT/bin/omarchy-remove-browser" >/dev/null ||
-  fail "browser removal cleans up privacy.json too"
-pass "privacy policy is wired into install, browser management and removal"
+grep -F 'sudo rm -f /etc/opt/chrome/policies/managed/color.json /etc/opt/chrome/policies/managed/privacy.json /etc/opt/chrome/policies/managed/omarchy.json' "$ROOT/bin/omarchy-remove-browser" >/dev/null ||
+  fail "Chrome removal cleans up color, privacy, and Omarchy policy files"
+grep -F 'sudo rm -f /etc/opt/edge/policies/managed/color.json /etc/opt/edge/policies/managed/privacy.json /etc/opt/edge/policies/managed/omarchy.json' "$ROOT/bin/omarchy-remove-browser" >/dev/null ||
+  fail "Edge removal cleans up color, privacy, and Omarchy policy files"
+pass "privacy policy is wired into install, browser management, and removal"
+
+fx_merge=$test_tmp/fx-merge
+mkdir -p "$fx_merge"
+printf '{"policies": {"DisableTelemetry": true}}\n' >"$fx_merge/policies.json"
+as_root() { unprivileged_as_root "$@"; }
+# Temp files are user-owned; trust them as the root-owned file they stand in for.
+browser_policy_firefox_policy_file_ok() { [[ -f $1 && ! -L $1 ]]; }
+browser_policy_firefox_skip_default_check "$fx_merge"
+browser_policy_firefox_skip_default_check "$fx_merge"
+[[ $(jq -c '.policies' "$fx_merge/policies.json") == '{"DisableTelemetry":true,"DontCheckDefaultBrowser":true}' ]] ||
+  fail "Firefox's default browser check is added beside an administrator's policies" "$(cat "$fx_merge/policies.json")"
+printf 'not json\n' >"$fx_merge/policies.json"
+browser_policy_firefox_skip_default_check "$fx_merge"
+[[ $(<"$fx_merge/policies.json") == "not json" ]] || fail "an unreadable Firefox policies.json is left alone"
+pass "Firefox's default browser check is merged into existing policies"

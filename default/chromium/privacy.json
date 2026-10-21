@@ -3,10 +3,6 @@
   "NetworkPredictionOptions": 2,
   "BlockThirdPartyCookies": true,
   "WebRtcIPHandling": "default_public_interface_only",
-  "PrivacySandboxAdTopicsEnabled": false,
-  "PrivacySandboxSiteEnabledAdsEnabled": false,
-  "PrivacySandboxAdMeasurementEnabled": false,
-  "PrivacySandboxPromptEnabled": false,
   "AlternateErrorPagesEnabled": false,
   "SpellCheckServiceEnabled": false
 }

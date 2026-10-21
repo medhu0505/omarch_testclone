@@ -4,7 +4,9 @@ Omarchy ships with [Chromium](https://www.chromium.org/) as the default browser.
 
 If Chromium isn't your taste, you're not stuck with it. Under _Install > Browser_ in the Omarchy menu you'll find Chrome, Edge, Brave, Brave Origin, Firefox, and [Zen](https://zen-browser.app/). Pick one and Omarchy installs it, sets up its policy directory, and applies your current theme to it.
 
-Every Chromium-family browser also gets a managed privacy policy at install time: it turns off search suggestions, prefetch and prediction, third-party cookies, spell-check uploads and Privacy Sandbox ad APIs, and limits WebRTC to your public interface. Edge only honours the subset it shares with Chromium, so its WebRTC and spell-check settings stay at their defaults. Override any of it by dropping a higher-priority JSON into the browser's managed policy directory.
+Every Chromium-family browser also gets a managed privacy policy at install time: it turns off search suggestions, prefetch and prediction, third-party cookies, spell-check uploads, and limits WebRTC to your public interface. Edge honours `AlternateErrorPagesEnabled`, `BlockThirdPartyCookies`, `NetworkPredictionOptions`, and `SearchSuggestEnabled`; its WebRTC and spell-check settings stay at their defaults.
+
+Chromium uses the value from the managed JSON file whose name sorts last in byte order. To override `privacy.json`, add a root-owned file named after it, such as `/etc/chromium/policies/managed/zz-local.json`; the managed-policy directory is root-owned, and Omarchy's policy-directory purge removes files not owned by root. For example: `sudo install -o root -g root -m 0644 zz-local.json /etc/chromium/policies/managed/zz-local.json`.
 
 ## Making one the default
 
