@@ -161,14 +161,13 @@ pass "an icon in a configured data directory is found"
 # The system data directories are searched too, the ones the desktop searches
 # when the environment names no list of its own.
 # The name the launcher resolves has to be the name the file carries, so the
-# icon is picked by a stem that survives the round trip: one with no dot in
-# it and no letter that changes case.
-system_icon=$(find /usr/share/icons -mindepth 4 -maxdepth 4 -type f -name '*.png' -print -quit 2>/dev/null)
-while [[ -n $system_icon ]]; do
-  system_icon_name=$(basename "$system_icon" .png)
-  [[ $system_icon_name == *[A-Z]* || $system_icon_name == *.* ]] || break
-  system_icon=$(find /usr/share/icons -mindepth 4 -maxdepth 4 -type f -name '*.png' ! -name "$system_icon_name.png" -print -quit 2>/dev/null)
-done
+# icon is picked by a stem that survives the round trip. The launcher turns
+# every character that is not a letter or a digit into a dash, so a stem of
+# lower-case letters, digits and dashes is one it resolves unchanged, and the
+# search asks for exactly that.
+system_icon=$(find /usr/share/icons -mindepth 4 -maxdepth 4 -type f \
+  -regextype posix-extended -regex '.*/[a-z0-9-]+\.png' -print -quit 2>/dev/null)
+system_icon_name=$(basename "$system_icon" .png)
 if [[ -z $system_icon ]]; then
   skip "the system data directories are searched" "the system holds no icon to look for"
 else
