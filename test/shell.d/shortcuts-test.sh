@@ -12,8 +12,10 @@ trap 'rm -rf "$tmp"' EXIT
 
 export HOME="$tmp/home"
 export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_RUNTIME_DIR="$tmp/run"
 export OMARCHY_PATH="$ROOT"
 registry="$XDG_CONFIG_HOME/omarchy/shortcuts"
+mkdir -p "$XDG_RUNTIME_DIR"
 mkdir -p "$registry"
 
 # Bind shortcuts the way the config does, against a recording hl, and run
@@ -307,12 +309,44 @@ printf '%s\n' 'keys=F7' >"$registry/omarchy.dictation.hold"
 rm -f "$registry/omarchy.dictation.hold"
 pass "without Hyprland set refuses and get shows only chosen keys"
 
-# A config from before named shortcuts can't apply them live; reload instead.
+# A snapshot Hyprland can't give is an error, not an empty desktop that would
+# make every shortcut look unbound.
 cat >"$bin/hyprctl" <<'SH'
 #!/bin/bash
 case $1 in
   version | binds) [[ $1 == binds ]] && echo '[]'; exit 0 ;;
   eval) exit 7 ;;
+esac
+SH
+if omarchy-shortcut-set com.example.record F1 --command x 2>"$tmp/err"; then fail "set refuses when Hyprland can't say what is bound"; fi
+grep -q "could not read shortcuts from Hyprland" "$tmp/err" || fail "the failure says what to do" "$(cat "$tmp/err")"
+mkdir -p "$tmp/odd dir"
+cp "$HYPRCTL_SNAPSHOT" "$tmp/fixture.json"
+cat >"$bin/hyprctl" <<'SH'
+#!/bin/bash
+case $1 in
+  version) exit 0 ;;
+  binds) echo '[{ "modmask": 68, "key": "X", "keycode": 0, "release": false, "submap": "", "description": "Toggle dictation" }]' ;;
+  eval) [[ $2 =~ ^o\.shortcuts\.snapshot\(\"(.*)\"\)$ ]] && cp "$HYPRCTL_SNAPSHOT" "${BASH_REMATCH[1]}" ;;
+esac
+SH
+TMPDIR="$tmp/odd dir" omarchy-shortcut-set omarchy.dictation.toggle "SUPER + CTRL + X" ||
+  fail "a shortcut does not conflict with itself whatever TMPDIR holds"
+rm -f "$registry/omarchy.dictation.toggle"
+pass "set reads Hyprland's bindings or refuses"
+
+# A config from before named shortcuts can't apply them live; reload instead.
+cat >"$bin/hyprctl" <<'SH'
+#!/bin/bash
+case $1 in
+  version | binds) [[ $1 == binds ]] && echo '[]'; exit 0 ;;
+  eval)
+    if [[ $2 =~ ^o\.shortcuts\.snapshot\(\"(.*)\"\)$ ]]; then
+      echo '[]' >"${BASH_REMATCH[1]}"
+    else
+      exit 7
+    fi
+    ;;
   *) echo "$*" >>"$HYPRCTL_LOG" ;;
 esac
 SH

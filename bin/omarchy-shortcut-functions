@@ -35,23 +35,27 @@ shortcut_hyprland_running() {
 }
 
 # What Hyprland bound, Omarchy's defaults included, asked for once and shared
-# with the commands this one runs. Empty when Hyprland isn't running. Loaded
-# when this file is sourced: loading it first inside $(...) would delete it
-# again when that subshell exits.
+# with the commands this one runs. Empty when Hyprland isn't running; an error
+# when it is but can't say, since an empty answer would make every shortcut look
+# unbound. Loaded when this file is sourced: loading it first inside $(...)
+# would delete it again when that subshell exits.
 shortcut_load_snapshot() {
   [[ -n ${SHORTCUTS_SNAPSHOT:-} && -r $SHORTCUTS_SNAPSHOT ]] && return 0
 
-  SHORTCUTS_SNAPSHOT=$(mktemp "${TMPDIR:-/tmp}/omarchy-shortcuts.XXXXXX")
+  # The path is written into Lua, so it comes from the runtime directory rather
+  # than TMPDIR and may only hold characters that need no quoting.
+  local runtime="${XDG_RUNTIME_DIR:-/tmp}"
+  [[ $runtime =~ ^[A-Za-z0-9/._-]+$ ]] || runtime=/tmp
+  SHORTCUTS_SNAPSHOT=$(mktemp "$runtime/omarchy-shortcuts.XXXXXX") || shortcut_fail "could not create a temporary file in $runtime"
   export SHORTCUTS_SNAPSHOT
   trap 'rm -f "$SHORTCUTS_SNAPSHOT"' EXIT
 
-  # The path is written into Lua, so it may only hold characters that need no quoting.
-  if [[ $SHORTCUTS_SNAPSHOT =~ ^[A-Za-z0-9/._-]+$ ]] && shortcut_hyprland_running &&
-    hyprctl eval "o.shortcuts.snapshot(\"$SHORTCUTS_SNAPSHOT\")" >/dev/null 2>&1 &&
-    jq -e 'type == "array"' "$SHORTCUTS_SNAPSHOT" >/dev/null 2>&1; then
-    return 0
+  if ! shortcut_hyprland_running; then
+    echo '[]' >"$SHORTCUTS_SNAPSHOT"
+  elif ! hyprctl eval "o.shortcuts.snapshot(\"$SHORTCUTS_SNAPSHOT\")" >/dev/null 2>&1 ||
+    ! jq -e 'type == "array"' "$SHORTCUTS_SNAPSHOT" >/dev/null 2>&1; then
+    shortcut_fail "could not read shortcuts from Hyprland; reload it with 'hyprctl reload' and try again"
   fi
-  echo '[]' >"$SHORTCUTS_SNAPSHOT"
 }
 
 # The snapshot's entry for an id, or nothing.
