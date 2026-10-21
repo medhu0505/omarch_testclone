@@ -18,7 +18,7 @@ mkdir -p "$mock_bin"
 
 # Every package manager call is recorded; a package counts as installed once
 # it is in $TEST_INSTALLED.
-for command in sudo yay; do
+for command in sudo yay fzf omarchy-show-done; do
   cat >"$mock_bin/$command" <<'SH'
 #!/bin/bash
 printf '%s %s\n' "${0##*/}" "$*" >>"$TEST_CALLS"
@@ -85,3 +85,16 @@ grep -Fx 'sudo pacman -Rns --noconfirm firefox' "$calls" >/dev/null || fail "oma
 run no "" omarchy-pkg-drop firefox || fail "omarchy-pkg-drop fails when there is nothing to remove"
 [[ ! -s $calls ]] || fail "omarchy-pkg-drop asked sudo with nothing to remove" "$(cat "$calls")"
 pass "removing takes an administrator, and nothing to remove takes no one"
+
+# The pickers say so before there is anything to pick.
+for command in omarchy-pkg-install omarchy-pkg-aur-install omarchy-pkg-remove; do
+  verb=install
+  [[ $command != "omarchy-pkg-remove" ]] || verb=remove
+  run no "" "$command" || true
+  grep -Fx "Only an administrator can $verb software." "$test_tmp/err" >/dev/null ||
+    fail "$command doesn't say an administrator does this" "$(cat "$test_tmp/err")"
+  [[ $(cat "$calls") == "omarchy-show-done 1" ]] || fail "$command only waits for a key, picking and asking nothing" "$(cat "$calls")"
+  run yes "" "$command" || true
+  grep -q "^fzf " "$calls" || fail "$command shows the picker to an administrator" "$(cat "$calls")"
+done
+pass "the package pickers take an administrator, and say so before picking"
