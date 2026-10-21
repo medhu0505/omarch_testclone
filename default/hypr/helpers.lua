@@ -135,15 +135,53 @@ function o.preinstalled_bindings_enabled()
   return not file_exists((os.getenv("HOME") or "") .. "/.local/state/omarchy/preinstalls-removed")
 end
 
--- Keys bound outside named shortcuts, so moving a shortcut off keys it took
--- from one of these knows a reload must bring that binding back.
+local MODIFIERS = { CONTROL = "CTRL", MOD1 = "ALT", WIN = "SUPER", LOGO = "SUPER", MOD4 = "SUPER" }
+local MODIFIER_KEYS = { ALT = true, SUPER = true, CONTROL = true, SHIFT = true, META = true, HYPER = true }
+
+-- A modifier pressed on its own changes the modifier mask between its press
+-- and release, so it only matches with the mask ignored.
+function o.modifier_key(key)
+  local name = key:match("^(%u+)_[LR]$")
+  return (name and MODIFIER_KEYS[name]) or key == "ISO_LEVEL3_SHIFT"
+end
+
+-- A chord as Hyprland matches it: modifiers sorted and case folded, so
+-- "SUPER + ctrl + x" and "CTRL + SUPER + X" are the same keys, and a modifier
+-- key alone reduces to that key. bin/omarchy-shortcut-functions matches this.
+function o.chord(keys)
+  local parts = {}
+  for raw in keys:gmatch("[^+]+") do
+    local part = raw:match("^%s*(.-)%s*$"):upper()
+    if part ~= "" then
+      table.insert(parts, part)
+    end
+  end
+
+  local key = table.remove(parts) or ""
+  if o.modifier_key(key) then
+    return key
+  end
+  for index, modifier in ipairs(parts) do
+    parts[index] = MODIFIERS[modifier] or modifier
+  end
+  table.sort(parts)
+  table.insert(parts, key)
+
+  return table.concat(parts, "+")
+end
+
+-- Keys bound outside named shortcuts, by chord, with each spelling they were
+-- bound with: Hyprland unbinds by that text, and moving a shortcut off keys it
+-- took from one of these needs a reload to bring that binding back.
 o.bound_keys = {}
 
 function o.bind(keys, description, dispatcher, options)
   local opts = options or {}
 
   if not (o.shortcuts and o.shortcuts.binding) then
-    o.bound_keys[keys] = true
+    local chord = o.chord(keys)
+    o.bound_keys[chord] = o.bound_keys[chord] or {}
+    o.bound_keys[chord][keys] = true
   end
 
   if description then

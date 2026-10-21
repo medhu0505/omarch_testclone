@@ -56,7 +56,7 @@ require("default.hypr.shortcuts")
 function bound(keys)
   local found = {}
   for _, binding in ipairs(binds) do
-    if o.shortcuts.normalize(binding.keys) == o.shortcuts.normalize(keys) then
+    if o.chord(binding.keys) == o.chord(keys) then
       table.insert(found, binding)
     end
   end
@@ -86,12 +86,12 @@ local alt = bound("Alt_R")
 assert(#alt == 2 and alt[1].opts.ignore_mods, "a modifier key alone ignores the mask that changes as it is pressed")
 assert(not f9[1].opts.ignore_mods, "other keys keep their modifiers")
 assert(#bound("SUPER + W") == 1, "defaults stay bound")
-assert(o.bound_keys["SUPER + W"] and not o.bound_keys["F9"], "only bindings outside shortcuts count as defaults")
+assert(o.bound_keys["SUPER+W"]["SUPER + W"] and not o.bound_keys["F9"], "only bindings outside shortcuts count as defaults")
 '
 pass "Omarchy shortcuts bind their default keys"
 
 printf '%s\n' 'keys=SUPER + R' 'keys=super + w' 'description=Ignored' 'command=ignored' >"$registry/omarchy.dictation.hold"
-printf '%s\n' 'description=Record' 'command=example record' 'keys=SUPER + ALT + R' >"$registry/com.example.record"
+printf '%s\n' 'description=Record' 'command=example record' 'keys=SUPER + ALT + R' 'keys=CTRL + SUPER + T' >"$registry/com.example.record"
 printf '%s\n' 'description=Talk' 'command=example start' 'release=example stop' 'keys=Super_R' >"$registry/com.example.talk"
 printf '%s\n' 'description=No command' 'keys=F1' >"$registry/com.example.orphan"
 printf '%s\n' 'description=Everything' 'command=x' 'keys=all' 'keys=SUPER + catchall' >"$registry/com.example.all"
@@ -105,9 +105,12 @@ o.shortcut("omarchy.dictation.hold", {
   command = "omarchy-dictation start",
   release = "omarchy-dictation stop",
 })
+o.bind("SUPER + CTRL + T", "Terminal", "terminal")
 o.shortcuts.apply()
 
 assert(#bound("F9") == 0 and #bound("Alt_R") == 0, "chosen keys replace the defaults")
+local t = bound("CTRL + SUPER + T")
+assert(#t == 1 and t[1].opts.description == "Record", "a default spelled another way is still taken")
 local r = bound("SUPER + R")
 assert(#r == 2 and o.bind_commands[r[1].dispatcher] == "omarchy-dictation start", "Omarchy shortcuts keep their own command")
 assert(r[1].opts.description == "Start dictation (push-to-talk)", "and their own description")

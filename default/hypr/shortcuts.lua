@@ -14,42 +14,7 @@ o.shortcuts = { declared = {}, order = {}, bound = {}, current = {} }
 
 local registry = paths.config_home .. "/omarchy/shortcuts"
 
-local MODIFIERS = { CONTROL = "CTRL", MOD1 = "ALT", WIN = "SUPER", LOGO = "SUPER", MOD4 = "SUPER" }
-local MODIFIER_KEYS = { ALT = true, SUPER = true, CONTROL = true, SHIFT = true, META = true, HYPER = true }
-
--- A modifier pressed on its own changes the modifier mask between its press
--- and release, so it only matches with the mask ignored.
-local function modifier_key(key)
-  local name = key:match("^(%u+)_[LR]$")
-  return (name and MODIFIER_KEYS[name]) or key == "ISO_LEVEL3_SHIFT"
-end
-
--- A chord as Hyprland matches it: modifiers sorted and case folded, so
--- "SUPER + ctrl + x" and "CTRL + SUPER + X" are the same keys, and a modifier
--- key alone reduces to that key. bin/omarchy-shortcut-functions matches this.
-local function normalize(keys)
-  local parts = {}
-  for raw in keys:gmatch("[^+]+") do
-    local part = raw:match("^%s*(.-)%s*$"):upper()
-    if part ~= "" then
-      table.insert(parts, part)
-    end
-  end
-
-  local key = table.remove(parts) or ""
-  if modifier_key(key) then
-    return key
-  end
-  for index, modifier in ipairs(parts) do
-    parts[index] = MODIFIERS[modifier] or modifier
-  end
-  table.sort(parts)
-  table.insert(parts, key)
-
-  return table.concat(parts, "+")
-end
-
-o.shortcuts.normalize = normalize
+local normalize, modifier_key = o.chord, o.modifier_key
 
 -- Hyprland reads hl.unbind("all") as removing every binding, and "catchall"
 -- binds every key in a submap, so neither ever comes from the registry.
@@ -227,12 +192,8 @@ function o.shortcuts.apply()
       end
     end
   end
-  local defaults = {}
-  for keys in pairs(o.bound_keys) do
-    defaults[normalize(keys)] = true
-  end
   for chord, keys in pairs(o.shortcuts.bound) do
-    if not wanted[chord] and defaults[chord] then
+    if not wanted[chord] and o.bound_keys[chord] then
       hl.exec_cmd("hyprctl reload")
       return
     end
@@ -246,8 +207,13 @@ function o.shortcuts.apply()
     for _, keys in ipairs(shortcut.command and shortcut.keys or {}) do
       local chord = normalize(keys)
       if valid_keys(keys) and not o.shortcuts.bound[chord] then
+        -- Hyprland unbinds by the text a binding was made with, so a default
+        -- spelled "SUPER + CTRL + X" survives an unbind of "CTRL + SUPER + X".
+        for spelling in pairs(o.bound_keys[chord] or {}) do
+          hl.unbind(spelling)
+        end
         hl.unbind(keys)
-        local options = modifier_key(normalize(keys)) and { ignore_mods = true } or nil
+        local options = modifier_key(chord:match("([^+]*)$")) and { ignore_mods = true } or nil
         if shortcut.release then
           o.bind_hold(keys, shortcut.description, shortcut.command, shortcut.release_description or shortcut.description, shortcut.release, options)
         else

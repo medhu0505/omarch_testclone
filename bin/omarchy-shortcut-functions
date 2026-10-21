@@ -93,7 +93,7 @@ shortcut_ids() {
   done
 }
 
-# A chord as Hyprland matches it, the same way shortcuts.lua normalizes it:
+# A chord as Hyprland matches it, the same way o.chord in helpers.lua does:
 # modifiers aliased, case folded, and sorted, so "super + ctrl + x" and
 # "CTRL + SUPER + X" compare equal. A modifier key pressed alone matches with
 # the mask ignored, so it reduces to the key itself.
