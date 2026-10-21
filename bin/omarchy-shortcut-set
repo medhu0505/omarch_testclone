@@ -54,6 +54,10 @@ for value in "${keys[@]}"; do
   shortcut_valid_keys "$value" || shortcut_fail "$value is not a key a shortcut can use"
 done
 
+# Only the running config knows Omarchy's defaults and every other binding, so
+# keys chosen without it could not be checked and might never bind.
+shortcut_hyprland_running || shortcut_fail "Hyprland isn't running; shortcuts can only change in a session"
+
 mkdir -p "$SHORTCUTS_DIR"
 exec 9>"$SHORTCUTS_DIR/.lock"
 flock -w 5 9 || shortcut_fail "shortcuts are busy; try again"

@@ -15,18 +15,31 @@ if [[ -z $id ]] || ! shortcut_valid_id "$id" || (($# > 2)) || { (($# == 2)) && (
   exit 1
 fi
 
+snapshot=$(shortcut_snapshot "$id")
+# Omarchy's defaults live in the running config, so without Hyprland only keys
+# someone chose are known.
+if [[ -z $snapshot && $id == omarchy.* ]] && ! shortcut_has_keys "$id"; then
+  if shortcut_hyprland_running; then
+    shortcut_fail "no shortcut named $id"
+  else
+    shortcut_fail "Hyprland isn't running, so Omarchy's default keys for $id aren't known"
+  fi
+fi
 shortcut_known "$id" || shortcut_fail "no shortcut named $id"
 
 if ((json)); then
-  snapshot=$(shortcut_snapshot "$id")
-  shortcut_keys "$id" | jq -Rn --arg id "$id" --argjson snapshot "${snapshot:-null}" \
+  source=app
+  [[ $id == omarchy.* ]] && source=omarchy
+  shortcut_keys "$id" | jq -Rn --arg id "$id" --arg source "$source" --argjson snapshot "${snapshot:-null}" \
     --arg description "$(shortcut_field "$id" description)" \
+    --arg release_description "$(shortcut_field "$id" release_description)" \
     --arg command "$(shortcut_field "$id" command)" \
     --arg release "$(shortcut_field "$id" release)" '
-      ($snapshot // { id: $id, source: "app" })
+      ($snapshot // { id: $id, source: $source })
       + { keys: [inputs] }
-      + (if $snapshot == null then
+      + (if $snapshot == null and $source == "app" then
           { description: $description, command: $command }
+          + (if $release_description != "" then { release_description: $release_description } else {} end)
           + (if $release != "" then { release: $release } else {} end)
         else {} end)'
 else

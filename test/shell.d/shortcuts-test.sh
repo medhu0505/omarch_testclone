@@ -290,6 +290,23 @@ omarchy-shortcut-reset com.example.record
 if omarchy-shortcut-get com.example.record 2>/dev/null; then fail "reset removes an app's shortcut"; fi
 pass "reset returns to defaults and removes app shortcuts"
 
+# Without Hyprland nothing knows Omarchy's defaults or the other bindings.
+cat >"$bin/hyprctl" <<'SH'
+#!/bin/bash
+exit 1
+SH
+if omarchy-shortcut-set com.example.offline F1 --command x 2>"$tmp/err"; then fail "set refuses without Hyprland"; fi
+grep -q "Hyprland isn't running" "$tmp/err" || fail "set says why it refused" "$(cat "$tmp/err")"
+[[ ! -e $registry/com.example.offline ]] || fail "a refused set writes nothing"
+if omarchy-shortcut-get omarchy.dictation.toggle 2>"$tmp/err"; then fail "get can't know Omarchy's defaults without Hyprland"; fi
+grep -q "aren't known" "$tmp/err" || fail "get says why Omarchy's defaults are unknown" "$(cat "$tmp/err")"
+printf '%s\n' 'keys=F7' >"$registry/omarchy.dictation.hold"
+[[ $(omarchy-shortcut-get omarchy.dictation.hold) == "F7" ]] || fail "get shows chosen keys without Hyprland"
+[[ $(omarchy-shortcut-get omarchy.dictation.hold --json | jq -c '[.source, .command]') == '["omarchy",null]' ]] ||
+  fail "get --json keeps an Omarchy shortcut Omarchy's without Hyprland" "$(omarchy-shortcut-get omarchy.dictation.hold --json)"
+rm -f "$registry/omarchy.dictation.hold"
+pass "without Hyprland set refuses and get shows only chosen keys"
+
 # A config from before named shortcuts can't apply them live; reload instead.
 cat >"$bin/hyprctl" <<'SH'
 #!/bin/bash
