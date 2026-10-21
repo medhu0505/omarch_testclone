@@ -58,9 +58,7 @@ done
 # keys chosen without it could not be checked and might never bind.
 shortcut_hyprland_running || shortcut_fail "Hyprland isn't running; shortcuts can only change in a session"
 
-mkdir -p "$SHORTCUTS_DIR"
-exec 9>"$SHORTCUTS_DIR/.lock"
-flock -w 5 9 || shortcut_fail "shortcuts are busy; try again"
+shortcut_lock
 
 snapshot=$(shortcut_snapshot "$id")
 # omarchy.* is Omarchy's own namespace, known even before Hyprland bound it.
@@ -137,10 +135,28 @@ write_shortcut() {
   local target="$SHORTCUTS_DIR/$1" temporary
   shift
 
-  temporary=$(mktemp "$SHORTCUTS_DIR/.$(basename "$target").XXXXXX")
-  printf '%s\n' "$@" >"$temporary"
-  mv -f "$temporary" "$target"
+  temporary=$(mktemp "$SHORTCUTS_DIR/.$(basename "$target").XXXXXX" 2>/dev/null) || return 1
+  if printf '%s\n' "$@" >"$temporary" && mv -f "$temporary" "$target"; then
+    return 0
+  fi
+  rm -f "$temporary"
+  return 1
 }
+
+# This shortcut first: should a write after it fail, keys are left held twice,
+# which binds once, rather than taken from another shortcut and given to none.
+declare -a lines=()
+for field in description release_description command release; do
+  [[ -n ${fields[$field]:-} ]] && lines+=("$field=${fields[$field]}")
+done
+if ((none)); then
+  lines+=("keys=")
+else
+  for value in "${keys[@]}"; do
+    lines+=("keys=$value")
+  done
+fi
+write_shortcut "$id" "${lines[@]}" || shortcut_fail "could not save $id in $SHORTCUTS_DIR"
 
 # Taking keys from another named shortcut leaves it with the rest of its own.
 for other in "${!taken_from[@]}"; do
@@ -153,20 +169,7 @@ for other in "${!taken_from[@]}"; do
     fi
   done < <(shortcut_keys "$other")
   ((kept)) || remaining+=("keys=")
-  write_shortcut "$other" "${remaining[@]}"
+  write_shortcut "$other" "${remaining[@]}" || shortcut_fail "could not take keys from $other in $SHORTCUTS_DIR"
 done
-
-declare -a lines=()
-for field in description release_description command release; do
-  [[ -n ${fields[$field]:-} ]] && lines+=("$field=${fields[$field]}")
-done
-if ((none)); then
-  lines+=("keys=")
-else
-  for value in "${keys[@]}"; do
-    lines+=("keys=$value")
-  done
-fi
-write_shortcut "$id" "${lines[@]}"
 
 shortcut_apply "$id" "${!taken_from[@]}"

@@ -153,6 +153,14 @@ shortcut_live_bindings() {
   '
 }
 
+# Hold the registry for the rest of this command, so two apps changing
+# shortcuts at once never undo each other.
+shortcut_lock() {
+  mkdir -p "$SHORTCUTS_DIR" 2>/dev/null && { exec 9>"$SHORTCUTS_DIR/.lock"; } 2>/dev/null ||
+    shortcut_fail "could not write to $SHORTCUTS_DIR"
+  flock -w 5 9 || shortcut_fail "shortcuts are busy; try again"
+}
+
 # Rebind the shortcuts with these ids now, leaving every other one alone. Ids
 # hold no characters Lua would need quoted. A Hyprland config from before named
 # shortcuts has no o.shortcuts to call, so reload it instead.

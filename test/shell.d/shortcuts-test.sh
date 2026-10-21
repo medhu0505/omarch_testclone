@@ -292,6 +292,22 @@ omarchy-shortcut-reset com.example.record
 if omarchy-shortcut-get com.example.record 2>/dev/null; then fail "reset removes an app's shortcut"; fi
 pass "reset returns to defaults and removes app shortcuts"
 
+# A registry that can't be written fails the change rather than reporting it.
+if ((EUID != 0)); then
+  touch "$registry/.lock"
+  chmod a-w "$registry"
+  if omarchy-shortcut-set com.example.readonly F11 --command x 2>"$tmp/err"; then fail "set fails when it can't save"; fi
+  grep -q "could not save com.example.readonly" "$tmp/err" || fail "set says it could not save" "$(cat "$tmp/err")"
+  chmod u+w "$registry" && rm -f "$registry/.lock"
+  chmod a-w "$registry"
+  if omarchy-shortcut-set com.example.readonly F11 --command x 2>"$tmp/err"; then fail "set fails when it can't lock"; fi
+  grep -q "could not write to" "$tmp/err" || fail "set says the registry can't be written" "$(cat "$tmp/err")"
+  chmod u+w "$registry"
+  pass "set fails when the registry can't be written"
+else
+  skip "set fails when the registry can't be written (root ignores permissions)"
+fi
+
 # Without Hyprland nothing knows Omarchy's defaults or the other bindings.
 cat >"$bin/hyprctl" <<'SH'
 #!/bin/bash
