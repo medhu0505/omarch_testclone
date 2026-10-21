@@ -120,6 +120,14 @@ pass "an icon in a configured data directory is found"
 
 # A file whose name starts with the icon name is indexed under its own name,
 # so it does not answer for the name that was asked for.
+# A theme entry is often a symbolic link to the real image, and the search
+# has to see through it, the way the desktop does.
+ln -sf "$test_tmp/icon.png" "$icon_dir/linked-icon.png"
+output=$(install_tui T11 true tile linked-icon 2>&1) && status=0 || status=$?
+[[ $output != *'No icon named'* ]] || fail "an icon the theme links to is found" "$output"
+rm -f "$icon_dir/linked-icon.png"
+pass "an icon the theme links to is found"
+
 cp "$test_tmp/icon.png" "$icon_dir/prefixed.other.png"
 output=$(install_tui T10 true tile prefixed 2>&1) && status=0 || status=$?
 [[ $output == *'No icon named'* ]] || fail "a name that is a prefix of another is reported" "$output"

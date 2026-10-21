@@ -96,7 +96,9 @@ icon_exists() {
       stem=${path##*/}
       stem=${stem%.*}
       [[ $stem == "$name" ]] || continue
-      [[ $(file -b --mime-type "$path") == image/* ]] || continue
+      # A theme entry is often a symbolic link to the real image, and the
+      # mime probe has to follow it to see what it points at.
+      [[ $(file -L -b --mime-type "$path") == image/* ]] || continue
       return 0
     done < <(find "$dir" -maxdepth 4 \( -type f -o -type l \) -name "$pattern.*" 2>/dev/null)
   done < <(icon_dirs)
