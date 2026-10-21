@@ -6,6 +6,12 @@
 # omarchy:requires-sudo=true
 
 if omarchy-pkg-missing "$@"; then
+  # With --noconfirm, pacman satisfies lib32-vulkan-driver with its first provider,
+  # which is NVIDIA's, so install the driver matching this GPU first.
+  if LC_ALL=C pacman -Si -- "$@" 2>/dev/null | grep -Eq '^Depends On .*[[:space:]]lib32-vulkan-driver([[:space:]<>=]|$)'; then
+    omarchy-install-gaming-gpu-lib32 || exit 1
+  fi
+
   if (( EUID == 0 )); then
     pacman -S --noconfirm --needed -- "$@" || exit 1
   else
