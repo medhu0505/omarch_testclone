@@ -244,38 +244,6 @@ user_accounts_try_disk_password() {
   esac
 }
 
-# Whether omarchy-drive-password's last change to the system disk's password
-# finished. One that stopped part way can leave the old key opening the disk
-# beside the new one, which no password test shows, so the account commands
-# stop with status 2 until a person finishes it, as they do when the change
-# itself refuses. Each account records the changes it starts, so every
-# administrator is asked, as itself. Changing the disk password takes sudo, so
-# an account that isn't an administrator can't have started one: a record in
-# its home is ignored rather than let it block every account change. Any other
-# failure is status 1.
-user_accounts_disk_change_finished() {
-  local self name home answer
-  self=$(user_accounts_self)
-  while IFS=$'\t' read -r name _; do
-    user_accounts_is_admin "$name" || continue
-    if [[ $name == "$self" ]]; then
-      answer=$(omarchy-drive-password --system-pending) || { printf '%s\n' "$answer" >&2; return 1; }
-    else
-      home=$(getent passwd "$name" | cut -d: -f6)
-      answer=$(as_root runuser -u "$name" -- env -u XDG_STATE_HOME HOME="$home" PATH="$PATH" OMARCHY_PATH="$OMARCHY_PATH" omarchy-drive-password --system-pending) ||
-        { printf '%s\n' "$answer" >&2; return 1; }
-    fi
-    case $answer in
-    none) ;;
-    pending)
-      [[ $name == "$self" ]] || echo "That change was started by '$name', who finishes it by running omarchy-drive-password." >&2
-      return 2
-      ;;
-    *) printf '%s\n' "$answer" >&2; return 1 ;;
-    esac
-  done < <(user_accounts_login_users)
-}
-
 # Whether the password is the user's login password, checked against its hash.
 user_accounts_password_is() {
   local hash
@@ -383,7 +351,6 @@ user_accounts_go_multi() {
   local self=$1 mine=$2 theirs=${3:-} disk choice new share own output opens="" changed
   disk=$(user_accounts_root_luks_or_explain) || return 1
   if [[ -n $disk ]]; then
-    user_accounts_disk_change_finished || return
     opens=$(user_accounts_try_disk_password "$disk" "$mine") || return 1
   fi
   if [[ $opens == "opens" ]]; then
@@ -430,10 +397,8 @@ user_accounts_go_multi() {
 # encrypted install automatic login once the disk is unlocked. $2 is the
 # remaining administrator's password, already checked.
 user_accounts_go_single() {
-  local self=$1 mine=$2 disk current output opens=""
+  local self=$1 mine=$2 disk current output opens="" keys
   disk=$(user_accounts_root_luks_or_explain) || return 1
-  # omarchy-user-remove has checked that no disk password change is
-  # unfinished, as it does before every removal.
   if [[ -n $disk ]]; then
     opens=$(user_accounts_try_disk_password "$disk" "$mine") || return 1
   fi
@@ -462,10 +427,37 @@ user_accounts_go_single() {
   printf 'root:%s\n' "$mine" | as_root chpasswd || return 1
   user_accounts_log "root password set to $self's login password: the only account left"
   if [[ -n $disk ]]; then
-    user_accounts_autologin_on "$self" || return 1
-    user_accounts_log "automatic login turned on for $self: the only account left"
-    echo "Your password unlocks the disk and root again, and you'll be logged in automatically."
+    # Automatic login lets whoever unlocks the disk into this desktop, so it
+    # comes back only when this password is the disk's one key, as the
+    # installer leaves it. Another key, left by a password change that stopped
+    # part way or added on purpose, keeps it off.
+    keys=$(user_accounts_disk_key_count "$disk") || return 1
+    if (( keys == 1 )); then
+      user_accounts_autologin_on "$self" || return 1
+      user_accounts_log "automatic login turned on for $self: the only account left"
+      echo "Your password unlocks the disk and root again, and you'll be logged in automatically."
+    else
+      if as_root test -e "$(user_accounts_autologin_conf)"; then
+        user_accounts_autologin_off || return 1
+      fi
+      user_accounts_log "automatic login left off for $self: the disk has $keys keys"
+      echo "Your password unlocks the disk and root again. The disk also opens with another key, so you won't be logged in automatically: anyone who knows that key could start the computer into your desktop."
+      echo "To have automatic login back, remove that key (or finish an interrupted change with omarchy-drive-password), then add and remove an account."
+    fi
   else
     echo "Root has your password again."
   fi
+}
+
+# How many keys the disk holds, read from its header the way luks_dump_slots
+# in install/provisioning/luks-rekey.sh reads them. Fails when the header can't
+# be read.
+user_accounts_disk_key_count() {
+  local dump
+  dump=$(as_root cryptsetup luksDump "$1") || return 1
+  awk '
+    /^[^ \t]/ { keyslots = ($0 == "Keyslots:") }
+    keyslots && /^ +[0-9]+: luks2/ { count++ }
+    /^Key Slot [0-9]+: ENABLED/ { count++ }
+    END { print count + 0 }' <<<"$dump"
 }

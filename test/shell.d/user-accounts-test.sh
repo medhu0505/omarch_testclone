@@ -138,6 +138,15 @@ SH
 # the OMARCHY_TEST_CRYPTSETUP_ERROR_AT-th check on, it can't tell (an I/O error).
 cat >"$mock_bin/cryptsetup" <<'SH'
 #!/bin/bash
+# luksDump shows as many keys as $OMARCHY_TEST_DIR/disk_keys says, one by default.
+if [[ $1 == "luksDump" ]]; then
+  printf 'LUKS header information\nVersion:        2\n\nKeyslots:\n'
+  for (( slot = 0; slot < $(cat "$OMARCHY_TEST_DIR/disk_keys" 2>/dev/null || echo 1); slot++ )); do
+    printf '  %s: luks2\n\tKey:        512 bits\n' "$slot"
+  done
+  printf 'Tokens:\nDigests:\n'
+  exit 0
+fi
 [[ $1 == "open" && " $* " == *" --test-passphrase "* ]] || exit 9
 count=$(( $(cat "$OMARCHY_TEST_DIR/cryptsetup.count" 2>/dev/null || echo 0) + 1 ))
 echo "$count" >"$OMARCHY_TEST_DIR/cryptsetup.count"
@@ -161,30 +170,9 @@ cat >"$mock_bin/mv" <<'SH'
 exec /usr/bin/mv "$@"
 SH
 
-# Root runs a command as another account.
-cat >"$mock_bin/runuser" <<'SH'
-#!/bin/bash
-[[ $1 == "-u" && $3 == "--" ]] || exit 9
-user=$2
-shift 3
-OMARCHY_TEST_RUNUSER=$user exec "$@"
-SH
-
 # The current and new disk passwords arrive on stdin, as with the real one.
 cat >"$mock_bin/omarchy-drive-password" <<'SH'
 #!/bin/bash
-# The query changes nothing, so only changes are logged. OMARCHY_TEST_DRIVE_PENDING
-# is the caller's own unfinished change, OMARCHY_TEST_DRIVE_PENDING_FOR names
-# another account with one.
-if [[ $1 == "--system-pending" ]]; then
-  if [[ -z ${OMARCHY_TEST_RUNUSER:-} && -n ${OMARCHY_TEST_DRIVE_PENDING:-} ]] ||
-    [[ -n ${OMARCHY_TEST_RUNUSER:-} && $OMARCHY_TEST_RUNUSER == "${OMARCHY_TEST_DRIVE_PENDING_FOR:-}" ]]; then
-    echo pending
-  else
-    echo none
-  fi
-  exit 0
-fi
 echo "omarchy-drive-password $*" >>"$OMARCHY_TEST_DIR/calls.log"
 [[ $1 == "--system-stdin" ]] || exit 9
 # The real one refuses while a change it recorded earlier is unfinished.
@@ -293,7 +281,7 @@ SH
 chmod +x "$mock_bin"/*
 
 reset_fixtures() {
-  rm -rf "${test_tmp:?}/home" "$test_tmp/sudoers.d" "$test_tmp/calls.log" "$test_tmp/journal" "$test_tmp/chpasswd.log" "$test_tmp/encrypted" "$test_tmp/undecidable" "$test_tmp/not_admin" "$test_tmp/cryptsetup.count"
+  rm -rf "${test_tmp:?}/home" "$test_tmp/sudoers.d" "$test_tmp/calls.log" "$test_tmp/journal" "$test_tmp/chpasswd.log" "$test_tmp/encrypted" "$test_tmp/undecidable" "$test_tmp/not_admin" "$test_tmp/cryptsetup.count" "$test_tmp/disk_keys"
   mkdir -p "$test_tmp/home/alice" "$test_tmp/home/bob" "$test_tmp/sudoers.d"
   # The owner, alice, was installed from the ISO: sudo by name, no wheel rule.
   echo "alice ALL=(ALL) ALL" >"$test_tmp/sudoers.d/04_alice"
@@ -1048,27 +1036,19 @@ pass "the removal points at omarchy-drive-password too"
 
 # A change that stopped between enrolling the new key and retiring the old one
 # leaves both opening the disk, so the remaining administrator's password
-# already works. The removal still stops: the old shared password would
-# otherwise boot into their desktop once automatic login is back.
+# already works. The old shared password would boot into their desktop once
+# automatic login is back, so with a second key on the disk it stays off, and
+# the command says why. Everything else goes back to one account.
 two_accounts
 touch "$test_tmp/encrypted"
 printf 'alicepw' >"$test_tmp/disk_password"
+echo 2 >"$test_tmp/disk_keys"
 answers alicepw yes
-if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty remove bob); then fail "an unfinished change stops the removal when your password already opens the disk"; fi
-has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"once it's finished with omarchy-drive-password, run this again"* ]] &&
-  ! grep -q "chpasswd" "$test_tmp/calls.log" ||
-  fail "an unfinished change stops the removal before anything changes, when your password already opens the disk" "$output; $(cat "$test_tmp/calls.log")"
-pass "an unfinished disk password change stops the removal even when your password already opens the disk"
-
-reset_fixtures
-only_alice
-touch "$test_tmp/encrypted"
-printf 'otherpw' >"$test_tmp/disk_password"
-answers yes alicepw no carolpw carolpw
-if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty add carol); then fail "an unfinished change stops the add when your password no longer opens the disk"; fi
-! has_user carol && [[ $output == *"once it's finished with omarchy-drive-password, run this again"* ]] && ! grep -q "passwd -l" "$test_tmp/calls.log" ||
-  fail "an unfinished change stops the add before anything changes, when your password no longer opens the disk" "$output; $(cat "$test_tmp/calls.log")"
-pass "an unfinished disk password change stops the add even when your password no longer opens the disk"
+output=$(run_tty remove bob) || fail "a second key on the disk doesn't stop the removal" "$output"
+! has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"The disk also opens with another key, so you won't be logged in automatically"* ]] &&
+  grep -qx "root:alicepw" "$test_tmp/chpasswd.log" ||
+  fail "a second key on the disk keeps automatic login off, and says why" "$output"
+pass "a second key on the disk keeps automatic login off, and says why"
 
 # Every question comes before anything changes, the wheel rule for --admin too.
 reset_fixtures
@@ -1103,53 +1083,6 @@ touch "$test_tmp/encrypted" "$test_tmp/undecidable"
 if output=$(printf 'davepw\n' | run_user add dave --password-stdin 2>&1); then fail "add goes on when the system disk can't be told"; fi
 ! has_user dave && [[ $output == *"Couldn't tell which drive holds the system"* ]] || fail "add refuses when the system disk can't be told" "$output"
 pass "no account is given the disk password"
-
-# Each account records the changes it starts, so one another administrator
-# left unfinished stops the switch too, and says whose it is.
-two_accounts
-sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
-touch "$test_tmp/encrypted"
-answers alicepw yes sharedpw
-if output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_tty remove bob); then fail "another account's unfinished change stops the removal"; fi
-has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"started by 'bob'"* ]] && ! grep -q "omarchy-drive-password --system-stdin" "$test_tmp/calls.log" ||
-  fail "another account's unfinished change stops the removal before anything changes, and names that account" "$output; $(cat "$test_tmp/calls.log")"
-pass "another account's unfinished disk password change stops the switch too"
-
-# Changing the disk password takes sudo, so an account that isn't an
-# administrator can't have started one: a record in its home is ignored rather
-# than let it block account changes.
-two_accounts
-touch "$test_tmp/encrypted"
-answers alicepw yes sharedpw
-output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_tty remove bob) || fail "a record in a limited account's home blocks the removal" "$output"
-! has_user bob && [[ $output != *"started by 'bob'"* ]] || fail "a record in a limited account's home is ignored" "$output"
-pass "a record in a limited account's home doesn't block account changes"
-
-# Only administrators are asked, so an administrator's unfinished change is
-# finished before they stop being one.
-reset_fixtures
-sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
-touch "$test_tmp/encrypted"
-if output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_user admin bob off 2>&1); then fail "admin off goes on while bob's disk password change is unfinished"; fi
-[[ $(wheel_members) == "alice,bob" && $output == *"started by 'bob'"* && $output == *"keeps administrator rights"* ]] ||
-  fail "admin off stops while bob's disk password change is unfinished" "$output; $(wheel_members)"
-pass "an administrator with an unfinished disk password change keeps their rights until it's finished"
-
-# Every removal checks, not only the one back to a single account: with three
-# accounts, bob's record would otherwise go with him, and his key could still
-# open the disk.
-reset_fixtures
-sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
-touch "$test_tmp/encrypted"
-if output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_user remove bob --yes 2>&1); then fail "an unfinished change stops a removal that leaves several accounts"; fi
-has_user bob && [[ $output == *"started by 'bob'"* ]] && ! grep -q "userdel" "$test_tmp/calls.log" ||
-  fail "an unfinished change stops a removal that leaves several accounts, before anything changes" "$output; $(cat "$test_tmp/calls.log")"
-# Where the system disk can't be told, nothing can be checked, so it refuses.
-reset_fixtures
-touch "$test_tmp/encrypted" "$test_tmp/undecidable"
-if output=$(run_user remove bob --yes 2>&1); then fail "a removal goes on when the system disk can't be told"; fi
-has_user bob && [[ $output == *"Couldn't tell which drive holds the system"* ]] || fail "a removal refuses when the system disk can't be told" "$output"
-pass "an unfinished disk password change stops every removal"
 
 # cryptsetup reports a wrong passphrase as status 2. Any other failure is no
 # answer, so the switches stop rather than read it as one: as "doesn't open",

@@ -351,12 +351,6 @@ attempt_stdin() {
   } >>"$tmp/output" 2>&1
 }
 
-# The query omarchy user add and remove ask before trusting the disk's password.
-pending_answer() {
-  echo 0 >"$tmp/steps"
-  bash -c 'TEST_PID=$$ exec bash "$0" --system-pending' "$ROOT/bin/omarchy-drive-password" 2>&1
-}
-
 consistent() {
   local context=$1 password=$2 other=$old_password
   [[ $password == "$old_password" ]] && other=$new_password
@@ -575,12 +569,9 @@ if attempt_stdin 0 "$old_password" "$new_password"; then fail "--system-stdin le
 said "Run omarchy-drive-password to finish it first."
 [[ -e $journal ]] || fail "--system-stdin keeps the interrupted change's journal"
 pass "--system-stdin leaves an interrupted change for a person to finish"
-answer=$(pending_answer) && [[ $answer == "pending" ]] || fail "--system-pending reports the interrupted change" "$answer"
-[[ -e $journal ]] || fail "--system-pending keeps the interrupted change's journal"
-pass "--system-pending reports a change that stopped part way, and keeps its journal"
 
 if output=$("$ROOT/bin/omarchy-drive-password" --bogus 2>&1); then fail "an unknown option is refused"; fi
-[[ $output == *"Usage: omarchy-drive-password [--system-stdin | --system-pending]"* ]] || fail "an unknown option is refused with the usage" "$output"
+[[ $output == *"Usage: omarchy-drive-password [--system-stdin]"* ]] || fail "an unknown option is refused with the usage" "$output"
 pass "an unknown option is refused with the usage"
 
 # On Apple the slot record follows the confirmed change: a crash there leaves
@@ -707,20 +698,6 @@ printf 'uuid=uuid-elsewhere\nphase=record\nslot=0\n' >"$journal"
 attempt 0 "$old_password" "$new_password" "$new_password" || fail "a journal for another disk does not block a change" "$(cat "$tmp/output")"
 consistent "stale journal" "$new_password"
 pass "a journal for a disk that is not / is dropped"
-
-fixture
-answer=$(pending_answer) && [[ $answer == "none" ]] || fail "--system-pending reports none without a journal" "$answer"
-mkdir -p "${journal%/*}"
-printf 'uuid=uuid-elsewhere\nphase=record\nslot=0\n' >"$journal"
-answer=$(pending_answer) && [[ $answer == "none" && ! -e $journal ]] || fail "--system-pending drops a journal for another disk" "$answer"
-pass "--system-pending reports none, and drops a journal for another disk"
-
-fixture
-mkdir -p "$tmp/state"
-chmod 555 "$tmp/state"
-answer=$(pending_answer) && [[ $answer == "none" && ! -e ${journal%/*} ]] || { chmod 755 "$tmp/state"; fail "--system-pending answers without writing state" "$answer"; }
-chmod 755 "$tmp/state"
-pass "--system-pending answers without writing any state"
 
 fixture
 if attempt 0 "$old_password" ""; then fail "an empty password is refused"; fi

@@ -110,18 +110,6 @@ if [[ $state == "off" ]]; then
   if [[ $(getent passwd "$name" | cut -d: -f4) == "$wheel_gid" ]]; then
     fail "wheel is $name's primary group; change it first (sudo usermod -g $name $name)"
   fi
-  # Only administrators are asked about an unfinished disk password change, so
-  # one this account left is finished before it stops being one.
-  disk=$(user_accounts_root_luks_or_explain) || fail "'$name' keeps administrator rights"
-  if [[ -n $disk ]]; then
-    status=0
-    user_accounts_disk_change_finished || status=$?
-    if (( status == 2 )); then
-      fail "an earlier disk password change stopped part way, so '$name' keeps administrator rights; once it's finished with omarchy-drive-password, run this again"
-    elif (( status != 0 )); then
-      fail "couldn't tell whether a disk password change is unfinished, so '$name' keeps administrator rights"
-    fi
-  fi
 fi
 
 if [[ $state == "on" ]]; then

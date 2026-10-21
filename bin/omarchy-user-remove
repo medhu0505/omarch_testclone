@@ -131,22 +131,6 @@ if user_accounts_has_programs "$name"; then
   sign_out=1
 fi
 
-# A disk password change someone left unfinished is finished first, whoever's
-# it is and however many accounts there are: the removed account's record goes
-# with it, and the disk may still open with a key of theirs. Where the system
-# disk can't be told, that can't be checked, so the removal refuses rather than
-# guess, as the switches do.
-disk=$(user_accounts_root_luks_or_explain) || fail "'$name' was not removed"
-if [[ -n $disk ]]; then
-  status=0
-  user_accounts_disk_change_finished || status=$?
-  if (( status == 2 )); then
-    fail "an earlier disk password change stopped part way, so '$name' was not removed; once it's finished with omarchy-drive-password, run this again"
-  elif (( status != 0 )); then
-    fail "couldn't tell whether a disk password change is unfinished, so '$name' was not removed"
-  fi
-fi
-
 # Switch back to one account before anyone is signed out or removed. Every
 # step of the switch can be repeated, and the account is still there until it's
 # done, so if anything stops this midway (a closed terminal, a wrong disk
