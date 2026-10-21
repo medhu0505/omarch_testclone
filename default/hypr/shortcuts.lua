@@ -10,7 +10,7 @@
 
 local paths = require("default.hypr.paths")
 
-o.shortcuts = { declared = {}, order = {}, bound = {}, current = {} }
+o.shortcuts = { declared = {}, order = {}, bound = {}, current = {}, hold_state = {} }
 
 local registry = paths.config_home .. "/omarchy/shortcuts"
 
@@ -220,6 +220,17 @@ function o.shortcuts.apply(ids)
     previous[shortcut.id] = shortcut
   end
 
+  -- A hold rebound or reloaded while its key is down would never see that key
+  -- come up, so finish it now rather than leave, say, dictation recording.
+  for id, state in pairs(o.shortcuts.hold_state) do
+    if rebinding(id) and state.held then
+      state.held = false
+      if previous[id] and previous[id].release then
+        hl.exec_cmd(previous[id].release)
+      end
+    end
+  end
+
   local wanted = {}
   for _, shortcut in ipairs(shortcuts) do
     if shortcut.command and rebinding(shortcut.id) then
@@ -258,7 +269,12 @@ function o.shortcuts.apply(ids)
           hl.unbind(keys)
           local options = modifier_key(chord:match("([^+]*)$")) and { ignore_mods = true } or nil
           if shortcut.release then
-            o.bind_hold(keys, shortcut.description, shortcut.command, shortcut.release_description or shortcut.description, shortcut.release, options)
+            o.shortcuts.hold_state[shortcut.id] = o.shortcuts.hold_state[shortcut.id] or { held = false }
+            local hold_options = { hold_state = o.shortcuts.hold_state[shortcut.id] }
+            for key, value in pairs(options or {}) do
+              hold_options[key] = value
+            end
+            o.bind_hold(keys, shortcut.description, shortcut.command, shortcut.release_description or shortcut.description, shortcut.release, hold_options)
           else
             o.bind(keys, shortcut.description, shortcut.command, options)
           end

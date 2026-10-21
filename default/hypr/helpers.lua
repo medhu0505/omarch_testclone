@@ -273,8 +273,10 @@ end
 -- is also non-consuming: a release bind that ignores modifiers would otherwise
 -- take the key from apps whenever it is pressed with other modifiers, such as
 -- Shift+F9, or without them, such as a plain x for SUPER + X.
+-- options.hold_state, a table, shares whether the key is held with the caller,
+-- which named shortcuts use to finish a hold before rebinding it.
 function o.bind_hold(keys, press_description, press, release_description, release, options)
-  local held = false
+  local state = options and options.hold_state or { held = false }
   press, release = command_from(press, press_description), command_from(release, release_description)
 
   local function run(dispatcher)
@@ -288,13 +290,13 @@ function o.bind_hold(keys, press_description, press, release_description, releas
   end
 
   local function on_press()
-    held = true
+    state.held = true
     run(press)
   end
 
   local function on_release()
-    if held then
-      held = false
+    if state.held then
+      state.held = false
       run(release)
     end
   end
@@ -308,7 +310,9 @@ function o.bind_hold(keys, press_description, press, release_description, releas
 
   local press_options, release_options = {}, {}
   for key, value in pairs(options or {}) do
-    press_options[key], release_options[key] = value, value
+    if key ~= "hold_state" then
+      press_options[key], release_options[key] = value, value
+    end
   end
   -- Options that change when the press half fires would break the release half.
   for _, key in ipairs({ "repeating", "long_press", "click", "drag" }) do

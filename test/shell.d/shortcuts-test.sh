@@ -191,6 +191,21 @@ backend_line=$(grep -n 'require("default.hypr.dictation-backend")' "$ROOT/defaul
 ((apply_line < backend_line)) || fail "shortcuts bind before the dictation backend can replace them"
 pass "a live apply only touches the shortcuts it names"
 
+run_lua '
+o.shortcut("omarchy.dictation.hold", { description = "Dictate", keys = "F9", command = "start", release = "stop" })
+o.shortcuts.apply()
+local f9 = bound("F9")
+assert(f9[1].opts.hold_state == nil, "the shared state is not a Hyprland option")
+f9[1].dispatcher()
+o.shortcuts.apply({ "com.example.unrelated" })
+assert(ran[#ran] == "start", "an unrelated change leaves a held key held")
+o.shortcuts.apply({ "omarchy.dictation.hold" })
+assert(ran[#ran] == "stop", "rebinding a held shortcut finishes the hold")
+bound("F9")[2].dispatcher()
+assert(ran[#ran] == "stop" and #ran == 2, "letting go afterwards does not stop it twice")
+'
+pass "rebinding a held shortcut finishes the hold"
+
 printf '%s\n' 'release=evil' 'release_description=Evil' 'command=evil' 'keys=F8' >"$registry/omarchy.dictation.toggle"
 printf '%s\n' 'description=Fake' 'command=fake' 'keys=F12' >"$registry/omarchy.fake"
 run_lua '
