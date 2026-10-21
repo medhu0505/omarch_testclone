@@ -59,9 +59,10 @@ download_icon() {
 # directories it searches, and in the legacy per-user theme directory.
 icon_dirs() {
   local dir
-  local -a data_dirs=("$HOME/.local/share" /usr/local/share /usr/share)
+  local -a data_dirs=("${XDG_DATA_HOME:-$HOME/.local/share}" /usr/local/share /usr/share)
 
   if [[ -n ${XDG_DATA_DIRS:-} ]]; then
+    local -a configured=()
     IFS=: read -r -a configured <<<"${XDG_DATA_DIRS}"
     data_dirs+=("${configured[@]}")
   fi
@@ -75,7 +76,7 @@ icon_dirs() {
 # A bare name has to resolve to an icon the desktop environment can find, or
 # the launcher ends up with a blank tile.
 icon_exists() {
-  local name="$1" dir file stem pattern
+  local name="$1" dir path stem pattern
 
   # An empty name is not an icon: the search would match every dotfile.
   [[ -n $name ]] || return 1
@@ -87,13 +88,13 @@ icon_exists() {
 
   while IFS= read -r dir; do
     [[ -d $dir ]] || continue
-    while IFS= read -r file; do
-      stem=${file##*/}
+    while IFS= read -r path; do
+      stem=${path##*/}
       stem=${stem%.*}
       [[ $stem == "$name" ]] || continue
-      [[ $(file -b --mime-type "$file") == image/* ]] || continue
+      [[ $(file -b --mime-type "$path") == image/* ]] || continue
       return 0
-    done < <(find "$dir" -type f -name "$pattern.*" 2>/dev/null)
+    done < <(find "$dir" -maxdepth 4 \( -type f -o -type l \) -name "$pattern.*" 2>/dev/null)
   done < <(icon_dirs)
 
   return 1

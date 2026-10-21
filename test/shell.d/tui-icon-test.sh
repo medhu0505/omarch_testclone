@@ -12,6 +12,11 @@ trap 'rm -rf "$test_tmp"' EXIT
 export HOME="$test_tmp/home"
 export OMARCHY_PATH="$ROOT"
 export XDG_CURRENT_DESKTOP=Hyprland
+# The icon search follows the data directories the desktop searches, so the
+# test owns them: the data home follows the fake home, and the data
+# directories hold only what this file puts there.
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_DATA_DIRS="$test_tmp/data"
 mkdir -p "$HOME" "$test_tmp/bin" "$test_tmp/icons"
 
 # A real one pixel PNG, so the icon check sees an image and not a body.
@@ -83,19 +88,28 @@ pass "an icon URL that answers with an image installs it"
 
 # A name that resolves to no icon in the theme is reported, and the launcher
 # is still written so the app can be started.
-output=$(install_tui T4 true tile no-such-icon 2>&1) && status=0 || status=$?
+missing="omarchy-test-missing-4f7c2a"
+output=$(install_tui T4 true tile "$missing" 2>&1) && status=0 || status=$?
 (( status == 0 )) || fail "a name that resolves to no icon still installs the launcher" "$output"
-[[ $output == *no-such-icon* ]] || fail "a name that resolves to no icon is reported" "$output"
-grep -qx 'Icon=no-such-icon' "$(desktop_file T4)" || fail "the launcher keeps the icon name it was given" "$(cat "$(desktop_file T4)")"
+[[ $output == *"$missing"* ]] || fail "a name that resolves to no icon is reported" "$output"
+grep -qx "Icon=$missing" "$(desktop_file T4)" || fail "the launcher keeps the icon name it was given" "$(cat "$(desktop_file T4)")"
 pass "a name that resolves to no icon is reported"
 
 # A failed reinstall leaves the icon that was installed before it alone.
 install_tui T8 true tile "https://example.invalid/icon.png" >/dev/null
 [[ -s $icon_dir/t8.png ]] || fail "the first install writes the icon" "$(ls "$icon_dir")"
+cp "$icon_dir/t8.png" "$test_tmp/kept-icon.png"
 output=$(install_tui T8 true tile "https://example.invalid/notfound.png" 2>&1) && status=0 || status=$?
 (( status != 0 )) || fail "a reinstall with a broken icon URL fails" "$output"
-[[ -s $icon_dir/t8.png ]] || fail "a failed reinstall keeps the installed icon" "$(ls "$icon_dir")"
+cmp -s "$icon_dir/t8.png" "$test_tmp/kept-icon.png" ||
+  fail "a failed reinstall keeps the installed icon" "$(file -b "$icon_dir/t8.png")"
 pass "a failed reinstall keeps the installed icon"
+
+# The answer is written to a temporary file beside the icon, and the icon
+# directory is left holding only the icons that belong there.
+[[ $(ls -A "$icon_dir" | grep -c 't[0-9]*\.png\.' || true) == 0 ]] ||
+  fail "a failed download leaves no temporary file behind" "$(ls -A "$icon_dir")"
+pass "a failed download leaves no temporary file behind"
 
 # An icon the desktop finds in a configured data directory is found here too.
 mkdir -p "$test_tmp/data/icons/hicolor/256x256/apps"

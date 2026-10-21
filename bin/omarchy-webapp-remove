@@ -53,8 +53,8 @@ fi
 icon_name=$(printf '%s\n' "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^[:alnum:]]\+/-/g; s/^-//; s/-$//')
 desktop_file=$(path_for_web_app "$APP_NAME")
 rm -f "${desktop_file:-$DESKTOP_DIR/$APP_NAME.desktop}"
-# The icon keeps the format it was installed with, so every format the icon
-# theme uses is removed here too. The installer names the icon after the
+# The icon keeps the format it was installed with, so the formats the icon
+# theme uses are removed here too. The installer names the icon after the
 # sanitized app name, and only that name is safe to match: a name the user
 # typed can hold a glob or a path. A name that sanitizes to nothing left the
 # icon at the empty name, and these are those files.
