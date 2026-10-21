@@ -13,8 +13,9 @@ mock_bin="$test_tmp/bin"
 mkdir -p "$mock_bin"
 
 for command in xdg-user-dirs-update xdg-settings xdg-mime; do
-  printf '#!/bin/bash\nexit 0\n' >"$mock_bin/$command"
+  printf '#!/bin/bash\nprintf "%%s %%s\\n" "${0##*/}" "$*" >>"$TEST_COMMAND_LOG"\n' >"$mock_bin/$command"
 done
+export TEST_COMMAND_LOG=$test_tmp/commands.log
 chmod +x "$mock_bin"/*
 
 # Provisioning prepends $OMARCHY_PATH/bin, which shadows a mock for anything
@@ -69,6 +70,25 @@ bookmarked "$default_home" "$default_home/Projects" Projects ||
   fail "omarchy-provision-user bookmarks ~/Projects"
 
 pass "omarchy-provision-user uses the default directories when none are configured"
+
+for dir in DOWNLOAD:Downloads PICTURES:Pictures VIDEOS:Videos DOCUMENTS:Documents MUSIC:Music; do
+  grep -qxF "xdg-user-dirs-update --set ${dir%%:*} $test_tmp/home/${dir#*:}" "$TEST_COMMAND_LOG" ||
+    fail "provisioning names the ${dir%%:*} folder in English" "$(cat "$TEST_COMMAND_LOG")"
+done
+for dir in Downloads Pictures Videos Documents Music; do
+  [[ -d $test_tmp/home/$dir ]] || fail "provisioning creates the $dir folder it names"
+done
+pass "provisioning names the user folders in English before a first login in another language"
+
+: >"$TEST_COMMAND_LOG"
+mkdir -p "$test_tmp/home/.config"
+printf 'XDG_DOWNLOAD_DIR="$HOME/下载"\n' >"$test_tmp/home/.config/user-dirs.dirs"
+HOME="$test_tmp/home" PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" \
+  OMARCHY_INSTALL="$test_tmp/install" bash "$ROOT/bin/omarchy-provision-user" --force >/dev/null ||
+  fail "omarchy-provision-user finishes again"
+! grep -q -- '--set DOWNLOAD ' "$TEST_COMMAND_LOG" || fail "provisioning keeps a folder the user already named"
+grep -q -- '--set PICTURES ' "$TEST_COMMAND_LOG" || fail "provisioning still names the folders the user has not"
+pass "provisioning keeps a folder the user already named, in any language"
 
 # A user who moved their XDG directories keeps them: provisioning must not
 # create an empty duplicate under the default name and bookmark that instead.
