@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # omarchy:summary=Succeed when you're an administrator who can use sudo, fail otherwise
-# omarchy:examples=omarchy-sudo-allowed || echo "an administrator has to do this"
 # omarchy:hidden=true
 
 # Omarchy's administrators are the members of wheel: setup puts the owner there
