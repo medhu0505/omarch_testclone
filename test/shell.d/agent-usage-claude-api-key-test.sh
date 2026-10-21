@@ -88,6 +88,11 @@ jq -e '.status == "Waiting for auth"' <<<"$result" >/dev/null ||
 result=$(T_SETTINGS='[1,2]' T_PROFILE='"text"' login)
 jq -e '.status == "Waiting for auth"' <<<"$result" >/dev/null ||
   fail "settings that aren't an object don't count as signed in" "$result"
+# The settings' env block wins over the environment, as in the CLI: one that
+# empties the variable leaves no key.
+result=$(T_SETTINGS='{"env":{"ANTHROPIC_API_KEY":""}}' login ANTHROPIC_API_KEY=sk-ant-test)
+jq -e '.status == "Waiting for auth"' <<<"$result" >/dev/null ||
+  fail "an exported key the settings empty doesn't count as signed in" "$result"
 # settings.local.json in the config directory is a project's file: `claude auth
 # status` stays signed out with a key only there, so the panel must too.
 result=$(T_SETTINGS_LOCAL='{"apiKeyHelper":"pass show anthropic","env":{"ANTHROPIC_API_KEY":"sk-ant-test"}}' login)

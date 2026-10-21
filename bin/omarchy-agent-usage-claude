@@ -874,15 +874,18 @@ def json_object(path: Path) -> dict[str, Any]:
 
 
 def api_key_login(claude_dir: Path) -> bool:
-  if any(os.environ.get(name) for name in API_KEY_VARIABLES):
-    return True
   if json_object(profile_path(claude_dir)).get("primaryApiKey"):
     return True
   settings = json_object(claude_dir / "settings.json")
   if settings.get("apiKeyHelper"):
     return True
-  env = settings.get("env")
-  return isinstance(env, dict) and any(env.get(name) for name in API_KEY_VARIABLES)
+  # The settings' env block is applied over the environment, as the CLI does,
+  # so a variable it sets, even to nothing, is the one that counts.
+  env = {name: os.environ.get(name) for name in API_KEY_VARIABLES}
+  overrides = settings.get("env")
+  if isinstance(overrides, dict):
+    env.update({name: overrides[name] for name in API_KEY_VARIABLES if name in overrides})
+  return any(env.values())
 
 
 # The plan label and limits for a home's login: a subscription's from the
