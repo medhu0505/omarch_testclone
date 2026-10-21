@@ -12,10 +12,14 @@ notify_update() {
 update_pending() {
   local status=0
   checkupdates --nocolor >/dev/null 2>&1 || status=$?
-  ((status != 2)) && return 0
 
-  [[ ${OMARCHY_PATH:-/usr/share/omarchy} != /usr/share/omarchy ]] &&
+  if (( status != 2 )); then
+    return 0
+  elif [[ ${OMARCHY_PATH:-/usr/share/omarchy} != "/usr/share/omarchy" ]]; then
     omarchy-update-available >/dev/null 2>&1
+  else
+    return 1
+  fi
 }
 
 notify_wifi() {
