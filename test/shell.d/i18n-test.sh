@@ -288,13 +288,19 @@ cat >"$work/stubs/omarchy-notification-send" <<'STUB'
 #!/bin/bash
 echo "$@" >>"$NOTIFY_LOG"
 STUB
-cat >"$work/stubs/dbus-update-activation-environment" <<'STUB'
-#!/bin/bash
-echo "$@" >>"$SESSION_ENV_LOG"
-STUB
 cat >"$work/stubs/locale" <<'STUB'
 #!/bin/bash
 if [[ $1 == "-a" ]]; then echo "en_US.utf8"; else echo "LANG=en_US.UTF-8"; fi
+STUB
+# A fake Hyprland session: the compositor and the shell restart record what
+# they were asked, so the test never touches a desktop it runs inside.
+cat >"$work/stubs/hyprctl" <<'STUB'
+#!/bin/bash
+echo "$@" >>"$SESSION_ENV_LOG"
+STUB
+cat >"$work/stubs/omarchy-restart-shell" <<'STUB'
+#!/bin/bash
+echo "restart" >>"$SESSION_ENV_LOG"
 STUB
 # sudo and pkexec record which one elevated and what it ran, then run it
 # as-is. sudo answers the long listing (`sudo -n -l -l`) with the
@@ -319,6 +325,7 @@ STUB
 chmod +x "$work/stubs/"*
 export PATH="$work/stubs:$PATH"
 export LOCALE_GEN_LOG=$work/locale-gen.log NOTIFY_LOG=$work/notify.log ELEVATE_LOG=$work/elevate.log SESSION_ENV_LOG=$work/session-env.log
+export HYPRLAND_INSTANCE_SIGNATURE=test
 : >"$LOCALE_GEN_LOG"; : >"$NOTIFY_LOG"; : >"$ELEVATE_LOG"; : >"$SESSION_ENV_LOG"
 
 assert_bash_equal() {
@@ -345,7 +352,7 @@ assert_bash_equal "$(cat "$ELEVATE_LOG")" "pkexec omarchy-locale-generate da" "w
 assert_bash_equal "$(cat "$OMARCHY_LANGUAGE_FILE")" "da" "omarchy-language persists the choice"
 assert_bash_equal "$(omarchy-language)" "da" "omarchy-language reads the persisted choice"
 assert_bash_equal "$(grep '^export LANG=' "$session_env")" "export LANG=da_DK.UTF-8" "omarchy-language sets the session LANG through uwsm for the next login"
-assert_bash_equal "$(cat "$SESSION_ENV_LOG")" "--systemd LANG=da_DK.UTF-8" "omarchy-language hands the new LANG to apps launched from now on"
+assert_bash_equal "$(cat "$SESSION_ENV_LOG")" $'eval hl.env("LANG", "da_DK.UTF-8", true)\nrestart' "omarchy-language hands the new LANG to Hyprland and services, then respawns the shell from it"
 assert_bash_equal "$(grep '^da_DK.UTF-8' "$OMARCHY_LOCALE_GEN")" "da_DK.UTF-8 UTF-8" "omarchy-language enables the locale in locale.gen"
 assert_bash_equal "$(cat "$LOCALE_GEN_LOG")" "da_DK.UTF-8" "omarchy-language generates the locale"
 
@@ -404,7 +411,7 @@ omarchy-language da </dev/null
 assert_bash_equal "$(cat "$OMARCHY_LANGUAGE_FILE")" "da" "already-applied locale switches without elevating"
 assert_bash_equal "$(cat "$LOCALE_GEN_LOG")" "" "already-generated locale is not regenerated"
 assert_bash_equal "$(cat "$ELEVATE_LOG")" "" "no password prompt when nothing privileged is needed"
-assert_bash_equal "$(cat "$SESSION_ENV_LOG")" "--systemd LANG=da_DK.UTF-8" "an already-generated locale still reaches the session"
+assert_bash_equal "$(head -n 1 "$SESSION_ENV_LOG")" 'eval hl.env("LANG", "da_DK.UTF-8", true)' "an already-generated locale still reaches the session"
 
 # Switching back writes the new LANG over the old one rather than adding to it.
 omarchy-language en </dev/null
@@ -422,6 +429,25 @@ TEST_SUDO_GRANT=1 omarchy-language sv </dev/null
 assert_bash_equal "$(cat "$ELEVATE_LOG")" "sudo -n omarchy-locale-generate sv" "with the grant, a new language generates its locale without a password prompt"
 assert_bash_equal "$(cat "$LOCALE_GEN_LOG")" "sv_SE.UTF-8" "the passwordless helper generates the language's locale"
 assert_bash_equal "$(cat "$OMARCHY_LANGUAGE_FILE")" "sv" "the passwordless switch persists the choice"
+
+# A CJK language brings its glyph forms, and its input method where Fcitx
+# answers; without a session bus the switch still succeeds and says how.
+cjk_font=$XDG_CONFIG_HOME/fontconfig/conf.d/50-omarchy-input-method.conf
+[[ ! -e $cjk_font ]] && pass "a non-CJK language leaves the CJK glyph forms alone" || fail "a non-CJK language leaves the CJK glyph forms alone"
+cat >"$work/stubs/busctl" <<'STUB'
+#!/bin/bash
+echo "no session bus" >&2
+exit 1
+STUB
+cp "$work/stubs/busctl" "$work/stubs/fcitx5-remote"
+chmod +x "$work/stubs/busctl" "$work/stubs/fcitx5-remote"
+cjk_output=$(TEST_SUDO_GRANT=1 omarchy-language ja </dev/null 2>&1) || fail "a CJK language switches without a reachable Fcitx" "$cjk_output"
+assert_bash_equal "$(cat "$OMARCHY_LANGUAGE_FILE")" "ja" "a CJK language switches without a reachable Fcitx"
+[[ $cjk_output == *"Setup > Typing > Input Methods"* ]] && pass "an input method that could not be added is named with where to add it" || fail "an input method that could not be added is named with where to add it" "$cjk_output"
+grep -q 'Noto Sans CJK JP' "$cjk_font" && pass "Japanese seeds Japanese glyph forms" || fail "Japanese seeds Japanese glyph forms"
+TEST_SUDO_GRANT=1 omarchy-language ko </dev/null 2>/dev/null
+grep -q 'Noto Sans CJK JP' "$cjk_font" && pass "a second CJK language keeps the glyph forms already chosen" || fail "a second CJK language keeps the glyph forms already chosen"
+rm -f "$work/stubs/busctl" "$work/stubs/fcitx5-remote" "$cjk_font"
 
 # A cancelled polkit prompt must not persist the choice, or the interface
 # would switch with LANG left behind.
