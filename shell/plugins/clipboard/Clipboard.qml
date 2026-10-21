@@ -104,10 +104,6 @@ Item {
     pinboardsFile.setText(JSON.stringify(root.pinboards, null, 2) + "\n")
   }
 
-  function label(key) {
-    return ClipboardHistory.label(Commons.I18n.t, key)
-  }
-
   function saveHistory() {
     historyFile.setText(JSON.stringify(root.history.slice(0, root.historyLimit), null, 2) + "\n")
   }
@@ -381,7 +377,7 @@ Item {
     var date = new Date(ms)
     var locale = Qt.locale(Commons.I18n.formatLocale)
     var time = date.toLocaleTimeString(locale, Locale.ShortFormat)
-    if (date.toDateString() === new Date().toDateString()) return root.label("clipboard.today").arg(time)
+    if (date.toDateString() === new Date().toDateString()) return Commons.I18n.t("clipboard.today").arg(time)
     return date.toLocaleString(locale, Locale.ShortFormat)
   }
 
@@ -693,7 +689,7 @@ Item {
           anchors.fill: parent
           opened: root.deletePinboardConfirmOpen
           z: 10
-          message: root.label("clipboard.deletePinboard").arg(root.currentPinboard)
+          message: Commons.I18n.t("clipboard.deletePinboard").arg(root.currentPinboard)
           confirmText: Commons.I18n.t("common.delete")
           background: root.background
           foreground: root.foreground
@@ -768,7 +764,7 @@ Item {
             spacing: Style.space(4)
 
             Chip {
-              label: root.label("clipboard.history")
+              label: Commons.I18n.t("clipboard.history")
               active: root.currentPinboard === ""
               onClicked: root.showTab("")
             }
@@ -968,7 +964,7 @@ Item {
 
             Text {
               textFormat: Text.PlainText
-              text: root.filterText ? Commons.I18n.t("common.noMatchesFor").arg(root.filterText) : (root.currentPinboard ? root.label("clipboard.pinboardEmpty") : Commons.I18n.t("clipboard.empty"))
+              text: root.filterText ? Commons.I18n.t("common.noMatchesFor").arg(root.filterText) : (root.currentPinboard ? Commons.I18n.t("clipboard.pinboardEmpty") : Commons.I18n.t("clipboard.empty"))
               color: root.foreground
               opacity: 0.7
               font.family: root.fontFamily
@@ -983,7 +979,7 @@ Item {
           id: hintsText
           textFormat: Text.PlainText
           width: parent.width
-          text: root.currentPinboard ? root.label("clipboard.pinboardHints") : root.label("clipboard.hints")
+          text: root.currentPinboard ? Commons.I18n.t("clipboard.pinboardHints") : Commons.I18n.t("clipboard.hints")
           color: root.foreground
           opacity: 0.45
           font.family: root.fontFamily
@@ -1033,7 +1029,7 @@ Item {
             Text {
               textFormat: Text.PlainText
               width: parent.width
-              text: root.pinPickerRenames ? root.label("clipboard.renamePinboard") : root.label("clipboard.pinTo")
+              text: root.pinPickerRenames ? Commons.I18n.t("clipboard.renamePinboard") : Commons.I18n.t("clipboard.pinTo")
               color: root.foreground
               opacity: 0.58
               font.family: root.fontFamily
@@ -1043,7 +1039,7 @@ Item {
             Text {
               textFormat: Text.PlainText
               width: parent.width
-              text: root.pinPickerText || root.label("clipboard.pinboardName")
+              text: root.pinPickerText || Commons.I18n.t("clipboard.pinboardName")
               color: root.foreground
               opacity: root.pinPickerText ? 1 : 0.58
               font.family: root.fontFamily
@@ -1069,7 +1065,7 @@ Item {
                   anchors.fill: parent
                   anchors.leftMargin: Style.space(10)
                   anchors.rightMargin: Style.space(10)
-                  text: pinRow.modelData.create ? root.label("clipboard.newPinboard").arg(pinRow.modelData.name) : "\uDB81\uDC03 " + pinRow.modelData.name
+                  text: pinRow.modelData.create ? Commons.I18n.t("clipboard.newPinboard").arg(pinRow.modelData.name) : "\uDB81\uDC03 " + pinRow.modelData.name
                   color: pinRow.hasCursor ? root.selectedText : root.foreground
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.title

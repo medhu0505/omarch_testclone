@@ -294,25 +294,6 @@ function translator(tr) {
   return typeof tr === "function" ? tr : function(key, english) { return english }
 }
 
-// English text for the picker's own labels, used when the catalog in tr has
-// no entry for a key (or tr is absent, as in the Node tests).
-var labels = {
-  "clipboard.history": "History",
-  "clipboard.pinTo": "Pin to pinboard",
-  "clipboard.renamePinboard": "Rename pinboard",
-  "clipboard.pinboardName": "Pinboard name…",
-  "clipboard.newPinboard": "New pinboard “%1”",
-  "clipboard.deletePinboard": "Delete pinboard “%1”? Its items go back to history.",
-  "clipboard.pinboardEmpty": "Nothing pinned here yet. Press Ctrl+P on an item to pin it.",
-  "clipboard.hints": "Enter paste · Ctrl+1–9 quick paste · Ctrl+P pin · ←/→ pinboards · Ctrl+T type · Del remove",
-  "clipboard.pinboardHints": "Enter paste · Ctrl+1–9 quick paste · Del unpin · F2 rename · Shift+Del delete pinboard",
-  "clipboard.today": "Today %1"
-}
-
-function label(tr, key) {
-  return translator(tr)(key, labels[key] || key)
-}
-
 function characterCount(count, trn, fmt) {
   var tn = typeof trn === "function" ? trn : function(key, n, english) { return n === 1 ? english.one : english.other }
   var number = typeof fmt === "function" ? fmt : function(v) { return String(v) }
@@ -436,7 +417,6 @@ if (typeof module !== "undefined") {
     removePinboard: removePinboard,
     entryKind: entryKind,
     kindOptions: kindOptions,
-    label: label,
     characterCount: characterCount,
     nextKind: nextKind,
     parseEntryJson: parseEntryJson,
