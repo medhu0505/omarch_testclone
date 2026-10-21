@@ -78,4 +78,10 @@ grep -qF 'readonly property bool barMoveActive: !!(barRef && barRef.barMoveActiv
   fail "toast cards take no input while the bar is being moved" "no barMoveActive from the bar"
 grep -qF 'mask: Region { item: surface.showingNotifications && !service.barMoveActive ? deck : null }' "$service" ||
   fail "toast cards take no input while the bar is being moved" "deck mask ignores barMoveActive"
+# A cloned notifications plugin reads the bar through PluginBarStateApi, so
+# the move flag has to reach that view too.
+grep -qF 'property bool barMoveActive: false' "$ROOT/shell/services/PluginBarStateApi.qml" ||
+  fail "cloned toast cards take no input while the bar is being moved" "PluginBarStateApi has no barMoveActive"
+grep -qF 'api.barMoveActive = Qt.binding(function() { return shell.bar ? shell.bar.barMoveActive === true : false })' "$ROOT/shell/shell.qml" ||
+  fail "cloned toast cards take no input while the bar is being moved" "plugin bar state does not follow barMoveActive"
 pass "toast cards take no input while the bar is being moved"
