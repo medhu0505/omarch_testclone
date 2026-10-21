@@ -148,6 +148,14 @@ for (const body of ['Your verification code is 938271', 'Your code is 938 271', 
   assert.equal(Store.restored(entry('See http://127.0.0.1/admin for details')).link, '')
 }
 
+{ // Join is earned by the link's host, never by text elsewhere in the URL.
+  for (const u of ['https://meet.google.com/abc-defg-hij', 'https://us02web.zoom.us/j/1', 'https://teams.microsoft.com/l/meetup-join/x'])
+    assert.equal(D.scan('Standup', u).meeting, true, u)
+  for (const u of ['https://zoom.us.evil.example/j/1', 'https://evil.example/meet.google.com', 'https://evil.example/?r=teams.microsoft.com',
+                   'https://notzoom.us/j/1'])
+    assert.equal(D.scan('Standup', u).meeting, false, u)
+}
+
 { // The --exec click argv: structural, fails closed, stays discrete arguments.
   const shot = JSON.stringify(['omasnap', '--edit', '/tmp/shot.png'])
   const literal = ['printf', '%s|', '$(touch /tmp/x)', '`id`', 'a; rm -rf /', "q'uote", 'new\nline', '-dash']

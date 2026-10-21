@@ -89,7 +89,9 @@ function links(text) {
   return out.slice(0, Security.MAX_CODES)
 }
 
-var MEETING = /(zoom\.us|meet\.google\.com|teams\.microsoft\.com|teams\.live\.com|whereby\.com|meet\.jit\.si)/i
+// Matched against the link's host, not the whole URL, or a path or a lookalike
+// host ("zoom.us.example.com") would earn the Join button.
+var MEETING_HOST = /(?:^|\.)(?:zoom\.us|meet\.google\.com|teams\.microsoft\.com|teams\.live\.com|whereby\.com|meet\.jit\.si)$/
 
 // Only shapes a bare number does not have: a leading +, a bracketed area code,
 // or a leading 0 with separators.
@@ -127,7 +129,7 @@ function scan(summary, body) {
     code: code.length ? code[0] : "",
     codes: code.join(" "),
     link: link.length ? link[0] : "",
-    meeting: link.length ? MEETING.test(link[0]) : false,
+    meeting: link.length ? MEETING_HOST.test(Security.hostOf(link[0])) : false,
     phone: phone.length ? phone[0] : ""
   }
 }
