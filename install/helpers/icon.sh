@@ -168,7 +168,8 @@ omarchy_icon_remove() {
       # The name of the icon is the file name without its extension, so a
       # file that carries a second part is the icon of another app: the
       # launcher resolves "foo.bar" to "foo-bar", and removing "foo" leaves
-      # it be.
+      # it be. A file that is not an image is not an icon, so it stays too:
+      # the removal takes the icons, not everything that carries the name.
       [[ ${base%.*} == "$name" ]] || continue
       [[ $(file -L -b --mime-type "$candidate") == image/* ]] || continue
       rm -f "$candidate"
@@ -189,6 +190,9 @@ omarchy_icon_remove() {
     done
   fi
 
-  # The icons the installers wrote before the name was sanitized.
+  # The icons the installers wrote before the name was sanitized. The name
+  # here is the one the user typed, so it can hold a glob or a path; the
+  # names are quoted, so they are matched literally, and only a .png file
+  # under those two directories is touched.
   rm -f "$OMARCHY_ICON_DIR/$raw_name.png" "$OMARCHY_OLD_ICON_DIR/$raw_name.png"
 }

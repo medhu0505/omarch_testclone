@@ -24,6 +24,10 @@ printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
 
 # The endpoint answers, so the download is exercised without a network. A 404
 # answers with a body and exits 0, which is what the install has to catch.
+# The stub writes this marker when a download is in flight, and the check
+# below waits for it before it interrupts the download.
+export OMARCHY_TEST_DOWNLOADING="$test_tmp/downloading"
+
 cat >"$test_tmp/bin/curl" <<SH
 #!/bin/bash
 dest=""
@@ -39,6 +43,7 @@ case "\$url" in
   *notfound*) printf '404: Not Found\n' >"\$dest"; exit 0 ;;
   *notimage*) printf 'this is not an image\n' >"\$dest"; exit 0 ;;
   *slow*) : >"$test_tmp/download-started"; sleep 2; cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
+  *interrupted*) : >"$OMARCHY_TEST_DOWNLOADING"; sleep 5; cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
   *) cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
 esac
 SH
@@ -162,11 +167,12 @@ pass "an icon in a configured data directory is found"
 # when the environment names no list of its own.
 # The name the launcher resolves has to be the name the file carries, so the
 # icon is picked by a stem that survives the round trip. The launcher turns
-# every character that is not a letter or a digit into a dash, so a stem of
-# lower-case letters, digits and dashes is one it resolves unchanged, and the
-# search asks for exactly that.
+# every character that is not a letter or a digit into a dash, collapses a run
+# of them into one, and drops a dash at either end, so the stems it resolves
+# unchanged are groups of letters and digits joined by a single dash, and the
+# search asks for exactly those.
 system_icon=$(find /usr/share/icons -mindepth 4 -maxdepth 4 -type f \
-  -regextype posix-extended -regex '.*/[a-z0-9-]+\.png' -print -quit 2>/dev/null) || system_icon=""
+  -regextype posix-extended -regex '.*/[a-z0-9]+(-[a-z0-9]+)*\.png' -print -quit 2>/dev/null) || system_icon=""
 system_icon_name=$(basename "$system_icon" .png)
 if [[ -z $system_icon ]]; then
   skip "the system data directories are searched" "the system holds no icon to look for"
@@ -274,6 +280,36 @@ EOF
 OMARCHY_REMOVE_NOTIFY=false "$ROOT/bin/omarchy-webapp-remove" W1 >/dev/null 2>&1
 [[ ! -e $icon_dir/w1.svg ]] || fail "removing a web app removes its icon" "$(ls "$icon_dir")"
 pass "removing a web app removes its icon"
+
+# An install that is interrupted while the answer downloads leaves no
+# temporary file behind and stops with the status of the signal.
+cat >"$test_tmp/bin/omarchy-icon-interrupt-check" <<'SH'
+#!/bin/bash
+PATH="$OMARCHY_TEST_STUB_BIN:$PATH"
+export PATH
+source "$OMARCHY_PATH/install/helpers/icon.sh"
+mkdir -p "$OMARCHY_ICON_ROOT"
+# The interrupt arrives the way a Ctrl-C does: to the whole process group,
+# so the shell that runs the download handles it. The script runs in its own
+# session, so the signal reaches nothing else.
+(
+  while [[ ! -e $OMARCHY_TEST_DOWNLOADING ]]; do sleep 0.05; done
+  kill -INT -$$
+) &
+omarchy_icon_download "https://example.invalid/interrupted.png" "$OMARCHY_ICON_DIR/interrupted.png"
+SH
+chmod +x "$test_tmp/bin/omarchy-icon-interrupt-check"
+status=0
+OMARCHY_TEST_STUB_BIN="$test_tmp/bin" \
+  setsid "$test_tmp/bin/omarchy-icon-interrupt-check" || status=$?
+[[ $status == 130 ]] ||
+  fail "an interrupted download stops with the status of the signal" "status $status"
+# The check that follows the interrupt looks at the icon directory itself, so
+# it sees the leftovers whether the download stopped the shell or not.
+leftovers=$(ls -A "$HOME/.local/share/icons" | grep -v '^hicolor$' || true)
+[[ -z $leftovers ]] ||
+  fail "an interrupted download leaves no temporary file behind" "$leftovers"
+pass "an interrupted download leaves no temporary file behind"
 
 # The download replaces the caller's own signal handlers and puts them back:
 # a command that already handles a signal must not lose it because it
