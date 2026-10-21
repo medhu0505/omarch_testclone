@@ -1107,6 +1107,11 @@ touch "$test_tmp/encrypted"
 if output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_user remove bob --yes 2>&1); then fail "an unfinished change stops a removal that leaves several accounts"; fi
 has_user bob && [[ $output == *"started by 'bob'"* ]] && ! grep -q "userdel" "$test_tmp/calls.log" ||
   fail "an unfinished change stops a removal that leaves several accounts, before anything changes" "$output; $(cat "$test_tmp/calls.log")"
+# Where the system disk can't be told, nothing can be checked, so it refuses.
+reset_fixtures
+touch "$test_tmp/encrypted" "$test_tmp/undecidable"
+if output=$(run_user remove bob --yes 2>&1); then fail "a removal goes on when the system disk can't be told"; fi
+has_user bob && [[ $output == *"Couldn't tell which drive holds the system"* ]] || fail "a removal refuses when the system disk can't be told" "$output"
 pass "an unfinished disk password change stops every removal"
 
 # cryptsetup reports a wrong passphrase as status 2. Any other failure is no
