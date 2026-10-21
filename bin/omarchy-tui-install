@@ -59,12 +59,16 @@ download_icon() {
 # directories it searches, and in the legacy per-user theme directory.
 icon_dirs() {
   local dir
-  local -a data_dirs=("${XDG_DATA_HOME:-$HOME/.local/share}" /usr/local/share /usr/share)
+  local -a data_dirs=("${XDG_DATA_HOME:-$HOME/.local/share}")
 
+  # A configured list of data directories replaces the default one, the same
+  # way it does for the desktop that resolves the icon.
   if [[ -n ${XDG_DATA_DIRS:-} ]]; then
     local -a configured=()
     IFS=: read -r -a configured <<<"${XDG_DATA_DIRS}"
     data_dirs+=("${configured[@]}")
+  else
+    data_dirs+=(/usr/local/share /usr/share)
   fi
 
   printf '%s\n' "$HOME/.icons"
