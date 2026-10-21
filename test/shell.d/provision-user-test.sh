@@ -30,7 +30,7 @@ mkdir -p "$test_tmp/install/user"
 provision() {
   env -u XDG_CONFIG_HOME HOME="$1" PATH="$mock_bin:$ROOT/bin:$PATH" \
     OMARCHY_PATH="$ROOT" OMARCHY_INSTALL="$test_tmp/install" \
-    bash "$ROOT/bin/omarchy-provision-user" >/dev/null
+    bash "$ROOT/bin/omarchy-provision-user" "${@:2}" >/dev/null
 }
 
 bookmarked() {
@@ -83,8 +83,7 @@ pass "provisioning names the user folders in English before a first login in ano
 : >"$TEST_COMMAND_LOG"
 mkdir -p "$test_tmp/home/.config"
 printf 'XDG_DOWNLOAD_DIR="$HOME/下载"\n' >"$test_tmp/home/.config/user-dirs.dirs"
-HOME="$test_tmp/home" PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" \
-  OMARCHY_INSTALL="$test_tmp/install" bash "$ROOT/bin/omarchy-provision-user" --force >/dev/null ||
+provision "$test_tmp/home" --force ||
   fail "omarchy-provision-user finishes again"
 ! grep -q -- '--set DOWNLOAD ' "$TEST_COMMAND_LOG" || fail "provisioning keeps a folder the user already named"
 grep -q -- '--set PICTURES ' "$TEST_COMMAND_LOG" || fail "provisioning still names the folders the user has not"
