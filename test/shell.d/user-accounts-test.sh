@@ -194,13 +194,18 @@ else
 fi
 SH
 
+# With OMARCHY_TEST_USERDEL_HOME_FAIL, it removes the account and then fails on
+# the home folder (status 12), as the real one does.
 cat >"$mock_bin/userdel" <<'SH'
 #!/bin/bash
 echo "userdel $*" >>"$OMARCHY_TEST_DIR/calls.log"
 name="${!#}"
 sed -i "/^$name:/d" "$OMARCHY_TEST_DIR/passwd" "$OMARCHY_TEST_DIR/group"
 sed -i -E "/^wheel:/ { s/([:,])$name(,|$)/\1/; s/,$// }" "$OMARCHY_TEST_DIR/group"
-if [[ $1 == "-r" ]]; then
+if [[ $1 == "-r" && -n ${OMARCHY_TEST_USERDEL_HOME_FAIL:-} ]]; then
+  echo "userdel: error removing directory /home/$name" >&2
+  exit 12
+elif [[ $1 == "-r" ]]; then
   rm -rf "${OMARCHY_TEST_DIR:?}/home/${name:?}"
   echo "userdel: $name mail spool (/var/spool/mail/$name) not found" >&2
 fi
@@ -884,6 +889,30 @@ for command in "remove bob --delete-home --yes" "admin bob off"; do
   grep -q "passwordless sudo grant of 'bob'" "$test_tmp/journal" || fail "$command logs the dropped grant" "$(cat "$test_tmp/journal")"
 done
 pass "removal and demotion drop the account's passwordless sudo grants"
+
+# The grants go before the account, or its wheel membership, does: a removal or
+# demotion that stops leaves none behind.
+for command in "remove bob --delete-home --yes:userdel" "admin bob off:gpasswd -d bob wheel"; do
+  reset_fixtures
+  sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
+  echo "bob ALL=(ALL) NOPASSWD: ALL" >"$test_tmp/sudoers.d/99-omarchy-nopasswd-1001"
+  output=$(run_user ${command%%:*} 2>&1) || fail "${command%%:*} with a passwordless grant" "$output"
+  grant_line=$(grep -n "rm -f .*99-omarchy-nopasswd-1001" "$test_tmp/calls.log" | head -1 | cut -d: -f1)
+  change_line=$(grep -n "${command#*:}" "$test_tmp/calls.log" | head -1 | cut -d: -f1)
+  [[ -n $grant_line && -n $change_line ]] && (( grant_line < change_line )) ||
+    fail "${command%%:*} drops the grants before the account changes" "$(cat "$test_tmp/calls.log")"
+done
+pass "the grants go before the account, or its administrator rights, do"
+
+# userdel can remove the account and then fail on its home folder: the grants
+# are already gone, and the command says what is left to do.
+reset_fixtures
+echo "bob ALL=(ALL) NOPASSWD: ALL" >"$test_tmp/sudoers.d/99-omarchy-nopasswd-1001"
+echo "bob ALL=(ALL) ALL" >"$test_tmp/sudoers.d/05_bob"
+if output=$(OMARCHY_TEST_USERDEL_HOME_FAIL=1 run_user remove bob --delete-home --yes 2>&1); then fail "a home folder userdel couldn't delete fails the command"; fi
+! has_user bob && [[ ! -e $test_tmp/sudoers.d/99-omarchy-nopasswd-1001 && ! -e $test_tmp/sudoers.d/05_bob && $output == *"removed 'bob', but couldn't delete"* ]] ||
+  fail "a home folder userdel couldn't delete leaves no grant, and says what's left" "$output; $(ls "$test_tmp/sudoers.d")"
+pass "a home folder userdel couldn't delete leaves no grant behind"
 
 # Every question is answered before anything changes: declining to sign the
 # other account out leaves the machine as it was, still multi-user.
