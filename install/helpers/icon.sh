@@ -164,6 +164,12 @@ omarchy_icon_remove() {
     # file that carries the name but is not an icon stays.
     for candidate in "$OMARCHY_ICON_DIR/$name".*; do
       [[ -f $candidate ]] || continue
+      base=${candidate##*/}
+      # The name of the icon is the file name without its extension, so a
+      # file that carries a second part is the icon of another app: the
+      # launcher resolves "foo.bar" to "foo-bar", and removing "foo" leaves
+      # it be.
+      [[ ${base%.*} == "$name" ]] || continue
       [[ $(file -L -b --mime-type "$candidate") == image/* ]] || continue
       rm -f "$candidate"
     done

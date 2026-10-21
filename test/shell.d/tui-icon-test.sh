@@ -166,7 +166,7 @@ pass "an icon in a configured data directory is found"
 # lower-case letters, digits and dashes is one it resolves unchanged, and the
 # search asks for exactly that.
 system_icon=$(find /usr/share/icons -mindepth 4 -maxdepth 4 -type f \
-  -regextype posix-extended -regex '.*/[a-z0-9-]+\.png' -print -quit 2>/dev/null)
+  -regextype posix-extended -regex '.*/[a-z0-9-]+\.png' -print -quit 2>/dev/null) || system_icon=""
 system_icon_name=$(basename "$system_icon" .png)
 if [[ -z $system_icon ]]; then
   skip "the system data directories are searched" "the system holds no icon to look for"
@@ -240,13 +240,15 @@ OMARCHY_REMOVE_NOTIFY=false "$ROOT/bin/omarchy-tui-remove" T16 >/dev/null 2>&1
 [[ ! -e $icon_dir/t16.jpg ]] || fail "removing a launcher removes its icon in any format" "$(ls "$icon_dir")"
 pass "removing a launcher removes its icon in any format"
 
-# The icon of another app whose name starts with the removed one is not the
-# removed app's icon: "t17" does not take "t17extra" with it.
-cp "$test_tmp/icon.png" "$icon_dir/t17extra.png"
-install_tui T17 true tile "$test_tmp/local.jpg" >/dev/null
-OMARCHY_REMOVE_NOTIFY=false "$ROOT/bin/omarchy-tui-remove" T17 >/dev/null 2>&1
-[[ -e $icon_dir/t17extra.png ]] || fail "removing a launcher removes no other app's icon" "$(ls "$icon_dir")"
-rm -f "$icon_dir/t17extra.png"
+# An icon whose name carries a second part is the icon of another app: the
+# launcher resolves "T16.extra" to "t16-extra", so removing "T16" leaves it
+# be. The file starts with the removed name and a dot, which is what the
+# removal matches on.
+cp "$test_tmp/icon.png" "$icon_dir/t16.extra.png"
+install_tui T16 true tile "$test_tmp/local.jpg" >/dev/null
+OMARCHY_REMOVE_NOTIFY=false "$ROOT/bin/omarchy-tui-remove" T16 >/dev/null 2>&1
+[[ -e $icon_dir/t16.extra.png ]] || fail "removing a launcher removes no other app's icon" "$(ls "$icon_dir")"
+rm -f "$icon_dir/t16.extra.png"
 pass "removing a launcher removes no other app's icon"
 
 # A file that carries the icon's name but is not an icon is not one of the
@@ -290,9 +292,10 @@ trap -p INT >"$OMARCHY_TEST_TRAPS" 2>&1
 grep -q "exit 42" "$OMARCHY_TEST_TRAPS" || exit 1
 SH
 chmod +x "$test_tmp/bin/omarchy-icon-helper-check"
+status=0
 OMARCHY_TEST_TRAPS="$test_tmp/traps.txt" OMARCHY_TEST_STUB_BIN="$test_tmp/bin" \
-  "$test_tmp/bin/omarchy-icon-helper-check"
-case $? in
+  "$test_tmp/bin/omarchy-icon-helper-check" || status=$?
+case $status in
   0) pass "a download keeps the caller's signal handler" ;;
   2) fail "a download keeps the caller's signal handler" "the download did not finish" ;;
   *) fail "a download keeps the caller's signal handler" "$(cat "$test_tmp/traps.txt" 2>/dev/null)" ;;
