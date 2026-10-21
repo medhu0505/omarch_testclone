@@ -39,12 +39,17 @@ user_accounts_is_login_user() {
   user_accounts_login_users | awk -F '\t' -v user="$1" '$1 == user { found = 1 } END { exit !found }'
 }
 
-user_accounts_is_admin() {
-  local wheel gid
-  wheel=$(getent group wheel || true)
-  [[ ",$(cut -d: -f4 <<<"$wheel")," == *",$1,"* ]] && return 0
+# Whether account $1 is in group $2, as a member or through its primary group.
+user_accounts_in_group() {
+  local group gid
+  group=$(getent group "$2" || true)
+  [[ ",$(cut -d: -f4 <<<"$group")," == *",$1,"* ]] && return 0
   gid=$(getent passwd "$1" | cut -d: -f4)
-  [[ -n $gid && $gid == "$(cut -d: -f3 <<<"$wheel")" ]]
+  [[ -n $gid && $gid == "$(cut -d: -f3 <<<"$group")" ]]
+}
+
+user_accounts_is_admin() {
+  user_accounts_in_group "$1" wheel
 }
 
 # Prints the login accounts that are administrators, one per line.

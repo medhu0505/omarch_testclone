@@ -847,6 +847,14 @@ for rule in "alice ALL=(ALL) SETENV: ALL" "alice ALL=(ALL) NOPASSWD:SETENV: ALL,
 done
 pass "admin off notices full sudo whatever its tags or group"
 
+# Sudoless Docker is root without a password too.
+reset_fixtures
+sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
+echo "docker:x:970:bob" >>"$test_tmp/group"
+if output=$(run_user admin bob off 2>&1); then fail "admin off passes over the docker group"; fi
+[[ $(wheel_members) == "alice" && $output == *"still in the docker group"* ]] || fail "admin off warns about the docker group" "$output; $(wheel_members)"
+pass "admin off warns when the account keeps root through the docker group"
+
 # Three tries for your own password, as sudo gives, so a wrong one can't be
 # typed until the login lockout takes the account.
 reset_fixtures

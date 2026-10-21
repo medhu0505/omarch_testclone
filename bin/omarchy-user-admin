@@ -133,6 +133,11 @@ else
   if user_accounts_has_full_sudo "$name"; then
     fail "$name is out of wheel, but another sudo rule still gives them full sudo; see sudo -l -U $name"
   fi
+  # Sudoless Docker (omarchy-setup-security-sudoless-docker) is root without a
+  # password, and left as it is, like a hand-written sudo rule.
+  if user_accounts_in_group "$name" docker; then
+    fail "$name is out of wheel, but still in the docker group, which gives root without a password; take them out with sudo gpasswd -d $name docker"
+  fi
   echo "$name is no longer an administrator."
   # Programs keep the groups they started with, so sudo still works in a
   # session that is already open.
