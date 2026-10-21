@@ -351,6 +351,7 @@ user_accounts_go_multi() {
   local self=$1 mine=$2 theirs=${3:-} disk choice new share own output opens="" changed
   disk=$(user_accounts_root_luks_or_explain) || return 1
   if [[ -n $disk ]]; then
+    user_accounts_own_change_finished || return 2
     opens=$(user_accounts_try_disk_password "$disk" "$mine") || return 1
   fi
   if [[ $opens == "opens" ]]; then
@@ -400,6 +401,7 @@ user_accounts_go_single() {
   local self=$1 mine=$2 disk current output opens="" keys
   disk=$(user_accounts_root_luks_or_explain) || return 1
   if [[ -n $disk ]]; then
+    user_accounts_own_change_finished || return 2
     opens=$(user_accounts_try_disk_password "$disk" "$mine") || return 1
   fi
   if [[ $opens == "refused" ]]; then
@@ -447,6 +449,15 @@ user_accounts_go_single() {
   else
     echo "Root has your password again."
   fi
+}
+
+# Whether a disk password change this account started has finished: until it
+# has, omarchy-drive-password keeps its note at this path, and the disk's keys
+# or their record may be half changed. The switches stop with status 2 (finish
+# it first) rather than trust the disk's password while it's there, even where
+# they'd have no new change to make.
+user_accounts_own_change_finished() {
+  [[ ! -e ${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/drive-password.state ]]
 }
 
 # How many keys the disk holds, read from its header the way luks_dump_slots

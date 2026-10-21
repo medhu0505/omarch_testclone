@@ -281,7 +281,7 @@ SH
 chmod +x "$mock_bin"/*
 
 reset_fixtures() {
-  rm -rf "${test_tmp:?}/home" "$test_tmp/sudoers.d" "$test_tmp/calls.log" "$test_tmp/journal" "$test_tmp/chpasswd.log" "$test_tmp/encrypted" "$test_tmp/undecidable" "$test_tmp/not_admin" "$test_tmp/cryptsetup.count" "$test_tmp/disk_keys"
+  rm -rf "${test_tmp:?}/home" "$test_tmp/sudoers.d" "$test_tmp/calls.log" "$test_tmp/journal" "$test_tmp/chpasswd.log" "$test_tmp/encrypted" "$test_tmp/undecidable" "$test_tmp/not_admin" "$test_tmp/cryptsetup.count" "$test_tmp/disk_keys" "$test_tmp/state"
   mkdir -p "$test_tmp/home/alice" "$test_tmp/home/bob" "$test_tmp/sudoers.d"
   # The owner, alice, was installed from the ISO: sudo by name, no wheel rule.
   echo "alice ALL=(ALL) ALL" >"$test_tmp/sudoers.d/04_alice"
@@ -325,7 +325,7 @@ run_user() {
   shift
   PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_LANGUAGE_FILE=/nonexistent OMARCHY_TEST_DIR="$test_tmp" \
     SUDO_USER=${RUN_AS:-alice} OMARCHY_LOGIN_DEFS=/dev/null OMARCHY_SUDOERS_DIR="$test_tmp/sudoers.d" \
-    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" OMARCHY_USER_LOCK="$test_tmp/user.lock" OMARCHY_HOME_ROOT="$test_tmp/home" \
+    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" OMARCHY_USER_LOCK="$test_tmp/user.lock" OMARCHY_HOME_ROOT="$test_tmp/home" XDG_STATE_HOME="$test_tmp/state" \
     "$ROOT/bin/omarchy-user-$command" "$@"
 }
 
@@ -607,7 +607,7 @@ run_tty() {
   printf -v cmd '%q ' "$ROOT/bin/omarchy-user-$command" "$@"
   PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_LANGUAGE_FILE=/nonexistent OMARCHY_TEST_DIR="$test_tmp" \
     SUDO_USER=${RUN_AS:-alice} OMARCHY_LOGIN_DEFS=/dev/null OMARCHY_SUDOERS_DIR="$test_tmp/sudoers.d" \
-    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" OMARCHY_USER_LOCK="$test_tmp/user.lock" OMARCHY_HOME_ROOT="$test_tmp/home" \
+    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" OMARCHY_USER_LOCK="$test_tmp/user.lock" OMARCHY_HOME_ROOT="$test_tmp/home" XDG_STATE_HOME="$test_tmp/state" \
     script -qefc "$cmd" /dev/null </dev/null >"$test_tmp/tty.out" 2>&1
   status=$?
   tr -d '\r' <"$test_tmp/tty.out"
@@ -1050,6 +1050,28 @@ output=$(run_tty remove bob) || fail "a second key on the disk doesn't stop the 
   fail "a second key on the disk keeps automatic login off, and says why" "$output"
 pass "a second key on the disk keeps automatic login off, and says why"
 
+# A change of yours that stopped part way is finished first, even where the
+# switch would have no new disk password change of its own to make.
+two_accounts
+touch "$test_tmp/encrypted"
+printf 'alicepw' >"$test_tmp/disk_password"
+mkdir -p "$test_tmp/state/omarchy"
+echo "phase=record" >"$test_tmp/state/omarchy/drive-password.state"
+answers alicepw yes
+if output=$(run_tty remove bob); then fail "your unfinished change stops the removal"; fi
+has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"once it's finished with omarchy-drive-password, run this again"* ]] ||
+  fail "your unfinished change stops the removal before anything changes" "$output"
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+printf 'otherpw' >"$test_tmp/disk_password"
+mkdir -p "$test_tmp/state/omarchy"
+echo "phase=record" >"$test_tmp/state/omarchy/drive-password.state"
+answers yes alicepw no carolpw carolpw
+if output=$(run_tty add carol); then fail "your unfinished change stops the add"; fi
+! has_user carol && [[ $output == *"once it's finished with omarchy-drive-password, run this again"* ]] || fail "your unfinished change stops the add" "$output"
+pass "a disk password change of yours that stopped part way is finished first"
+
 # A home that holds the note of an unfinished disk password change isn't
 # deleted: finishing that change needs it, also when the administrator who
 # started it was demoted since.
@@ -1154,7 +1176,7 @@ run_traced() {
   printf -v cmd '%q ' bash -x "$ROOT/bin/omarchy-user-$1" "${@:2}"
   PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_LANGUAGE_FILE=/nonexistent OMARCHY_TEST_DIR="$test_tmp" \
     SUDO_USER=alice OMARCHY_LOGIN_DEFS=/dev/null OMARCHY_SUDOERS_DIR="$test_tmp/sudoers.d" \
-    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" OMARCHY_USER_LOCK="$test_tmp/user.lock" OMARCHY_HOME_ROOT="$test_tmp/home" \
+    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" OMARCHY_USER_LOCK="$test_tmp/user.lock" OMARCHY_HOME_ROOT="$test_tmp/home" XDG_STATE_HOME="$test_tmp/state" \
     script -qefc "$cmd" /dev/null </dev/null 2>&1 | tr -d '\r'
 }
 reset_fixtures
