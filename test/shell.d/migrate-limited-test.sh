@@ -93,6 +93,13 @@ grep -qx "Needs an administrator, for this account: sudo gpasswd -d $(id -un) in
   [[ ! -f $test_tmp/home-no/.local/state/omarchy/migrations/400-this-account.sh ]] ||
   fail "a step about a limited account itself says so and stays pending" "$(cat "$test_tmp/err"; cat "$test_tmp/calls")"
 rm -f "$test_root/migrations/400-this-account.sh"
+cat >"$test_root/migrations/450-this-owner.sh" <<'SH'
+sudo chown "$USER:$USER" /var/lib/example
+SH
+if run_migrate no; then fail "a step naming a limited account as user:group fails its migration"; fi
+grep -qx "Needs an administrator, for this account: sudo chown $(id -un):$(id -un) /var/lib/example" "$test_tmp/err" ||
+  fail "a step naming a limited account as user:group says so" "$(cat "$test_tmp/err")"
+rm -f "$test_root/migrations/450-this-owner.sh"
 if run_migrate no; then fail "a step about a limited account's home fails its migration"; fi
 grep -q "Needs an administrator, for this account: sudo chown root .*/.config/thing" "$test_tmp/err" ||
   fail "a step about a limited account's home says so" "$(cat "$test_tmp/err")"

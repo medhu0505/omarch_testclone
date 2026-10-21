@@ -4,14 +4,16 @@
 # an administrator (see agents/skills/migrations.md). A migration's
 # machine-wide steps are an administrator's, done by their own run of it, so
 # this runs nothing, says what it left, and reports success, instead of asking
-# for a password sudo would refuse. A step about this account itself, with its
-# name or home in the command, is not one an administrator's run does for it:
+# for a password sudo would refuse. A step about this account itself, naming
+# it (alone or as user:group) or a path in its home, is not one an
+# administrator's run does for it:
 # that fails, and the migration stays pending until an administrator has done
 # it. pkexec is the same file.
 
 account=$(id -un)
 for argument in "$@"; do
-  if [[ $argument == "$account" || $argument == */"$account" || $argument == "$HOME" || $argument == "$HOME"/* ]]; then
+  if [[ $argument == "$account" || $argument == "$account":* || $argument == *:"$account" || $argument == */"$account" ||
+    $argument == "$HOME" || $argument == "$HOME"/* ]]; then
     echo "Needs an administrator, for this account: ${0##*/} $*" >&2
     exit 1
   fi
