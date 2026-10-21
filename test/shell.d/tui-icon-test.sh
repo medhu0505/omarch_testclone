@@ -299,9 +299,12 @@ mkdir -p "$OMARCHY_ICON_ROOT"
 omarchy_icon_download "https://example.invalid/interrupted.png" "$OMARCHY_ICON_DIR/interrupted.png"
 SH
 chmod +x "$test_tmp/bin/omarchy-icon-interrupt-check"
+# A shell that inherits an ignored interrupt cannot trap it at all, and the
+# suite hands the commands an ignored interrupt. The handler only exists
+# where the signal is trappable, so the check says so before it starts.
 status=0
 OMARCHY_TEST_STUB_BIN="$test_tmp/bin" \
-  setsid "$test_tmp/bin/omarchy-icon-interrupt-check" || status=$?
+  env --default-signal=INT setsid "$test_tmp/bin/omarchy-icon-interrupt-check" || status=$?
 [[ $status == 130 ]] ||
   fail "an interrupted download stops with the status of the signal" "status $status"
 # The check that follows the interrupt looks at the icon directory itself, so
@@ -328,9 +331,12 @@ trap -p INT >"$OMARCHY_TEST_TRAPS" 2>&1
 grep -q "exit 42" "$OMARCHY_TEST_TRAPS" || exit 1
 SH
 chmod +x "$test_tmp/bin/omarchy-icon-helper-check"
+# The check runs in its own session: a shell that inherits an ignored
+# interrupt cannot trap it at all, and the suite runner ignores the interrupt
+# in the commands it starts.
 status=0
 OMARCHY_TEST_TRAPS="$test_tmp/traps.txt" OMARCHY_TEST_STUB_BIN="$test_tmp/bin" \
-  "$test_tmp/bin/omarchy-icon-helper-check" || status=$?
+  env --default-signal=INT setsid "$test_tmp/bin/omarchy-icon-helper-check" || status=$?
 case $status in
   0) pass "a download keeps the caller's signal handler" ;;
   2) fail "a download keeps the caller's signal handler" "the download did not finish" ;;
