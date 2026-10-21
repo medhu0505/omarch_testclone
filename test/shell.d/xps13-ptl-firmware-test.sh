@@ -41,6 +41,9 @@ if [[ $1 == "-Q" ]]; then
     [[ -s $TEST_VERSION_FILE ]] || exit 1
     printf 'linux-firmware-cirrus %s\n' "$(<"$TEST_VERSION_FILE")"
   fi
+elif [[ $1 == "-Si" ]]; then
+  # omarchy-pkg-add reads sync metadata before installing; only installs belong in the log.
+  exit 1
 else
   printf 'pacman %s\n' "$*" >>"$TEST_LOG"
   [[ $* == "-S --noconfirm --needed -- linux-firmware-cirrus-dx13260" ]] || exit 1
