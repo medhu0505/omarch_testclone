@@ -716,6 +716,13 @@ answer=$(pending_answer) && [[ $answer == "none" && ! -e $journal ]] || fail "--
 pass "--system-pending reports none, and drops a journal for another disk"
 
 fixture
+mkdir -p "$tmp/state"
+chmod 555 "$tmp/state"
+answer=$(pending_answer) && [[ $answer == "none" && ! -e ${journal%/*} ]] || { chmod 755 "$tmp/state"; fail "--system-pending answers without writing state" "$answer"; }
+chmod 755 "$tmp/state"
+pass "--system-pending answers without writing any state"
+
+fixture
 if attempt 0 "$old_password" ""; then fail "an empty password is refused"; fi
 said "Password cannot be empty."
 if attempt 0 "$old_password" "secret123" "*"; then fail "a mismatched confirmation is refused"; fi
