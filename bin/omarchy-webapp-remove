@@ -59,6 +59,10 @@ rm -f "${desktop_file:-$DESKTOP_DIR/$APP_NAME.desktop}"
 # name the user typed can hold a glob or a path.
 if [[ -n $icon_name ]]; then
   rm -f "$ICON_DIR/$icon_name".*
+else
+  # A name that sanitizes to nothing left the icon at the empty name, in the
+  # formats the installer can write.
+  rm -f "$ICON_DIR/.png" "$ICON_DIR/.svg" "$ICON_DIR/.xpm"
 fi
 rm -f "$ICON_DIR/$APP_NAME.png" "$OLD_ICON_DIR/$APP_NAME.png"
 

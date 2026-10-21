@@ -37,6 +37,15 @@ case "\$url" in
 esac
 SH
 chmod +x "$test_tmp/bin/curl"
+
+# The desktop database updater is not needed to exercise the icon handling,
+# and it is not installed everywhere, so the test brings its own.
+cat >"$test_tmp/bin/update-desktop-database" <<'SH'
+#!/bin/bash
+exit 0
+SH
+chmod +x "$test_tmp/bin/update-desktop-database"
+
 export PATH="$test_tmp/bin:$ROOT/bin:$PATH"
 
 install_tui() {
@@ -74,6 +83,29 @@ output=$(install_tui T4 true tile no-such-icon 2>&1) && status=0 || status=$?
 [[ $output == *no-such-icon* ]] || fail "a name that resolves to no icon is reported" "$output"
 grep -qx 'Icon=no-such-icon' "$(desktop_file T4)" || fail "the launcher keeps the icon name it was given" "$(cat "$(desktop_file T4)")"
 pass "a name that resolves to no icon is reported"
+
+# A failed reinstall leaves the icon that was installed before it alone.
+install_tui T8 true tile "https://example.invalid/icon.png" >/dev/null
+[[ -s $icon_dir/t8.png ]] || fail "the first install writes the icon" "$(ls "$icon_dir")"
+output=$(install_tui T8 true tile "https://example.invalid/notfound.png" 2>&1) && status=0 || status=$?
+(( status != 0 )) || fail "a reinstall with a broken icon URL fails" "$output"
+[[ -s $icon_dir/t8.png ]] || fail "a failed reinstall keeps the installed icon" "$(ls "$icon_dir")"
+pass "a failed reinstall keeps the installed icon"
+
+# An icon the desktop finds in a configured data directory is found here too.
+mkdir -p "$test_tmp/data/icons/hicolor/256x256/apps"
+cp "$test_tmp/icon.png" "$test_tmp/data/icons/hicolor/256x256/apps/data-dir-icon.png"
+output=$(XDG_DATA_DIRS="$test_tmp/data" install_tui T9 true tile data-dir-icon 2>&1) && status=0 || status=$?
+[[ $output != *'No icon named'* ]] || fail "an icon in a configured data directory is found" "$output"
+pass "an icon in a configured data directory is found"
+
+# A file whose name starts with the icon name is indexed under its own name,
+# so it does not answer for the name that was asked for.
+cp "$test_tmp/icon.png" "$icon_dir/prefixed.other.png"
+output=$(install_tui T10 true tile prefixed 2>&1) && status=0 || status=$?
+[[ $output == *'No icon named'* ]] || fail "a name that is a prefix of another is reported" "$output"
+rm -f "$icon_dir/prefixed.other.png"
+pass "a name that is a prefix of another is reported"
 
 # A name that is not an icon at all is reported too, even when the icon
 # directory holds a dotfile the search would otherwise match.

@@ -50,9 +50,14 @@ install_user_icon() {
 }
 
 download_icon() {
-  curl -fsSL --max-time 10 -o "$2" "$1" 2>/dev/null &&
-    [[ -s $2 && $(file -b --mime-type "$2") == image/* ]] && return 0
-  rm -f "$2"
+  local url="$1" dest="$2" temp
+
+  temp=$(mktemp "$dest.XXXXXX") || return 1
+  if curl -fsSL --max-time 10 -o "$temp" "$1" 2>/dev/null &&
+    [[ -s $temp && $(file -b --mime-type "$temp") == image/* ]]; then
+    mv -f "$temp" "$dest" && return 0
+  fi
+  rm -f "$temp"
   return 1
 }
 
