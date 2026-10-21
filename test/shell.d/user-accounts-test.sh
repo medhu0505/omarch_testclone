@@ -994,6 +994,16 @@ if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty add carol); then fail "an unfin
   fail "an unfinished change stops the add before anything changes, when your password no longer opens the disk" "$output; $(cat "$test_tmp/calls.log")"
 pass "an unfinished disk password change stops the add even when your password no longer opens the disk"
 
+# Every question comes before anything changes, the wheel rule for --admin too.
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers yes alicepw carolpw carolpw
+if output=$(run_tty add carol --admin); then fail "leaving the disk password question cancels the add"; fi
+! has_user carol && [[ ! -e $test_tmp/sudoers.d/00-omarchy-wheel ]] ||
+  fail "cancelling the switch's questions writes no wheel rule" "$output; $(ls "$test_tmp/sudoers.d")"
+pass "the wheel rule for --admin waits until the switch's questions are answered"
+
 # cryptsetup reports a wrong passphrase as status 2. Any other failure is no
 # answer, so the switches stop rather than read it as one: as "doesn't open",
 # the add would skip the split and have the administrator share their own

@@ -140,12 +140,6 @@ else
 fi
 [[ -n $password ]] || fail "the password can't be empty"
 
-groups=()
-if [[ $admin == "yes" ]]; then
-  user_accounts_ensure_wheel_sudo || fail "couldn't give the wheel group sudo, so '$name' was not added"
-  groups=(-G wheel)
-fi
-
 # The switch first, the account second: whatever stops this partway leaves
 # the machine with one account and more protection, never with a second
 # account and less. Every step of the switch can be repeated, so running this
@@ -158,6 +152,12 @@ if (( second_account )); then
   elif (( status != 0 )); then
     fail "the switch to several accounts didn't finish, so '$name' was not added; run this again to continue"
   fi
+fi
+
+groups=()
+if [[ $admin == "yes" ]]; then
+  user_accounts_ensure_wheel_sudo || fail "couldn't give the wheel group sudo, so '$name' was not added"
+  groups=(-G wheel)
 fi
 
 # A UID that owns nothing under /home, so a kept home folder never passes on.
