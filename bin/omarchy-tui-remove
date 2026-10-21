@@ -31,12 +31,11 @@ if [[ -z $APP_NAME ]]; then
   exit 1
 fi
 
-# The icon handling lives in one place for the four launcher commands.
+# The icon rules live in one place, which the four launcher commands share.
 source "$OMARCHY_PATH/install/helpers/icon.sh"
 
-icon_name=$(omarchy_icon_name "$APP_NAME")
 rm -f "$DESKTOP_DIR/$APP_NAME.desktop"
-omarchy_icon_remove "$icon_name" "$APP_NAME"
+omarchy_icon_remove "$APP_NAME"
 if [[ ${OMARCHY_REMOVE_NOTIFY:-true} != "false" ]]; then
   omarchy-notification-send -g  "$(omarchy-i18n tui.removed)" "$APP_NAME"
 fi

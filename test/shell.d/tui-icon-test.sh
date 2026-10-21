@@ -48,7 +48,6 @@ case "\$url" in
   *notimage*) printf 'this is not an image\n' >"\$dest"; exit 0 ;;
   *slow*) : >"$test_tmp/download-started"; sleep 2; cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
   *interrupt*) : >"$OMARCHY_TEST_DOWNLOADING"; sleep 5; cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
-  *terminated*) : >"$OMARCHY_TEST_DOWNLOADING"; sleep 5; cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
   *) cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
 esac
 SH
@@ -97,7 +96,10 @@ done
   fail "the download was in flight" "the installer never reached the download"
 [[ -z "$(ls -A "$icon_dir" 2>/dev/null)" ]] ||
   fail "a download in flight leaves no file in the icon directory" "$(ls -A "$icon_dir")"
-wait "$install_pid"
+status=0
+wait "$install_pid" || status=$?
+(( status == 0 )) || fail "the download that was in flight finished" "status $status"
+[[ -s $icon_dir/t13.png ]] || fail "the download that was in flight installed the icon" "$(ls "$icon_dir")"
 [[ -z "$(ls -A "$HOME/.local/share/icons" | grep -v '^hicolor$')" ]] ||
   fail "a finished download leaves no temporary file behind" "$(ls -A "$HOME/.local/share/icons")"
 rm -f "$icon_dir/t13.png" "$(desktop_file T13)"
@@ -199,12 +201,12 @@ fi
 
 # The theme layout is four levels below the theme root, and an entry deeper
 # than that is not one the desktop resolves.
-mkdir -p "$icon_dir/deeper/nested/dir"
-cp "$test_tmp/icon.png" "$icon_dir/deeper/nested/dir/deep-icon.png"
+mkdir -p "$icon_dir/one"
+cp "$test_tmp/icon.png" "$icon_dir/one/deep-icon.png"
 output=$(install_tui T15 true tile deep-icon 2>&1) && status=0 || status=$?
 (( status == 0 )) || fail "a name that is too deep still installs the launcher" "$output"
 [[ $output == *'No icon named'* ]] || fail "an entry deeper than the theme layout is not found" "$output"
-rm -rf "$icon_dir/deeper"
+rm -rf "$icon_dir/one"
 pass "an entry deeper than the theme layout is not found"
 
 # A file whose name starts with the icon name is indexed under its own name,

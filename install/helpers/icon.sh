@@ -12,6 +12,10 @@ OMARCHY_OLD_ICON_DIR="$HOME/.local/share/applications/icons"
 # is worse than one that says the download failed.
 OMARCHY_ICON_DOWNLOAD_TIMEOUT=10
 
+# A shell that is stopped by a signal reports the signal plus 128.
+OMARCHY_ICON_INTERRUPT_STATUS=130
+OMARCHY_ICON_TERMINATE_STATUS=143
+
 # The icon theme's layout is the theme, the size, the context and the name,
 # which is four levels below the icons directory the search starts at. Every
 # icon a live system holds is within them.
@@ -58,7 +62,8 @@ omarchy_icon_install_local() {
 # answer is written to a temporary file and only replaces the icon once it is
 # an image, so a failed download leaves an installed icon alone. The
 # downloader's own error is kept, so a failed fetch still says why it failed;
-# a caller that falls back to another source quietly sends it to /dev/null.
+# a caller that wants the failure silent sends the whole call to /dev/null,
+# and a caller that falls back to another source does exactly that.
 omarchy_icon_download() {
   local url="$1" dest="$2" temp status
 
@@ -75,17 +80,20 @@ omarchy_icon_download() {
   local previous_int previous_term
   previous_int=$(trap -p INT)
   previous_term=$(trap -p TERM)
-  trap 'rm -f "$temp"; exit 130' INT
-  trap 'rm -f "$temp"; exit 143' TERM
+  trap "rm -f \"$temp\"; exit $OMARCHY_ICON_INTERRUPT_STATUS" INT
+  trap "rm -f \"$temp\"; exit $OMARCHY_ICON_TERMINATE_STATUS" TERM
 
   if curl -fsSL --max-time "$OMARCHY_ICON_DOWNLOAD_TIMEOUT" -o "$temp" "$url" &&
     [[ -s $temp && $(file -b --mime-type "$temp") == image/* ]]; then
     # The temporary file is owner-only, and the icon is not.
-    chmod 0644 "$temp" && mv -f "$temp" "$dest"
-    status=$?
-    # The desktop resolves the icon through the theme cache, so the cache is
-    # refreshed once the icon is in place.
-    ((status == 0)) && gtk-update-icon-cache "$OMARCHY_ICON_ROOT/hicolor" &>/dev/null || true
+    if chmod 0644 "$temp" && mv -f "$temp" "$dest"; then
+      status=0
+      # The desktop resolves the icon through the theme cache, so the cache
+      # is refreshed once the icon is in place.
+      gtk-update-icon-cache "$OMARCHY_ICON_ROOT/hicolor" &>/dev/null || true
+    else
+      status=1
+    fi
   else
     status=1
   fi
@@ -152,9 +160,12 @@ omarchy_icon_exists() {
 # been installed with: the installers keep the format of the file they copied,
 # and the formats the theme ships are not the only ones an icon can have.
 omarchy_icon_remove() {
-  # The sanitized name the icon is known by, and the name the user typed,
-  # which the installers before the sanitization wrote the icon under.
-  local name="$1" raw_name="$2" candidate base
+  # The name the user typed. The icon is known by its sanitized form, and
+  # the installers before the sanitization wrote the icon under the name as
+  # it was typed.
+  local raw_name="$1" candidate base
+  local name
+  name=$(omarchy_icon_name "$raw_name")
 
   if [[ -n $name ]]; then
     # The icon keeps the format it was installed with, and the formats the
