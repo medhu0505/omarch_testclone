@@ -320,6 +320,20 @@ for (const [name, source] of [['Panel.qml', panelCode], ['BarWidget.qml', widget
 }
 assert(/date\.toLocaleString\(root\.formatLocale,/.test(widgetSource), 'bar clock formats with the Omarchy language')
 assert(/standaloneMonthName\(viewMonth/.test(panelCode), 'calendar title uses the standalone month name')
+
+// ---- Catching up when the system clock jumps. SystemClock waits out the rest
+//      of the minute on a timer that stops while the machine sleeps, so after a
+//      wake the label and the calendar's today kept the old time (#13504). The
+//      resync IPC restarts both clocks; omarchy-clock-resync.timer calls it.
+const restartClock = /clock\.enabled = false\s*clock\.enabled = true/
+const widgetResync = widgetSource.match(/function resync\(\) \{[\s\S]*?\n {2}\}/)
+assert(widgetResync && restartClock.test(widgetResync[0]), 'clock restarts its SystemClock on resync')
+assert(widgetResync && /panelLoader\.item\.resync\(\)/.test(widgetResync[0]), 'clock resync reaches the calendar')
+assert(widgetResync && !/refresh\(\)/.test(widgetResync[0]), 'clock resync does not send the calendar back to today')
+const panelResync = panelCode.match(/function resync\(\) \{[\s\S]*?\n {2}\}/)
+assert(panelResync && restartClock.test(panelResync[0]) && !/goToToday|refresh\(\)/.test(panelResync[0]), 'calendar restarts its own clock on resync and keeps a browsed month')
+assert(/function resync\(\): void \{ root\.broadcast\("resync"\) \}/.test(widgetSource), 'clock resync IPC reaches the clock on every monitor')
+assert(!/\bTimer \{/.test(widgetSource), 'clock waits for the system clock timer instead of polling the wall clock')
 JS
 
 shell_json=$(cd "$ROOT" && jq -r '[.bar.layout.center[].id] | join(",")' config/omarchy/shell.json)
