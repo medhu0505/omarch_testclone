@@ -12,7 +12,12 @@ omarchy-cmd-present limine-mkinitcpio || exit 0
 [[ ! -e $rebuild_marker ]] || exit 0
 
 if [[ ! -f $limine_config_dir/thinkpad-t14-display-power.conf ]]; then
-  sudo bash "$OMARCHY_PATH/install/hardware/lenovo/fix-thinkpad-t14-display-power.sh"
+  # sudo resets the environment, so the directory the leaf writes to is passed
+  # in rather than inherited: the leaf and the check below must name the same
+  # one, or the migration would verify a file the leaf never wrote.
+  sudo bash -c 'OMARCHY_LIMINE_CONFIG_DIR="$1" bash "$2"' bash \
+    "$limine_config_dir" \
+    "$OMARCHY_PATH/install/hardware/lenovo/fix-thinkpad-t14-display-power.sh"
 fi
 
 if ! grep -Fq 'i915.enable_dc=0' "$limine_config_dir/thinkpad-t14-display-power.conf"; then

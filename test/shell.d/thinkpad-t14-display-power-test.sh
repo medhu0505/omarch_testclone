@@ -20,6 +20,15 @@ scratch=$(mktemp -d)
 trap 'rm -rf "$scratch"' EXIT
 mkdir -p "$scratch/bin"
 
+# The stub above has to match what the real matcher does, or the machine the
+# leaf picks is not the machine the leaf would pick in production.
+grep -q 'product_name' "$ROOT/bin/omarchy-hw-match" ||
+  fail "the real matcher reads the DMI product name"
+grep -q 'product_family' "$ROOT/bin/omarchy-hw-match" ||
+  fail "the real matcher reads the DMI product family"
+grep -q 'grep -qi' "$ROOT/bin/omarchy-hw-match" ||
+  fail "the real matcher matches case-insensitively"
+
 # omarchy-hw-match greps the fixed /sys/class/dmi/id files; point it at fixtures.
 mkdir -p "$scratch/dmi"
 cat >"$scratch/bin/omarchy-hw-match" <<'SH'
@@ -80,8 +89,8 @@ config="$scratch/t14/limine-entry-tool.d/$config_name"
 
 run_leaf "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/t14"
 [[ -f $config ]] || fail "the ThinkPad T14 Gen 2i gets the display drop-in"
-grep -Fq 'i915.enable_dc=0' "$config" || fail "the drop-in turns off display power saving" "$(cat "$config")"
-grep -Fq 'i915.enable_fbc=0' "$config" || fail "the drop-in turns off frame-buffer compression" "$(cat "$config")"
+grep -Fxq 'KERNEL_CMDLINE[default]+=" i915.enable_dc=0 i915.enable_fbc=0"' "$config" ||
+  fail "the drop-in carries the kernel parameters under the key the boot tooling reads" "$(cat "$config")"
 pass "the ThinkPad T14 Gen 2i gets the display drop-in"
 
 # Rerunning the leaf must not change the drop-in: hardware setup runs again on
@@ -112,6 +121,38 @@ grep -q '^limine-mkinitcpio' "$CALL_LOG" || fail "the migration rebuilds the boo
 grep -q '^omarchy-state set reboot-required' "$CALL_LOG" ||
   fail "the migration asks for the reboot that applies it"
 pass "the migration applies the display drop-in and rebuilds the boot entries"
+
+# The path a machine is actually in when the migration runs: the install-time
+# leaf already wrote the drop-in during hardware setup.
+rm -rf "$scratch/prewritten"
+mkdir -p "$scratch/prewritten/limine-entry-tool.d"
+printf '%s\n' 'KERNEL_CMDLINE[default]+=" i915.enable_dc=0 i915.enable_fbc=0"' \
+  >"$scratch/prewritten/limine-entry-tool.d/$config_name"
+run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/prewritten"
+grep -q '^limine-mkinitcpio' "$CALL_LOG" || fail "the migration rebuilds a machine that already has the drop-in"
+[[ -f $scratch/prewritten/marker ]] || fail "the migration records the rebuild of a machine that already has the drop-in"
+pass "the migration rebuilds a machine that already has the drop-in"
+
+# A rebuild that fails must leave the migration pending: the marker would stop
+# every later retry, and the user would be told to reboot for a parameter that
+# never reached the boot entries.
+rm -rf "$scratch/rebuild-failed"
+status=0
+TEST_MKINITCPIO_STATUS=1 run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/rebuild-failed" || status=$?
+(( status != 0 )) || fail "a failed rebuild fails the migration"
+[[ ! -e $scratch/rebuild-failed/marker ]] || fail "a failed rebuild records no marker"
+! grep -q '^omarchy-state set reboot-required' "$CALL_LOG" ||
+  fail "a failed rebuild asks for no reboot"
+pass "a failed rebuild leaves the migration pending"
+
+# A refused write leaves the drop-in unwritten, and the migration must not
+# report success over it.
+rm -rf "$scratch/write-failed"
+status=0
+TEST_SUDO_STATUS=1 run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/write-failed" || status=$?
+(( status != 0 )) || fail "a refused write fails the migration"
+[[ ! -e $scratch/write-failed/marker ]] || fail "a refused write records no marker"
+pass "a refused write leaves the migration pending"
 
 # The marker stops another user's run from repeating the machine-wide rebuild.
 run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/migrated"
