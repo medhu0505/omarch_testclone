@@ -279,16 +279,25 @@ pass "removing a web app removes its icon"
 # downloaded an icon.
 cat >"$test_tmp/bin/omarchy-icon-helper-check" <<'SH'
 #!/bin/bash
+# The downloader's path is the one the helper uses, so the check names the
+# downloader itself rather than whatever the path happens to hold.
+PATH="$OMARCHY_TEST_STUB_BIN:$PATH"
+export PATH
 source "$OMARCHY_PATH/install/helpers/icon.sh"
 trap 'exit 42' INT
 mkdir -p "$OMARCHY_ICON_DIR"
-omarchy_icon_download "https://example.invalid/icon.png" "$OMARCHY_ICON_DIR/helper-check.png" >/dev/null
-trap -p INT | grep -q "exit 42" || exit 1
+omarchy_icon_download "https://example.invalid/icon.png" "$OMARCHY_ICON_DIR/helper-check.png" >/dev/null || exit 2
+trap -p INT >"$OMARCHY_TEST_TRAPS" 2>&1
+grep -q "exit 42" "$OMARCHY_TEST_TRAPS" || exit 1
 SH
 chmod +x "$test_tmp/bin/omarchy-icon-helper-check"
-"$test_tmp/bin/omarchy-icon-helper-check" ||
-  fail "a download keeps the caller's signal handler" "the handler was replaced"
-pass "a download keeps the caller's signal handler"
+OMARCHY_TEST_TRAPS="$test_tmp/traps.txt" OMARCHY_TEST_STUB_BIN="$test_tmp/bin" \
+  "$test_tmp/bin/omarchy-icon-helper-check"
+case $? in
+  0) pass "a download keeps the caller's signal handler" ;;
+  2) fail "a download keeps the caller's signal handler" "the download did not finish" ;;
+  *) fail "a download keeps the caller's signal handler" "$(cat "$test_tmp/traps.txt" 2>/dev/null)" ;;
+esac
 
 # The web app installer downloads the icon the same guarded way: an icon URL
 # that answers with an image installs it, and one that answers with an error
