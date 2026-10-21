@@ -76,12 +76,15 @@ cat >"$mock_bin/nm-online" <<'SH'
 #!/bin/bash
 exit 0
 SH
+# Like the real one, it looks for Omarchy's package with checkupdates.
 cat >"$mock_bin/omarchy-update-available" <<'SH'
 #!/bin/bash
+checkupdates >/dev/null
 exit "$OMARCHY_TEST_OMARCHY_UPDATE"
 SH
 cat >"$mock_bin/checkupdates" <<'SH'
 #!/bin/bash
+echo checkupdates >>"$OMARCHY_TEST_CALLS"
 exit "$OMARCHY_TEST_CHECKUPDATES"
 SH
 cat >"$mock_bin/omarchy-notification-send" <<'SH'
@@ -91,19 +94,28 @@ SH
 chmod +x "$mock_bin/nm-online" "$mock_bin/omarchy-update-available" \
   "$mock_bin/checkupdates" "$mock_bin/omarchy-notification-send"
 
-# Arguments: omarchy-update-available's exit status, then checkupdates'.
+# Arguments: OMARCHY_PATH, omarchy-update-available's exit status, then
+# checkupdates'.
 offers_update() {
   : >"$test_tmp/calls"
-  PATH="$mock_bin:$PATH" OMARCHY_TEST_CALLS="$test_tmp/calls" \
-    OMARCHY_TEST_OMARCHY_UPDATE="$1" OMARCHY_TEST_CHECKUPDATES="$2" \
+  OMARCHY_PATH="$1" PATH="$mock_bin:$PATH" OMARCHY_TEST_CALLS="$test_tmp/calls" \
+    OMARCHY_TEST_OMARCHY_UPDATE="$2" OMARCHY_TEST_CHECKUPDATES="$3" \
     bash -c 'source "$1"; wait' _ "$ROOT/install/user/first-run/wifi.sh"
   grep -Fq 'Update System' "$test_tmp/calls"
 }
 
-if offers_update 1 2; then
+installed=/usr/share/omarchy
+checkout="$test_tmp/omarchy-checkout"
+
+if offers_update "$installed" 1 2; then
   fail "first run offers no update when nothing is pending"
 fi
-offers_update 1 0 || fail "first run offers an update when packages are pending"
-offers_update 0 2 || fail "first run offers an update when Omarchy has one"
-offers_update 1 1 || fail "first run offers an update when it cannot tell whether one is pending"
+[[ $(grep -c '^checkupdates$' "$test_tmp/calls") == 1 ]] ||
+  fail "first run syncs the package databases once"
+offers_update "$installed" 1 0 || fail "first run offers an update when packages are pending"
+offers_update "$installed" 1 1 || fail "first run offers an update when it cannot tell whether one is pending"
+offers_update "$checkout" 0 2 || fail "first run offers an update when a development checkout is behind"
+if offers_update "$checkout" 1 2; then
+  fail "first run offers no update when a current checkout has nothing pending"
+fi
 pass "first run offers an update only when there is one"

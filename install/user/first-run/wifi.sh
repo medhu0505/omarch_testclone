@@ -3,16 +3,19 @@ notify_update() {
     --exec omarchy-launch-floating-terminal-with-presentation omarchy-update
 }
 
-# Something for omarchy-update to install: Omarchy itself or a development
-# checkout behind its upstream (what the bar's update icon shows), or any
-# repository package. checkupdates exits 2 when every package is current and
-# 1 when it could not tell, so only a definite "nothing" holds the prompt back.
+# Something for omarchy-update to install: any repository package, Omarchy's
+# own among them, or a development checkout behind its upstream. checkupdates
+# exits 2 when every package is current and 1 when it could not tell, so only
+# a definite "nothing" holds the prompt back. It syncs the package databases,
+# so it runs once; omarchy-update-available would run it again, and is asked
+# only about a checkout, which checkupdates cannot see.
 update_pending() {
-  omarchy-update-available >/dev/null 2>&1 && return 0
-
   local status=0
   checkupdates --nocolor >/dev/null 2>&1 || status=$?
-  ((status != 2))
+  ((status != 2)) && return 0
+
+  [[ ${OMARCHY_PATH:-/usr/share/omarchy} != /usr/share/omarchy ]] &&
+    omarchy-update-available >/dev/null 2>&1
 }
 
 notify_wifi() {
