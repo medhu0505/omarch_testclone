@@ -96,6 +96,19 @@ class PiScannerTests(unittest.TestCase):
     self.assertEqual(record['schemaVersion'], 1)
     return record
 
+  def test_empty_record_is_not_provider_data(self):
+    record = self.run_collector('--force')
+    self.assertFalse(record['ready'])
+    self.assertEqual(record['tierLabel'], '')
+    provider_has_data = (
+      any(record.get(key, 0) > 0 for key in ('totalPrompts', 'totalSessions', 'activeDays', 'todayPrompts', 'todaySessions'))
+      or bool(record.get('limits'))
+      or bool(record.get('accounts'))
+      or bool(record.get('balance'))
+      or (record.get('ready') is True and record.get('tierLabel') != '')
+    )
+    self.assertFalse(provider_has_data)
+
   def header(self, id, parent=None):
     header = {'type': 'session', 'version': 3, 'id': id, 'timestamp': self.timestamp, 'cwd': '/project'}
     if parent is not None:
