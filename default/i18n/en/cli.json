@@ -257,6 +257,7 @@
   "themeSync.disabled": "Herdr theme sync disabled",
   "themeSync.enabled": "Herdr theme sync enabled",
   "time.now": "%1  ·  %2  ·  Week %3",
+  "timezone.adminOnly": "Only an administrator can change the time zone",
   "timezone.changed": "Timezone is now set to %1",
   "timezone.setTitle": "Set timezone",
   "transcode.done": "Transcoded to %1 %2",
