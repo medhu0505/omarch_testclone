@@ -74,15 +74,17 @@ run_leaf() {
 }
 
 run_migration() {
-  local product_name="$1" product_family="$2" state="$3"
+  local product_name="$1" product_family="$2" state="$3" strict="${4:-strict}"
   : >"$CALL_LOG"
   printf '%s\n' "$product_name" >"$scratch/dmi/product_name"
   printf '%s\n' "$product_family" >"$scratch/dmi/product_family"
+  local runner=(bash -euo pipefail)
+  [[ $strict == strict ]] || runner=(bash)
   DMI_NAME_FILE="$scratch/dmi/product_name" DMI_FAMILY_FILE="$scratch/dmi/product_family" \
     PATH="$scratch/bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" \
     OMARCHY_LIMINE_CONFIG_DIR="$state/limine-entry-tool.d" \
     OMARCHY_THINKPAD_T14_DISPLAY_POWER_MARKER="$state/marker" \
-    bash -euo pipefail "$migration" </dev/null
+    "${runner[@]}" "$migration" </dev/null
 }
 
 config="$scratch/t14/limine-entry-tool.d/$config_name"
@@ -133,6 +135,20 @@ grep -q '^limine-mkinitcpio' "$CALL_LOG" || fail "the migration rebuilds a machi
 [[ -f $scratch/prewritten/marker ]] || fail "the migration records the rebuild of a machine that already has the drop-in"
 pass "the migration rebuilds a machine that already has the drop-in"
 
+# A drop-in that is already on disk but does not carry the parameter is the
+# case where the leaf does not run, so the migration's own check is the only
+# thing standing between a wrong setting and a completed repair.
+rm -rf "$scratch/wrong-setting"
+mkdir -p "$scratch/wrong-setting/limine-entry-tool.d"
+printf '%s\n' 'KERNEL_CMDLINE[default]+=" i915.enable_something_else=0"' \
+  >"$scratch/wrong-setting/limine-entry-tool.d/$config_name"
+status=0
+run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/wrong-setting" || status=$?
+(( status != 0 )) || fail "a drop-in without the parameter fails the migration"
+[[ ! -e $scratch/wrong-setting/marker ]] || fail "a drop-in without the parameter records no marker"
+! grep -q '^limine-mkinitcpio' "$CALL_LOG" || fail "a drop-in without the parameter rebuilds nothing"
+pass "a drop-in without the parameter leaves the migration pending"
+
 # A rebuild that fails must leave the migration pending: the marker would stop
 # every later retry, and the user would be told to reboot for a parameter that
 # never reached the boot entries.
@@ -144,6 +160,17 @@ TEST_MKINITCPIO_STATUS=1 run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scra
 ! grep -q '^omarchy-state set reboot-required' "$CALL_LOG" ||
   fail "a failed rebuild asks for no reboot"
 pass "a failed rebuild leaves the migration pending"
+
+# The same has to hold without the runner's strict shell options: the marker
+# would stop every later retry, so the rebuild's own check has to be what
+# decides, not the shell the migration happens to be run under.
+rm -rf "$scratch/rebuild-failed-loose"
+status=0
+TEST_MKINITCPIO_STATUS=1 run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/rebuild-failed-loose" loose || status=$?
+(( status != 0 )) || fail "a failed rebuild fails the migration without strict shell options"
+[[ ! -e $scratch/rebuild-failed-loose/marker ]] ||
+  fail "a failed rebuild records no marker without strict shell options"
+pass "a failed rebuild leaves the migration pending without strict shell options"
 
 # A refused write leaves the drop-in unwritten, and the migration must not
 # report success over it.

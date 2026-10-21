@@ -25,7 +25,14 @@ if ! grep -Fq 'i915.enable_dc=0' "$limine_config_dir/thinkpad-t14-display-power.
   exit 1
 fi
 
-sudo limine-mkinitcpio
+# The rebuild is checked rather than left to the runner's shell options: the
+# marker below stops every later retry, so a rebuild that failed must leave the
+# migration pending instead of recording a repair that never happened.
+if ! sudo limine-mkinitcpio; then
+  echo "Couldn't rebuild the boot entries; leaving the ThinkPad T14 Gen 2i display migration pending" >&2
+  exit 1
+fi
+
 sudo install -Dm644 /dev/null "$rebuild_marker"
 
 omarchy-state set reboot-required
