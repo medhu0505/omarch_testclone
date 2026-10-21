@@ -31,6 +31,8 @@ stub omarchy-hw-fingerprint 'exit 0'
 stub omarchy-apply-lock 'echo apply-lock >> "$CALL_LOG"; touch "$SCRATCH/pam.d/omarchy-lock-fingerprint"'
 stub omarchy-pkg-missing 'exit 1'
 stub gdbus '[[ -z $GDBUS_ERROR ]] || { echo "Error: GDBus.Error:$GDBUS_ERROR" >&2; exit 1; }; printf "(objectpath %s,)\n" "${DEFAULT_READER:-/net/reactivated/Fprint/Device/0}"'
+# The scan-type and name lookups get no answer, so the host's own fprintd is never asked.
+stub busctl 'exit 1'
 stub fprintd-list 'printf "%s" "$FPRINTD_LIST"; exit "${LIST_STATUS:-0}"'
 stub fprintd-enroll 'echo "fprintd-enroll $*" >> "$CALL_LOG"; [[ ${ENROLL_OK:-1} == 1 ]]'
 stub fprintd-verify 'echo "fprintd-verify" >> "$CALL_LOG"; [[ ${VERIFY_OK:-1} == 1 ]]'
@@ -76,7 +78,9 @@ fi
 assert_pam_untouched "a failed enrollment leaves PAM alone"
 pass "a failed enrollment stops before PAM"
 
-FPRINTD_LIST=$enrolled VERIFY_OK=0 run_setup || true
+if FPRINTD_LIST=$enrolled VERIFY_OK=0 run_setup; then
+  fail "an enrolled print that fails to verify fails setup"
+fi
 assert_pam_untouched "an enrolled print that fails to verify leaves PAM alone"
 grep -q 'fprintd-delete tester' "$scratch/out" ||
   fail "an enrolled print that fails to verify says how to start over" "$(<"$scratch/out")"
