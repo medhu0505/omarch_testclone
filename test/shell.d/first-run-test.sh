@@ -68,3 +68,42 @@ for unit in "${units[@]}"; do
 done
 (( ${#units[@]} > 1 )) || fail "first-run enables each unit on its own"
 pass "a unit missing from the build costs first-run only that unit"
+
+# First run offers an update only when there is one. A fresh install from
+# current media is already current, and a critical toast that leads to
+# "nothing to do" teaches people to dismiss the next one.
+cat >"$mock_bin/nm-online" <<'SH'
+#!/bin/bash
+exit 0
+SH
+cat >"$mock_bin/omarchy-update-available" <<'SH'
+#!/bin/bash
+exit "$OMARCHY_TEST_OMARCHY_UPDATE"
+SH
+cat >"$mock_bin/checkupdates" <<'SH'
+#!/bin/bash
+exit "$OMARCHY_TEST_CHECKUPDATES"
+SH
+cat >"$mock_bin/omarchy-notification-send" <<'SH'
+#!/bin/bash
+printf '%s\n' "$*" >>"$OMARCHY_TEST_CALLS"
+SH
+chmod +x "$mock_bin/nm-online" "$mock_bin/omarchy-update-available" \
+  "$mock_bin/checkupdates" "$mock_bin/omarchy-notification-send"
+
+# Arguments: omarchy-update-available's exit status, then checkupdates'.
+offers_update() {
+  : >"$test_tmp/calls"
+  PATH="$mock_bin:$PATH" OMARCHY_TEST_CALLS="$test_tmp/calls" \
+    OMARCHY_TEST_OMARCHY_UPDATE="$1" OMARCHY_TEST_CHECKUPDATES="$2" \
+    bash -c 'source "$1"; wait' _ "$ROOT/install/user/first-run/wifi.sh"
+  grep -Fq 'Update System' "$test_tmp/calls"
+}
+
+if offers_update 1 2; then
+  fail "first run offers no update when nothing is pending"
+fi
+offers_update 1 0 || fail "first run offers an update when packages are pending"
+offers_update 0 2 || fail "first run offers an update when Omarchy has one"
+offers_update 1 1 || fail "first run offers an update when it cannot tell whether one is pending"
+pass "first run offers an update only when there is one"
