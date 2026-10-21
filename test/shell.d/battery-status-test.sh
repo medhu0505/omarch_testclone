@@ -249,11 +249,11 @@ chmod +x "$tmp_dir/bin/upower"
 
 shell_output=$(OMARCHY_POWER_SUPPLY_PATH="$tmp_dir/power" PATH="$tmp_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell)
 
-if grep -q 'W' <<<"$(grep -E '^rate' <<<"$shell_output")"; then
+if grep -q '^rate' <<<"$shell_output"; then
   fail "battery status omits the rate when no trustworthy reading exists" "$shell_output"
 fi
 plain_output=$(OMARCHY_POWER_SUPPLY_PATH="$tmp_dir/power" PATH="$tmp_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status")
-[[ $plain_output != *"W /"* ]] ||
+[[ $plain_output == *"56Wh" && $plain_output != *"/"* ]] ||
   fail "battery status omits the rate segment in plain output too" "$plain_output"
 pass "battery status omits the rate when no trustworthy reading exists"
 
