@@ -2,4 +2,11 @@
 
 # omarchy:summary=Launch Files
 
-exec setsid uwsm-app -- nautilus --new-window
+# VMware SVGA has no usable Vulkan renderer, and the session's
+# GDK_BACKEND=wayland,x11,* makes Nautilus abort its Wayland connection
+# before a window is mapped. Cairo is the renderer that opens.
+if omarchy-hw-vmware-svga; then
+  exec setsid uwsm-app -- env -u GDK_BACKEND GSK_RENDERER=cairo nautilus --new-window
+else
+  exec setsid uwsm-app -- nautilus --new-window
+fi
