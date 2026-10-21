@@ -20,8 +20,16 @@ config_file=$limine_config_dir/thinkpad-t14-display-power.conf
 
 if omarchy-hw-match "ThinkPad T14 Gen 2i"; then
   mkdir -p "$limine_config_dir"
-  cat >"$config_file" <<'CONF'
+
+  # Write through a temporary file and rename it into place, so a write that
+  # is interrupted cannot leave a drop-in that is empty or half a command line:
+  # the boot tooling reads that file, and a partial one is worse than none.
+  tmp_file=$(mktemp "$limine_config_dir/.thinkpad-t14-display-power.conf.XXXXXX")
+  trap 'rm -f "$tmp_file"' EXIT
+  cat >"$tmp_file" <<'CONF'
 # Lenovo ThinkPad T14 Gen 2i display power-saving workaround
 KERNEL_CMDLINE[default]+=" i915.enable_dc=0 i915.enable_fbc=0"
 CONF
+  mv -f "$tmp_file" "$config_file"
+  trap - EXIT
 fi

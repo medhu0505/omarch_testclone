@@ -45,6 +45,7 @@ SH
 cat >"$scratch/bin/limine-mkinitcpio" <<'SH'
 #!/bin/bash
 printf 'limine-mkinitcpio %s\n' "$*" >>"$CALL_LOG"
+[[ -z ${TEST_MKINITCPIO_MESSAGE:-} ]] || printf '%s\n' "$TEST_MKINITCPIO_MESSAGE"
 exit "${TEST_MKINITCPIO_STATUS:-0}"
 SH
 cat >"$scratch/bin/omarchy-cmd-present" <<'SH'
@@ -80,7 +81,8 @@ run_migration() {
   # caller asked for is taken here and handed to the command explicitly, and the
   # environment is cleared for the next case either way.
   local mkinitcpio_status="${TEST_MKINITCPIO_STATUS:-0}" sudo_status="${TEST_SUDO_STATUS:-0}"
-  export TEST_MKINITCPIO_STATUS=0 TEST_SUDO_STATUS=0
+  local mkinitcpio_message="${TEST_MKINITCPIO_MESSAGE:-}"
+  export TEST_MKINITCPIO_STATUS=0 TEST_SUDO_STATUS=0 TEST_MKINITCPIO_MESSAGE=""
   printf '%s\n' "$product_name" >"$scratch/dmi/product_name"
   printf '%s\n' "$product_family" >"$scratch/dmi/product_family"
   local runner=(bash -euo pipefail)
@@ -90,6 +92,7 @@ run_migration() {
     OMARCHY_LIMINE_CONFIG_DIR="$state/limine-entry-tool.d" \
     OMARCHY_THINKPAD_T14_DISPLAY_POWER_MARKER="$state/marker" \
     TEST_MKINITCPIO_STATUS="$mkinitcpio_status" TEST_SUDO_STATUS="$sudo_status" \
+    TEST_MKINITCPIO_MESSAGE="$mkinitcpio_message" \
     "${runner[@]}" "$migration" </dev/null
 }
 
@@ -141,19 +144,34 @@ grep -q '^limine-mkinitcpio' "$CALL_LOG" || fail "the migration rebuilds a machi
 [[ -f $scratch/prewritten/marker ]] || fail "the migration records the rebuild of a machine that already has the drop-in"
 pass "the migration rebuilds a machine that already has the drop-in"
 
-# A drop-in that is already on disk but does not carry the parameter is the
-# case where the leaf does not run, so the migration's own check is the only
-# thing standing between a wrong setting and a completed repair.
+# A drop-in that exists but does not carry the parameter is repaired rather
+# than left in place: because omarchy-migrate stops on a failed migration, a
+# file that only exists would block every later run until someone fixed it by
+# hand.
 rm -rf "$scratch/wrong-setting"
 mkdir -p "$scratch/wrong-setting/limine-entry-tool.d"
 printf '%s\n' 'KERNEL_CMDLINE[default]+=" i915.enable_something_else=0"' \
   >"$scratch/wrong-setting/limine-entry-tool.d/$config_name"
+run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/wrong-setting"
+grep -Fxq 'KERNEL_CMDLINE[default]+=" i915.enable_dc=0 i915.enable_fbc=0"' \
+  "$scratch/wrong-setting/limine-entry-tool.d/$config_name" ||
+  fail "a drop-in without the parameter is rewritten"
+grep -q '^limine-mkinitcpio' "$CALL_LOG" || fail "a repaired drop-in is rebuilt"
+[[ -f $scratch/wrong-setting/marker ]] || fail "a repaired drop-in records the marker"
+pass "a drop-in without the parameter is repaired"
+
+# limine-mkinitcpio reports a kernel it could not rebuild and still exits 0, so
+# its output decides whether the boot image carries the setting.
+rm -rf "$scratch/rebuild-reported-failed"
 status=0
-run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/wrong-setting" || status=$?
-(( status != 0 )) || fail "a drop-in without the parameter fails the migration"
-[[ ! -e $scratch/wrong-setting/marker ]] || fail "a drop-in without the parameter records no marker"
-! grep -q '^limine-mkinitcpio' "$CALL_LOG" || fail "a drop-in without the parameter rebuilds nothing"
-pass "a drop-in without the parameter leaves the migration pending"
+TEST_MKINITCPIO_MESSAGE='mkinitcpio failed for kernel linux-omarchy' \
+  run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/rebuild-reported-failed" || status=$?
+(( status != 0 )) || fail "a rebuild that reports a failed kernel fails the migration"
+[[ ! -e $scratch/rebuild-reported-failed/marker ]] ||
+  fail "a rebuild that reports a failed kernel records no marker"
+! grep -q '^omarchy-state set reboot-required' "$CALL_LOG" ||
+  fail "a rebuild that reports a failed kernel asks for no reboot"
+pass "a rebuild that reports a failed kernel leaves the migration pending"
 
 # A rebuild that fails must leave the migration pending: the marker would stop
 # every later retry, and the user would be told to reboot for a parameter that
