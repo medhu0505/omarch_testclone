@@ -838,7 +838,8 @@ pass "accounts that aren't administrators are told so, before sudo"
 
 # A hand-written rule with tags, exceptions or a group still gives full sudo.
 for rule in "alice ALL=(ALL) SETENV: ALL" "alice ALL=(ALL) NOPASSWD:SETENV: ALL, !/usr/bin/passwd" \
-  "alice ALL=(root : root) NOPASSWD: ALL" "alice ALL=(ALL : ALL) ALL"; do
+  "alice ALL=(root : root) NOPASSWD: ALL" "alice ALL=(ALL : ALL) ALL" \
+  "alice ALL=(root, postgres) ALL" "alice ALL=(postgres, root : wheel) NOPASSWD: ALL"; do
   reset_fixtures
   sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
   printf '%s\n' "$rule" >"$test_tmp/sudoers.d/04_alice"
