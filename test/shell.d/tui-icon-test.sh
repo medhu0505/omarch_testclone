@@ -28,10 +28,14 @@ printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
 # below waits for it before it interrupts the download.
 export OMARCHY_TEST_DOWNLOADING="$test_tmp/downloading"
 
+export CURL_ARGS_LOG="$test_tmp/curl-args.log"
+: >"$CURL_ARGS_LOG"
+
 cat >"$test_tmp/bin/curl" <<SH
 #!/bin/bash
 dest=""
 url=""
+printf '%s\n' "\$*" >>"$CURL_ARGS_LOG"
 while (( \$# )); do
   case \$1 in
     -o) dest=\$2; shift 2 ;;
@@ -43,7 +47,8 @@ case "\$url" in
   *notfound*) printf '404: Not Found\n' >"\$dest"; exit 0 ;;
   *notimage*) printf 'this is not an image\n' >"\$dest"; exit 0 ;;
   *slow*) : >"$test_tmp/download-started"; sleep 2; cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
-  *interrupted*) : >"$OMARCHY_TEST_DOWNLOADING"; sleep 5; cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
+  *interrupt*) : >"$OMARCHY_TEST_DOWNLOADING"; sleep 5; cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
+  *terminated*) : >"$OMARCHY_TEST_DOWNLOADING"; sleep 5; cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
   *) cp "$test_tmp/icon.png" "\$dest"; exit 0 ;;
 esac
 SH
@@ -103,8 +108,17 @@ pass "a download in flight leaves no file in the icon directory"
 : >"$ICON_CACHE_LOG"
 install_tui T3 true tile "https://example.invalid/icon.png" >/dev/null
 [[ -s $icon_dir/t3.png ]] || fail "an icon URL that answers with an image installs it" "$(ls "$icon_dir")"
-[[ -s $ICON_CACHE_LOG ]] || fail "a downloaded icon refreshes the icon theme cache"
+grep -qx "$HOME/.local/share/icons/hicolor" "$ICON_CACHE_LOG" ||
+  fail "a downloaded icon refreshes the icon theme cache" "$(cat "$ICON_CACHE_LOG")"
 pass "a downloaded icon refreshes the icon theme cache"
+
+# The download asks for the icon with a deadline, so a server that never
+# answers cannot hold the install forever.
+: >"$CURL_ARGS_LOG"
+install_tui T4 true tile "https://example.invalid/icon.png" >/dev/null
+grep -q -- '--max-time 10' "$CURL_ARGS_LOG" ||
+  fail "a download asks for the icon with a deadline" "$(cat "$CURL_ARGS_LOG")"
+pass "a download asks for the icon with a deadline"
 
 # A URL that answers with an error body must not install that body as the
 # icon, and the launcher must not be written either.
@@ -282,31 +296,34 @@ OMARCHY_REMOVE_NOTIFY=false "$ROOT/bin/omarchy-webapp-remove" W1 >/dev/null 2>&1
 pass "removing a web app removes its icon"
 
 # An install that is interrupted while the answer downloads leaves no
-# temporary file behind and stops with the status of the signal.
+# temporary file behind and stops with the status of the signal. Both
+# signals the helper handles are checked, the interrupt and the terminate.
 cat >"$test_tmp/bin/omarchy-icon-interrupt-check" <<'SH'
 #!/bin/bash
 PATH="$OMARCHY_TEST_STUB_BIN:$PATH"
 export PATH
 source "$OMARCHY_PATH/install/helpers/icon.sh"
 mkdir -p "$OMARCHY_ICON_ROOT"
-# The interrupt arrives the way a Ctrl-C does: to the whole process group,
-# so the shell that runs the download handles it. The script runs in its own
+# The signal arrives the way a Ctrl-C does: to the whole process group, so
+# the shell that runs the download handles it. The script runs in its own
 # session, so the signal reaches nothing else.
 (
   while [[ ! -e $OMARCHY_TEST_DOWNLOADING ]]; do sleep 0.05; done
-  kill -INT -$$
+  kill -"$OMARCHY_TEST_SIGNAL" -$$
 ) &
-omarchy_icon_download "https://example.invalid/interrupted.png" "$OMARCHY_ICON_DIR/interrupted.png"
+omarchy_icon_download "https://example.invalid/interrupt-$OMARCHY_TEST_SIGNAL.png" "$OMARCHY_ICON_DIR/$OMARCHY_TEST_SIGNAL.png"
 SH
 chmod +x "$test_tmp/bin/omarchy-icon-interrupt-check"
 # A shell that inherits an ignored interrupt cannot trap it at all, and the
 # suite hands the commands an ignored interrupt. The handler only exists
 # where the signal is trappable, so the check says so before it starts.
-status=0
-OMARCHY_TEST_STUB_BIN="$test_tmp/bin" \
-  env --default-signal=INT setsid "$test_tmp/bin/omarchy-icon-interrupt-check" || status=$?
-[[ $status == 130 ]] ||
-  fail "an interrupted download stops with the status of the signal" "status $status"
+for signal in INT TERM; do
+  status=0
+  OMARCHY_TEST_SIGNAL="$signal" OMARCHY_TEST_STUB_BIN="$test_tmp/bin" \
+    env --default-signal=INT,TERM setsid "$test_tmp/bin/omarchy-icon-interrupt-check" || status=$?
+  [[ $status == $((128 + $(kill -l "$signal"))) ]] ||
+    fail "an interrupted download stops with the status of the signal" "$signal gave status $status"
+done
 # The check that follows the interrupt looks at the icon directory itself, so
 # it sees the leftovers whether the download stopped the shell or not.
 leftovers=$(ls -A "$HOME/.local/share/icons" | grep -v '^hicolor$' || true)
