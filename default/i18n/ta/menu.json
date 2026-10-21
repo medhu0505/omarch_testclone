@@ -1208,9 +1208,6 @@
   "update.password.user": {
     "label": "பயனர்"
   },
-  "system.reboot-boot-menu": {
-    "label": "துவக்க மெனுவுக்கு மறுதொடக்கம்"
-  },
   "setup.default.agent.kimi": {
     "label": "Kimi"
   }

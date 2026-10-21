@@ -1208,9 +1208,6 @@
   "update.password.user": {
     "label": "المستخدم"
   },
-  "system.reboot-boot-menu": {
-    "label": "إعادة التشغيل إلى قائمة الإقلاع"
-  },
   "setup.default.agent.kimi": {
     "label": "Kimi"
   }

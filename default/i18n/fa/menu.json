@@ -1208,9 +1208,6 @@
   "update.password.user": {
     "label": "کاربر"
   },
-  "system.reboot-boot-menu": {
-    "label": "راه‌اندازی مجدد به منوی بوت"
-  },
   "setup.default.agent.kimi": {
     "label": "Kimi"
   }

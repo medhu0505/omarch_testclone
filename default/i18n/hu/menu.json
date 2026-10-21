@@ -1208,9 +1208,6 @@
   "update.password.user": {
     "label": "Felhasználó"
   },
-  "system.reboot-boot-menu": {
-    "label": "Újraindítás a bootmenübe"
-  },
   "setup.default.agent.kimi": {
     "label": "Kimi"
   }

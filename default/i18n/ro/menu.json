@@ -1208,9 +1208,6 @@
   "update.password.user": {
     "label": "Utilizator"
   },
-  "system.reboot-boot-menu": {
-    "label": "Repornește în meniul de boot"
-  },
   "setup.default.agent.kimi": {
     "label": "Kimi"
   }

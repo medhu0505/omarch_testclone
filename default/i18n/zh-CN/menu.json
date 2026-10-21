@@ -1208,9 +1208,6 @@
   "update.password.user": {
     "label": "用户"
   },
-  "system.reboot-boot-menu": {
-    "label": "重启到启动菜单"
-  },
   "setup.default.agent.kimi": {
     "label": "Kimi"
   }

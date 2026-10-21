@@ -1208,9 +1208,6 @@
   "update.password.user": {
     "label": "Utente"
   },
-  "system.reboot-boot-menu": {
-    "label": "Riavvia al menu di avvio"
-  },
   "setup.default.agent.kimi": {
     "label": "Kimi"
   }

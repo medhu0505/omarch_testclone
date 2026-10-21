@@ -1208,9 +1208,6 @@
   "update.password.user": {
     "label": "Pengguna"
   },
-  "system.reboot-boot-menu": {
-    "label": "Mulai ulang ke Menu Boot"
-  },
   "setup.default.agent.kimi": {
     "label": "Kimi"
   }

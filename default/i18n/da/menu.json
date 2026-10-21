@@ -1208,9 +1208,6 @@
   "update.password.user": {
     "label": "Bruger"
   },
-  "system.reboot-boot-menu": {
-    "label": "Genstart til opstartsmenu"
-  },
   "setup.default.agent.kimi": {
     "label": "Kimi"
   }
