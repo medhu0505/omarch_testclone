@@ -39,9 +39,10 @@ install_user_icon() {
 
 # A URL that answers with an error body still exits 0, so the answer is
 # checked: an empty file or a body that is not an image is not an icon, and
-# it is not left behind as one.
+# it is not left behind as one. The downloader's own error is kept, so a
+# failed fetch still says why it failed.
 download_icon() {
-  curl -fsSL --max-time 10 -o "$2" "$1" 2>/dev/null &&
+  curl -fsSL --max-time 10 -o "$2" "$1" &&
     [[ -s $2 && $(file -b --mime-type "$2") == image/* ]] && return 0
   rm -f "$2"
   return 1
@@ -52,6 +53,9 @@ download_icon() {
 # directories the desktop searches, so look there.
 icon_exists() {
   local name="$1" dir
+
+  # An empty name is not an icon: the search would match every dotfile.
+  [[ -n $name ]] || return 1
 
   for dir in "$HOME/.local/share/icons" "$HOME/.icons" /usr/local/share/icons /usr/share/icons /usr/local/share/pixmaps /usr/share/pixmaps; do
     [[ -d $dir ]] || continue

@@ -75,6 +75,15 @@ output=$(install_tui T4 true tile no-such-icon 2>&1) && status=0 || status=$?
 grep -qx 'Icon=no-such-icon' "$(desktop_file T4)" || fail "the launcher keeps the icon name it was given" "$(cat "$(desktop_file T4)")"
 pass "a name that resolves to no icon is reported"
 
+# A name that is not an icon at all is reported too, even when the icon
+# directory holds a dotfile the search would otherwise match.
+printf 'hidden\n' >"$icon_dir/.hidden"
+output=$(install_tui T7 true tile . 2>&1) && status=0 || status=$?
+(( status == 0 )) || fail "a name that is not an icon still installs the launcher" "$output"
+[[ $output == *'No icon named'* ]] || fail "a name that is not an icon is reported" "$output"
+rm -f "$icon_dir/.hidden"
+pass "a name that is not an icon is reported"
+
 # A name that does resolve is not reported.
 mkdir -p "$HOME/.local/share/icons/hicolor/256x256/apps"
 cp "$test_tmp/icon.png" "$HOME/.local/share/icons/hicolor/256x256/apps/known-icon.png"
