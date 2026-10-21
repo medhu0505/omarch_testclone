@@ -5,7 +5,7 @@ o.bind("SUPER + SHIFT + RETURN", "Browser", { omarchy = "browser" })
 -- Some laptop keyboards and every numpad emit KP_Enter for Enter. Applications
 -- treat the two keys the same, so the bindings should too. The mirrors carry no
 -- description so the keybindings menu does not list each action twice.
-o.bind("SUPER + KP_Enter", nil, { omarchy = "terminal" })
+o.bind("SUPER + KP_Enter", nil, o.launch_terminal())
 o.bind("SUPER + SHIFT + KP_Enter", nil, { omarchy = "browser" })
 o.bind("SUPER + SHIFT + F", "File manager", { omarchy = "nautilus" })
 o.bind("SUPER + ALT + SHIFT + F", "File manager (cwd)", { omarchy = "nautilus-cwd" })
