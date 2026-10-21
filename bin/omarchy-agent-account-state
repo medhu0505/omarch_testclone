@@ -471,7 +471,9 @@ def recover_home(provider: str, home: Path) -> dict[str, Any] | None:
     entry = receipt.get("entry")
     if not isinstance(entry, dict) or entry.get("home") != str(home) or entry.get("id") != home.name:
       return None
-    if any(identity(provider, account_home(provider, a)).get("accountId") == found["accountId"] for a in registry["accounts"]):
+    for account in registry["accounts"]:
+      account.update(identity(provider, account_home(provider, account)))
+    if any(account.get("accountId") == found["accountId"] for account in registry["accounts"]):
       # A retry may already have registered this login under another home.
       shutil.rmtree(home)
       return None
