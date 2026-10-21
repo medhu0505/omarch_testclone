@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# omarchy:summary=Compatibility name for omarchy-system shutdown (Omarchy 4.0 and earlier)
+# omarchy:hidden=true
+
+# Keybindings, menu extensions and scripts written for Omarchy 4.0 call this
+# name. omarchy-system took it over in 4.5.
+exec omarchy-system shutdown "$@"
