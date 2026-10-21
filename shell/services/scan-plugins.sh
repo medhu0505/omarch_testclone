@@ -19,12 +19,12 @@ emit_manifest() {
   if [[ ${manifest##*/} == "manifest.json" ]]; then
     sub="${manifest%/manifest.json}"
   else
-    sub="$(dirname -- "$manifest")"
+    sub="${manifest%/*}"
   fi
 
   printf '===%s::%s===\n' "$kind" "$sub"
-  # One unreadable manifest must not end the scan for every plugin after it.
-  cat "$manifest" || true
+  # Read without a process per manifest; an unreadable one prints nothing and the scan carries on.
+  printf '%s\n' "$(<"$manifest")"
   printf '\n=== EOM ===\n'
 }
 
