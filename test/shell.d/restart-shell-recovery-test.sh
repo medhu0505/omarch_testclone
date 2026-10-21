@@ -6,10 +6,22 @@ source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
 SCRIPT="$ROOT/bin/omarchy-restart-shell"
 
+test_tmp=$(mktemp -d)
+registry_pid=
+
+cleanup() {
+  if [[ -n $registry_pid ]]; then
+    builtin kill -KILL "$registry_pid" 2>/dev/null || true
+    wait "$registry_pid" 2>/dev/null || true
+  fi
+  rm -rf "$test_tmp"
+}
+trap cleanup EXIT
+
 bash -n "$SCRIPT"
 pass "omarchy-restart-shell has valid bash syntax"
 
-if ! grep -q "timeout 5 quickshell kill -p" "$SCRIPT"; then
+if ! grep -q "timeout 30 quickshell kill -p" "$SCRIPT"; then
   fail "restart keeps the IPC kill path"
 fi
 pass "restart starts with IPC kill"
@@ -34,6 +46,11 @@ if ! grep -q "shell_process_matches_config" "$SCRIPT"; then
 fi
 pass "restart matches the config-path argument exactly, not a substring"
 
+if ! grep -q "shell_instance_pids" "$SCRIPT"; then
+  fail "restart collects config-matched pids from the quickshell registry"
+fi
+pass "restart collects matching pids from the quickshell registry"
+
 if ! grep -qE "runtime_dir=.*quickshell" "$SCRIPT"; then
   fail "restart defines the quickshell runtime directory cleanup"
 fi
@@ -49,12 +66,16 @@ const fs = require('fs')
 const source = fs.readFileSync(root + '/bin/omarchy-restart-shell', 'utf8')
 
 assert(
-  /while timeout 5 quickshell kill -p "\$CONFIG_DIR" --any-display/.test(source),
+  /while timeout 30 quickshell kill -p "\$CONFIG_DIR" --any-display/.test(source),
   'IPC kill loop is preserved'
 )
 assert(
   /shell_process_matches_config\(\)/.test(source) && /mapfile -t qs_pids/.test(source),
   'fallback collects quickshell pids matching the exact config path'
+)
+assert(
+  /shell_instance_pids\(\)[\s\S]*?quickshell list -a -j[\s\S]*?startswith\(\$dir\)[\s\S]*?\.pid/.test(source),
+  'fallback collects matching pids from the quickshell registry'
 )
 assert(
   /process_dead\(\)/.test(source) && /state.*Z/.test(source),
@@ -74,3 +95,103 @@ assert(
 )
 pass('restart-shell recovery path includes IPC kill, signal fallback, and runtime cleanup')
 JS
+
+function_source=$(
+  sed -n \
+    -e '/^shell_instance_running() {/,/^}/p' \
+    -e '/^shell_instance_pids() {/,/^}/p' \
+    -e '/^shell_process_matches_config() {/,/^}/p' \
+    -e '/^process_dead() {/,/^}/p' \
+    -e '/^matching_shell_pids() {/,/^}/p' \
+    -e '/^stop_shell_instances() {/,/^}/p' \
+    "$SCRIPT"
+)
+[[ -n $function_source ]] || fail "restart recovery functions are available for focused tests"
+eval "$function_source"
+
+CONFIG_DIR="$test_tmp/omarchy/shell"
+command sleep 60 &
+registry_pid=$!
+registry_cmdline=$(tr '\0' ' ' <"/proc/$registry_pid/cmdline")
+[[ $registry_cmdline != *"-p"* ]] || fail "registry fixture must have no -p argument" "$registry_cmdline"
+
+list_calls_file="$test_tmp/list-calls"
+signals_file="$test_tmp/signals"
+pgrep_file="$test_tmp/pgrep-calls"
+: >"$list_calls_file"
+: >"$signals_file"
+: >"$pgrep_file"
+test_scenario=running
+declare -A term_sent=()
+
+quickshell() {
+  case $1 in
+    kill)
+      return 1
+      ;;
+    list)
+      local calls=0
+      if [[ -f $list_calls_file ]]; then
+        calls=$(<"$list_calls_file")
+      fi
+      calls=$((calls + 1))
+      printf '%s\n' "$calls" >"$list_calls_file"
+      if [[ $test_scenario == "running" || $calls == 1 ]]; then
+        printf '[{"config_path":"%s/shell.qml","pid":%s}]\n' "$CONFIG_DIR" "$registry_pid"
+      else
+        printf '[]\n'
+      fi
+      ;;
+  esac
+}
+
+timeout() {
+  shift
+  "$@"
+}
+
+sleep() {
+  if [[ $test_scenario == "running" ]]; then
+    SECONDS=$((SECONDS + 31))
+  fi
+  return 0
+}
+
+pgrep() {
+  printf '%s\n' "$*" >>"$pgrep_file"
+  printf '%s\n' "$registry_pid"
+}
+
+kill() {
+  case $1 in
+    -TERM)
+      printf 'TERM %s\n' "$2" >>"$signals_file"
+      term_sent["$2"]=1
+      ;;
+    -KILL)
+      printf 'KILL %s\n' "$2" >>"$signals_file"
+      ;;
+  esac
+}
+
+process_dead() {
+  [[ ${term_sent[$1]:-0} == 1 ]]
+}
+
+mapfile -t matching_pids < <(matching_shell_pids)
+[[ ${#matching_pids[@]} == 1 && ${matching_pids[0]} == "$registry_pid" ]] ||
+  fail "registry finds a crash-restarted shell whose cmdline lacks -p" "${matching_pids[*]}"
+: >"$list_calls_file"
+stop_shell_instances
+grep -F "TERM $registry_pid" "$signals_file" >/dev/null ||
+  fail "signal fallback includes the registry pid without a -p cmdline"
+pass "registry pid is signalled when its cmdline lacks -p"
+
+test_scenario=exited
+: >"$list_calls_file"
+: >"$signals_file"
+: >"$pgrep_file"
+stop_shell_instances
+[[ ! -s $signals_file && ! -s $pgrep_file ]] ||
+  fail "signal fallback does not run after the wait loop sees the instance exit"
+pass "signal fallback stays idle when the wait loop sees the instance exit"
