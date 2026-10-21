@@ -48,7 +48,8 @@ download_icon() {
   temp=$(mktemp "$dest.XXXXXX") || return 1
   if curl -fsSL --max-time 10 -o "$temp" "$url" &&
     [[ -s $temp && $(file -b --mime-type "$temp") == image/* ]]; then
-    mv -f "$temp" "$dest" && return 0
+    # The temporary file is owner-only, and the icon is not.
+    chmod 0644 "$temp" && mv -f "$temp" "$dest" && return 0
   fi
   rm -f "$temp"
   return 1

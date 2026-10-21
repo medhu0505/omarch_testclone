@@ -74,6 +74,11 @@ pass "an icon URL that answers with something else fails the install"
 # A URL that answers with an image installs that image.
 install_tui T3 true tile "https://example.invalid/icon.png" >/dev/null
 [[ -s $icon_dir/t3.png ]] || fail "an icon URL that answers with an image installs it" "$(ls "$icon_dir")"
+# The answer is written to a temporary file, which is owner-only, and the icon
+# is moved into place, so the icon has to be readable like the one a direct
+# download would have written.
+[[ $(stat -c '%a' "$icon_dir/t3.png") == 644 ]] ||
+  fail "the installed icon is readable" "$(stat -c '%a' "$icon_dir/t3.png")"
 pass "an icon URL that answers with an image installs it"
 
 # A name that resolves to no icon in the theme is reported, and the launcher
