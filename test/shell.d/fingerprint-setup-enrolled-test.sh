@@ -51,7 +51,7 @@ assert_pam_configured() {
 }
 
 assert_pam_untouched() {
-  ! grep -q "^sudo tee $scratch/pam.d" "$CALL_LOG" || fail "$1" "$(<"$CALL_LOG")"
+  ! grep -Eq "^sudo (sed|tee) .*$scratch/pam.d" "$CALL_LOG" || fail "$1" "$(<"$CALL_LOG")"
   ! grep -qx 'apply-lock' "$CALL_LOG" || fail "$1: omarchy-apply-lock was not called" "$(<"$CALL_LOG")"
 }
 
@@ -90,7 +90,10 @@ grep -q 'fprintd-delete tester, then run this setup again' "$scratch/out" ||
   fail "an enrolled print that fails to verify says how to remove every finger" "$(<"$scratch/out")"
 pass "an enrolled print that fails to verify explains how to enroll again"
 
-FPRINTD_LIST=$none VERIFY_OK=0 run_setup || true
+if FPRINTD_LIST=$none VERIFY_OK=0 run_setup; then
+  fail "a new print that fails to verify fails setup"
+fi
+assert_pam_untouched "a new print that fails to verify leaves PAM alone"
 grep -qx 'fprintd-enroll tester' "$CALL_LOG" || fail "nothing enrolled still enrolls before verifying" "$(<"$CALL_LOG")"
 grep -q 'fprintd-delete tester' "$scratch/out" ||
   fail "a new print that fails to verify says how to start over" "$(<"$scratch/out")"
