@@ -15,7 +15,7 @@ update_pending() {
 
   if (( status != 2 )); then
     return 0
-  elif [[ ${OMARCHY_PATH:-/usr/share/omarchy} != "/usr/share/omarchy" ]]; then
+  elif [[ $OMARCHY_PATH != "/usr/share/omarchy" ]]; then
     omarchy-update-available >/dev/null 2>&1
   else
     return 1
