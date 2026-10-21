@@ -13,9 +13,11 @@ if [[ ! -f $HOME/.local/state/omarchy/preinstalls-removed ]]; then
   # user-owned launcher at the same path stays.
   if [[ -f $wrapper && ! -L $wrapper ]] &&
     cmp -s "$wrapper" <(printf '#!/bin/bash\nexport MISE_MINIMUM_RELEASE_AGE=0\nmise use -g --quiet "%s" || exit 1\nexec mise x "%s" -- "kimi" "$@"\n' "$package" "$package"); then
-    rm -f "$wrapper"
     # Drop only the request this wrapper wrote; without the wrapper, a latest
     # request is the user's own. Keep the install for the declaration to reuse.
+    # Dropped before the wrapper goes, so a failed or interrupted run finds the
+    # wrapper again and retries instead of leaving the request behind.
     mise unuse -g --no-prune "$package@latest"
+    rm -f "$wrapper"
   fi
 fi

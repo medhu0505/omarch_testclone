@@ -17,6 +17,7 @@ cat >"$mock_bin/mise" <<'SH'
 #!/bin/bash
 printf '%s\n' "$*" >>"$OMARCHY_TEST_MISE_LOG"
 [[ $* == 'reshim --system' ]] && exit "${OMARCHY_TEST_RESHIM_STATUS:-0}"
+[[ $1 == unuse ]] && exit "${OMARCHY_TEST_UNUSE_STATUS:-0}"
 exit 0
 SH
 chmod +x "$mock_bin/mise"
@@ -185,6 +186,16 @@ pass "Kimi migration replaces the leftover wrapper with the lazy shim"
 bash -euo pipefail "$kimi_migration" >/dev/null
 [[ ! -s $mise_log ]] || fail "Kimi migration leaves a user's own latest request alone once the wrapper is gone" "$(cat "$mise_log")"
 pass "Kimi migration is idempotent"
+
+write_wrapper npm:@moonshot-ai/kimi-code kimi
+OMARCHY_TEST_UNUSE_STATUS=1 bash -euo pipefail "$kimi_migration" >/dev/null 2>&1 && status=0 || status=$?
+((status != 0)) || fail "Kimi migration stays pending when it cannot drop the request"
+[[ -e $test_home/.local/bin/kimi ]] || fail "Kimi migration keeps the wrapper to retry when it cannot drop the request"
+: >"$mise_log"
+bash -euo pipefail "$kimi_migration" >/dev/null
+[[ ! -e $test_home/.local/bin/kimi ]] && grep -q '^unuse ' "$mise_log" || fail "Kimi migration finishes on the retry"
+pass "Kimi migration retries after it cannot drop the request"
+: >"$mise_log"
 
 write_wrapper npm:@moonshot-ai/kimi-code kimi
 printf 'echo finished\n' >>"$test_home/.local/bin/kimi"
