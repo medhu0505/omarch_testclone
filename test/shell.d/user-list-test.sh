@@ -47,8 +47,9 @@ cat >"$test_tmp/group" <<'EOF'
 wheel:x:998:alice
 EOF
 
+# loginctl list-users --json=short: bob lingers, with services but no session.
 cat >"$test_tmp/sessions" <<'EOF'
-1000 alice no active
+[{"uid":1000,"user":"alice","linger":false,"state":"active"},{"uid":1001,"user":"bob","linger":true,"state":"lingering"}]
 EOF
 
 cat >"$test_tmp/lastlog" <<'EOF'

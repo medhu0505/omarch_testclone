@@ -29,8 +29,10 @@ done
 source "$OMARCHY_PATH/install/helpers/user-accounts.sh"
 
 # One call each for sessions and last logins, so the cost stays flat however
-# many accounts there are.
-signed_in=" $(loginctl list-users --no-legend --no-pager 2>/dev/null | awk '{ printf "%s ", $2 }') "
+# many accounts there are. Signed in is a session open now (active or online),
+# not a lingering account's services.
+signed_in=" $(loginctl list-users --no-pager --json=short 2>/dev/null |
+  jq -r '.[] | select(.state == "active" or .state == "online") | .user' 2>/dev/null | tr '\n' ' ' || true) "
 last_logins=$(lastlog2 2>/dev/null | awk 'NR > 1 && NF >= 7 {
   date = $(NF-5); for (i = NF-4; i <= NF; i++) date = date " " $i
   print $1 "\t" date
