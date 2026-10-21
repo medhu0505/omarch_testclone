@@ -141,6 +141,13 @@ passphrase=$(cat)
 [[ $passphrase == "$(cat "$OMARCHY_TEST_DIR/disk_password")" ]] || exit 2
 SH
 
+# find, failing with OMARCHY_TEST_FIND_FAIL, as on an unreadable directory.
+cat >"$mock_bin/find" <<'SH'
+#!/bin/bash
+[[ -z ${OMARCHY_TEST_FIND_FAIL:-} ]] || exit 1
+exec /usr/bin/find "$@"
+SH
+
 # Root runs a command as another account.
 cat >"$mock_bin/runuser" <<'SH'
 #!/bin/bash
@@ -914,7 +921,7 @@ for command in "remove bob --delete-home --yes:userdel" "admin bob off:gpasswd -
   sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
   echo "bob ALL=(ALL) NOPASSWD: ALL" >"$test_tmp/sudoers.d/99-omarchy-nopasswd-1001"
   output=$(run_user ${command%%:*} 2>&1) || fail "${command%%:*} with a passwordless grant" "$output"
-  grant_line=$(grep -n "rm -f .*99-omarchy-nopasswd-1001" "$test_tmp/calls.log" | head -1 | cut -d: -f1)
+  grant_line=$(grep -n "rm -fv -- .*99-omarchy-nopasswd-1001" "$test_tmp/calls.log" | head -1 | cut -d: -f1)
   change_line=$(grep -n "${command#*:}" "$test_tmp/calls.log" | head -1 | cut -d: -f1)
   [[ -n $grant_line && -n $change_line ]] && (( grant_line < change_line )) ||
     fail "${command%%:*} drops the grants before the account changes" "$(cat "$test_tmp/calls.log")"
@@ -930,6 +937,18 @@ if output=$(OMARCHY_TEST_USERDEL_HOME_FAIL=1 run_user remove bob --delete-home -
 ! has_user bob && [[ ! -e $test_tmp/sudoers.d/99-omarchy-nopasswd-1001 && ! -e $test_tmp/sudoers.d/05_bob && $output == *"removed 'bob', but couldn't delete"* ]] ||
   fail "a home folder userdel couldn't delete leaves no grant, and says what's left" "$output; $(ls "$test_tmp/sudoers.d")"
 pass "a home folder userdel couldn't delete leaves no grant behind"
+
+# A grant cleanup that fails stops the command before the account, or its
+# administrator rights, change.
+reset_fixtures
+sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
+echo "bob ALL=(ALL) ALL" >"$test_tmp/sudoers.d/05_bob"
+for command in "remove bob --yes" "admin bob off"; do
+  if output=$(OMARCHY_TEST_FIND_FAIL=1 run_user $command 2>&1); then fail "$command goes on when the grants can't be read"; fi
+  has_user bob && [[ $(wheel_members) == "alice,bob" && -e $test_tmp/sudoers.d/05_bob && $output == *"couldn't remove the sudo grants naming 'bob'"* ]] ||
+    fail "$command stops before anything changes when the grants can't be read" "$output; $(wheel_members)"
+done
+pass "a grant cleanup that fails stops the removal and the demotion"
 
 # Every question is answered before anything changes: declining to sign the
 # other account out leaves the machine as it was, still multi-user.

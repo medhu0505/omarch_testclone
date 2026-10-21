@@ -117,8 +117,8 @@ if [[ $state == "on" ]]; then
 else
   # The grants go before wheel membership does: a demotion that stops leaves an
   # administrator through wheel, and running it again finishes.
-  user_accounts_drop_installer_grants "$name"
-  user_accounts_drop_passwordless_grants "$name" "$(getent passwd "$name" | cut -d: -f3)"
+  user_accounts_drop_installer_grants "$name" && user_accounts_drop_passwordless_grants "$name" "$(getent passwd "$name" | cut -d: -f3)" ||
+    fail "couldn't remove the sudo grants naming '$name', so they're still an administrator; run this again to finish"
   as_root gpasswd -d "$name" wheel >/dev/null
   user_accounts_log "administrator rights taken from login user '$name' by $self"
   if user_accounts_has_full_sudo "$name"; then

@@ -123,22 +123,28 @@ user_accounts_ensure_wheel_sudo() {
 }
 
 # Prints the files the installer wrote to grant this user sudo by name: NN_<name>
-# holding nothing but "<name> ALL=(ALL) ALL". Anything else is left alone.
+# holding nothing but "<name> ALL=(ALL) ALL". Anything else is left alone. Fails
+# when the directory or a file can't be read, rather than finding nothing.
 user_accounts_installer_grants() {
-  local file
+  local found file content
+  found=$(as_root find "$(user_accounts_sudoers_dir)" -maxdepth 1 -type f -name "[0-9][0-9]_$1") || return 1
   while IFS= read -r file; do
-    if [[ $(as_root cat "$file" | grep -v '^[[:space:]]*$') == "$1 ALL=(ALL) ALL" ]]; then
+    [[ -n $file ]] || continue
+    content=$(as_root cat "$file") || return 1
+    if [[ $(grep -v '^[[:space:]]*$' <<<"$content") == "$1 ALL=(ALL) ALL" ]]; then
       printf '%s\n' "$file"
     fi
-  done < <(as_root find "$(user_accounts_sudoers_dir)" -maxdepth 1 -type f -name "[0-9][0-9]_$1")
+  done <<<"$found"
 }
 
 user_accounts_drop_installer_grants() {
-  local file
-  user_accounts_installer_grants "$1" | while IFS= read -r file; do
-    as_root rm -f "$file"
+  local files file
+  files=$(user_accounts_installer_grants "$1") || return 1
+  while IFS= read -r file; do
+    [[ -n $file ]] || continue
+    as_root rm -f "$file" || return 1
     user_accounts_log "removed the installer's sudo grant for '$1' ($file)"
-  done
+  done <<<"$files"
 }
 
 # True when sudo lets the user run any command as root.
@@ -183,12 +189,11 @@ user_accounts_free_uid() {
 # Omarchy's passwordless-sudo grants (omarchy-sudo-passwordless) name the
 # account by UID, so a UID handed to a later account would carry them along.
 user_accounts_drop_passwordless_grants() { # NAME UID
-  local file
+  local file removed
   for file in "$(user_accounts_sudoers_dir)/99-omarchy-nopasswd-$2" "$(user_accounts_sudoers_dir)/99-omarchy-permanent-nopasswd-$2"; do
-    if as_root test -e "$file"; then
-      as_root rm -f "$file"
-      user_accounts_log "removed the passwordless sudo grant of '$1' ($file)"
-    fi
+    # One call that fails on any error, and says when it removed something.
+    removed=$(as_root rm -fv -- "$file") || return 1
+    [[ -z $removed ]] || user_accounts_log "removed the passwordless sudo grant of '$1' ($file)"
   done
 }
 
