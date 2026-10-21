@@ -20,6 +20,9 @@ now_ms=$(date +%s%3N)
 # the refresh token has not.
 paused_subscription=$(printf '{"claudeAiOauth":{"accessToken":"token","expiresAt":%s,"refreshTokenExpiresAt":%s,"subscriptionType":"max","rateLimitTier":"default_claude_max_5x"}}' \
   $((now_ms - 1000)) $((now_ms + 86400000)))
+# One whose refresh expiry the credentials don't record.
+unknown_refresh_subscription=$(printf '{"claudeAiOauth":{"accessToken":"token","expiresAt":%s,"subscriptionType":"max","rateLimitTier":"default_claude_max_5x"}}' \
+  $((now_ms - 1000)))
 # One a person would have to sign in to again.
 lapsed_subscription=$(printf '{"claudeAiOauth":{"accessToken":"token","expiresAt":%s,"refreshTokenExpiresAt":%s,"subscriptionType":"max","rateLimitTier":"default_claude_max_5x"}}' \
   $((now_ms - 86400000)) $((now_ms - 1000)))
@@ -105,6 +108,11 @@ jq -e '.status == "Sign-in expired"' <<<"$result" >/dev/null ||
 result=$(T_CREDENTIALS="$lapsed_subscription" T_PROFILE='{"primaryApiKey":"sk-ant-test"}' login)
 jq -e '.plan == "API key" and .status == ""' <<<"$result" >/dev/null ||
   fail "a lapsed subscription beside a key reads as the key" "$result"
+# Credentials that don't say when the refresh token lapses may still refresh,
+# so the subscription keeps its plan.
+result=$(T_CREDENTIALS="$unknown_refresh_subscription" T_PROFILE='{"primaryApiKey":"sk-ant-test"}' login)
+jq -e '.plan == "Max 5x"' <<<"$result" >/dev/null ||
+  fail "a subscription whose refresh expiry is unknown keeps its plan beside a key" "$result"
 pass "a lapsed subscription beside a key reads as the key, not as a sign-in to redo"
 
 # The whole record: an API-key login with no session yet is still ready, so
