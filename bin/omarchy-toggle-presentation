@@ -82,7 +82,7 @@ enable_presentation() {
   omarchy-toggle-idle stay-awake >/dev/null
   omarchy-shell -q omarchy.indicators refresh
   mark_done activation_complete
-  omarchy-notification-send -g 󰐼 "Presentation mode on" "Stay awake, notifications silenced, bar hidden"
+  omarchy-notification-send -g 󰐼 "$(omarchy-i18n presentation.enabled)" "$(omarchy-i18n presentation.enabledBody)"
 }
 
 disable_presentation() {
@@ -122,7 +122,7 @@ disable_presentation() {
   fi
   rm -f "$STATE_FILE" "$RESTORE_FILE"
   omarchy-shell -q omarchy.indicators refresh
-  omarchy-notification-send -g 󰐼 "Presentation mode off"
+  omarchy-notification-send -g 󰐼 "$(omarchy-i18n presentation.disabled)"
 }
 
 print_status() {

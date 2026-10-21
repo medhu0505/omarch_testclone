@@ -38,7 +38,7 @@ SH
 chmod +x "$stub/omarchy-shell" "$stub/omarchy-notification-send"
 
 run() {
-  HOME="$home" PATH="$stub:$ROOT/bin:$PATH" \
+  HOME="$home" OMARCHY_PATH="$ROOT" PATH="$stub:$ROOT/bin:$PATH" \
     SHELL_LOG="$tmpdir/shell.log" DND_SET_LOG="$tmpdir/dnd" NOTIFY_LOG="$tmpdir/notify" \
     DND_STATE="${DND_STATE:-off}" \
     "$ROOT/bin/omarchy-toggle-presentation" "$@"
