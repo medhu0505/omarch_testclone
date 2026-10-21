@@ -25,6 +25,9 @@ if omarchy-hw-match "ThinkPad T14 Gen 2i"; then
   # is interrupted cannot leave a drop-in that is empty or half a command line:
   # the boot tooling reads that file, and a partial one is worse than none.
   tmp_file=$(mktemp "$limine_config_dir/.thinkpad-t14-display-power.conf.XXXXXX")
+  # mktemp creates the file 0600 and root owns it, while the migration that
+  # verifies this drop-in runs as the user, so it has to be readable by them.
+  chmod 0644 "$tmp_file"
   trap 'rm -f "$tmp_file"' EXIT
   cat >"$tmp_file" <<'CONF'
 # Lenovo ThinkPad T14 Gen 2i display power-saving workaround

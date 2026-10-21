@@ -102,6 +102,9 @@ run_leaf "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/t14"
 [[ -f $config ]] || fail "the ThinkPad T14 Gen 2i gets the display drop-in"
 grep -Fxq 'KERNEL_CMDLINE[default]+=" i915.enable_dc=0 i915.enable_fbc=0"' "$config" ||
   fail "the drop-in carries the kernel parameters under the key the boot tooling reads" "$(cat "$config")"
+mode=$(stat -c '%a' "$config" 2>/dev/null || stat -f '%A' "$config" 2>/dev/null)
+[[ $mode == 644 ]] ||
+  fail "the drop-in is readable by the user that runs the migration" "mode=$mode"
 pass "the ThinkPad T14 Gen 2i gets the display drop-in"
 
 # Rerunning the leaf must not change the drop-in: hardware setup runs again on
