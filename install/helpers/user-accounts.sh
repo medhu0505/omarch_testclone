@@ -248,12 +248,16 @@ user_accounts_try_disk_password() {
 # finished. One that stopped part way can leave the old key opening the disk
 # beside the new one, which no password test shows, so the account commands
 # stop with status 2 until a person finishes it, as they do when the change
-# itself refuses. Each account records the changes it starts, so every login account
-# is asked, as itself. Any other failure is status 1.
+# itself refuses. Each account records the changes it starts, so every
+# administrator is asked, as itself. Changing the disk password takes sudo, so
+# an account that isn't an administrator can't have started one: a record in
+# its home is ignored rather than let it block every account change. Any other
+# failure is status 1.
 user_accounts_disk_change_finished() {
   local self name home answer
   self=$(user_accounts_self)
   while IFS=$'\t' read -r name _; do
+    user_accounts_is_admin "$name" || continue
     if [[ $name == "$self" ]]; then
       answer=$(omarchy-drive-password --system-pending) || { printf '%s\n' "$answer" >&2; return 1; }
     else

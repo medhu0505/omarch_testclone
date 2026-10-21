@@ -1092,6 +1092,7 @@ pass "no account is given the disk password"
 # Each account records the changes it starts, so one another administrator
 # left unfinished stops the switch too, and says whose it is.
 two_accounts
+sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
 touch "$test_tmp/encrypted"
 answers alicepw yes sharedpw
 if output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_tty remove bob); then fail "another account's unfinished change stops the removal"; fi
@@ -1099,10 +1100,21 @@ has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"started by 'bob
   fail "another account's unfinished change stops the removal before anything changes, and names that account" "$output; $(cat "$test_tmp/calls.log")"
 pass "another account's unfinished disk password change stops the switch too"
 
+# Changing the disk password takes sudo, so an account that isn't an
+# administrator can't have started one: a record in its home is ignored rather
+# than let it block account changes.
+two_accounts
+touch "$test_tmp/encrypted"
+answers alicepw yes sharedpw
+output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_tty remove bob) || fail "a record in a limited account's home blocks the removal" "$output"
+! has_user bob && [[ $output != *"started by 'bob'"* ]] || fail "a record in a limited account's home is ignored" "$output"
+pass "a record in a limited account's home doesn't block account changes"
+
 # Every removal checks, not only the one back to a single account: with three
 # accounts, bob's record would otherwise go with him, and his key could still
 # open the disk.
 reset_fixtures
+sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
 touch "$test_tmp/encrypted"
 if output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_user remove bob --yes 2>&1); then fail "an unfinished change stops a removal that leaves several accounts"; fi
 has_user bob && [[ $output == *"started by 'bob'"* ]] && ! grep -q "userdel" "$test_tmp/calls.log" ||
