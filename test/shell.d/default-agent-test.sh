@@ -184,9 +184,11 @@ for tool in codex claude copilot opencode pi "\"$kimi_package\""; do
     fail "user setup declares $tool as a self-updating native lazy tool"
 done
 [[ $(grep -c 'auto_update = "4h"' "$lazy_config") == 12 ]] || fail "only the agent CLIs update themselves"
-grep -Eq '^uv = \{ version = "latest", lazy = true, minimum_release_age = "0s" \}$' "$lazy_config" ||
-  fail "user setup declares uv as a native lazy tool"
-[[ $(grep -c 'lazy = true' "$lazy_config") == 21 ]] || fail "user setup declares every default mise tool as lazy"
+for tool in node uv; do
+  grep -Eq "^$tool = \\{ version = \"latest\", lazy = true, minimum_release_age = \"0s\" \\}$" "$lazy_config" ||
+    fail "user setup declares $tool as a native lazy tool"
+done
+[[ $(grep -c 'lazy = true' "$lazy_config") == 22 ]] || fail "user setup declares every default mise tool as lazy"
 grep -Fx "reshim --system" "$mise_history" >/dev/null || fail "user setup builds the system lazy bootstrap shims"
 pass "user setup configures system lazy tools from registry shorthands"
 : >"$stub_log"
@@ -993,6 +995,26 @@ mapfile -d '' -t launch_args <"$launch_log"
   ${launch_args[4]} == "Review this project" ]] ||
   fail "OpenClaw receives prompts through --message" "argv: ${launch_args[*]}"
 pass "OpenClaw receives prompts through --message"
+
+# With the package and no openclaw command, the launcher sets OpenClaw up, so
+# the agent hands over to it rather than calling OpenClaw missing.
+cat >"$mock_bin/omarchy-pkg-present" <<'SH'
+#!/bin/bash
+[[ " ${OMARCHY_TEST_PACKAGES:-} " == *" $1 "* ]]
+SH
+chmod +x "$mock_bin/omarchy-pkg-present"
+: >"$launch_log"
+OMARCHY_TEST_MISSING_COMMAND=openclaw OMARCHY_TEST_PACKAGES=openclaw omarchy-agent >/dev/null 2>&1 ||
+  fail "OpenClaw's agent launches with the package and no command yet"
+mapfile -d '' -t launch_args <"$launch_log"
+[[ ${launch_args[*]} == "--app-id=org.omarchy.agent omarchy-launch-openclaw --tui" ]] ||
+  fail "OpenClaw's agent hands a missing command to its launcher when the package is there" "argv: ${launch_args[*]}"
+: >"$launch_log"
+if OMARCHY_TEST_MISSING_COMMAND=openclaw OMARCHY_TEST_PACKAGES= omarchy-agent >/dev/null 2>&1; then
+  fail "OpenClaw's agent without the package is still missing"
+fi
+[[ ! -s $launch_log ]] || fail "OpenClaw's agent without the package starts nothing"
+pass "OpenClaw's agent hands a missing command to its launcher only when the package is there"
 
 # Native lazy shims can precede ~/.local/bin. The agent launcher must still run
 # the official command when the default-agent selector recognized one.
