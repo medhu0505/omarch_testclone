@@ -113,12 +113,15 @@ jq -e '.status == "Sign-in expired"' <<<"$result" >/dev/null ||
 result=$(T_CREDENTIALS="$lapsed_subscription" T_PROFILE='{"primaryApiKey":"sk-ant-test"}' login)
 jq -e '.plan == "API key" and .status == ""' <<<"$result" >/dev/null ||
   fail "a lapsed subscription beside a key reads as the key" "$result"
-# Credentials that don't say when the refresh token lapses may still refresh,
-# so the subscription keeps its plan.
+# So is one whose access token lapsed and whose credentials don't say when the
+# refresh token does, which on its own reads as an expired sign-in too.
+result=$(T_CREDENTIALS="$unknown_refresh_subscription" login)
+jq -e '.status == "Sign-in expired"' <<<"$result" >/dev/null ||
+  fail "a subscription whose refresh expiry is unknown asks for a sign-in on its own" "$result"
 result=$(T_CREDENTIALS="$unknown_refresh_subscription" T_PROFILE='{"primaryApiKey":"sk-ant-test"}' login)
-jq -e '.plan == "Max 5x"' <<<"$result" >/dev/null ||
-  fail "a subscription whose refresh expiry is unknown keeps its plan beside a key" "$result"
-pass "a lapsed subscription beside a key reads as the key, not as a sign-in to redo"
+jq -e '.plan == "API key" and .status == "" and .limits == [] and .accountPlan == "API key"' <<<"$result" >/dev/null ||
+  fail "a subscription whose refresh expiry is unknown, beside a key, reads as the key" "$result"
+pass "a subscription that would ask for a sign-in reads as the key beside one"
 
 # The whole record: an API-key login with no session yet is still ready, so
 # the panel lists it rather than offering to add it.
