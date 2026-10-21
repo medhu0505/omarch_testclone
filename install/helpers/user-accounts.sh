@@ -145,9 +145,10 @@ user_accounts_drop_installer_grants() {
 user_accounts_has_full_sudo() {
   local privileges
   privileges=$(as_root sudo -l -U "$1" 2>/dev/null) || return 1
-  # Any tags (NOPASSWD:, SETENV:, NOEXEC:...) and any exceptions after a comma
-  # still leave a rule that runs anything else as root.
-  grep -qE '^[[:space:]]+\((ALL|root)( : ALL)?\) ([A-Z_]+:[[:space:]]*)*ALL(,|$)' <<<"$privileges"
+  # Running as root, with any group after it, any tags (NOPASSWD:, SETENV:,
+  # NOEXEC:...) and any exceptions after a comma, still runs anything else as
+  # root.
+  grep -qE '^[[:space:]]+\((ALL|root)([[:space:]]*:[^)]*)?\) ([A-Z_]+:[[:space:]]*)*ALL(,|$)' <<<"$privileges"
 }
 
 user_accounts_login_count() {

@@ -33,7 +33,7 @@ if [[ $1 == "-l" && $2 == "-U" ]]; then
     echo "    (ALL) ALL"
   fi
   # A rule naming the user is listed as sudo prints it: its tags and all.
-  sed -n "s/^$3 ALL=(ALL) \(.*\)$/    (ALL) \1/p" "$OMARCHY_SUDOERS_DIR"/* 2>/dev/null
+  sed -n "s/^$3 ALL=(\([^)]*\)) \(.*\)$/    (\1) \2/p" "$OMARCHY_SUDOERS_DIR"/* 2>/dev/null
   echo "    (root) NOPASSWD: /usr/bin/omarchy-dns Cloudflare"
   exit 0
 fi
@@ -796,15 +796,16 @@ done
   fail "a non-administrator changes nothing and never reaches sudo" "$(cat "$test_tmp/calls.log")"
 pass "accounts that aren't administrators are told so, before sudo"
 
-# A hand-written rule with tags, or exceptions, still gives full sudo.
-for rule in "alice ALL=(ALL) SETENV: ALL" "alice ALL=(ALL) NOPASSWD:SETENV: ALL, !/usr/bin/passwd"; do
+# A hand-written rule with tags, exceptions or a group still gives full sudo.
+for rule in "alice ALL=(ALL) SETENV: ALL" "alice ALL=(ALL) NOPASSWD:SETENV: ALL, !/usr/bin/passwd" \
+  "alice ALL=(root : root) NOPASSWD: ALL" "alice ALL=(ALL : ALL) ALL"; do
   reset_fixtures
   sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
   printf '%s\n' "$rule" >"$test_tmp/sudoers.d/04_alice"
   output=$(RUN_AS=bob run_user admin alice off 2>&1) && fail "admin off misses the full sudo in '$rule'"
   [[ $output == *"another sudo rule"* ]] || fail "admin off misses the full sudo in '$rule'" "$output"
 done
-pass "admin off notices full sudo whatever its tags"
+pass "admin off notices full sudo whatever its tags or group"
 
 # Three tries for your own password, as sudo gives, so a wrong one can't be
 # typed until the login lockout takes the account.
