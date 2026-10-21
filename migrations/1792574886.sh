@@ -20,7 +20,10 @@ if [[ ! -f $limine_config_dir/thinkpad-t14-display-power.conf ]]; then
     "$OMARCHY_PATH/install/hardware/lenovo/fix-thinkpad-t14-display-power.sh"
 fi
 
-if ! grep -Fq 'i915.enable_dc=0' "$limine_config_dir/thinkpad-t14-display-power.conf"; then
+# The same line the leaf writes, not a loose substring: a drop-in that carries
+# only one of the two parameters is not the setting this migration applies.
+if ! grep -Fxq 'KERNEL_CMDLINE[default]+=" i915.enable_dc=0 i915.enable_fbc=0"' \
+  "$limine_config_dir/thinkpad-t14-display-power.conf"; then
   echo "Couldn't apply the ThinkPad T14 Gen 2i display setting; leaving the boot migration pending" >&2
   exit 1
 fi

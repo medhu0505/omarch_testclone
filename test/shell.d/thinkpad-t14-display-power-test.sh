@@ -76,6 +76,11 @@ run_leaf() {
 run_migration() {
   local product_name="$1" product_family="$2" state="$3" strict="${4:-strict}"
   : >"$CALL_LOG"
+  # A VAR=value prefix on a function call leaks in POSIX mode, so the value the
+  # caller asked for is taken here and handed to the command explicitly, and the
+  # environment is cleared for the next case either way.
+  local mkinitcpio_status="${TEST_MKINITCPIO_STATUS:-0}" sudo_status="${TEST_SUDO_STATUS:-0}"
+  export TEST_MKINITCPIO_STATUS=0 TEST_SUDO_STATUS=0
   printf '%s\n' "$product_name" >"$scratch/dmi/product_name"
   printf '%s\n' "$product_family" >"$scratch/dmi/product_family"
   local runner=(bash -euo pipefail)
@@ -84,6 +89,7 @@ run_migration() {
     PATH="$scratch/bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" \
     OMARCHY_LIMINE_CONFIG_DIR="$state/limine-entry-tool.d" \
     OMARCHY_THINKPAD_T14_DISPLAY_POWER_MARKER="$state/marker" \
+    TEST_MKINITCPIO_STATUS="$mkinitcpio_status" TEST_SUDO_STATUS="$sudo_status" \
     "${runner[@]}" "$migration" </dev/null
 }
 
@@ -156,6 +162,7 @@ rm -rf "$scratch/rebuild-failed"
 status=0
 TEST_MKINITCPIO_STATUS=1 run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/rebuild-failed" || status=$?
 (( status != 0 )) || fail "a failed rebuild fails the migration"
+grep -q '^limine-mkinitcpio' "$CALL_LOG" || fail "a failed rebuild still attempted the rebuild"
 [[ ! -e $scratch/rebuild-failed/marker ]] || fail "a failed rebuild records no marker"
 ! grep -q '^omarchy-state set reboot-required' "$CALL_LOG" ||
   fail "a failed rebuild asks for no reboot"
@@ -168,6 +175,8 @@ rm -rf "$scratch/rebuild-failed-loose"
 status=0
 TEST_MKINITCPIO_STATUS=1 run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/rebuild-failed-loose" loose || status=$?
 (( status != 0 )) || fail "a failed rebuild fails the migration without strict shell options"
+grep -q '^limine-mkinitcpio' "$CALL_LOG" ||
+  fail "a failed rebuild still attempted the rebuild without strict shell options"
 [[ ! -e $scratch/rebuild-failed-loose/marker ]] ||
   fail "a failed rebuild records no marker without strict shell options"
 pass "a failed rebuild leaves the migration pending without strict shell options"
@@ -180,6 +189,18 @@ TEST_SUDO_STATUS=1 run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/wr
 (( status != 0 )) || fail "a refused write fails the migration"
 [[ ! -e $scratch/write-failed/marker ]] || fail "a refused write records no marker"
 pass "a refused write leaves the migration pending"
+
+# A case that needs the rebuild to succeed, after the failure cases: a failure
+# knob that leaked into it would make the rebuild fail and this case with it.
+rm -rf "$scratch/after-failures"
+mkdir -p "$scratch/after-failures/limine-entry-tool.d"
+printf '%s\n' 'KERNEL_CMDLINE[default]+=" i915.enable_dc=0 i915.enable_fbc=0"' \
+  >"$scratch/after-failures/limine-entry-tool.d/$config_name"
+run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/after-failures"
+grep -q '^limine-mkinitcpio' "$CALL_LOG" ||
+  fail "a rebuild still succeeds after the failure cases"
+[[ -f $scratch/after-failures/marker ]] || fail "a rebuild after the failure cases records the marker"
+pass "a rebuild still succeeds after the failure cases"
 
 # The marker stops another user's run from repeating the machine-wide rebuild.
 run_migration "20W1S7PB00" "ThinkPad T14 Gen 2i" "$scratch/migrated"
