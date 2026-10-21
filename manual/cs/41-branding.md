@@ -16,7 +16,7 @@ Poté nastavení použijete příkazem `omarchy plymouth set '#1d2021' '#ebdbb2'
 
 ### Spořič obrazovky
 
-Logo používané pro spořič obrazovky můžete změnit v části _Vzhled > Spořič obrazovky_. Jde o logo ve formě ASCII, takže můžete text přímo upravovat, ale můžete mu předat také obrázek png nebo svg a my ho převedeme na ASCII. Vypadá to docela dobře.
+Logo používané pro spořič obrazovky můžete změnit v části _Vzhled > Branding > Spořič obrazovky_. Jde o logo ve formě ASCII, takže můžete text přímo upravovat, ale můžete mu předat také obrázek png nebo svg a my ho převedeme na ASCII. Vypadá to docela dobře.
 
  ![branding-screensaver](images/branding-screensaver.webp)
 
@@ -28,7 +28,7 @@ V nabídce jsou tři položky:
 
 ### Obrazovka O aplikaci
 
-Stejné tři volby se nacházejí v části _Vzhled > O aplikaci_ pro obrazovku _O aplikaci_, kterou vyvoláte z nabídky Omarchy, a fungují totožně — soubor je `~/.config/omarchy/branding/about.txt` a okno O aplikaci se po každé změně zobrazí. Kresba na obrazovce O aplikaci se převádí na menší velikost než u spořiče obrazovky, protože se musí vejít do okna, nikoli vyplnit displej.
+Stejné tři volby se nacházejí v části _Vzhled > Branding > O aplikaci_ pro obrazovku _O aplikaci_, kterou vyvoláte z nabídky Omarchy, a fungují totožně — soubor je `~/.config/omarchy/branding/about.txt` a okno O aplikaci se po každé změně zobrazí. Kresba na obrazovce O aplikaci se převádí na menší velikost než u spořiče obrazovky, protože se musí vejít do okna, nikoli vyplnit displej.
 
 Dokud je okno otevřené, občas přes kresbu přejede zelený odlesk a poté ji opět nechá v klidu. Vaše vlastní kresba ho dostane také, pokud je každý její znak široký jeden sloupec — a to platí pro vše, co vytvoří příkaz _Nastavit z obrázku_. Kresba tvořená emoji nebo znaky s dvojitou šířkou namísto toho zůstane v klidu, a stejně tak obrazovka, pokud máte vlastní konfiguraci fastfetch: statické logo v těchto případech znamená, že animace drží stranou, místo aby selhala, protože posun odlesku napříč by posunul zbytek řádku na nesprávné místo.
 

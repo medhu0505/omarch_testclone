@@ -93,7 +93,7 @@ Můžete ho spustit na požádání z _Systém > Spořič obrazovky_ (`Super + E
 
 `omarchy toggle screensaver` je to, co vypne ten při nečinnosti, pokud byste raději šli přímo od práce k zamknutí. Potřebuje terminál, který umí nakonfigurovat — Alacritty, Foot, Ghostty nebo Kitty — a řekne vám to, pokud je váš výchozí terminál něco jiného.
 
-Logo, které kreslí, si můžete změnit v _Vzhled > Spořič obrazovky_. Nahrajte png nebo svg a Omarchy ho převede na ASCII. Viz [branding](41-branding.md).
+Logo, které kreslí, si můžete změnit v _Vzhled > Branding > Spořič obrazovky_. Nahrajte png nebo svg a Omarchy ho převede na ASCII. Viz [branding](41-branding.md).
 
 ### Zamykací obrazovka
 
