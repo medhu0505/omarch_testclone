@@ -76,3 +76,24 @@ if run_migrate no; then fail "a migration that fails for a limited account fails
 [[ ! -f $test_tmp/home-no/.local/state/omarchy/migrations/300-broken.sh ]] ||
   fail "a migration that fails for a limited account stays pending"
 pass "a migration that fails for another reason stays pending for a limited account"
+
+# A step about the account itself is no administrator's run's to do: it fails,
+# says so, and stays pending, while the machine-wide ones before it are left.
+rm -f "$test_root/migrations/300-broken.sh"
+cat >"$test_root/migrations/400-this-account.sh" <<'SH'
+sudo gpasswd -d "$USER" input
+echo "user step 400" >>"$TEST_CALLS"
+SH
+cat >"$test_root/migrations/500-this-home.sh" <<'SH'
+sudo chown root "$HOME/.config/thing"
+SH
+if run_migrate no; then fail "a step about a limited account itself fails its migration"; fi
+grep -qx "Needs an administrator, for this account: sudo gpasswd -d $(id -un) input" "$test_tmp/err" &&
+  [[ ! -s $test_tmp/escalations && $(cat "$test_tmp/calls") == $'user step 100\nuser step 200' ]] &&
+  [[ ! -f $test_tmp/home-no/.local/state/omarchy/migrations/400-this-account.sh ]] ||
+  fail "a step about a limited account itself says so and stays pending" "$(cat "$test_tmp/err"; cat "$test_tmp/calls")"
+rm -f "$test_root/migrations/400-this-account.sh"
+if run_migrate no; then fail "a step about a limited account's home fails its migration"; fi
+grep -q "Needs an administrator, for this account: sudo chown root .*/.config/thing" "$test_tmp/err" ||
+  fail "a step about a limited account's home says so" "$(cat "$test_tmp/err")"
+pass "a step about the limited account itself fails and stays pending, saying it needs an administrator"
