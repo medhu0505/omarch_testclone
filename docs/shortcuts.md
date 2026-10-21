@@ -17,7 +17,7 @@ Apps that call these often can run the commands directly (`omarchy-shortcut-set`
 ## Commands
 
 - `get <id> [--json]` prints the keys bound now, one chord per line, and fails for an unknown id. `--json` adds the description, commands, `default_keys` for Omarchy's own shortcuts, and `bound` (the keys Hyprland actually bound).
-- `set <id> <keys>... [--description <text>] [--command <command>] [--release <command>] [--force] [--json]` replaces the keys and applies them at once. A new app shortcut needs `--command`; later calls may pass only keys. `--release` makes it a hold: the command runs on press, the release command on release, the way push-to-talk needs. `set <id> --none` keeps the shortcut but unbinds it.
+- `set <id> <keys>... [--description <text>] [--command <command>] [--release <command>] [--release-description <text>] [--force] [--json]` replaces the keys and applies them at once. A new app shortcut needs `--command`; later calls may pass only keys. `--release` makes it a hold: the command runs on press, the release command on release, the way push-to-talk needs. The keybindings menu lists the release under `--release-description`, or under the description when there is none. `set <id> --none` keeps the shortcut but unbinds it.
 - `reset <id>` drops the choice: an Omarchy shortcut returns to its default keys, and an app's shortcut is removed. Call it from an app's uninstaller.
 - `list [--json]` shows every shortcut.
 
@@ -40,7 +40,7 @@ Some keys can't be taken even with `--force`, and `set` names them the same way:
 
 ## How it works
 
-- `~/.config/omarchy/shortcuts/<id>` holds each changed shortcut as `field=value` lines (`keys` repeated, `description`, `command`, `release`). It is data, never loaded as Lua, because other programs write it. Values are single lines.
+- `~/.config/omarchy/shortcuts/<id>` holds each changed shortcut as `field=value` lines (`keys` repeated, `description`, `command`, `release`, `release_description`). It is data, never loaded as Lua, because other programs write it. Values are single lines.
 - `default/hypr/shortcuts.lua` defines `o.shortcut(id, spec)`, which Omarchy's bindings use to declare defaults, and `o.shortcuts.apply()`, which `default/hypr/omarchy.lua` calls after the defaults and before the dictation backend's own integration, so a backend can still unbind or replace Omarchy's dictation keys. It lays the registry over the declarations and binds each shortcut, first unbinding its keys so it takes them from any default. Personal bindings in `~/.config/hypr/bindings.lua` load after it, so a shortcut can't unbind them at login. `set` reports them as conflicts instead.
 - `set` and `reset` apply live with `hyprctl eval 'o.shortcuts.apply({"<id>", ...})'`, naming the shortcuts they changed. Only those are unbound and bound again, so every other shortcut, and anything the user or a backend unbound since the config loaded, is left alone. If the shortcut moves off keys it took from a default, `apply` runs `hyprctl reload` instead, because only the config knows what that default was. An older config without `o.shortcuts` also gets a reload.
 - `get`, `list` and `set` ask the running compositor with `hyprctl eval "o.shortcuts.snapshot(<path>)"` for what is bound and which chords belong to Omarchy's own defaults, so they never read stale state. `o.bind` records each chord it binds; ones bound after the shortcuts apply are the user's or a backend's.

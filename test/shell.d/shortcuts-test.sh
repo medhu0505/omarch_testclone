@@ -378,6 +378,10 @@ grep -qx 'command=example record' "$registry/com.example.record" || fail "the co
 [[ $(omarchy-shortcut-list --json | jq -r '.[] | select(.id == "com.example.record") | .keys[0]') == "SUPER + ALT + R" ]] ||
   fail "list --json includes app shortcuts"
 omarchy-shortcut-list | grep -q '^omarchy.dictation.toggle  *SUPER + CTRL + X  *Toggle dictation$' || fail "list prints a table" "$(omarchy-shortcut-list)"
+omarchy-shortcut-set com.example.talk F12 --command "talk start" --release "talk stop" --description "Talk" --release-description "Stop talking" ||
+  fail "set registers a hold with a release description"
+grep -qx 'release_description=Stop talking' "$registry/com.example.talk" || fail "the release description is saved"
+omarchy-shortcut-reset com.example.talk
 pass "list shows every shortcut"
 
 omarchy-shortcut-set omarchy.dictation.toggle --none || fail "--none disables a shortcut"

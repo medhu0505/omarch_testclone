@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # omarchy:summary=Bind a named shortcut to new keys, or register an app's own shortcut
-# omarchy:args=<id> <keys>... [--description <text>] [--command <command>] [--release <command>] [--force] [--json] [--none]
+# omarchy:args=<id> <keys>... [--description <text>] [--command <command>] [--release <command>] [--release-description <text>] [--force] [--json] [--none]
 # omarchy:examples=omarchy shortcut set omarchy.dictation.hold F9 "SUPER + R" | omarchy shortcut set com.example.app.record "SUPER + ALT + R" --description "Record" --command "example-app record" | omarchy shortcut set com.example.app.talk Super_R --description "Push to talk" --command "example-app start" --release "example-app stop"
 
 # Keys use Hyprland's syntax, as in o.bind: "SUPER + SHIFT + R", F9, code:191,
@@ -12,7 +12,7 @@
 source omarchy-shortcut-functions
 
 usage() {
-  echo "Usage: omarchy-shortcut-set <id> <keys>... [--description <text>] [--command <command>] [--release <command>] [--force] [--json]" >&2
+  echo "Usage: omarchy-shortcut-set <id> <keys>... [--description <text>] [--command <command>] [--release <command>] [--release-description <text>] [--force] [--json]" >&2
   echo "       omarchy-shortcut-set <id> --none" >&2
   exit 1
 }
