@@ -171,12 +171,9 @@ function parsePinboards(raw) {
 
 function pinboardList(saved, history) {
   var names = []
-  var seen = {}
   function add(value) {
     var name = pinboardName(value)
-    if (!name || seen[name]) return
-    seen[name] = true
-    names.push(name)
+    if (name && names.indexOf(name) < 0) names.push(name)
   }
 
   if (Array.isArray(saved)) saved.forEach(add)
@@ -350,8 +347,9 @@ function cappedEntry(entry) {
   if (!entry || entry.type !== "text" || entry.text.length <= displayTextLimit) return entry
 
   // Cut on a line break so a file:// URI never truncates into a bogus path.
+  // Keep the metadata: a long pinned snippet still belongs to its board.
   var cut = entry.text.lastIndexOf("\n", displayTextLimit)
-  return { type: "text", text: entry.text.slice(0, cut > 0 ? cut : displayTextLimit) }
+  return withMetadata({ type: "text", text: entry.text.slice(0, cut > 0 ? cut : displayTextLimit) }, entry)
 }
 
 // filter narrows the rows to one pinboard ({ pinboard: name }; empty means
@@ -405,6 +403,7 @@ if (typeof module !== "undefined") {
   module.exports = {
     normalizeEntry: normalizeEntry,
     entryKey: entryKey,
+    pinboardName: pinboardName,
     parseHistory: parseHistory,
     addEntry: addEntry,
     removeEntryAt: removeEntryAt,

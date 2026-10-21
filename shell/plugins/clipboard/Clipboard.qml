@@ -105,7 +105,9 @@ Item {
   }
 
   function saveHistory() {
-    historyFile.setText(JSON.stringify(root.history.slice(0, root.historyLimit), null, 2) + "\n")
+    // addEntry already trims unpinned entries to the limit. Slicing here would
+    // cut pins that sit past it, and shift the indexes the paste helpers read.
+    historyFile.setText(JSON.stringify(root.history, null, 2) + "\n")
   }
 
   function addClipboardEntry(entry) {
@@ -170,6 +172,9 @@ Item {
   }
 
   function rebuildDisplay() {
+    // A pending quick paste names a row position, which a rebuilt list
+    // (a new copy, another filter) gives to another entry.
+    root.quickPasteIndex = -1
     var rows = ClipboardHistory.displayRows(root.history, root.filterText, 50, Commons.I18n.t, Commons.I18n.tn, Commons.I18n.formatNumber, { pinboard: root.currentPinboard, kind: root.kindFilter })
 
     displayModel.clear()
@@ -268,7 +273,7 @@ Item {
         if (!needle || root.pinboards[i].toLowerCase().indexOf(needle) >= 0) rows.push({ name: root.pinboards[i], create: false })
       }
     }
-    var typed = root.pinPickerText.trim()
+    var typed = ClipboardHistory.pinboardName(root.pinPickerText)
     if (typed && root.pinboards.indexOf(typed) < 0) rows.push({ name: typed, create: true })
     return rows
   }
@@ -296,8 +301,11 @@ Item {
     root.closePinPicker()
   }
 
-  function pinSelectedTo(name) {
-    if (!root.cursorActive || root.selectedIndex < 0 || root.selectedIndex >= displayModel.count) return
+  // Names are bounded before they are compared, as the history file stores
+  // them, so a long name cannot slip past the duplicate check and merge boards.
+  function pinSelectedTo(value) {
+    var name = ClipboardHistory.pinboardName(value)
+    if (!name || !root.cursorActive || root.selectedIndex < 0 || root.selectedIndex >= displayModel.count) return
     var row = displayModel.get(root.selectedIndex)
     root.history = ClipboardHistory.pinEntryAt(root.history, row.historyIndex, name)
     if (root.pinboards.indexOf(name) < 0) {
@@ -308,7 +316,8 @@ Item {
     root.rebuildDisplay()
   }
 
-  function renameCurrentPinboard(name) {
+  function renameCurrentPinboard(value) {
+    var name = ClipboardHistory.pinboardName(value)
     var from = root.currentPinboard
     if (!from || !name || name === from || root.pinboards.indexOf(name) >= 0) return
     root.history = ClipboardHistory.renamePinboard(root.history, from, name)
@@ -1027,6 +1036,7 @@ Item {
             spacing: Style.space(6)
 
             Text {
+              id: pinPickerTitle
               textFormat: Text.PlainText
               width: parent.width
               text: root.pinPickerRenames ? Commons.I18n.t("clipboard.renamePinboard") : Commons.I18n.t("clipboard.pinTo")
@@ -1037,6 +1047,7 @@ Item {
             }
 
             Text {
+              id: pinPickerName
               textFormat: Text.PlainText
               width: parent.width
               text: root.pinPickerText || Commons.I18n.t("clipboard.pinboardName")
@@ -1047,15 +1058,28 @@ Item {
               elide: Text.ElideRight
             }
 
-            Repeater {
+            // Many boards scroll inside the card rather than run off it, and the
+            // keyboard cursor stays in view.
+            ListView {
+              id: pinPickerList
+              width: parent.width
+              height: Math.min(contentHeight, pinPicker.parent.height - root.contentMargin * 2
+                - pinPicker.contentTopInset - pinPicker.contentBottomInset
+                - pinPickerTitle.height - pinPickerName.height - pinPickerColumn.spacing * 2)
+              clip: true
+              spacing: pinPickerColumn.spacing
+              boundsBehavior: Flickable.StopAtBounds
               model: pinPicker.rows
+              currentIndex: root.pinPickerIndex
+              highlightFollowsCurrentItem: false
+              onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
 
-              Rectangle {
+              delegate: Rectangle {
                 id: pinRow
                 required property var modelData
                 required property int index
                 readonly property bool hasCursor: index === root.pinPickerIndex
-                width: pinPickerColumn.width
+                width: pinPickerList.width
                 height: root.chipHeight + Style.space(8)
                 radius: root.cornerRadius
                 color: hasCursor ? root.selectedBackground : "transparent"

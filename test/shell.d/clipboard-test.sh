@@ -266,6 +266,24 @@ assertDeepEqual(
 )
 
 assertDeepEqual(clipboard.parsePinboards('{"not":"a list"}'), [], 'clipboard pinboard parser rejects non-lists')
+
+assertDeepEqual(
+  clipboard.pinboardList(['constructor', 'toString'], [{ type: 'text', text: 'a', pinboard: 'hasOwnProperty' }]),
+  ['constructor', 'toString', 'hasOwnProperty'],
+  'clipboard pinboard list keeps names that match object properties'
+)
+
+assertEqual(clipboard.pinboardName('x'.repeat(80)), 'x'.repeat(64), 'clipboard bounds pinboard names to the stored length')
+
+{
+  const long = { type: 'text', text: 'x'.repeat(9000), pinboard: 'Code', app: 'foot', copiedAt: 1700000000000 }
+  const rows = clipboard.displayRows([long], '', 50, null, null, null, { pinboard: 'Code' })
+  assertDeepEqual(
+    rows.map(row => ({ pinboard: row.pinboard, app: row.app, copiedAt: row.copiedAt, length: row.textLength })),
+    [{ pinboard: 'Code', app: 'foot', copiedAt: 1700000000000, length: 9000 }],
+    'clipboard keeps the pinboard and metadata of text too long to display in full'
+  )
+}
 assertDeepEqual(clipboard.parsePinboards('nope'), [], 'clipboard pinboard parser rejects invalid json')
 
 assertDeepEqual(
