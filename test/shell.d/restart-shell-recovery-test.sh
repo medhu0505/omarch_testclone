@@ -205,9 +205,13 @@ stop_shell_instances
 pass "signal fallback stays idle when the wait loop sees the instance exit"
 
 # A shell whose instance.lock is gone is missing from quickshell list but still
-# running; only its argv identifies it.
-bash -c 'command sleep 60; :' quickshell -p "$CONFIG_DIR" &
+# running; only its argv identifies it. It stops itself, so no child outlives it.
+bash -c 'kill -STOP $$' quickshell -p "$CONFIG_DIR" >/dev/null 2>&1 &
 unlisted_pid=$!
+for (( i = 0; i < 100; i++ )); do
+  [[ $(awk '{print $3}' "/proc/$unlisted_pid/stat") == "T" ]] && break
+  command sleep 0.01
+done
 test_scenario=unlisted
 : >"$signals_file"
 stop_shell_instances
