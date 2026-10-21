@@ -878,8 +878,9 @@ BarWidget {
     }
 
     TrayIcon {
-      x: (parent.width - width) / 2
-      y: (parent.height - height) / 2
+      // Rounded: a bitmap icon centered on a half pixel (12 in a 27 slot) blurs.
+      x: Math.round((parent.width - width) / 2)
+      y: Math.round((parent.height - height) / 2)
       width: Style.bar.iconSize
       height: Style.bar.iconSize
       icon: trayItemRoot.modelData.icon

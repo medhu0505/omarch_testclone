@@ -71,3 +71,19 @@ assert(
   'the pinned icons sit against the fixed edge, and the drawer opens away from it'
 )
 JS
+
+run_node_test "tray icons sit on whole pixels" <<'JS'
+const fs = require('fs')
+const source = fs.readFileSync(root + '/shell/plugins/bar/widgets/Tray.qml', 'utf8')
+const itemStart = source.indexOf('component TrayItem: Item {')
+const trayItem = source.slice(itemStart, source.indexOf('MouseArea {', itemStart))
+
+// The 12px icon centered in its 27px slot sits at 7.5, and a bitmap drawn on a
+// half pixel is sampled across two and blurs. anchors.centerIn snapped that to
+// a whole pixel; the manual center has to round it itself.
+assert(
+  /x: Math\.round\(\(parent\.width - width\) \/ 2\)/.test(trayItem) &&
+    /y: Math\.round\(\(parent\.height - height\) \/ 2\)/.test(trayItem),
+  'tray icons are centered on a whole pixel'
+)
+JS
