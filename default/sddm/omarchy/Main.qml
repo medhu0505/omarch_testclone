@@ -103,6 +103,7 @@ Rectangle {
           id: username
           property bool deleting: false
           anchors.fill: parent
+          clip: true
           anchors.leftMargin: 20
           anchors.rightMargin: 20
           verticalAlignment: TextInput.AlignVCenter
