@@ -67,12 +67,13 @@ assertEqual(power.barLabel('time', 1, ''), '100%', 'power falls back to the perc
 assert(/if \(b === Qt\.RightButton\) root\.cycleLabel\(\)/.test(panelSource), 'power right click cycles the bar label')
 assert(/function setLabel\(mode\) \{\n\s*var next = Object\.assign\([^\n]+label: [^\n]+\)\n\s*delete next\.showPercentage[\s\S]*?updateEntryInline/.test(panelSource), 'power persists the bar label in place of showPercentage')
 assert(/function togglePercentage\(\) \{\n\s*setLabel\(root\.labelMode === "none" \? "percentage" : "none"\)/.test(panelSource), 'power keeps togglePercentage as a percentage on/off switch')
+assert(/function toggleTime\(\) \{\n\s*setLabel\(root\.labelMode === "time" \? "percentage" : "time"\)/.test(panelSource), 'power toggles the time beside the percentage')
 // BarIconButton lays its label out before the icon; bar-icon-geometry-test.sh checks the order.
 assert(/text: root\.batteryIcon\(\)\n\s*labelText: !vertical \? Model\.barLabel\(root\.labelMode, /.test(panelSource), 'power shows the bar label beside the battery icon')
 assert(/timeToEmpty : d\.timeToFull/.test(panelSource), 'power reads the bar time live from UPower')
 assert(/labelText === "" \? Style\.bar\.iconSlot\n\s*: root\.barTimeText === "" \? Style\.bar\.iconSlot \* 2\n\s*: Style\.bar\.iconSlot \+ labelMetrics\.advanceWidth/.test(panelSource), 'power widens the bar slot to the label only when the time shows')
 assert(/openPanelIndicatorWidth:.*labelMode !== "none".*button\.glyphPaintedWidth : 0/.test(panelSource), 'power spans the open-panel mark across the painted label block')
 assert(/IpcHandler[\s\S]*?function togglePercentage\(\) \{ root\.togglePercentage\(\) \}/.test(panelSource), 'power exposes togglePercentage over IPC')
-assert(/function cycleLabel\(\) \{ root\.cycleLabel\(\) \}\n\s*function label\(\): string \{ return root\.labelMode \}/.test(panelSource), 'power exposes the bar label over IPC')
+assert(/function toggleTime\(\) \{ root\.toggleTime\(\) \}\n\s*function cycleLabel\(\) \{ root\.cycleLabel\(\) \}\n\s*function label\(\): string \{ return root\.labelMode \}/.test(panelSource), 'power exposes the bar label over IPC')
 assert(/manageIpc: false/.test(panelSource), 'power owns its IPC handler so it can extend the target methods')
 JS

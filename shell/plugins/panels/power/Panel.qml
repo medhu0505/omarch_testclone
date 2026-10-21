@@ -200,6 +200,10 @@ Panel {
     setLabel(root.labelMode === "none" ? "percentage" : "none")
   }
 
+  function toggleTime() {
+    setLabel(root.labelMode === "time" ? "percentage" : "time")
+  }
+
   ShellIpc {
     target: "omarchy.power"
 
@@ -209,6 +213,7 @@ Panel {
     function hide() { root.close() }
     function toggle() { root.toggle() }
     function togglePercentage() { root.togglePercentage() }
+    function toggleTime() { root.toggleTime() }
     function cycleLabel() { root.cycleLabel() }
     function label(): string { return root.labelMode }
   }

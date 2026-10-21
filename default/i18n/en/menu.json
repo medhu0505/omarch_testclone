@@ -122,6 +122,12 @@
   "appearance.top-bar.indicators.battery-percentage-off": {
     "label": "Hide Battery Percentage"
   },
+  "appearance.top-bar.indicators.battery-time-on": {
+    "label": "Show Battery Time"
+  },
+  "appearance.top-bar.indicators.battery-time-off": {
+    "label": "Hide Battery Time"
+  },
   "appearance.top-bar.indicators.clock": {
     "label": "Clock"
   },
