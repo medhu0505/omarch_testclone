@@ -211,10 +211,26 @@ user_accounts_root_luks_or_explain() {
   user_accounts_root_luks || { echo "Couldn't tell which drive holds the system, so no password can be checked against the disk." >&2; return 1; }
 }
 
-# Whether the password opens the disk. cryptsetup tries enrolled tokens before
-# the key, so allow only a token type none has, as omarchy-drive-password does.
-user_accounts_opens_disk() {
-  printf '%s' "$2" | as_root cryptsetup open --test-passphrase --token-type passphrase-only --key-file - "$1" >/dev/null 2>&1
+# Whether password $2 opens disk $1: prints "opens" or "refused". cryptsetup
+# tries enrolled tokens before the key, so allow only a token type none has, as
+# omarchy-drive-password does. It reports a wrong passphrase as status 2; any
+# other failure (an I/O or memory error, a busy device, sudo itself) is neither
+# answer, so this fails and the caller stops. An empty password opens nothing.
+user_accounts_try_disk_password() {
+  local status=0
+  if [[ -z $2 ]]; then
+    echo refused
+    return 0
+  fi
+  printf '%s' "$2" | as_root cryptsetup open --test-passphrase --token-type passphrase-only --key-file - "$1" >/dev/null 2>&1 || status=$?
+  case $status in
+  0) echo opens ;;
+  2) echo refused ;;
+  *)
+    echo "Couldn't check a password against $1 (cryptsetup status $status)." >&2
+    return 1
+    ;;
+  esac
 }
 
 # Whether the password is the user's login password, checked against its hash.
@@ -265,9 +281,9 @@ user_accounts_ask_own_password() {
 
 # Asks for a new password twice until both match and the check in $2 (a
 # function given the arguments after it, then the password) accepts it, and
-# prints it.
+# prints it. The check returns 1 to ask again; any other failure stops.
 user_accounts_ask_new_password() {
-  local prompt=$1 check=$2 password confirmation
+  local prompt=$1 check=$2 password confirmation status
   shift 2
   while true; do
     password=$(gum input --password --prompt "$prompt") || return 1
@@ -276,9 +292,14 @@ user_accounts_ask_new_password() {
       echo "The password can't be empty." >&2
     elif [[ $password != "$confirmation" ]]; then
       echo "The passwords don't match. Try again." >&2
-    elif "$check" "$@" "$password"; then
-      printf '%s\n' "$password"
-      return 0
+    else
+      status=0
+      "$check" "$@" "$password" || status=$?
+      if (( status == 0 )); then
+        printf '%s\n' "$password"
+        return 0
+      fi
+      (( status == 1 )) || return 1
     fi
   done
 }
@@ -292,7 +313,9 @@ _user_accounts_not_this_one() {
 }
 
 _user_accounts_not_the_disk_key() {
-  ! user_accounts_opens_disk "$1" "$2" || { echo "That one unlocks the disk; choose one that doesn't." >&2; return 1; }
+  local result
+  result=$(user_accounts_try_disk_password "$1" "$2") || return 2
+  [[ $result == "refused" ]] || { echo "That one unlocks the disk; choose one that doesn't." >&2; return 1; }
 }
 
 user_accounts_explain_multi() {
@@ -313,9 +336,12 @@ user_accounts_explain_multi() {
 # asks who is logging in instead of logging the owner in automatically. $2 is
 # the administrator's password, already checked.
 user_accounts_go_multi() {
-  local self=$1 mine=$2 disk choice new share own output
+  local self=$1 mine=$2 disk choice new share own output opens="" changed
   disk=$(user_accounts_root_luks_or_explain) || return 1
-  if [[ -n $disk ]] && user_accounts_opens_disk "$disk" "$mine"; then
+  if [[ -n $disk ]]; then
+    opens=$(user_accounts_try_disk_password "$disk" "$mine") || return 1
+  fi
+  if [[ $opens == "opens" ]]; then
     share=$(omarchy-i18n user.choiceShareDisk)
     own=$(omarchy-i18n user.choiceNewOwn)
     choice=$(gum choose --header "$(omarchy-i18n user.whichPassword)" "$share" "$own") || return 1
@@ -330,7 +356,9 @@ user_accounts_go_multi() {
         return 1
       fi
       [[ -z $output ]] || printf '%s\n' "$output"
-      if user_accounts_opens_disk "$disk" "$mine" || ! user_accounts_opens_disk "$disk" "$new"; then
+      opens=$(user_accounts_try_disk_password "$disk" "$mine") || return 1
+      changed=$(user_accounts_try_disk_password "$disk" "$new") || return 1
+      if [[ $opens == "opens" || $changed == "refused" ]]; then
         echo "The disk password didn't change." >&2
         return 1
       fi
@@ -357,12 +385,16 @@ user_accounts_go_multi() {
 # encrypted install automatic login once the disk is unlocked. $2 is the
 # remaining administrator's password, already checked.
 user_accounts_go_single() {
-  local self=$1 mine=$2 disk current output
+  local self=$1 mine=$2 disk current output opens=""
   disk=$(user_accounts_root_luks_or_explain) || return 1
-  if [[ -n $disk ]] && ! user_accounts_opens_disk "$disk" "$mine"; then
+  if [[ -n $disk ]]; then
+    opens=$(user_accounts_try_disk_password "$disk" "$mine") || return 1
+  fi
+  if [[ $opens == "refused" ]]; then
     while true; do
       current=$(gum input --password --prompt "$(omarchy-i18n user.currentDiskPassword)") || return 1
-      user_accounts_opens_disk "$disk" "$current" && break
+      opens=$(user_accounts_try_disk_password "$disk" "$current") || return 1
+      [[ $opens != "opens" ]] || break
       echo "That doesn't unlock the disk. Try again." >&2
     done
     # As in user_accounts_go_multi: an earlier change that stopped part way
@@ -373,7 +405,8 @@ user_accounts_go_single() {
       return 1
     fi
     [[ -z $output ]] || printf '%s\n' "$output"
-    if ! user_accounts_opens_disk "$disk" "$mine"; then
+    opens=$(user_accounts_try_disk_password "$disk" "$mine") || return 1
+    if [[ $opens != "opens" ]]; then
       echo "Your password doesn't unlock the disk yet. Run omarchy-drive-password and use your own password as the new one." >&2
       return 1
     fi

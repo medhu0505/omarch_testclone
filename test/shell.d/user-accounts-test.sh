@@ -126,10 +126,17 @@ cat >"$mock_bin/omarchy-sudo-allowed" <<'SH'
 [[ ! -e $OMARCHY_TEST_DIR/not_admin ]]
 SH
 
+# A wrong passphrase is status 2 and an empty one 1, as with the real one. From
+# the OMARCHY_TEST_CRYPTSETUP_ERROR_AT-th check on, it can't tell (an I/O error).
 cat >"$mock_bin/cryptsetup" <<'SH'
 #!/bin/bash
 [[ $1 == "open" && " $* " == *" --test-passphrase "* ]] || exit 9
-[[ $(cat) == "$(cat "$OMARCHY_TEST_DIR/disk_password")" ]] || exit 2
+count=$(( $(cat "$OMARCHY_TEST_DIR/cryptsetup.count" 2>/dev/null || echo 0) + 1 ))
+echo "$count" >"$OMARCHY_TEST_DIR/cryptsetup.count"
+(( ${OMARCHY_TEST_CRYPTSETUP_ERROR_AT:-0} == 0 || count < OMARCHY_TEST_CRYPTSETUP_ERROR_AT )) || exit 3
+passphrase=$(cat)
+[[ -n $passphrase ]] || exit 1
+[[ $passphrase == "$(cat "$OMARCHY_TEST_DIR/disk_password")" ]] || exit 2
 SH
 
 # The current and new disk passwords arrive on stdin, as with the real one.
@@ -238,7 +245,7 @@ SH
 chmod +x "$mock_bin"/*
 
 reset_fixtures() {
-  rm -rf "${test_tmp:?}/home" "$test_tmp/sudoers.d" "$test_tmp/calls.log" "$test_tmp/journal" "$test_tmp/chpasswd.log" "$test_tmp/encrypted" "$test_tmp/undecidable" "$test_tmp/not_admin"
+  rm -rf "${test_tmp:?}/home" "$test_tmp/sudoers.d" "$test_tmp/calls.log" "$test_tmp/journal" "$test_tmp/chpasswd.log" "$test_tmp/encrypted" "$test_tmp/undecidable" "$test_tmp/not_admin" "$test_tmp/cryptsetup.count"
   mkdir -p "$test_tmp/home/alice" "$test_tmp/home/bob" "$test_tmp/sudoers.d"
   # The owner, alice, was installed from the ISO: sudo by name, no wheel rule.
   echo "alice ALL=(ALL) ALL" >"$test_tmp/sudoers.d/04_alice"
@@ -915,6 +922,51 @@ if output=$(OMARCHY_TEST_DRIVE_PENDING=1 run_tty remove bob); then fail "an unfi
 has_user bob && [[ $output == *"run omarchy-drive-password to finish it, then run this again"* && $output != *"run this again to finish"* ]] ||
   fail "an unfinished disk password change stops the removal and points at omarchy-drive-password" "$output"
 pass "the removal points at omarchy-drive-password too"
+
+# cryptsetup reports a wrong passphrase as status 2. Any other failure is no
+# answer, so the switches stop rather than read it as one: as "doesn't open",
+# the add would skip the split and have the administrator share their own
+# password.
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers yes alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
+if output=$(OMARCHY_TEST_CRYPTSETUP_ERROR_AT=1 run_tty add carol); then fail "a cryptsetup error stops the add"; fi
+! has_user carol && [[ $(cat "$test_tmp/disk_password") == "alicepw" && $output == *"Couldn't check a password"* && $output != *"Give carol"* ]] &&
+  ! grep -q "passwd -l" "$test_tmp/calls.log" ||
+  fail "a cryptsetup error stops the add before anything changes" "$output; $(cat "$test_tmp/calls.log")"
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers yes alicepw no carolpw carolpw "A new password for me" newalicepw newalicepw newalicepw newalicepw
+if output=$(OMARCHY_TEST_CRYPTSETUP_ERROR_AT=2 run_tty add carol); then fail "a cryptsetup error while checking a new password stops the add"; fi
+! has_user carol && [[ $output == *"Couldn't check a password"* ]] && ! grep -q "chpasswd" "$test_tmp/calls.log" &&
+  [[ $(grep -c "input --password" "$test_tmp/gum.log") == 5 ]] ||
+  fail "a cryptsetup error while checking a new password stops the add without asking again" "$output; $(cat "$test_tmp/calls.log")"
+pass "a cryptsetup error stops the add, rather than counting as a wrong password"
+
+two_accounts
+touch "$test_tmp/encrypted"
+answers alicepw yes sharedpw
+if output=$(OMARCHY_TEST_CRYPTSETUP_ERROR_AT=1 run_tty remove bob); then fail "a cryptsetup error stops the removal"; fi
+has_user bob && [[ ! -e $test_tmp/autologin.conf && $output == *"Couldn't check a password"* ]] &&
+  ! grep -q "chpasswd\|omarchy-drive-password" "$test_tmp/calls.log" ||
+  fail "a cryptsetup error stops the removal before anything changes" "$output; $(cat "$test_tmp/calls.log")"
+two_accounts
+touch "$test_tmp/encrypted"
+answers alicepw yes sharedpw sharedpw
+if output=$(OMARCHY_TEST_CRYPTSETUP_ERROR_AT=2 run_tty remove bob); then fail "a cryptsetup error checking the current disk password stops the removal"; fi
+has_user bob && [[ $output == *"Couldn't check a password"* && $output != *"Try again"* ]] && ! grep -q "omarchy-drive-password" "$test_tmp/calls.log" ||
+  fail "a cryptsetup error checking the current disk password stops the removal without asking again" "$output; $(cat "$test_tmp/calls.log")"
+pass "a cryptsetup error stops the removal, rather than counting as a wrong password"
+
+# An empty answer is a wrong password, asked again, not an error.
+two_accounts
+touch "$test_tmp/encrypted"
+answers alicepw yes "" sharedpw
+output=$(run_tty remove bob) || fail "an empty disk password is asked again" "$output"
+! has_user bob && [[ $output == *"That doesn't unlock the disk. Try again."* ]] || fail "an empty disk password is asked again" "$output"
+pass "an empty disk password is asked again"
 
 # The lock file is root's alone, so only an administrator can hold the lock.
 reset_fixtures
