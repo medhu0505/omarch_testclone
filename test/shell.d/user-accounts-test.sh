@@ -1110,6 +1110,16 @@ output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_tty remove bob) || fail "a recor
 ! has_user bob && [[ $output != *"started by 'bob'"* ]] || fail "a record in a limited account's home is ignored" "$output"
 pass "a record in a limited account's home doesn't block account changes"
 
+# Only administrators are asked, so an administrator's unfinished change is
+# finished before they stop being one.
+reset_fixtures
+sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
+touch "$test_tmp/encrypted"
+if output=$(OMARCHY_TEST_DRIVE_PENDING_FOR=bob run_user admin bob off 2>&1); then fail "admin off goes on while bob's disk password change is unfinished"; fi
+[[ $(wheel_members) == "alice,bob" && $output == *"started by 'bob'"* && $output == *"keeps administrator rights"* ]] ||
+  fail "admin off stops while bob's disk password change is unfinished" "$output; $(wheel_members)"
+pass "an administrator with an unfinished disk password change keeps their rights until it's finished"
+
 # Every removal checks, not only the one back to a single account: with three
 # accounts, bob's record would otherwise go with him, and his key could still
 # open the disk.
