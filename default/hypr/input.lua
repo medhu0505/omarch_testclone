@@ -11,11 +11,9 @@ local vconsole = keyboard.selected()
 
 local kb_layout = vconsole.XKBLAYOUT or "us"
 local kb_variant = vconsole.XKBVARIANT or ""
--- CapsLock is the compose key, so Caps Lock itself has to live somewhere else.
--- Both Shifts together is the usual home for it, but it's easy to hit by
--- accident while typing. The _cancel variant sets Caps Lock the same way and
--- releases it on the next lone Shift, so a misfire clears itself.
-local kb_options = "compose:caps,shift:both_capslock_cancel"
+-- Caps Lock is Caps Lock, and Shift + Caps Lock is the compose key. Stock XKB
+-- has no such option, so Omarchy defines it in /etc/xkb.
+local kb_options = "omarchy:shift_caps_compose"
 
 -- Hyprland resolves keybindings against the first entry in kb_layout, not the
 -- layout that's currently active, so Omarchy's Latin-keysym bindings (SUPER + W
@@ -66,8 +64,16 @@ hl.config({
   },
 })
 
--- Scroll nicely in the terminal.
-o.window("(Alacritty|kitty)", { scroll_touchpad = 1.5 })
+-- Scroll nicely in the terminal. TUIs launched under their own app-id
+-- (org.omarchy.agent in the console, org.omarchy.btop, TUI.float, ...) no longer
+-- carry the terminal's class, but their initial title is still the terminal's
+-- name, so they are matched by that to scroll at the same rate.
+local function terminal_scroll(class, title, factor)
+  o.window(class, { scroll_touchpad = factor })
+  o.window({ class = "(org\\.omarchy\\..*|TUI\\..*)", initial_title = title }, { scroll_touchpad = factor })
+end
+
+terminal_scroll("(Alacritty|kitty)", "(Alacritty|kitty)", 1.5)
 -- foot only applies its scrollback multiplier to wheel clicks, not precise touchpad scrolling.
-o.window("foot", { scroll_touchpad = 2.0 })
-o.window("com.mitchellh.ghostty", { scroll_touchpad = 0.2 })
+terminal_scroll("foot", "foot", 2.0)
+terminal_scroll("com.mitchellh.ghostty", "Ghostty", 0.2)

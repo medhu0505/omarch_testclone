@@ -188,7 +188,7 @@ assert_status 0
 cmp -s "$ROOT/default/pacman/pacman-stable.conf" "$OMARCHY_REFRESH_TEST_ROOT/etc/pacman.conf" || fail "successful refresh lost channel config"
 cmp -s "$ROOT/default/pacman/mirrorlist-stable" "$OMARCHY_REFRESH_TEST_ROOT/etc/pacman.d/mirrorlist" || fail "successful refresh lost mirrorlist"
 [[ $(grep -c '^copy:' "$SUDO_TEST_LOG") == 4 ]] || fail "success must only back up and switch the two files"
-grep -q '^step:pacman -Syyuu --noconfirm$' "$SUDO_TEST_LOG" || fail "transaction arguments changed"
+grep -q '^step:pacman -Syyuu --noconfirm --ignore omarchy-dev,omarchy-settings-dev$' "$SUDO_TEST_LOG" || fail "transaction arguments changed"
 pass "successful refresh keeps the selected channel, uses four copies, and exits cold"
 
 # Launch from Python with default signal dispositions: asynchronous shells and
