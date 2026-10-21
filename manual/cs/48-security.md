@@ -20,7 +20,7 @@ Funguje to tak, že se obnoví výchozí snímek, který pořídí instalátor, 
 
 ## Sudo bez hesla
 
-Někdy chcete, aby příkaz `sudo` přestal vyžadovat heslo, nejčastěji když za vás agent umělé inteligence vykonává delší úsek práce se systémem. Volba _Nastavení > Zabezpečení > Passwordless Sudo_ se ptá, jak dlouho má být přístup povolen: **15 minut**, **1 hodina**, **1 den** nebo **Trvale**. Po dobu aktivního přístupu se vedle ostatních indikátorů v pruhu nabídek zobrazuje červená výstražná ikona. Kliknutím na ni nebo opětovným spuštěním příkazu přístup vypnete. Pomocí příkazu `omarchy-sudo-passwordless 30` můžete předat také vlastní počet minut (od 1 do 1440), případně použít variantu `omarchy-sudo-passwordless permanent`.
+Někdy chcete, aby příkaz `sudo` přestal vyžadovat heslo, nejčastěji když za vás agent umělé inteligence vykonává delší úsek práce se systémem. Volba _Nastavení > Zabezpečení > Sudo bez hesla_ se ptá, jak dlouho má být přístup povolen: **15 minut**, **1 hodina**, **1 den** nebo **Trvale**. Po dobu aktivního přístupu se vedle ostatních indikátorů v pruhu nabídek zobrazuje červená výstražná ikona. Kliknutím na ni nebo opětovným spuštěním příkazu přístup vypnete. Pomocí příkazu `omarchy-sudo-passwordless 30` můžete předat také vlastní počet minut (od 1 do 1440), případně použít variantu `omarchy-sudo-passwordless permanent`.
 
 Časově omezený přístup vyprší automaticky, a to i ihned po obnovení z uspání, které překročilo lhůtu. Restart počítače ho ukončí předčasně. Trvalý přístup přežije restart počítače a zůstává povolený, dokud ho nevypnete.
 

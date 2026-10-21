@@ -14,6 +14,6 @@ Ověřování otiskem prstu odeberete v nabídce _Odebrat > Zabezpečení > Otis
 
 ### Ověřování pomocí FIDO2
 
-Zařízení FIDO2 můžete nastavit pro ověřování `sudo` v nabídce _Nastavení > Zabezpečení > FIDO2_ (`Super + Space`). Tato možnost funguje pro `sudo` a systémové výzvy k ověření, nikoli pro odemykání obrazovky.
+Zařízení FIDO2 můžete nastavit pro ověřování `sudo` v nabídce _Nastavení > Zabezpečení > Fido2_ (`Super + Space`). Tato možnost funguje pro `sudo` a systémové výzvy k ověření, nikoli pro odemykání obrazovky.
 
-Ověřování pomocí FIDO2 odeberete v nabídce _Odebrat > Zabezpečení > FIDO2_.
+Ověřování pomocí FIDO2 odeberete v nabídce _Odebrat > Zabezpečení > Fido2_.
