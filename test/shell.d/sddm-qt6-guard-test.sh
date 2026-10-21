@@ -39,7 +39,7 @@ STUB
 chmod +x "$test_dir/bin/sudo"
 
 reset_state() {
-  rm -f "$test_dir/etc/sddm.conf" "$test_dir/etc/sddm.conf.d/"*.conf
+  rm -f "$test_dir/etc/sddm.conf" "$test_dir/etc/sddm.conf.d/"*
   : >"$sudo_log"
   : >"$ldd_log"
 }
@@ -183,6 +183,17 @@ cmp -s "$test_dir/expected-first" "$test_dir/etc/sddm.conf.d/10-theme.conf" &&
   fail "multiple drop-ins remain untouched"
 [[ ! -s $sudo_log ]] || fail "multiple drop-ins do not invoke sudo"
 pass "multiple drop-ins are ignored safely"
+
+reset_state
+printf '[Theme]\nCurrent=omarchy\n' >"$test_dir/etc/sddm.conf.d/99-omarchy-login.conf"
+printf '[Theme]\nCurrent=maya\n' >"$test_dir/etc/sddm.conf.d/99-omarchy-login.conf.orig"
+cp "$test_dir/etc/sddm.conf.d/99-omarchy-login.conf" "$test_dir/expected"
+run_migration missing >/dev/null
+grep -Fx 'Current=omarchy' "$test_dir/etc/sddm.conf.d/99-omarchy-login.conf.orig" >/dev/null ||
+  fail "a later drop-in without a .conf suffix is repaired"
+cmp -s "$test_dir/expected" "$test_dir/etc/sddm.conf.d/99-omarchy-login.conf" ||
+  fail "the earlier .conf drop-in is left unchanged"
+pass "a later drop-in without a .conf suffix is repaired, as SDDM loads it"
 
 reset_state
 printf '[Theme]\nCurrent=elarun\n' >"$test_dir/etc/sddm.conf.d/10-theme.conf"

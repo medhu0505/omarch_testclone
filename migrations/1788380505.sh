@@ -10,7 +10,7 @@ ldd_output=$(ldd "$greeter" 2>/dev/null) || exit 0
 
 export LC_ALL=C
 config_files=()
-for file in "$sddm_conf_dir"/*.conf; do
+for file in "$sddm_conf_dir"/*; do
   [[ -f $file ]] || continue
   config_files+=("$file")
 done
