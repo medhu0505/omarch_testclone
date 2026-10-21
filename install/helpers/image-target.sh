@@ -174,12 +174,13 @@ omarchy_image_defer_hardware() {
 # prints most of its own as "Failed to ...", "Command failed: ...", "The file:
 # ... not found", "Invalid 'initrd=...", "Repeated hash mismatches...",
 # "Kernel name: ... is invalid" or "FAT32 boot partition not found...", and
-# crashes with Java's "Exception in thread ...".
+# crashes with Java's "Exception in thread ...". A command killed outright
+# prints nothing, but bash reports it as "<script>: line N: <pid> Killed ...".
 omarchy_image_limine_rebuild_confirmed() {
   local output uki initcpio built_uki built_initcpio
 
   output=$(sed 's/\x1b\[[0-9;]*m//g' <<<"$1")
-  ! grep -Eq '^((==> )?(ERROR|Error|error)\b|Failed to |Command failed:|The file: |Invalid '"'"'initrd=|Repeated hash mismatches|Kernel name: |FAT32 boot partition not found|Exception in thread )' <<<"$output" ||
+  ! grep -Eq '^((==> )?(ERROR|Error|error)\b|Failed to |Command failed:|The file: |Invalid '"'"'initrd=|Repeated hash mismatches|Kernel name: |FAT32 boot partition not found|Exception in thread |[^ ]+: line [0-9]+: +[0-9]+ )' <<<"$output" ||
     return 1
   uki=$(grep -Ec '^Building UKI (fallback )?for ' <<<"$output") || true
   initcpio=$(grep -Ec '^Building (fallback )?initramfs for ' <<<"$output") || true

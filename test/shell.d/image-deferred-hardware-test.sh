@@ -425,6 +425,14 @@ limine_built 'Building UKI for linux (6.18.0)' '==> Initcpio image generation su
   $'\tat org.limine.entry.tool.Main.addUki(Main.java:315)'
 assert_rebuild_unconfirmed "an image Limine's entry tool crashed before installing is left for owner setup to confirm"
 
+# Killed outright (the OOM killer, say), the entry tool prints nothing, and
+# only bash reports the signal it died of.
+owed_rebuild_root limine-entry-killed
+limine_built 'Building UKI for linux (6.18.0)' '==> Initcpio image generation successful' \
+  '==> Unified kernel image generation successful' \
+  '/usr/bin/limine-entry-tool: line 116: 1155607 Killed                     /usr/lib/limine/limine-entry-tool "${ARGS[@]}"'
+assert_rebuild_unconfirmed "an image Limine's entry tool was killed before installing is left for owner setup to confirm"
+
 owed_rebuild_root limine-uki
 limine_built 'Building UKI for linux (6.18.0)' '==> Initcpio image generation successful' \
   '==> Unified kernel image generation successful' 'Building UKI fallback for linux (6.18.0)' \
