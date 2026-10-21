@@ -92,6 +92,15 @@ fi
 
 as_root true || fail "couldn't get administrator rights (sudo)"
 user_accounts_lock || fail "another account change is in progress; try again when it's done"
+# Another command may have changed the account while this one waited for sudo
+# or the lock: what the question and checks above saw must still hold.
+getent passwd "$name" >/dev/null || fail "there is no user '$name'"
+if user_accounts_is_admin "$name"; then
+  now="on"
+else
+  now="off"
+fi
+[[ $now == "$current" ]] || fail "'$name' changed while this was waiting; run it again"
 
 if [[ $state == "off" ]]; then
   other_admins=$(user_accounts_admins | grep -vxF -- "$name" || true)

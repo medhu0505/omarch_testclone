@@ -45,6 +45,12 @@ while [[ ${1:-} == -* ]]; do
   esac
   shift
 done
+# Another command finishing while this one waits for sudo: the first `sudo true`
+# runs $OMARCHY_TEST_DIR/meanwhile once.
+if [[ ${1:-} == "true" && -f $OMARCHY_TEST_DIR/meanwhile ]]; then
+  bash "$OMARCHY_TEST_DIR/meanwhile"
+  rm -f "$OMARCHY_TEST_DIR/meanwhile"
+fi
 exec "$@"
 SH
 
@@ -550,6 +556,17 @@ run_user admin bob maybe >/dev/null 2>&1 && fail "admin rejects anything but on 
 run_user admin bob on off >/dev/null 2>&1 && fail "admin rejects a third word"
 grep -q gpasswd "$test_tmp/calls.log" && fail "admin changes nothing on bad arguments"
 pass "admin rejects incomplete or bad arguments"
+
+# Another command can change the account while this one waits for sudo: the
+# decision is made on what holds under the lock.
+reset_fixtures
+sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
+printf 'sed -i -E "/^wheel:/ s/,bob(,|$)/\\1/" "%s/group"\n' "$test_tmp" >"$test_tmp/meanwhile"
+if output=$(run_user admin bob on 2>&1); then fail "admin on goes on after bob was demoted meanwhile"; fi
+[[ $output == *"changed while this was waiting"* && $(wheel_members) == "alice" ]] ||
+  fail "admin on stops when bob was demoted while it waited" "$output; $(wheel_members)"
+rm -f "$test_tmp/meanwhile"
+pass "admin decides on the account as it is under the lock"
 
 # on and off are valid names too, so the first word is always the name.
 reset_fixtures
