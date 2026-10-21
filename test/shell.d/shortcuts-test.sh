@@ -172,6 +172,19 @@ backend_line=$(grep -n 'require("default.hypr.dictation-backend")' "$ROOT/defaul
 ((apply_line < backend_line)) || fail "shortcuts bind before the dictation backend can replace them"
 pass "a live apply only touches the shortcuts it names"
 
+printf '%s\n' 'release=evil' 'release_description=Evil' 'command=evil' 'keys=F8' >"$registry/omarchy.dictation.toggle"
+printf '%s\n' 'description=Fake' 'command=fake' 'keys=F12' >"$registry/omarchy.fake"
+run_lua '
+o.shortcut("omarchy.dictation.toggle", { description = "Toggle dictation", keys = "SUPER + CTRL + X", command = "toggle" })
+o.shortcuts.apply()
+local f8 = bound("F8")
+assert(#f8 == 1 and o.bind_commands[f8[1].dispatcher] == nil and f8[1].opts.description == "Toggle dictation",
+  "a file for an Omarchy shortcut only changes its keys")
+assert(#bound("F12") == 0, "an undeclared Omarchy id never binds")
+'
+rm -f "$registry/omarchy.dictation.toggle" "$registry/omarchy.fake"
+pass "files for Omarchy shortcuts only change their keys"
+
 printf '%s\n' 'description=Quote "this" \ and	tab' 'command=x' 'keys=F3' >"$registry/com.example.record"
 run_lua '
 o.shortcuts.apply()
@@ -246,6 +259,8 @@ if omarchy-shortcut-set com.example.record "SUPER + ALT + R" 2>/dev/null; then f
 if omarchy-shortcut-set "../escape" F1 --command x 2>/dev/null; then fail "ids cannot leave the registry"; fi
 if omarchy-shortcut-set com.example.record $'F1\nkeys=F2' --command x 2>/dev/null; then fail "values cannot add lines"; fi
 if omarchy-shortcut-set com.example.record 2>/dev/null; then fail "set needs keys"; fi
+if omarchy-shortcut-set omarchy.dictation.hld F10 2>/dev/null; then fail "set refuses an Omarchy id Omarchy doesn't declare"; fi
+[[ ! -e $registry/omarchy.dictation.hld ]] || fail "a misspelled Omarchy id writes nothing"
 for reserved in all ALL "SUPER + catchall"; do
   if omarchy-shortcut-set com.example.record "$reserved" --command x 2>/dev/null; then fail "set refuses the reserved key $reserved"; fi
 done

@@ -101,10 +101,11 @@ local function resolve()
 
   local function add(id, declared, entry)
     local shortcut = { id = id, source = declared and "omarchy" or "app", default_keys = declared and declared.keys or nil }
-    for _, field in ipairs({ "description", "release_description", "command", "release" }) do
-      shortcut[field] = declared and declared[field] or entry and entry[field] or nil
-    end
     -- Apps name and run their own shortcuts; Omarchy's only take new keys.
+    local source = declared or entry
+    for _, field in ipairs({ "description", "release_description", "command", "release" }) do
+      shortcut[field] = source[field]
+    end
     shortcut.description = shortcut.description or id
     shortcut.keys = (entry and entry.has_keys) and entry.keys or (declared and declared.keys) or {}
     shortcut.changed = entry ~= nil and entry.has_keys == true
@@ -120,8 +121,10 @@ local function resolve()
   for _, id in ipairs(o.shortcuts.order) do
     add(id, o.shortcuts.declared[id], entries[id])
   end
+  -- omarchy.* is Omarchy's own namespace: a file there names keys for one of
+  -- its declared shortcuts and is never a shortcut of its own.
   for id, entry in pairs(entries) do
-    if not seen[id] then
+    if not seen[id] and not id:match("^omarchy%.") then
       add(id, nil, entry)
     end
   end

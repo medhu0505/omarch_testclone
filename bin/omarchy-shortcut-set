@@ -61,8 +61,9 @@ shortcut_hyprland_running || shortcut_fail "Hyprland isn't running; shortcuts ca
 shortcut_lock
 
 snapshot=$(shortcut_snapshot "$id")
-# omarchy.* is Omarchy's own namespace, known even before Hyprland bound it.
+# omarchy.* is Omarchy's own namespace: only the shortcuts it declares.
 if [[ $id == omarchy.* ]]; then
+  [[ -n $snapshot ]] || shortcut_fail "no Omarchy shortcut named $id"
   ((${#fields[@]} == 0)) || shortcut_fail "$id is Omarchy's own shortcut; only its keys can change"
 else
   for field in description command release release_description; do
