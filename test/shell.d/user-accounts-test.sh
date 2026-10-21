@@ -1050,6 +1050,25 @@ output=$(run_tty remove bob) || fail "a second key on the disk doesn't stop the 
   fail "a second key on the disk keeps automatic login off, and says why" "$output"
 pass "a second key on the disk keeps automatic login off, and says why"
 
+# A home that holds the note of an unfinished disk password change isn't
+# deleted: finishing that change needs it, also when the administrator who
+# started it was demoted since.
+reset_fixtures
+sed -i 's/^wheel:x:998:alice$/wheel:x:998:alice,bob/' "$test_tmp/group"
+mkdir -p "$test_tmp/home/bob/.local/state/omarchy"
+echo "phase=record" >"$test_tmp/home/bob/.local/state/omarchy/drive-password.state"
+if output=$(run_user remove bob --delete-home --yes 2>&1); then fail "removal deletes a home holding an unfinished change's note"; fi
+has_user bob && [[ -e $test_tmp/home/bob/.local/state/omarchy/drive-password.state && $output == *"unfinished disk password change"* ]] ||
+  fail "removal keeps a home holding an unfinished change's note, and says why" "$output"
+output=$(run_user remove bob --yes 2>&1) || fail "removal without --delete-home goes on" "$output"
+! has_user bob && [[ -e $test_tmp/home/bob/.local/state/omarchy/drive-password.state ]] || fail "removal without --delete-home keeps the note" "$output"
+reset_fixtures
+mkdir -p "$test_tmp/home/bob/.local/state/omarchy"
+echo "phase=record" >"$test_tmp/home/bob/.local/state/omarchy/drive-password.state"
+if output=$(run_user remove bob --delete-home --yes 2>&1); then fail "removal deletes a demoted administrator's home holding the note"; fi
+has_user bob && [[ -e $test_tmp/home/bob ]] || fail "removal keeps a demoted administrator's home holding the note" "$output"
+pass "a home holding an unfinished disk password change isn't deleted"
+
 # Every question comes before anything changes, the wheel rule for --admin too.
 reset_fixtures
 only_alice

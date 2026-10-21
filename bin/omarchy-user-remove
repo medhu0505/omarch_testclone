@@ -131,6 +131,15 @@ if user_accounts_has_programs "$name"; then
   sign_out=1
 fi
 
+# omarchy-drive-password keeps the note it needs to finish an interrupted
+# disk password change in the home of the administrator who started it, even
+# if they've stopped being one since, so that home isn't deleted while it
+# holds one.
+note="$home/.local/state/omarchy/drive-password.state"
+if (( delete_home )) && as_root test -e "$note"; then
+  fail "$home holds the note of an unfinished disk password change ($note), so it isn't deleted; finish that change first, or remove '$name' without --delete-home"
+fi
+
 # Switch back to one account before anyone is signed out or removed. Every
 # step of the switch can be repeated, and the account is still there until it's
 # done, so if anything stops this midway (a closed terminal, a wrong disk
