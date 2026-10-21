@@ -119,7 +119,7 @@ user_accounts_ensure_wheel_sudo() {
   staged="$rule.new"
   if printf '%s\n' '%wheel ALL=(ALL:ALL) ALL' | as_root tee "$staged" >/dev/null &&
     as_root chmod 0440 "$staged" && as_root visudo -cqf "$staged"; then
-    as_root mv -f "$staged" "$rule"
+    as_root mv -f "$staged" "$rule" || return 1
     user_accounts_log "administrators in wheel now get sudo from $rule"
   else
     as_root rm -f "$staged"

@@ -154,6 +154,13 @@ cat >"$mock_bin/find" <<'SH'
 exec /usr/bin/find "$@"
 SH
 
+# mv, failing with OMARCHY_TEST_MV_FAIL, as on a full or read-only disk.
+cat >"$mock_bin/mv" <<'SH'
+#!/bin/bash
+[[ -z ${OMARCHY_TEST_MV_FAIL:-} ]] || exit 1
+exec /usr/bin/mv "$@"
+SH
+
 # Root runs a command as another account.
 cat >"$mock_bin/runuser" <<'SH'
 #!/bin/bash
@@ -378,6 +385,13 @@ has_user dave && fail "add --admin stops when the sudo rule doesn't validate"
 [[ -z $(ls "$test_tmp/sudoers.d" | grep -v 04_alice) ]] ||
   fail "a rule that doesn't validate leaves nothing in sudoers.d" "$(ls "$test_tmp/sudoers.d")"
 pass "add --admin stops when the sudo rule doesn't validate, and leaves nothing behind"
+
+reset_fixtures
+if printf 'pw\n' | OMARCHY_TEST_MV_FAIL=1 run_user add dave --admin --password-stdin >/dev/null 2>&1; then
+  fail "add --admin stops when the sudo rule can't be put in place"
+fi
+has_user dave && fail "add --admin stops when the sudo rule can't be put in place"
+pass "add --admin stops when the sudo rule can't be put in place"
 
 reset_fixtures
 printf 'pw\n' | run_user add carol --password-stdin >/dev/null || fail "add without --admin leaves sudoers alone"
