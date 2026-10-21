@@ -1082,6 +1082,11 @@ answers yes alicepw no carolpw carolpw "A new disk password, to share" carolpw c
 output=$(run_tty add carol) || fail "the switch asks again after the new account's password" "$output"
 has_user carol && [[ $output == *"That's the new account's password"* && $(cat "$test_tmp/disk_password") == "sharedpw" ]] ||
   fail "the shared disk password can't be the new account's" "$output"
+# Where the system disk can't be told, no password can be checked against it.
+reset_fixtures
+touch "$test_tmp/encrypted" "$test_tmp/undecidable"
+if output=$(printf 'davepw\n' | run_user add dave --password-stdin 2>&1); then fail "add goes on when the system disk can't be told"; fi
+! has_user dave && [[ $output == *"Couldn't tell which drive holds the system"* ]] || fail "add refuses when the system disk can't be told" "$output"
 pass "no account is given the disk password"
 
 # Each account records the changes it starts, so one another administrator

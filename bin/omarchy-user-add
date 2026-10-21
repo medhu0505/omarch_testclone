@@ -119,9 +119,10 @@ if [[ -z $admin ]]; then
 fi
 
 # Everyone who starts the computer types the disk password, so no account may
-# log in with it: an administrator's would open root to all of them.
-disk=""
-disk=$(user_accounts_root_luks 2>/dev/null) || disk=""
+# log in with it: an administrator's would open root to all of them. Where the
+# system disk can't be told, no password can be checked against it, so the add
+# refuses rather than guess, as the switch to several accounts does.
+disk=$(user_accounts_root_luks_or_explain) || fail "'$name' was not added"
 opens_disk() {
   local result
   [[ -n $disk ]] || return 1
