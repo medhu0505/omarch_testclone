@@ -1039,6 +1039,28 @@ output=$(run_tty remove bob) || fail "an empty disk password is asked again" "$o
 ! has_user bob && [[ $output == *"That doesn't unlock the disk. Try again."* ]] || fail "an empty disk password is asked again" "$output"
 pass "an empty disk password is asked again"
 
+# Passwords live in variables, so neither command traces under bash -x.
+run_traced() {
+  local cmd
+  printf -v cmd '%q ' bash -x "$ROOT/bin/omarchy-user-$1" "${@:2}"
+  PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_PATH="$ROOT" OMARCHY_LANGUAGE_FILE=/nonexistent OMARCHY_TEST_DIR="$test_tmp" \
+    SUDO_USER=alice OMARCHY_LOGIN_DEFS=/dev/null OMARCHY_SUDOERS_DIR="$test_tmp/sudoers.d" \
+    OMARCHY_SDDM_AUTOLOGIN="$test_tmp/autologin.conf" OMARCHY_USER_LOCK="$test_tmp/user.lock" OMARCHY_HOME_ROOT="$test_tmp/home" \
+    script -qefc "$cmd" /dev/null </dev/null 2>&1 | tr -d '\r'
+}
+reset_fixtures
+only_alice
+touch "$test_tmp/encrypted"
+answers yes alicepw no carolpw carolpw "A new disk password, to share" sharedpw sharedpw
+output=$(run_traced add carol) || true
+has_user carol && [[ $output != *alicepw* && $output != *carolpw* && $output != *sharedpw* ]] ||
+  fail "omarchy user add traces no password" "$output"
+answers alicepw yes sharedpw
+output=$(run_traced remove carol) || true
+! has_user carol && [[ $output != *alicepw* && $output != *sharedpw* ]] ||
+  fail "omarchy user remove traces no password" "$output"
+pass "neither command traces a password under bash -x"
+
 # The lock file is root's alone, so only an administrator can hold the lock.
 reset_fixtures
 rm -f "$test_tmp/user.lock"

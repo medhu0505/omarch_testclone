@@ -6,6 +6,8 @@
 # omarchy:alias=omarchy user rm
 # omarchy:requires-sudo=true
 
+# Passwords live in variables; never trace them.
+set +x
 set -euo pipefail
 
 # Like Omarchy's other commands, these run as you and ask for sudo themselves.
