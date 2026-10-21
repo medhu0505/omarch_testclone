@@ -37,6 +37,29 @@ install_user_icon() {
   printf '%s\n' "$name"
 }
 
+# A URL that answers with an error body still exits 0, so the answer is
+# checked: an empty file or a body that is not an image is not an icon, and
+# it is not left behind as one.
+download_icon() {
+  curl -fsSL --max-time 10 -o "$2" "$1" 2>/dev/null &&
+    [[ -s $2 && $(file -b --mime-type "$2") == image/* ]] && return 0
+  rm -f "$2"
+  return 1
+}
+
+# A bare name has to resolve to an icon the desktop environment can find, or
+# the launcher ends up with a blank tile. The icon theme lives in the data
+# directories the desktop searches, so look there.
+icon_exists() {
+  local name="$1" dir
+
+  for dir in "$HOME/.local/share/icons" "$HOME/.icons" /usr/local/share/icons /usr/share/icons /usr/local/share/pixmaps /usr/share/pixmaps; do
+    [[ -d $dir ]] || continue
+    find "$dir" -name "$name.*" -print -quit 2>/dev/null | grep -q . && return 0
+  done
+  return 1
+}
+
 if (( $# != 4 )); then
   echo -e "\e[32m$(omarchy-i18n tui.intro)\n\e[0m"
   APP_NAME=$(gum input --prompt "$(omarchy-i18n tui.namePrompt)" --placeholder "$(omarchy-i18n tui.namePlaceholder)")
@@ -61,7 +84,7 @@ mkdir -p "$(dirname "$DESKTOP_FILE")"
 if [[ $ICON_REF =~ ^https?:// ]]; then
   ICON_VALUE=$(safe_icon_name "$APP_NAME")
   mkdir -p "$ICON_DIR"
-  if ! curl -sL -o "$ICON_DIR/$ICON_VALUE.png" "$ICON_REF"; then
+  if ! download_icon "$ICON_REF" "$ICON_DIR/$ICON_VALUE.png"; then
     echo "Error: Failed to download icon."
     exit 1
   fi
@@ -71,6 +94,9 @@ elif [[ -f $ICON_REF ]]; then
 else
   # Bundled Omarchy icons are package-owned under /usr/share/icons/hicolor.
   ICON_VALUE=$(icon_name_from_ref "$ICON_REF")
+  if ! icon_exists "$ICON_VALUE"; then
+    echo "Warning: No icon named $ICON_VALUE was found." >&2
+  fi
 fi
 
 if [[ $WINDOW_STYLE == "float" ]]; then

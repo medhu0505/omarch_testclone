@@ -51,7 +51,9 @@ install_user_icon() {
 
 download_icon() {
   curl -fsSL --max-time 10 -o "$2" "$1" 2>/dev/null &&
-    [[ -s $2 && $(file -b --mime-type "$2") == image/* ]]
+    [[ -s $2 && $(file -b --mime-type "$2") == image/* ]] && return 0
+  rm -f "$2"
+  return 1
 }
 
 # Chromium --app= treats javascript:, file:, and data: as a document to
