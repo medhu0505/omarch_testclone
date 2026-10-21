@@ -175,6 +175,11 @@ end
 -- took from one of these needs a reload to bring that binding back.
 o.bound_keys = {}
 
+-- Chords bound once the shortcuts were applied, by the user's own config or a
+-- dictation backend. A shortcut can't take these: they would bind again after
+-- it at the next reload, and both would run.
+o.late_keys = {}
+
 function o.bind(keys, description, dispatcher, options)
   local opts = options or {}
 
@@ -182,6 +187,9 @@ function o.bind(keys, description, dispatcher, options)
     local chord = o.chord(keys)
     o.bound_keys[chord] = o.bound_keys[chord] or {}
     o.bound_keys[chord][keys] = true
+    if o.shortcuts and o.shortcuts.loaded then
+      o.late_keys[chord] = true
+    end
   end
 
   if description then

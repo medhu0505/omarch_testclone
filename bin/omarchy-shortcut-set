@@ -108,34 +108,48 @@ while read -r other; do
   done < <(shortcut_keys "$other")
 done < <(shortcut_ids)
 
-# Keys used inside a submap can't be taken: unbinding them for a shortcut
-# would also remove them from that submap, which nothing would bring back.
-declare -a submap_conflicts=()
+# Only Omarchy's own bindings can be taken. Unbinding a key a submap uses
+# removes it from that submap too, and the user's own bindings, or a dictation
+# backend's, load after the shortcuts and would come back at the next reload.
+declare -A defaults=()
+while read -r chord; do
+  defaults[$chord]=1
+done < <(shortcut_defaults)
+
+declare -a fixed_conflicts=()
 while IFS=$'\x1f' read -r chord description submap; do
   [[ -v chosen[$chord] && ! -v owned[$chord] ]] || continue
   if [[ -n $submap ]]; then
-    submap_conflicts+=("${chosen[$chord]}"$'\x1f'"$description"$'\x1f'$'\x1f'"$submap")
+    fixed_conflicts+=("${chosen[$chord]}"$'\x1f'"$description"$'\x1f'$'\x1f'"$submap"$'\x1f'fixed)
+  elif [[ ! -v seen[$chord] && ! -v defaults[$chord] ]]; then
+    fixed_conflicts+=("${chosen[$chord]}"$'\x1f'"$description"$'\x1f'$'\x1f'$'\x1f'fixed)
+    seen[$chord]=1
   elif [[ ! -v seen[$chord] ]]; then
     conflicts+=("${chosen[$chord]}"$'\x1f'"$description"$'\x1f')
     seen[$chord]=1
   fi
 done < <(shortcut_live_bindings)
 
-if ((${#submap_conflicts[@]})) || { ((${#conflicts[@]})) && ((!force)); }; then
+if ((${#fixed_conflicts[@]})) || { ((${#conflicts[@]})) && ((!force)); }; then
   if ((json)); then
-    printf '%s\n' "${conflicts[@]}" "${submap_conflicts[@]}" | sed '/^$/d' | jq -Rn '{ conflicts: [inputs | split("\u001f") | {
-      keys: .[0], description: .[1], id: (if .[2] == "" then null else .[2] end), submap: (if (.[3] // "") == "" then null else .[3] end)
+    printf '%s\n' "${conflicts[@]}" "${fixed_conflicts[@]}" | sed '/^$/d' | jq -Rn '{ conflicts: [inputs | split("\u001f") | {
+      keys: .[0], description: .[1], id: (if .[2] == "" then null else .[2] end),
+      submap: (if (.[3] // "") == "" then null else .[3] end), can_take: ((.[4] // "") != "fixed")
     }] }'
   else
     for conflict in "${conflicts[@]}"; do
       IFS=$'\x1f' read -r value description other <<<"$conflict"
       echo "$value is already used by \"${description:-a binding}\"${other:+ ($other)}" >&2
     done
-    for conflict in "${submap_conflicts[@]}"; do
-      IFS=$'\x1f' read -r value description _ submap <<<"$conflict"
-      echo "$value is used by \"${description:-a binding}\" in the $submap submap and can't be taken" >&2
+    for conflict in "${fixed_conflicts[@]}"; do
+      IFS=$'\x1f' read -r value description _ submap _ <<<"$conflict"
+      if [[ -n $submap ]]; then
+        echo "$value is used by \"${description:-a binding}\" in the $submap submap and can't be taken" >&2
+      else
+        echo "$value is used by \"${description:-a binding}\", bound in your own Hyprland config or by another program, and can't be taken" >&2
+      fi
     done
-    if ((${#submap_conflicts[@]})); then
+    if ((${#fixed_conflicts[@]})); then
       echo "Choose other keys." >&2
     else
       echo "Choose other keys, or pass --force to take them." >&2

@@ -58,16 +58,16 @@ shortcut_load_snapshot() {
   trap 'rm -f "$SHORTCUTS_SNAPSHOT"' EXIT
 
   if ! shortcut_hyprland_running; then
-    echo '[]' >"$SHORTCUTS_SNAPSHOT"
+    echo '{"shortcuts": [], "defaults": []}' >"$SHORTCUTS_SNAPSHOT"
   elif ! hyprctl eval "o.shortcuts.snapshot(\"$SHORTCUTS_SNAPSHOT\")" >/dev/null 2>&1 ||
-    ! jq -e 'type == "array"' "$SHORTCUTS_SNAPSHOT" >/dev/null 2>&1; then
+    ! jq -e '.shortcuts | type == "array"' "$SHORTCUTS_SNAPSHOT" >/dev/null 2>&1; then
     shortcut_fail "could not read shortcuts from Hyprland; reload it with 'hyprctl reload' and try again"
   fi
 }
 
 # The snapshot's entry for an id, or nothing.
 shortcut_snapshot() {
-  jq -c --arg id "$1" '.[] | select(.id == $id)' "$SHORTCUTS_SNAPSHOT"
+  jq -c --arg id "$1" '.shortcuts[] | select(.id == $id)' "$SHORTCUTS_SNAPSHOT"
 }
 
 # A field's values from an id's registry file, one per line.
@@ -97,7 +97,7 @@ shortcut_known() {
 
 shortcut_ids() {
   {
-    jq -r '.[].id' "$SHORTCUTS_SNAPSHOT"
+    jq -r '.shortcuts[].id' "$SHORTCUTS_SNAPSHOT"
     find "$SHORTCUTS_DIR" -maxdepth 1 -type f -printf '%f\n' 2>/dev/null
   } | awk '!seen[$0]++' | while read -r id; do
     shortcut_valid_id "$id" && printf '%s\n' "$id"
@@ -169,6 +169,11 @@ shortcut_lock() {
   mkdir -p "$SHORTCUTS_DIR" 2>/dev/null && { exec 9>"$SHORTCUTS_DIR/.lock"; } 2>/dev/null ||
     shortcut_fail "could not write to $SHORTCUTS_DIR"
   flock -w 5 9 || shortcut_fail "shortcuts are busy; try again"
+}
+
+# Chords of Omarchy's own bindings, which a shortcut may take, one per line.
+shortcut_defaults() {
+  jq -r '.defaults[]' "$SHORTCUTS_SNAPSHOT"
 }
 
 # Rebind the shortcuts with these ids now, leaving every other one alone. Ids

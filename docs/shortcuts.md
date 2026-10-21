@@ -27,11 +27,14 @@ Ids starting with `omarchy.` are Omarchy's. Their keys can change, but their des
 
 ## Conflicts
 
-`set` refuses keys already in use and exits 2. That covers live Hyprland bindings (Omarchy defaults, the user's own, other apps') and other named shortcuts. Each conflict is printed as `<keys> is already used by "<description>" (<id>)`, or with `--json` as `{"conflicts": [{"keys", "description", "id"}]}`, so a shortcut recorder can show who holds the keys and offer to take them.
+`set` refuses keys already in use and exits 2. That covers live Hyprland bindings (Omarchy defaults, the user's own, other apps') and other named shortcuts. Each conflict is printed as `<keys> is already used by "<description>" (<id>)`, or with `--json` as `{"conflicts": [{"keys", "description", "id", "submap", "can_take"}]}`, so a shortcut recorder can show who holds the keys and offer to take them.
 
-Keys used inside a submap, such as `RETURN` in the screenshot picker, are refused even with `--force`: Hyprland unbinds a key in every submap at once, so taking it would break that submap.
+`--force` takes keys from another named shortcut, which keeps the rest of its keys, or from one of Omarchy's default bindings, which stays unbound while the shortcut holds its keys and comes back when the shortcut moves off them.
 
-`--force` takes the keys. A named shortcut that held them keeps the rest of its keys. An Omarchy default binding stays unbound while the shortcut holds its keys, and it comes back when the shortcut moves off them. A personal binding from `~/.config/hypr/bindings.lua` is only unbound until the next config load, because that file loads after shortcuts and binds it again, so both would run.
+Some keys can't be taken even with `--force`, and `set` names them the same way:
+
+- Keys used inside a submap, such as `RETURN` in the screenshot picker. Hyprland unbinds a key in every submap at once, so taking it would break that submap.
+- Keys bound in the user's own `~/.config/hypr/bindings.lua`, by a dictation backend, or with a raw `hl.bind`. These load after the shortcuts, so they would bind again at the next reload and both would run. The user removes them there first.
 
 `set` needs Hyprland running: only the running config knows Omarchy's default keys and every other binding, so keys chosen without it could neither be checked nor be sure to bind. Without Hyprland, `get` and `list` show the keys someone chose, and `get` fails for an Omarchy shortcut still on its defaults.
 
@@ -40,4 +43,4 @@ Keys used inside a submap, such as `RETURN` in the screenshot picker, are refuse
 - `~/.config/omarchy/shortcuts/<id>` holds each changed shortcut as `field=value` lines (`keys` repeated, `description`, `command`, `release`). It is data, never loaded as Lua, because other programs write it. Values are single lines.
 - `default/hypr/shortcuts.lua` defines `o.shortcut(id, spec)`, which Omarchy's bindings use to declare defaults, and `o.shortcuts.apply()`, which `default/hypr/omarchy.lua` calls after the defaults and before the dictation backend's own integration, so a backend can still unbind or replace Omarchy's dictation keys. It lays the registry over the declarations and binds each shortcut, first unbinding its keys so it takes them from any default. Personal bindings in `~/.config/hypr/bindings.lua` load after it, so a shortcut can't unbind them at login. `set` reports them as conflicts instead.
 - `set` and `reset` apply live with `hyprctl eval 'o.shortcuts.apply({"<id>", ...})'`, naming the shortcuts they changed. Only those are unbound and bound again, so every other shortcut, and anything the user or a backend unbound since the config loaded, is left alone. If the shortcut moves off keys it took from a default, `apply` runs `hyprctl reload` instead, because only the config knows what that default was. An older config without `o.shortcuts` also gets a reload.
-- `get` and `list` ask the running compositor with `hyprctl eval "o.shortcuts.snapshot(<path>)"` for what is bound, so they never read stale state.
+- `get`, `list` and `set` ask the running compositor with `hyprctl eval "o.shortcuts.snapshot(<path>)"` for what is bound and which chords belong to Omarchy's own defaults, so they never read stale state. `o.bind` records each chord it binds; ones bound after the shortcuts apply are the user's or a backend's.

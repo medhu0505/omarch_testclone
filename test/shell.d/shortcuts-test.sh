@@ -204,6 +204,18 @@ assert(#bound("F12") == 0, "an undeclared Omarchy id never binds")
 rm -f "$registry/omarchy.dictation.toggle" "$registry/omarchy.fake"
 pass "files for Omarchy shortcuts only change their keys"
 
+run_lua '
+o.bind("SUPER + W", "Close window", "close")
+o.shortcuts.apply()
+o.bind("SUPER + P", "Personal", "personal")
+local path = os.tmpname()
+o.shortcuts.snapshot(path)
+local snapshot = io.open(path):read("a")
+os.remove(path)
+assert(snapshot:find([==["defaults":["SUPER+W"]]==], 1, true), "only bindings made before the shortcuts can be taken: " .. snapshot)
+'
+pass "the snapshot names the bindings a shortcut can take"
+
 printf '%s\n' 'description=Quote "this" \ and	tab' 'command=x' 'keys=F3' >"$registry/com.example.record"
 run_lua '
 o.shortcuts.apply()
@@ -213,7 +225,7 @@ local snapshot = io.open(path):read("a")
 os.remove(path)
 io.open(os.getenv("HOME") .. "/snapshot.json", "w"):write(snapshot):close()
 '
-jq -e '.[] | select(.id == "com.example.record") | .description == "Quote \"this\" \\ and\ttab"' "$HOME/snapshot.json" >/dev/null ||
+jq -e '.shortcuts[] | select(.id == "com.example.record") | .description == "Quote \"this\" \\ and\ttab"' "$HOME/snapshot.json" >/dev/null ||
   fail "the snapshot is valid JSON whatever the text" "$(cat "$HOME/snapshot.json")"
 pass "the snapshot escapes text into valid JSON"
 
@@ -252,14 +264,15 @@ cat >"$HYPRCTL_BINDS" <<'JSON'
   { "modmask": 8, "key": "Alt_R", "keycode": 0, "release": false, "submap": "", "description": "Start dictation (push-to-talk)" },
   { "modmask": 68, "key": "X", "keycode": 0, "release": false, "submap": "", "description": "Toggle dictation" },
   { "modmask": 64, "key": "", "keycode": 191, "release": false, "submap": "", "description": "Coded" },
-  { "modmask": 64, "key": "Q", "keycode": 0, "release": false, "submap": "resize", "description": "In a submap" }
+  { "modmask": 64, "key": "Q", "keycode": 0, "release": false, "submap": "resize", "description": "In a submap" },
+  { "modmask": 64, "key": "P", "keycode": 0, "release": false, "submap": "", "description": "Personal" }
 ]
 JSON
 cat >"$HYPRCTL_SNAPSHOT" <<'JSON'
-[
+{ "defaults": ["SUPER+CODE:191", "SUPER+W"], "shortcuts": [
   { "id": "omarchy.dictation.toggle", "source": "omarchy", "keys": ["SUPER + CTRL + X"], "bound": ["SUPER + CTRL + X"], "changed": false, "description": "Toggle dictation", "command": "omarchy-dictation toggle", "default_keys": ["SUPER + CTRL + X"] },
   { "id": "omarchy.dictation.hold", "source": "omarchy", "keys": ["F9", "ALT + Alt_R"], "bound": ["F9", "ALT + Alt_R"], "changed": false, "description": "Start dictation (push-to-talk)", "command": "omarchy-dictation start", "release": "omarchy-dictation stop", "default_keys": ["F9", "ALT + Alt_R"] }
-]
+] }
 JSON
 
 [[ $(omarchy-shortcut-get omarchy.dictation.hold) == $'F9\nALT + Alt_R' ]] || fail "get prints the default keys one per line"
@@ -303,8 +316,12 @@ json=$(omarchy-shortcut-set com.example.record "SUPER + W" --command x --json) &
 pass "set refuses keys another binding uses"
 
 if omarchy-shortcut-set com.example.record "SUPER + Q" --command x --force 2>/dev/null; then fail "force can't take a submap's keys"; fi
+if omarchy-shortcut-set com.example.record "SUPER + P" --command x --force 2>"$tmp/err"; then fail "force can't take the user's own binding"; fi
+grep -q 'SUPER + P is used by "Personal", bound in your own Hyprland config' "$tmp/err" || fail "the user's binding is named" "$(cat "$tmp/err")"
 [[ $(omarchy-shortcut-set com.example.record "SUPER + Q" --command x --json | jq -r '.conflicts[] | select(.submap) | .submap') == "resize" ]] ||
   fail "json names the submap"
+[[ $(omarchy-shortcut-set com.example.record "SUPER + P" "SUPER + W" --command x --json | jq -c '[.conflicts[] | [.keys, .can_take]]') == '[["SUPER + W",true],["SUPER + P",false]]' ]] ||
+  fail "json says which keys force can take" "$(omarchy-shortcut-set com.example.record "SUPER + P" "SUPER + W" --command x --json)"
 omarchy-shortcut-set com.example.record "SUPER + R" "SUPER + SHIFT + R" --command "example record" --description "Record" --force ||
   fail "force takes conflicting keys"
 grep -qx 'o.shortcuts.apply({"com.example.record","omarchy.dictation.hold"})' "$HYPRCTL_LOG" ||
@@ -396,7 +413,7 @@ case $1 in
   version | binds) [[ $1 == binds ]] && echo '[]'; exit 0 ;;
   eval)
     if [[ $2 =~ ^o\.shortcuts\.snapshot\(\"(.*)\"\)$ ]]; then
-      echo '[]' >"${BASH_REMATCH[1]}"
+      echo '{"shortcuts": [], "defaults": []}' >"${BASH_REMATCH[1]}"
     else
       exit 7
     fi

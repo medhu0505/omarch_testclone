@@ -159,8 +159,9 @@ local function json_list(values)
   return "[" .. table.concat(items, ",") .. "]"
 end
 
--- Write every shortcut as JSON to path: what it binds now, its default, and
--- what runs, for `omarchy shortcut get` and `list`.
+-- Write every shortcut as JSON to path, for `omarchy shortcut`: what each binds
+-- now, its default, and what runs, and the chords of Omarchy's own bindings,
+-- which a shortcut may take.
 function o.shortcuts.snapshot(path)
   local items = {}
   for _, shortcut in ipairs(o.shortcuts.current) do
@@ -182,8 +183,16 @@ function o.shortcuts.snapshot(path)
     table.insert(items, "{" .. table.concat(fields, ",") .. "}")
   end
 
+  local defaults = {}
+  for chord in pairs(o.bound_keys) do
+    if not o.late_keys[chord] then
+      table.insert(defaults, chord)
+    end
+  end
+  table.sort(defaults)
+
   local file = assert(io.open(path, "w"))
-  file:write("[" .. table.concat(items, ",\n") .. "]\n")
+  file:write('{"shortcuts":[' .. table.concat(items, ",\n") .. '],\n"defaults":' .. json_list(defaults) .. "}\n")
   file:close()
 end
 
@@ -261,4 +270,5 @@ function o.shortcuts.apply(ids)
   end
   o.shortcuts.binding = false
   o.shortcuts.current = shortcuts
+  o.shortcuts.loaded = true
 end
