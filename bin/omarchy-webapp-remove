@@ -5,8 +5,6 @@
 
 set -e
 
-source "$OMARCHY_PATH/install/helpers/icon.sh"
-
 DESKTOP_DIR="$HOME/.local/share/applications/"
 
 # Always index the launchers, so removal deletes the file that was found rather
@@ -49,6 +47,9 @@ if [[ -z $APP_NAME ]]; then
   echo "You must select a web app to remove."
   exit 1
 fi
+
+# The icon handling lives in one place for the four launcher commands.
+source "$OMARCHY_PATH/install/helpers/icon.sh"
 
 icon_name=$(omarchy_icon_name "$APP_NAME")
 desktop_file=$(path_for_web_app "$APP_NAME")

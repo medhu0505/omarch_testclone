@@ -13,8 +13,8 @@ OMARCHY_OLD_ICON_DIR="$HOME/.local/share/applications/icons"
 OMARCHY_ICON_DOWNLOAD_TIMEOUT=10
 
 # The icon theme's layout is the theme, the size, the context and the name,
-# which is four levels below the theme root. Every icon a live system holds
-# is within them.
+# which is four levels below the icons directory the search starts at. Every
+# icon a live system holds is within them.
 OMARCHY_ICON_SEARCH_DEPTH=4
 
 # The name an icon is known by: lower case, and only the characters that can
@@ -57,7 +57,8 @@ omarchy_icon_install_local() {
 # checked: an empty file or a body that is not an image is not an icon. The
 # answer is written to a temporary file and only replaces the icon once it is
 # an image, so a failed download leaves an installed icon alone. The
-# downloader's own error is kept, so a failed fetch still says why it failed.
+# downloader's own error is kept, so a failed fetch still says why it failed;
+# a caller that falls back to another source quietly sends it to /dev/null.
 omarchy_icon_download() {
   local url="$1" dest="$2" temp status
 
@@ -68,7 +69,9 @@ omarchy_icon_download() {
   temp=$(mktemp "$OMARCHY_ICON_ROOT/.omarchy-icon.XXXXXX") || return 1
 
   # The caller's own handlers are kept and put back: a command that already
-  # handles a signal must not lose it because it downloaded an icon.
+  # handles a signal must not lose it because it downloaded an icon. The
+  # captured text is the caller's own handler, read back from the shell, and
+  # it is evaluated again to put it back.
   local previous_int previous_term
   previous_int=$(trap -p INT)
   previous_term=$(trap -p TERM)
@@ -80,6 +83,9 @@ omarchy_icon_download() {
     # The temporary file is owner-only, and the icon is not.
     chmod 0644 "$temp" && mv -f "$temp" "$dest"
     status=$?
+    # The desktop resolves the icon through the theme cache, so the cache is
+    # refreshed once the icon is in place.
+    ((status == 0)) && gtk-update-icon-cache "$OMARCHY_ICON_ROOT/hicolor" &>/dev/null || true
   else
     status=1
   fi
@@ -146,12 +152,21 @@ omarchy_icon_exists() {
 # been installed with: the installers keep the format of the file they copied,
 # and the formats the theme ships are not the only ones an icon can have.
 omarchy_icon_remove() {
+  # The sanitized name the icon is known by, and the name the user typed,
+  # which the installers before the sanitization wrote the icon under.
   local name="$1" raw_name="$2" candidate base
 
   if [[ -n $name ]]; then
-    # The name is sanitized, so it holds no glob character and cannot reach
-    # another app's icon.
-    rm -f "$OMARCHY_ICON_DIR/$name".*
+    # The icon keeps the format it was installed with, and the formats the
+    # installers can produce are not bounded by the ones the theme ships. The
+    # name is sanitized, so it holds no glob character and cannot reach
+    # another app's icon, and only the files that are images are taken, so a
+    # file that carries the name but is not an icon stays.
+    for candidate in "$OMARCHY_ICON_DIR/$name".*; do
+      [[ -f $candidate ]] || continue
+      [[ $(file -L -b --mime-type "$candidate") == image/* ]] || continue
+      rm -f "$candidate"
+    done
   else
     # A name that sanitizes to nothing left the icon at the empty name, where
     # the installer wrote it: the file name is the extension alone. A file

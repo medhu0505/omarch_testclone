@@ -21,7 +21,6 @@ require_plain_name() {
 }
 
 
-source "$OMARCHY_PATH/install/helpers/icon.sh"
 # Chromium --app= treats javascript:, file:, and data: as a document to
 # run. Prefix schemeless input with https as before, then refuse anything
 # that is not http(s).

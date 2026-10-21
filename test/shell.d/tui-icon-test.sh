@@ -44,6 +44,16 @@ esac
 SH
 chmod +x "$test_tmp/bin/curl"
 
+# The icon theme cache is refreshed when an icon lands, and the desktop
+# resolves the icon through that cache, so the test records the refreshes.
+cat >"$test_tmp/bin/gtk-update-icon-cache" <<'SH'
+#!/bin/bash
+printf '%s\n' "$1" >>"$ICON_CACHE_LOG"
+SH
+chmod +x "$test_tmp/bin/gtk-update-icon-cache"
+export ICON_CACHE_LOG="$test_tmp/icon-cache.log"
+: >"$ICON_CACHE_LOG"
+
 # The desktop database updater is not needed to exercise the icon handling,
 # and it is not installed everywhere, so the test brings its own.
 cat >"$test_tmp/bin/update-desktop-database" <<'SH'
@@ -73,10 +83,23 @@ for _ in $(seq 1 100); do
   [[ -e $test_tmp/download-started ]] && break
   sleep 0.05
 done
+[[ -e $test_tmp/download-started ]] ||
+  fail "the download was in flight" "the installer never reached the download"
 [[ -z "$(ls -A "$icon_dir" 2>/dev/null)" ]] ||
   fail "a download in flight leaves no file in the icon directory" "$(ls -A "$icon_dir")"
-wait "$install_pid" || true
+wait "$install_pid"
+[[ -z "$(ls -A "$HOME/.local/share/icons" | grep -v '^hicolor$')" ]] ||
+  fail "a finished download leaves no temporary file behind" "$(ls -A "$HOME/.local/share/icons")"
+rm -f "$icon_dir/t13.png" "$(desktop_file T13)"
 pass "a download in flight leaves no file in the icon directory"
+
+# A URL that answers with an image installs that image, and the icon theme
+# cache is refreshed: the desktop resolves the icon through that cache.
+: >"$ICON_CACHE_LOG"
+install_tui T3 true tile "https://example.invalid/icon.png" >/dev/null
+[[ -s $icon_dir/t3.png ]] || fail "an icon URL that answers with an image installs it" "$(ls "$icon_dir")"
+[[ -s $ICON_CACHE_LOG ]] || fail "a downloaded icon refreshes the icon theme cache"
+pass "a downloaded icon refreshes the icon theme cache"
 
 # A URL that answers with an error body must not install that body as the
 # icon, and the launcher must not be written either.
@@ -137,11 +160,18 @@ pass "an icon in a configured data directory is found"
 
 # The system data directories are searched too, the ones the desktop searches
 # when the environment names no list of its own.
-system_icon=$(find /usr/share/icons -mindepth 4 -maxdepth 4 \( -type f -o -type l \) -name '*.png' -print -quit 2>/dev/null)
+# The name the launcher resolves has to be the name the file carries, so the
+# icon is picked by a stem that survives the round trip: one with no dot in
+# it and no letter that changes case.
+system_icon=$(find /usr/share/icons -mindepth 4 -maxdepth 4 -type f -name '*.png' -print -quit 2>/dev/null)
+while [[ -n $system_icon ]]; do
+  system_icon_name=$(basename "$system_icon" .png)
+  [[ $system_icon_name == *[A-Z]* || $system_icon_name == *.* ]] || break
+  system_icon=$(find /usr/share/icons -mindepth 4 -maxdepth 4 -type f -name '*.png' ! -name "$system_icon_name.png" -print -quit 2>/dev/null)
+done
 if [[ -z $system_icon ]]; then
   skip "the system data directories are searched" "the system holds no icon to look for"
 else
-  system_icon_name=$(basename "$system_icon" .png)
   output=$(unset XDG_DATA_DIRS; install_tui T14 true tile "$system_icon_name" 2>&1) && status=0 || status=$?
   (( status == 0 )) || fail "an icon the system provides still installs the launcher" "$output"
   [[ $output != *'No icon named'* ]] || fail "an icon the system provides is found" "$output"
@@ -210,6 +240,24 @@ install_tui T16 true tile "$test_tmp/local.jpg" >/dev/null
 OMARCHY_REMOVE_NOTIFY=false "$ROOT/bin/omarchy-tui-remove" T16 >/dev/null 2>&1
 [[ ! -e $icon_dir/t16.jpg ]] || fail "removing a launcher removes its icon in any format" "$(ls "$icon_dir")"
 pass "removing a launcher removes its icon in any format"
+
+# The icon of another app whose name starts with the removed one is not the
+# removed app's icon: "t17" does not take "t17extra" with it.
+cp "$test_tmp/icon.png" "$icon_dir/t17extra.png"
+install_tui T17 true tile "$test_tmp/local.jpg" >/dev/null
+OMARCHY_REMOVE_NOTIFY=false "$ROOT/bin/omarchy-tui-remove" T17 >/dev/null 2>&1
+[[ -e $icon_dir/t17extra.png ]] || fail "removing a launcher removes no other app's icon" "$(ls "$icon_dir")"
+rm -f "$icon_dir/t17extra.png"
+pass "removing a launcher removes no other app's icon"
+
+# A file that carries the icon's name but is not an icon is not one of the
+# icons the removal takes away.
+printf 'not an icon\n' >"$icon_dir/t16.desktop"
+install_tui T16 true tile "$test_tmp/local.jpg" >/dev/null
+OMARCHY_REMOVE_NOTIFY=false "$ROOT/bin/omarchy-tui-remove" T16 >/dev/null 2>&1
+[[ -e $icon_dir/t16.desktop ]] || fail "a file that is not an icon stays" "$(ls "$icon_dir")"
+rm -f "$icon_dir/t16.desktop"
+pass "a file that is not an icon stays"
 
 # The web app launcher has the same icon to take away.
 cp "$test_tmp/local.svg" "$test_tmp/webapp.svg"
