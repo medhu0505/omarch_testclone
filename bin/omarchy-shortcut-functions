@@ -21,6 +21,15 @@ shortcut_valid_value() {
   [[ $1 != *[[:cntrl:]]* ]]
 }
 
+# Hyprland reads `hl.unbind("all")` as removing every binding, and "catchall"
+# binds every key in a submap, so neither can be a shortcut's key.
+shortcut_valid_keys() {
+  local chord
+
+  chord=$(shortcut_chord "$1")
+  [[ ${chord##*+} != "ALL" && ${chord##*+} != "CATCHALL" ]]
+}
+
 shortcut_hyprland_running() {
   [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] && hyprctl version >/dev/null 2>&1
 }

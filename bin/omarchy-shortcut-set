@@ -51,6 +51,7 @@ for value in "${keys[@]}" "${fields[@]}"; do
 done
 for value in "${keys[@]}"; do
   [[ -n ${value//[[:space:]+]/} ]] || shortcut_fail "empty keys"
+  shortcut_valid_keys "$value" || shortcut_fail "$value is not a key a shortcut can use"
 done
 
 mkdir -p "$SHORTCUTS_DIR"

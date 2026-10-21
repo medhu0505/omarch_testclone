@@ -51,6 +51,14 @@ end
 
 o.shortcuts.normalize = normalize
 
+-- Hyprland reads hl.unbind("all") as removing every binding, and "catchall"
+-- binds every key in a submap, so neither ever comes from the registry.
+local RESERVED_KEYS = { ALL = true, CATCHALL = true }
+
+local function valid_keys(keys)
+  return not RESERVED_KEYS[normalize(keys):match("([^+]*)$")]
+end
+
 local function as_list(keys)
   if type(keys) == "table" then
     return keys
@@ -215,7 +223,7 @@ function o.shortcuts.apply()
   for _, shortcut in ipairs(shortcuts) do
     if shortcut.command then
       for _, keys in ipairs(shortcut.keys) do
-        wanted[normalize(keys)] = true
+        wanted[normalize(keys)] = valid_keys(keys) or nil
       end
     end
   end
@@ -237,7 +245,7 @@ function o.shortcuts.apply()
     shortcut.bound = {}
     for _, keys in ipairs(shortcut.command and shortcut.keys or {}) do
       local chord = normalize(keys)
-      if not o.shortcuts.bound[chord] then
+      if valid_keys(keys) and not o.shortcuts.bound[chord] then
         hl.unbind(keys)
         local options = modifier_key(normalize(keys)) and { ignore_mods = true } or nil
         if shortcut.release then

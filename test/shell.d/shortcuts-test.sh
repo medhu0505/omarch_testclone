@@ -32,10 +32,13 @@ hl = setmetatable({
   bind = function(keys, dispatcher, opts)
     table.insert(binds, { keys = keys, dispatcher = dispatcher, opts = opts or {} })
   end,
+  -- As Hyprland does: "all" clears every binding, and anything else matches
+  -- the text it was bound with, spaces removed and case folded, in any submap.
   unbind = function(keys)
     table.insert(unbound, keys)
+    local function text(value) return value:gsub("%s", ""):lower() end
     for index = #binds, 1, -1 do
-      if o.shortcuts.normalize(binds[index].keys) == o.shortcuts.normalize(keys) then
+      if keys == "all" or text(binds[index].keys) == text(keys) then
         table.remove(binds, index)
       end
     end
@@ -91,6 +94,7 @@ printf '%s\n' 'keys=SUPER + R' 'keys=super + w' 'description=Ignored' 'command=i
 printf '%s\n' 'description=Record' 'command=example record' 'keys=SUPER + ALT + R' >"$registry/com.example.record"
 printf '%s\n' 'description=Talk' 'command=example start' 'release=example stop' 'keys=Super_R' >"$registry/com.example.talk"
 printf '%s\n' 'description=No command' 'keys=F1' >"$registry/com.example.orphan"
+printf '%s\n' 'description=Everything' 'command=x' 'keys=all' 'keys=SUPER + catchall' >"$registry/com.example.all"
 printf '%s\n' 'command=bad' 'keys=F2' >"$registry/.hidden"
 run_lua '
 o.bind("SUPER + W", "Close window", "close-window")
@@ -113,6 +117,10 @@ assert(bound("SUPER + ALT + R")[1].opts.description == "Record", "apps register 
 assert(#bound("Super_R") == 2 and bound("Super_R")[1].opts.ignore_mods, "apps get hold shortcuts too")
 assert(#bound("F1") == 0, "a shortcut with nothing to run binds nothing")
 assert(#bound("F2") == 0, "hidden files are not shortcuts")
+for _, keys in ipairs(unbound) do
+  assert(keys ~= "all" and not keys:find("catchall"), "reserved keys never reach hl.unbind: " .. keys)
+end
+assert(#bound("SUPER + W") > 0, "a registry naming all keys does not clear the bindings")
 
 -- Moving off keys taken from a default needs the config to bring it back.
 local file = io.open(os.getenv("XDG_CONFIG_HOME") .. "/omarchy/shortcuts/omarchy.dictation.hold", "w")
@@ -213,6 +221,9 @@ if omarchy-shortcut-set com.example.record "SUPER + ALT + R" 2>/dev/null; then f
 if omarchy-shortcut-set "../escape" F1 --command x 2>/dev/null; then fail "ids cannot leave the registry"; fi
 if omarchy-shortcut-set com.example.record $'F1\nkeys=F2' --command x 2>/dev/null; then fail "values cannot add lines"; fi
 if omarchy-shortcut-set com.example.record 2>/dev/null; then fail "set needs keys"; fi
+for reserved in all ALL "SUPER + catchall"; do
+  if omarchy-shortcut-set com.example.record "$reserved" --command x 2>/dev/null; then fail "set refuses the reserved key $reserved"; fi
+done
 pass "set refuses invalid changes"
 
 set +e
