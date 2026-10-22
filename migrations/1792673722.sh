@@ -69,9 +69,12 @@ fi
 # makes the marker check below mean what it says.
 if omarchy-cmd-present flock; then
   # touch, not install: install replaces the file, and two runs replacing it
-  # would each lock an inode of their own.
-  sudo mkdir -p "$(dirname "$rebuild_lock")" || exit 1
+  # would each lock an inode of their own. The mode is set after, because a
+  # user's umask 077 would leave a lock no other user can open, and the
+  # directory has to stay traversable for them to reach it.
+  sudo install -d -m 755 "$(dirname "$rebuild_lock")" || exit 1
   sudo touch "$rebuild_lock" || exit 1
+  sudo chmod 644 "$rebuild_lock" || exit 1
   exec {rebuild_lock_fd}<"$rebuild_lock" || exit 1
   flock -w 300 "$rebuild_lock_fd" || exit 1
 fi

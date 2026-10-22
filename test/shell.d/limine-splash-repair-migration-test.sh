@@ -208,6 +208,18 @@ wait "$second" || second_status=$?
 [[ $first_status == 0 && $second_status == 0 ]] || fail "a run of two at once failed"
 pass "two runs at once rebuild the boot image once"
 
+# A user whose umask is 077 must not leave a lock no other user can open, or
+# every later update on the machine stops at it.
+reset
+write_drifted
+rm -f "$test_dir/rebuild.lock"
+chmod 700 "$test_dir"
+( umask 077; run 'root=PARTUUID=1 rw quiet loglevel=0' )
+[[ $(stat -c %a "$test_dir/rebuild.lock") == 644 ]] ||
+  fail "the lock was created unreadable for other users"
+[[ $(stat -c %a "$test_dir") == 755 ]] || fail "the lock's directory is not traversable"
+pass "the lock is readable whatever the umask"
+
 # The repair itself needs sudo; a denied prompt must not be recorded as done.
 reset
 write_drifted
