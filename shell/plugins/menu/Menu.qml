@@ -995,9 +995,7 @@ Item {
     requestActive = !!doneFile
     dmenuWidth = Math.max(1, Number(payload.width || 300))
     dmenuMaxHeight = Math.max(0, Number(payload.maxHeight || 0))
-    var anchor = payload.anchor
-    dmenuAnchor = anchor && [anchor.x, anchor.y, anchor.width, anchor.height].every(isFinite)
-      && anchor.width > 0 && anchor.height > 0 ? anchor : null
+    dmenuAnchor = MenuModel.dmenuAnchor(payload.anchor)
     activeMenu = "root"
     navStack = []
     filterText = ""
