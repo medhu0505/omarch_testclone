@@ -66,3 +66,16 @@ LUA
 output=$(HOME="$TMPDIR/home" DEBUG=1 timeout 60 lua -E - <<<"$scan" 2>&1) || fail "Lua bind scan stops a runaway config instead of running until killed (output: $output)"
 grep -qF $'64\tKeybindings menu\tK\texec\tomarchy-menu keybindings' <<<"$output" || fail "Lua bind scan keeps binds declared before a runaway loop (got: $output)"
 pass "Lua bind scan stops a runaway config and keeps the binds declared before it"
+
+# Indexing a collection still reads a stand-in: only `ipairs` sees it as empty,
+# so a config that names its first monitor keeps the binds declared after it.
+cat >"$TMPDIR/home/.config/hypr/hyprland.lua" <<'LUA'
+local name = hl.get_monitors()[1].name
+hl.monitor({ output = name, scale = 1 })
+hl.bind("SUPER + K", hl.dsp.exec_cmd("omarchy-menu keybindings"), { description = "Keybindings menu" })
+LUA
+
+output=$(HOME="$TMPDIR/home" DEBUG=1 timeout 60 lua -E - <<<"$scan" 2>&1) || fail "Lua bind scan reads an indexed stub collection (output: $output)"
+[[ $output != *"lua bind scan failed"* ]] || fail "Lua bind scan does not abort on an indexed stub collection ($output)"
+grep -qF $'64\tKeybindings menu\tK\texec\tomarchy-menu keybindings' <<<"$output" || fail "Lua bind scan reports binds declared after indexing a stub collection (got: $output)"
+pass "Lua bind scan reads an indexed stub collection and keeps the binds after it"
