@@ -20,6 +20,8 @@ stub curl 'printf "curl %s\n" "${@: -1}" >> "$TEST_LOG"; exit "${TEST_CURL_STATU
 # the real launcher does when no browser is running to take the handoff.
 stub omarchy-launch-webapp 'printf "webapp %s\n" "$*" >> "$TEST_WEBAPP_LOG"
 if [[ -n ${TEST_WEBAPP_BLOCKS:-} ]]; then exec -a captive-portal-test-browser /usr/bin/sleep 30; fi
+# The real fallback with no browser running: exec setsid of the browser.
+if [[ -n ${TEST_WEBAPP_FALLBACK_STATUS:-} ]]; then exec setsid /bin/sh -c "exit $TEST_WEBAPP_FALLBACK_STATUS"; fi
 exit "${TEST_WEBAPP_STATUS:-0}"'
 stub omarchy-notification-send 'printf "notify %s\n" "$*" >> "$TEST_LOG"'
 stub sleep ':'
@@ -114,3 +116,10 @@ TEST_WEBAPP_STATUS=1 TEST_NMCLI_PORTAL_CHECKS=100000 run_portal '{"ExitNodeStatu
 (( status == 1 )) || fail "gives up when the portal window fails to open" "exit status $status"
 [[ $(tail -1 "$stage/log") == "notify -g  Tailscale exit node restored" ]] || fail "restores the exit node when the portal window fails to open" "$(<"$stage/log")"
 pass "gives up and restores the exit node when the portal window fails to open"
+
+# The same when the launcher has to start the browser itself and that fails.
+status=0
+TEST_WEBAPP_FALLBACK_STATUS=1 TEST_NMCLI_PORTAL_CHECKS=100000 run_portal '{"ExitNodeStatus":{"ID":"node","Online":true}}' || status=$?
+(( status == 1 )) || fail "gives up when a freshly started browser fails" "exit status $status"
+[[ $(tail -1 "$stage/log") == "notify -g  Tailscale exit node restored" ]] || fail "restores the exit node when a freshly started browser fails" "$(<"$stage/log")"
+pass "gives up and restores the exit node when a freshly started browser fails"
