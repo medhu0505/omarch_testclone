@@ -11,9 +11,6 @@ echo "Put splash back so the Plymouth LUKS prompt stays graphical"
 
 defaults_conf="${OMARCHY_LIMINE_DEFAULTS_CONF:-/etc/limine-entry-tool.d/omarchy-defaults.conf}"
 running_cmdline="${OMARCHY_RUNNING_CMDLINE:-/proc/cmdline}"
-limine_conf="${OMARCHY_LIMINE_CONF:-}"
-modules_dir="${OMARCHY_KERNEL_MODULES_DIR:-/usr/lib/modules}"
-limine_functions="${OMARCHY_LIMINE_FUNCTIONS:-/usr/lib/limine/limine-common-functions}"
 rebuild_marker="${OMARCHY_LIMINE_REBUILD_MARKER:-/var/lib/omarchy/migrations/1792673722}"
 
 omarchy-cmd-present limine-mkinitcpio || exit 0
@@ -33,7 +30,9 @@ while IFS= read -r line || [[ -n $line ]]; do
       file_has_splash=true
     elif [[ " $words " == *" quiet "* && " $words " == *" loglevel=0 "* &&
       " $words " == *" vt.global_cursor_default=0 "* ]]; then
-      line=${line/ quiet / quiet splash }
+      # Append before the closing quote: where the token sits on the line is
+      # the file's, and a copy that reordered the tokens is still Omarchy's.
+      line="${line%\"} splash\""
       repaired=true
       file_has_splash=true
     fi
@@ -43,13 +42,15 @@ while IFS= read -r line || [[ -n $line ]]; do
   lines+=("$line")
 done <"$defaults_conf"
 
-# Stage the rewrite beside the file and rename it over, so an interrupted write
-# cannot leave a partial drop-in in place: it carries the whole boot command
-# line, and a backup= file has no .pacnew to surface the damage.
+# Stage the rewrite in a file of this run and rename it over, so a write cut
+# short cannot leave a partial boot command line behind. The name is unique per
+# run because two users updating at once would otherwise share one staging file
+# and keep writing to the copy the other has already renamed into place.
 if [[ $repaired == true ]]; then
-  printf '%s\n' "${lines[@]}" | sudo tee "$defaults_conf.new" >/dev/null
-  sudo chmod 644 "$defaults_conf.new"
-  sudo mv -f -- "$defaults_conf.new" "$defaults_conf"
+  staged=$(sudo mktemp "$defaults_conf.XXXXXX") || exit 1
+  printf '%s\n' "${lines[@]}" | sudo tee "$staged" >/dev/null || exit 1
+  sudo chmod 644 "$staged" || exit 1
+  sudo mv -f -- "$staged" "$defaults_conf" || exit 1
   echo "Restored splash in $defaults_conf"
 fi
 
@@ -65,56 +66,18 @@ fi
 [[ ! -e $rebuild_marker ]] || exit 0
 
 echo "The booted kernel is missing splash; rebuilding the boot image"
-sudo limine-mkinitcpio
+rebuild_log=$(mktemp)
+trap 'rm -f "$rebuild_log"' EXIT
+sudo limine-mkinitcpio 2>&1 | tee "$rebuild_log"
 
-# The boot menu is on the ESP, which /etc/default/limine names; /boot when it
-# does not, or is not there.
-limine_menu=$limine_conf
-if [[ -z $limine_menu ]]; then
-  esp=""
-  if [[ -r /etc/default/limine ]]; then
-    esp=$(sed -n 's/^ESP_PATH=["'\'']\?\([^"'\'']*\).*/\1/p' /etc/default/limine | tail -n 1)
-  fi
-  limine_menu="${esp:-/boot}/limine.conf"
-fi
-
-# limine-mkinitcpio carries on past a kernel it could not build, a full boot
-# partition for one, and still exits 0, so a menu that carries command lines
-# has to name splash afterwards. The menu also holds other distributions'
-# entries, which never carry Omarchy's splash, so ask limine-entry-tool for the
-# command line of each entry the rebuild builds instead. One of them configured
-# with splash and none of them in the menu means the rebuild itself went wrong
-# and the migration stays pending. A menu with no command lines at all has them
-# inside the boot images, and is taken at its word.
-menu_cmdlines=$(sudo grep -E '^[[:space:]]*cmdline:' "$limine_menu" 2>/dev/null) || menu_cmdlines=""
-built=false
-while IFS= read -r menu_cmdline; do
-  [[ " ${menu_cmdline//\"/} " != *" splash "* ]] || built=true
-done <<<"$menu_cmdlines"
-
-if [[ -n $menu_cmdlines ]] && [[ $built == false ]]; then
-  # shellcheck disable=SC2016
-  fallback=$(sudo bash -c 'source "$1" && load_config >/dev/null && printf "%s\n" "${MKINITCPIO_FALLBACK:-}"' _ "$limine_functions")
-  configured=false
-  shopt -s nullglob
-  for kernel_dir in "$modules_dir"/*/; do
-    [[ -f ${kernel_dir}modules.builtin ]] || continue
-    kernel_name=$(pacman -Qqo "${kernel_dir}modules.builtin" 2>/dev/null) || continue
-    entries=("$kernel_name")
-    [[ $fallback != "yes" && $fallback != "$kernel_name" ]] || entries+=("$kernel_name-fallback")
-    for entry in "${entries[@]}"; do
-      kernel_cmdline=$(sudo limine-entry-tool --get-cmdline "$entry" | tail -n 1)
-      [[ " ${kernel_cmdline//\"/} " != *" splash "* ]] || configured=true
-    done
-  done
-  shopt -u nullglob
-
-  if [[ $configured == true ]]; then
-    echo "The boot menu still has no entry with splash after the rebuild" >&2
-    exit 1
-  fi
-
-  echo "The Limine kernel command line leaves out splash; use += rather than = in /etc/default/limine to keep Omarchy's defaults"
+# limine-mkinitcpio reports a kernel it could not rebuild and still exits 0, so
+# read its log rather than the menu: with UKIs the menu has no command lines to
+# read, and the other distributions FIND_BOOTLOADERS adds to it carry none of
+# Omarchy's tokens. A kernel left out keeps the migration pending, and the next
+# update tries again.
+if grep -q 'mkinitcpio failed for kernel' "$rebuild_log"; then
+  echo "A boot image was not rebuilt. Fix the error above, then run omarchy-migrate again before rebooting." >&2
+  exit 1
 fi
 
 sudo install -Dm644 /dev/null "$rebuild_marker"
