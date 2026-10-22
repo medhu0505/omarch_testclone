@@ -1,10 +1,10 @@
 # Přepínače, nečinnost a spořič obrazovky
 
-Mnoho z toho, co denně měníte, není vlastně nastavení. Je to režim, který na hodinu zapnete a zase vypnete: noční světlo, když pracujete dlouho do noci, nerušit, když prezentujete, zůstat vzhůru, když se na něco díváte. Omarchy jim říká přepínače a všechny fungují stejně — klávesová zkratka, položka nabídky a příkaz, všechny zasahují tentýž přepínač.
+Řadu funkcí během dne jen zapnete a později zase vypnete: noční světlo při práci do noci, režim nerušit při prezentaci nebo zákaz automatického zamykání při sledování obrazovky. Omarchy jim říká přepínače. Každý ovládáte stejně — klávesovou zkratkou, položkou nabídky nebo příkazem. Všechny tři možnosti mění tentýž stav.
 
 ### Nabídka přepínačů
 
-`Super + Ctrl + O` otevře přímo _Akce > Přepnout_, nebo tam můžete dojít z nabídky Omarchy (`Super + Space`). Všechno v tomto seznamu je přepínač, který můžete přepnout, aniž byste přemýšleli o tom, kde stav žije. Přepínače pro vzhled plochy sedí hned vedle, v _Akce > Vzhled_.
+`Super + Ctrl + O` otevře _Akce > Přepnout_. Do stejné nabídky se dostanete i přes nabídku Omarchy (`Super + Space`). Všechny uvedené funkce můžete rovnou zapnout nebo vypnout. Přepínače vzhledu plochy najdete vedle, v _Akce > Vzhled_.
 
 Z terminálu jsou tytéž přepínače `omarchy toggle <thing>`. Samostatným spuštěním `omarchy toggle` uvidíte celou skupinu.
 
@@ -12,7 +12,7 @@ Z terminálu jsou tytéž přepínače `omarchy toggle <thing>`. Samostatným sp
 | ------ | ------ | ------- |
 | Noční světlo | `Super + Ctrl + N` | `omarchy toggle nightlight` |
 | Ztišit oznámení | `Super + Ctrl + ,` | `omarchy toggle notification silencing` |
-| Zůstat vzhůru (žádné zamykání při nečinnosti) | `Super + Ctrl + I` | `omarchy toggle idle` |
+| Nezamykat při nečinnosti | `Super + Ctrl + I` | `omarchy toggle idle` |
 | Záznam pádů | — | `omarchy toggle crash-capture` |
 | Spořič obrazovky | — | `omarchy toggle screensaver` |
 | Synchronizace motivu [Herdr](https://herdr.dev) | — | `omarchy toggle theme sync` |
@@ -36,15 +36,15 @@ Příznaky jsou pojmenovány podle vypnutého stavu — `screensaver-off`, `susp
 
 ### Ukazatele na panelu
 
-Když je režim zapnutý, dostanete malý glyf uprostřed horního panelu vedle hodin. To je widget ukazatelů a nese diktování, nahrávání obrazovky, čekající připomínky, noční světlo, nerušit a zůstat vzhůru.
+Zapnutý režim poznáte podle malé ikony uprostřed horní lišty vedle hodin. Widget ukazatelů takto zobrazuje diktování, nahrávání obrazovky, čekající připomínky, noční světlo, režim nerušit a vypnuté automatické zamykání.
 
-Neaktivní ukazatele jsou skryté. Najeďte na oblast kolem nich a objeví se ztlumené, takže na jeden můžete kliknout a zapnout ho, aniž byste znali jeho klávesovou zkratku. Kliknutím na aktivní ho zase vypnete. Pokud byste je raději viděli všechny neustále, nastavte `alwaysShow` na `true` u položky `omarchy.indicators` v `~/.config/omarchy/shell.json` — jak se widgety panelu konfigurují, viz [horní panel](05-the-top-bar.md).
+Neaktivní ukazatele jsou skryté. Najeďte na oblast kolem nich a objeví se ztlumené, takže na jeden můžete kliknout a zapnout ho, aniž byste znali jeho klávesovou zkratku. Kliknutím na aktivní ho zase vypnete. Pokud byste je raději viděli všechny neustále, nastavte `alwaysShow` na `true` u položky `omarchy.indicators` v `~/.config/omarchy/shell.json` — jak se widgety panelu konfigurují, viz [horní lišta](05-the-top-bar.md).
 
 ### Noční světlo
 
-`Super + Ctrl + N` zahřeje obrazovku na 4000 K a opětovným stisknutím ji vrátí na 6500 K. Řídí ho hyprsunset, který přepínač spustí za vás, pokud už neběží.
+`Super + Ctrl + N` nastaví teplejší barvy obrazovky s barevnou teplotou 4000 K. Dalším stisknutím se vrátíte na 6500 K. Změnu zajišťuje hyprsunset, který přepínač v případě potřeby sám spustí.
 
-Ve výchozím nastavení hyprsunset s vaší obrazovkou nedělá vůbec nic. `~/.config/hypr/hyprsunset.conf` se dodává s identitním profilem právě proto, aby displej zůstal nedotčený, dokud nepožádáte o teplo. Pokud byste raději, aby se přepínal podle hodin, nahraďte ho časovým profilem:
+Ve výchozím nastavení hyprsunset barevnou teplotu nemění. Profil v `~/.config/hypr/hyprsunset.conf` ponechává původní nastavení obrazovky, dokud noční světlo sami nezapnete. Pokud chcete teplotu měnit podle času, nahraďte ho časovým profilem:
 
 ```
 profile {
@@ -57,11 +57,11 @@ Poté spouštějte hyprsunset při přihlášení přidáním `o.launch_on_start
 
 ### Nerušit
 
-`Super + Ctrl + ,` ztiší oznámení. Zatímco je zapnuté, nevyskakují žádné toastové zprávy a ukazatel přeškrtnutého zvonku sedí na panelu, aby vám připomínal, proč plocha ztichla.
+`Super + Ctrl + ,` ztiší oznámení. Dokud je tento režim zapnutý, oznámení nevyskakují na obrazovce. Přeškrtnutý zvonek na liště vám připomíná, proč je na ploše klid.
 
 Nic se ale neztratí. Ztišené oznámení se zapíše přímo do vaší historie oznámení, což je přesně záznam, který chcete, když se vrátíte a přemýšlíte, co jste zmeškali. Otevřete ji pomocí `Super + Shift + Alt + ,`. Zbytek příběhu oznámení viz [upozornění](10-notices.md).
 
-Dva druhy zpráv se stále dostanou skrz: vlastní potvrzovací toastové zprávy Omarchy o tom, co jste právě udělali („Theme changed“, „Screenshot saved“), a kritické výstrahy odeslané z příkazového řádku. Chatovací aplikace, které označují všechno jako kritické, aby si vynutily cestu před vás, se nepočítají.
+Dva druhy zpráv se stále dostanou skrz: vlastní potvrzovací vyskakovací zprávy Omarchy o tom, co jste právě udělali („Theme changed“, „Screenshot saved“), a kritické výstrahy odeslané z příkazového řádku. Chatovací aplikace, které označují všechno jako kritické, aby si vynutily cestu před vás, se nepočítají.
 
 ### Nečinnost
 
@@ -81,7 +81,7 @@ Obě čísla jsou sekundy počítané od okamžiku, kdy jste se stali nečinným
 
 Pokud spořič obrazovky zavřete před lhůtou pro zamknutí, počítá se to jako aktivita a čekající zamknutí se zruší. Nebudete uzamčeni za to, že jste se podívali na svůj počítač.
 
-Chcete-li úplně zastavit zamykání při nečinnosti, `Super + Ctrl + I` — nebo `omarchy toggle idle` — zapne zůstat vzhůru a na panelu se objeví ukazatel šálku kávy. Ten stiskněte před dlouhou prezentací nebo buildem, který chcete sledovat. Stiskněte ho znovu pro návrat k normálu. `omarchy toggle idle status` vypíše aktuální stav jako JSON, pokud ho potřebujete ze skriptu.
+Automatické zamykání a spořič obrazovky vypnete pomocí `Super + Ctrl + I` nebo `omarchy toggle idle`. Na liště se objeví šálek kávy. Tento režim se hodí před dlouhou prezentací nebo sestavováním programu, jehož průběh chcete sledovat. Dalším stisknutím se vrátíte k běžnému chování. Pro použití ve skriptech vypíše `omarchy toggle idle status` aktuální stav jako JSON.
 
 Tady jde o zamykání a spořič obrazovky, ne o napájení. Uspání a hibernace mají vlastní nastavení v [uspání systému](36-system-sleep.md).
 
@@ -93,7 +93,7 @@ Můžete ho spustit na požádání z _Systém > Spořič obrazovky_ (`Super + E
 
 `omarchy toggle screensaver` je to, co vypne ten při nečinnosti, pokud byste raději šli přímo od práce k zamknutí. Potřebuje terminál, který umí nakonfigurovat — Alacritty, Foot, Ghostty nebo Kitty — a řekne vám to, pokud je váš výchozí terminál něco jiného.
 
-Logo, které kreslí, si můžete změnit v _Styl > Spořič obrazovky_. Nahrajte png nebo svg a Omarchy ho převede na ASCII. Viz [branding](41-branding.md).
+Logo, které kreslí, si můžete změnit v _Vzhled > Branding > Spořič obrazovky_. Nahrajte png nebo svg a Omarchy ho převede na ASCII. Viz [branding](41-branding.md).
 
 ### Zamykací obrazovka
 

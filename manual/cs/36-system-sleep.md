@@ -14,6 +14,6 @@ Uspání přepnete spuštěním příkazu `omarchy toggle suspend` z terminálu.
 
 ### Přepnutí hibernace
 
-Hibernaci nastavíte spuštěním příkazu `omarchy hibernation setup` z terminálu. Hibernace vytvoří na spouštěcí jednotce podsvazek /swap o velikosti přidělené fyzické paměti RAM, takže si ověřte, že máte dostatek volného místa. U počítače s 32 GB budete pro tento svazek vždy potřebovat více než 32 GB volného místa. Hibernace vyžaduje také výchozí zavaděč Limine.
+Hibernaci nastavíte spuštěním příkazu `omarchy hibernation setup` z terminálu. Hibernace vytvoří na spouštěcí jednotce podsvazek /swap o velikosti odpovídající kapacitě operační paměti RAM, takže si ověřte, že máte dostatek volného místa. U počítače s 32 GB budete pro tento svazek vždy potřebovat více než 32 GB volného místa. Hibernace vyžaduje také výchozí zavaděč Limine.
 
 Po nastavení uvidíte volbu hibernace v části _Systém_ (nebo po stisku `Super + Esc`), takže pak můžete vyzkoušet, zda na vašem systému funguje spolehlivě. Pokud ne, odstraníte ji opět spuštěním příkazu `omarchy hibernation remove`.

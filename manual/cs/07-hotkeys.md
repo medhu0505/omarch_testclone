@@ -10,7 +10,7 @@ Všechny hlavní klávesové zkratky uvidíte pomocí `Super + K` (zkratky Tmuxu
 | `Super + Alt + Space` | Mřížka aplikací |
 | `Super + Escape` | Systémová nabídka (uspat, restartovat atd.)  |
 | `Super + Ctrl + L` | Zamknout počítač |
-| `Super + W` or `Super + Q` | Zavřít okno             |
+| `Super + W` nebo `Super + Q` | Zavřít okno             |
 | `Ctrl + Alt + Del` | Zavřít všechna okna |
 | `Super + T`               | Přepnout okno mezi dlaždicemi/plovoucím             |
 | `Super + J` | Přepnout polohu okna (vodorovně/svisle) |
@@ -26,8 +26,8 @@ Všechny hlavní klávesové zkratky uvidíte pomocí `Super + K` (zkratky Tmuxu
 | `Super + Shift + Tab` | Skočit na předchozí pracovní plochu |
 | `Super + Ctrl + Tab` | Skočit na dřívější pracovní plochu |
 | `Super + Shift + 1/2/3/4` | Přesunout okno na pracovní plochu |
-| `Super + Shift + Alt + 1/2/3/4` | Přesunout okno na pracovní plochu bez následování |
-| `Super + S` / `Super + Grave` | Přepnout scratchpad |
+| `Super + Shift + Alt + 1/2/3/4` | Přesunout okno na pracovní plochu bez přepnutí plochy |
+| `Super + S` / `Super + Grave` | Zobrazit/skrýt scratchpad |
 | `Super + Alt + S` / `Super + Shift + Grave` | Přesunout okno na scratchpad |
 | `Super + Shift + Alt + Arrows` | Přesunout pracovní plochy na monitor daným směrem |
 | `Super + Arrow`  | Přesunout fokus na okno ve směru šipky              |
@@ -149,7 +149,7 @@ Obvykle na Linuxu potřebujete `Ctrl + Shift + C/V` pro kopírování a vkládá
 | `Super + Ctrl + Print Screen` | Extrakce textu do schránky |
 | `Super + Alt + [` | Zmenšit překryv webové kamery během nahrávání |
 | `Super + Alt + ]` | Zvětšit překryv webové kamery během nahrávání |
-| `Alt + Shift + L` | Kopírovat current URL from webapp or Chromium |
+| `Alt + Shift + L` | Zkopírovat aktuální URL z webové aplikace nebo Chromia |
 | `Alt + Shift + D` | Stáhnout video na aktuální stránce do `~/Videos` |
 | `Super + Ctrl + X` | Spustit/zastavit diktování (vyžaduje _Nastavení > Výchozí > Diktování_) |
 | `Right Alt` / `F9` | Diktování push-to-talk (vyžaduje Voxtype nebo Superwhisper) |
@@ -165,10 +165,10 @@ Všechny možnosti zachycení jsou přístupné také v _Akce > Zachytit_ v nab�
 | `Super + ,` | Zavřít nejnovější oznámení  |
 | `Super + Shift + ,` | Zavřít všechna oznámení |
 | `Super + Ctrl + ,` | Přepnout ztišení oznámení  |
-| `Super + Alt + ,` | Vyvolat nejnovější oznámení  |
+| `Super + Alt + ,` | Provést akci posledního oznámení  |
 | `Super + Shift + Alt + ,` | Otevřít historii oznámení  |
 
-## Styl
+## Vzhled
 
 | Klávesová zkratka                  | Funkce              |
 | ----------------------- | --------------------- |
@@ -177,9 +177,9 @@ Všechny možnosti zachycení jsou přístupné také v _Akce > Zachytit_ v nab�
 | `Super + Backspace` | Přepnout průhlednost okna |
 | `Super + Ctrl + Backspace` | Přepnout čtvercový poměr pro jedno okno |
 
-Další obrázky na pozadí žijí v `~/.config/omarchy/backgrounds/<theme name>`. K dispozici také přes _Instalovat > Styl > Pozadí_ v nabídce Omarchy.
+Další obrázky na pozadí žijí v `~/.config/omarchy/backgrounds/<theme name>`. K dispozici také přes _Instalovat > Vzhled > Pozadí_ v nabídce Omarchy.
 
-Všechny možnosti stylu jsou přístupné také v _Styl_ v nabídce Omarchy (`Super + Space`).
+Všechny možnosti vzhledu najdete v části _Vzhled_ nabídky Omarchy (`Super + Space`).
 
 ## Přepínače
 
@@ -189,11 +189,11 @@ Všechny možnosti stylu jsou přístupné také v _Styl_ v nabídce Omarchy (`S
 | `Super + Ctrl + N` | Přepnout teplotu displeje nočního světla |
 | `Super + Ctrl + Delete` | Přepnout displej notebooku zapnuto/vypnuto |
 | `Super + Ctrl + Alt + Delete` | Přepnout zrcadlení displeje notebooku |
-| `Super + Shift + Space` | Přepnout horní panel  |
+| `Super + Shift + Space` | Zobrazit/skrýt horní lištu  |
 | `Shift + Mute` | Přepnout na další zvukový výstup |
 | `Shift + Play` | Přepnout na další zdroj médií |
 | `Super + Shift + Backspace` | Přepnout mezery oken |
-| `Super + Ctrl + Alt + F` | Přepnout plochu na celou obrazovku (horní panel + mezery oken) |
+| `Super + Ctrl + Alt + F` | Přepnout plochu na celou obrazovku (horní lišta + mezery oken) |
 
 ## Připomínka
 
@@ -215,26 +215,26 @@ Všechny možnosti stylu jsou přístupné také v _Styl_ v nabídce Omarchy (`S
 
 Prefixová klávesa je `Ctrl + Space` (funguje také `Ctrl + B`). Tyto zkratky můžete změnit v `~/.config/tmux/tmux.conf`.
 
-### Panely
+### Podokna
 
 | Klávesová zkratka                  | Funkce              |
 | ----------------------- | --------------------- |
-| `Prefix + v` | Rozdělit panel vedle (svisle) |
-| `Prefix + h` | Rozdělit panel dole (vodorovně) |
-| `Prefix + x` | Zabít panel |
-| `Prefix + z` | Přepnout přiblížení panelu (celá obrazovka) |
-| `Alt + Enter` | Rozdělit panel dole (bez prefixu) |
-| `Alt + Shift + Enter` | Rozdělit panel vedle (bez prefixu) |
-| `Alt + Escape` | Zabít panel (no prefix) |
-| `Ctrl + Alt + Arrows` | Pohybovat se mezi panely |
-| `Ctrl + Alt + Shift + Arrows` | Změnit velikost panelů |
+| `Prefix + v` | Rozdělit podokno svisle (vedle sebe) |
+| `Prefix + h` | Rozdělit podokno vodorovně (nad sebou) |
+| `Prefix + x` | Zavřít podokno |
+| `Prefix + z` | Přepnout přiblížení podokna (celá obrazovka) |
+| `Alt + Enter` | Rozdělit podokno vodorovně (bez prefixu) |
+| `Alt + Shift + Enter` | Rozdělit podokno svisle (bez prefixu) |
+| `Alt + Escape` | Zavřít podokno (bez prefixu) |
+| `Ctrl + Alt + Arrows` | Pohybovat se mezi podokny |
+| `Ctrl + Alt + Shift + Arrows` | Změnit velikost podoken |
 
 ### Okna
 
 | Klávesová zkratka                  | Funkce              |
 | ----------------------- | --------------------- |
 | `Prefix + c` | Nové okno |
-| `Prefix + k` | Zabít okno |
+| `Prefix + k` | Zavřít okno |
 | `Prefix + r` | Přejmenovat okno |
 | `Alt + 1-9` | Přejít na konkrétní okno |
 | `Alt + Arrow Left/Right` | Pohybovat se mezi okny |
@@ -245,7 +245,7 @@ Prefixová klávesa je `Ctrl + Space` (funguje také `Ctrl + B`). Tyto zkratky m
 | Klávesová zkratka                  | Funkce              |
 | ----------------------- | --------------------- |
 | `Prefix + C` | Nová relace |
-| `Prefix + K` | Zabít relaci |
+| `Prefix + K` | Ukončit relaci |
 | `Prefix + R` | Přejmenovat relaci |
 | `Prefix + N` | Další relace |
 | `Prefix + P` | Předchozí relace |
@@ -259,7 +259,7 @@ Prefixová klávesa je `Ctrl + Space` (funguje také `Ctrl + B`). Tyto zkratky m
 | ----------------------- | --------------------- |
 | `Prefix + [` | Vstoupit do režimu kopírování |
 | `v` | Zahájit výběr (v režimu kopírování) |
-| `y` | Kopírovat selection (in copy mode) |
+| `y` | Zkopírovat výběr (v režimu kopírování) |
 
 ### Obecné
 
@@ -277,7 +277,7 @@ Tyto funkce musí být spuštěny uvnitř relace Tmux.
 | ------- | -------- |
 | `tdl <ai> [<second_ai>]` | Vytvořit vývojové rozložení s editorem, AI a terminálem |
 | `tdlm <ai> [<second_ai>]` | Vytvořit vývojové rozložení pro každý podadresář |
-| `tsl <count> <command>` | Vytvořit vícesložkové rojové rozložení |
+| `tsl <count> <command>` | Vytvořit rozložení s více podokny pro roj agentů |
 
 ## Terminál Ghostty
 
@@ -285,11 +285,11 @@ Terminál Ghostty se instaluje pomocí _Instalovat > Terminál_ přes nabídku O
 
 | Klávesová zkratka                  | Funkce              |
 | ----------------------- | --------------------- |
-| `Ctrl + Shift + E` | Nové rozdělení dole |
-| `Ctrl + Shift + O` | Nové rozdělení vedle |
-| `Ctrl + Alt + Arrows` | Pohybovat se mezi rozděleními |
-| `Super + Ctrl + Shift + Arrows` | Změnit velikost rozdělení o 10 řádků |
-| `Super + Ctrl + Shift + Alt + Arrows` | Změnit velikost rozdělení o 100 řádků |
+| `Ctrl + Shift + E` | Nové podokno dole |
+| `Ctrl + Shift + O` | Nové podokno vedle |
+| `Ctrl + Alt + Arrows` | Pohybovat se mezi podokny |
+| `Super + Ctrl + Shift + Arrows` | Změnit velikost podoken o 10 řádků |
+| `Super + Ctrl + Shift + Alt + Arrows` | Změnit velikost podoken o 100 řádků |
 | `Ctrl + Shift + T` | Nová záložka  |
 | `Ctrl + Shift + Arrows` | Pohybovat se mezi záložkami |
 | `Alt + Numbers` | Přejít na konkrétní záložku |
@@ -338,31 +338,31 @@ Terminál Ghostty se instaluje pomocí _Instalovat > Terminál_ přes nabídku O
 
 Pomocí `Super + Ctrl + E` můžete zobrazit úplný výběr emoji, který vloží výběr do schránky, nebo můžete použít tyto možnosti rychlého přístupu.
 
-| Klávesová zkratka       | EM | Clue       |
+| Klávesová zkratka       | EM | Pomůcka       |
 | ------------ | -- | ---------- |
-| `Shift + CapsLock M S` | 😄 | úsměv      |
-| `Shift + CapsLock M C` | 😂 | pláč        |
-| `Shift + CapsLock M L` | 😍 | láska       |
-| `Shift + CapsLock M V` | ✌️ | vítězství    |
-| `Shift + CapsLock M H` | ❤️ | srdce      |
-| `Shift + CapsLock M Y` | 👍 | ano        |
-| `Shift + CapsLock M N` | 👎 | no         |
-| `Shift + CapsLock M F` | 🖕 | fuck       |
-| `Shift + CapsLock M W` | 🤞 | přání       |
-| `Shift + CapsLock M R` | 🤘 | rock       |
-| `Shift + CapsLock M K` | 😘 | polibek       |
-| `Shift + CapsLock M E` | 🙄 | protočení očí    |
-| `Shift + CapsLock M I` | 😉 | mrknutí       |
-| `Shift + CapsLock M P` | 🙏 | modlitba |
-| `Shift + CapsLock M D` | 🤤 | slintání      |
-| `Shift + CapsLock M M` | 💰 | peníze      |
-| `Shift + CapsLock M X` | 🎉 | xellebrate |
-| `Shift + CapsLock M 1` | 💯 | 100%       |
-| `Shift + CapsLock M T` | 🥂 | přípitek      |
-| `Shift + CapsLock M O` |👌 | ok |
-| `Shift + CapsLock M G` |👋 | pozdrav |
-| `Shift + CapsLock M A` |💪 | paže |
-| `Shift + CapsLock M B` |🤯 | výbuch |
+| `Shift + CapsLock M S` | 😄 | smile (úsměv) |
+| `Shift + CapsLock M C` | 😂 | cry (pláč) |
+| `Shift + CapsLock M L` | 😍 | love (láska) |
+| `Shift + CapsLock M V` | ✌️ | victory (vítězství) |
+| `Shift + CapsLock M H` | ❤️ | heart (srdce) |
+| `Shift + CapsLock M Y` | 👍 | yes (ano) |
+| `Shift + CapsLock M N` | 👎 | no (ne) |
+| `Shift + CapsLock M F` | 🖕 | fuck (vztyčený prostředníček) |
+| `Shift + CapsLock M W` | 🤞 | wish (přání) |
+| `Shift + CapsLock M R` | 🤘 | rock |
+| `Shift + CapsLock M K` | 😘 | kiss (polibek) |
+| `Shift + CapsLock M E` | 🙄 | eyeroll (protočení očí) |
+| `Shift + CapsLock M I` | 😉 | wink (mrknutí) |
+| `Shift + CapsLock M P` | 🙏 | pray (modlitba) |
+| `Shift + CapsLock M D` | 🤤 | drool (slintání) |
+| `Shift + CapsLock M M` | 💰 | money (peníze) |
+| `Shift + CapsLock M X` | 🎉 | xellebrate (oslava) |
+| `Shift + CapsLock M 1` | 💯 | 100% |
+| `Shift + CapsLock M T` | 🥂 | toast (přípitek) |
+| `Shift + CapsLock M O` |👌 | ok (v pořádku) |
+| `Shift + CapsLock M G` |👋 | greeting (pozdrav) |
+| `Shift + CapsLock M A` |💪 | arm (paže) |
+| `Shift + CapsLock M B` |🤯 | blowing (výbuch) |
 
 ## Rychlé dokončování
 
