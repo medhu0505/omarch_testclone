@@ -22,6 +22,7 @@ import "Markup.js" as Markup
 import "Delivery.js" as Delivery
 import "Settings.js" as Settings
 import "Icons.js" as Icons
+import "NotificationFold.js" as NotificationFold
 
 Item {
   id: service
@@ -30,6 +31,13 @@ Item {
   property var shell: null
 
   property string omarchyPath: Quickshell.env("OMARCHY_PATH")
+
+  readonly property string foldRulesPath: {
+    var configHome = Quickshell.env("XDG_CONFIG_HOME")
+    if (!configHome) configHome = Quickshell.env("HOME") + "/.config"
+    return configHome + "/omarchy/ml/fold.json"
+  }
+  property var foldRules: null
 
   // ------------------------------------------------------------- settings
   //
@@ -492,7 +500,7 @@ Item {
   property int historyRevision: 0
 
   function refreshHistory() {
-    historyRows = Store.displayRows(currentHistory())
+    historyRows = NotificationFold.fold(Store.displayRows(currentHistory()), foldRules)
     historyRevision += 1
   }
 
@@ -1443,6 +1451,21 @@ Item {
     printErrors: false
     onLoaded: service.loadHistory(text())
     onLoadFailed: service.loadHistory("")
+  }
+
+  FileView {
+    id: foldRulesFile
+    path: service.foldRulesPath
+    watchChanges: true
+    printErrors: false
+    onLoaded: {
+      service.foldRules = NotificationFold.parseRules(text())
+      service.refreshHistory()
+    }
+    onLoadFailed: {
+      service.foldRules = null
+      service.refreshHistory()
+    }
   }
 
   FileView {
