@@ -147,6 +147,12 @@ for command in lspci pacman lsmod readlink modinfo modprobe rmmod tee sudo omarc
   ln -s stub "$stub_bin/$command"
 done
 ln -s "$ROOT/bin/omarchy-pkg-drop" "$stub_bin/omarchy-pkg-drop"
+# Removing packages takes an administrator, which the driver's owner is.
+cat >"$stub_bin/omarchy-sudo-allowed" <<'SH'
+#!/bin/bash
+exit 0
+SH
+chmod +x "$stub_bin/omarchy-sudo-allowed"
 
 reset_state() {
   rm -rf "$TEST_STATE"

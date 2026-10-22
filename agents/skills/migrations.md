@@ -31,6 +31,14 @@ prompt themselves. Migrations must be idempotent: if one user already applied a
 machine-wide repair, the same migration running for another user should detect
 that and no-op.
 
+### Accounts that aren't administrators
+
+On an account outside `wheel` (`omarchy-sudo-allowed` fails), `omarchy-migrate` puts `default/omarchy/migrate-limited/` first on `PATH`: its `sudo` and `pkexec` run nothing, print what they left on stderr, and report success. The machine-wide steps are an administrator's, done by their own run of the same migration, normally `omarchy update` as soon as it has installed the migration. The limited account's run applies only its own part, without a password prompt sudo would refuse. So:
+
+- Don't base a step for the user on what a sudo command printed or returned: for such an account it printed nothing and succeeded.
+- A privileged step about the account itself, with its name or home in the command (`sudo gpasswd -d "$USER" input`), is not one an administrator's run does for it, so there it fails, says so, and the migration stays pending until an administrator has done it. Where a repair applies to every account, have the administrator's run do it for all of them.
+- Package helpers still refuse there when a package is missing (`omarchy-pkg-add` says an administrator installs software), which fails the migration and leaves it pending until an administrator has installed it.
+
 ## When migrations run
 
 ### During `omarchy update`

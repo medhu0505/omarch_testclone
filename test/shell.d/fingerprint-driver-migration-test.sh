@@ -19,6 +19,11 @@ cat > "$scratch/bin/sudo" <<'STUB'
 #!/bin/bash
 exec "$@"
 STUB
+# Installing takes an administrator; the migration runs as one.
+cat > "$scratch/bin/omarchy-sudo-allowed" <<'STUB'
+#!/bin/bash
+exit 0
+STUB
 # INSTALLED lists the installed package names, one per line; an install adds
 # its packages to INSTALLED_LOG so omarchy-pkg-add's follow-up query sees them.
 cat > "$scratch/bin/pacman" <<'STUB'

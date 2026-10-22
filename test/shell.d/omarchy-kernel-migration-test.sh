@@ -43,6 +43,12 @@ case "$1" in
 esac
 SH
 
+# Installing takes an administrator; the migration runs as one.
+cat > "$scratch/bin/omarchy-sudo-allowed" <<'SH'
+#!/bin/bash
+exit 0
+SH
+
 cat > "$scratch/bin/limine-mkinitcpio" <<'SH'
 #!/bin/bash
 [[ ${REBUILD_FAIL:-0} == "0" ]]

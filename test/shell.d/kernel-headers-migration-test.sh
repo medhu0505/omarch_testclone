@@ -29,6 +29,11 @@ cat > "$tmp_dir/bin/sudo" <<'SH'
 [[ $1 == "pacman" ]] || exit 1
 "$@"
 SH
+# Installing takes an administrator; the migration runs as one.
+cat > "$tmp_dir/bin/omarchy-sudo-allowed" <<'SH'
+#!/bin/bash
+exit 0
+SH
 chmod +x "$tmp_dir/bin/"*
 
 migration="$ROOT/migrations/1789444024.sh"
