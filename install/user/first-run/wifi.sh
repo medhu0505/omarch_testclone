@@ -3,6 +3,25 @@ notify_update() {
     --exec omarchy-launch-floating-terminal-with-presentation omarchy-update
 }
 
+# Something for omarchy-update to install: any repository package, Omarchy's
+# own among them, or a development checkout behind its upstream. checkupdates
+# exits 2 when every package is current and 1 when it could not tell, so only
+# a definite "nothing" holds the prompt back. It syncs the package databases,
+# so it runs once; omarchy-update-available would run it again, and is asked
+# only about a checkout, which checkupdates cannot see.
+update_pending() {
+  local status=0
+  checkupdates --nocolor >/dev/null 2>&1 || status=$?
+
+  if (( status != 2 )); then
+    return 0
+  elif [[ $OMARCHY_PATH != "/usr/share/omarchy" ]]; then
+    omarchy-update-available >/dev/null 2>&1
+  else
+    return 1
+  fi
+}
+
 notify_wifi() {
   omarchy-notification-send -u critical -g 󰖩 "Setup Wi-Fi" "Click to configure the wireless network." \
     --exec omarchy-shell shell toggle omarchy.network
@@ -23,8 +42,10 @@ announce_network() {
     nm-online -q -t 3600 || return
   fi
 
-  # Only an administrator can install updates, so only they are asked to.
-  if omarchy-sudo-allowed; then
+  # Only an administrator can install updates, so only they are asked to. A
+  # fresh install from current media has nothing to update, and a toast that
+  # leads nowhere teaches people to dismiss the next one.
+  if omarchy-sudo-allowed && update_pending; then
     notify_update
   fi
 }
