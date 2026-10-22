@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# omarchy:summary=Compatibility name for omarchy-system shutdown (Omarchy 4.0 and earlier)
+# omarchy:summary=Shut down after closing applications
 # omarchy:hidden=true
 
 # Keybindings, menu extensions and scripts written for Omarchy 4.0 call this
