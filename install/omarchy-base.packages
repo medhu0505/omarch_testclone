@@ -30,6 +30,7 @@ evince
 exfatprogs
 expac
 eza
+espeak-ng
 fakeroot
 fastfetch
 fcitx5
@@ -130,6 +131,7 @@ sddm
 signed
 slurp
 socat
+speech-dispatcher
 starship
 superwhisper-bin
 sushi
