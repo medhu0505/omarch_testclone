@@ -1,3 +1,4 @@
+run_logged "$OMARCHY_INSTALL/config/block-emsign-root.sh"
 run_logged "$OMARCHY_INSTALL/config/theme-system.sh"
 run_logged "$OMARCHY_INSTALL/config/browser-policy.sh"
 run_logged "$OMARCHY_INSTALL/config/increase-lockout-limit.sh"
