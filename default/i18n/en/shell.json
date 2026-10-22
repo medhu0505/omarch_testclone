@@ -369,7 +369,7 @@
   "network.networkLost": "Network lost",
   "network.noConnection": "No connection",
   "network.notConnected": "NOT CONNECTED",
-  "network.openCaptivePortal": "Sign into Wi-Fi",
+  "network.openCaptivePortal": "Sign into network",
   "network.otherNetworks": "OTHER NETWORKS",
   "network.packetLoss": "Packet Loss",
   "network.passphrase": "Passphrase",
