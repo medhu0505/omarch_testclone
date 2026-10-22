@@ -951,11 +951,12 @@ Item {
   Component.onCompleted: applyBarConfig()
 
   // The indicator peek opens as the pointer comes onto the bar and holds until
-  // it leaves, or crosses past the end of the center box onto the panel icons.
-  // Revealing the indicators widens their section, which can slide a widget
-  // under a stationary pointer, so nothing narrower than the stretch of bar up
-  // to that edge, which the reveal never moves, can hold it without opening
-  // and closing it in a loop.
+  // it leaves, or crosses past the end of the center box onto the panel icons
+  // (BarModel.peeksAt). Revealing the indicators widens their section, which
+  // can slide a widget under a stationary pointer, so nothing narrower than the
+  // stretch of bar up to that edge, held still while the peek is open
+  // (BarModel.nextPeekEdge), can hold it without opening and closing it in a
+  // loop.
   function setBarHovered(hovered) {
     barHoverCount = Math.max(0, barHoverCount + (hovered ? 1 : -1))
     if (barHoverCount > 0) {
@@ -1604,7 +1605,7 @@ Item {
       // hovered while the pointer is over a widget, where a sibling would lose
       // hover to the section the pointer entered.
       HoverHandler {
-        readonly property bool peeking: hovered && (root.vertical ? point.position.y : point.position.x) < barWindow.peekEdge
+        readonly property bool peeking: hovered && BarModel.peeksAt(point.position, barWindow.peekEdge, root.vertical)
         onPeekingChanged: root.setBarHovered(peeking)
         // Unplugging a monitor destroys its bar without a leave event, which
         // would strand this surface's tally and hold the peek open for good.
@@ -1915,11 +1916,19 @@ Item {
 
     // Both placements sit at the bar surface's origin or anchor off its edge,
     // so the box's end in the sections is its end on the surface.
-    Binding {
-      when: sections.active && !!sections.window
-      target: sections.window
-      property: "peekEdge"
-      value: root.vertical ? sections.y + centerBox.y + centerBox.height : sections.x + centerBox.x + centerBox.width
+    readonly property real boxEnd: root.vertical ? y + centerBox.y + centerBox.height : x + centerBox.x + centerBox.width
+    onBoxEndChanged: syncPeekEdge()
+    onActiveChanged: syncPeekEdge()
+    onWindowChanged: syncPeekEdge()
+    Component.onCompleted: syncPeekEdge()
+
+    function syncPeekEdge() {
+      if (active && window) window.peekEdge = BarModel.nextPeekEdge(window.peekEdge, boxEnd, root.centerSectionRevealHeld)
+    }
+
+    Connections {
+      target: root
+      function onCenterSectionRevealHeldChanged() { sections.syncPeekEdge() }
     }
 
     ModuleList {
