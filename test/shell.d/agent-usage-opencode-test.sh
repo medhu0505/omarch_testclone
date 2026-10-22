@@ -174,6 +174,19 @@ summary["goTrafficCounted"] = (
   and stats["modelUsage"]["glm-5.3"]["cacheReadInputTokens"] == 3
 )
 
+# --limits-only reuses today's cached stats, however old, but a cache written
+# yesterday no longer describes "today" and the database is scanned again.
+import hashlib
+
+cache_file = Path(os.environ["XDG_CACHE_HOME"]) / "omarchy" / "agent-usage" / (
+  "opencode-go-stats-" + hashlib.sha1(str(db_path).encode("utf-8")).hexdigest()[:16] + ".json"
+)
+collector.write_json(cache_file, {"stats": None})
+summary["limitsOnlyUsesTodaysCache"] = collector.scan_local_stats(True) is None
+yesterday = time.time() - 86400
+os.utime(cache_file, (yesterday, yesterday))
+summary["yesterdaysCacheRescans"] = collector.scan_local_stats(True) is not None
+
 print(json.dumps(summary))
 PY
 )

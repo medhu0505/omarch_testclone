@@ -99,8 +99,10 @@ fail() {
 # half-made home behind.
 home=""
 browser=""
+header_file=""
 cleanup() {
   [[ -n $browser ]] && rm -f "$browser"
+  [[ -n $header_file ]] && rm -f "$header_file"
   [[ -n $home && -d $home && $home == */.pending/* ]] && rm -rf "$home"
 }
 trap cleanup EXIT
@@ -163,13 +165,7 @@ if [[ $provider == "opencode" ]]; then
     if [[ $events == "true" ]]; then
       read -r key || fail "$(omarchy-i18n agents.loginUnfinished)"
     elif [[ -t 0 ]]; then
-      if command -v gum >/dev/null 2>&1; then
-        key=$(gum input --password --placeholder "oc_sk_…" --prompt "OpenCode Go API key: ") || exit 130
-      else
-        printf 'OpenCode Go API key: ' >&2
-        read -rs key || fail "$(omarchy-i18n agents.loginUnfinished)"
-        echo >&2
-      fi
+      key=$(gum input --password --placeholder "oc_sk_…" --prompt "OpenCode Go API key: ") || exit 130
     else
       read -r key || fail "$(omarchy-i18n agents.loginUnfinished)"
     fi
@@ -178,14 +174,20 @@ if [[ $provider == "opencode" ]]; then
   [[ -n $key ]] || fail "$(omarchy-i18n agents.loginUnfinished)"
 
   say "$(omarchy-i18n agents.goCheckingKey)"
+  # The key never enters a child process's arguments, where another local
+  # user could read it: curl takes the header from a private file instead.
+  header_file=$(mktemp "${XDG_RUNTIME_DIR:-/tmp}/omarchy-go-auth.XXXXXX") || fail "$(omarchy-i18n agents.homeFailed)"
+  printf 'Authorization: Bearer %s\n' "$key" >"$header_file" || fail "$(omarchy-i18n agents.homeFailed)"
   status=$(curl -sS -o /dev/null -w "%{http_code}" -m 15 \
-    -H "Authorization: Bearer $key" -H "Accept: application/json" \
+    -H @"$header_file" -H "Accept: application/json" \
     "https://opencode.ai/inference/go/v1/usage" 2>/dev/null) || status="000"
   if [[ $status == "404" ]]; then
     status=$(curl -sS -o /dev/null -w "%{http_code}" -m 15 \
-      -H "Authorization: Bearer $key" -H "Accept: application/json" \
+      -H @"$header_file" -H "Accept: application/json" \
       "https://opencode.ai/zen/go/v1/usage" 2>/dev/null) || status="000"
   fi
+  rm -f "$header_file"
+  header_file=""
   case "$status" in
   200) ;;
   401) fail "$(omarchy-i18n agents.goKeyRejected)" ;;
