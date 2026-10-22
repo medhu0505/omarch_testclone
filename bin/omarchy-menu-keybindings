@@ -14,6 +14,12 @@ declare -A LUA_BIND_ARG_MAP
 # fixed platform root, which no environment variable moves.
 key_names_file=/usr/share/omarchy-platform/key-names
 
+# How long the scan of the user's config may take before the menu gives up on
+# it and shows the binds Hyprland reports instead. The scan only fills in what
+# Hyprland leaves out, so a config that never finishes loading must not keep
+# the menu from opening. Override it to measure a slower config on purpose.
+scan_timeout="${OMARCHY_KEYBINDINGS_SCAN_TIMEOUT:-10}"
+
 # The leading layout and variant, which Hyprland resolves bindings against.
 # Only names XKB could know pass, since they end up on a command line.
 leading_keyboard() {
@@ -123,8 +129,9 @@ build_lua_bind_cache() {
     LUA_BIND_ARG_MAP["$cache_key"]="$arg"
   done < <(
     # -E keeps LUA_INIT and LUA_PATH from the environment out of the scan, which
-    # loads the user's config.
-    lua -E - <<'LUA'
+    # loads the user's config. The budget ends a scan that runs away: the menu
+    # then shows the binds Hyprland reports, which is the truth anyway.
+    timeout "$scan_timeout" lua -E - <<'LUA'
 local modifiers = { SHIFT = 1, CTRL = 4, CONTROL = 4, ALT = 8, SUPER = 64 }
 
 local function split_keys(keys)
@@ -227,9 +234,17 @@ local function dsp_proxy(path)
   })
 end
 
+-- The stub stands in for Hyprland's Lua API while the config is scanned for
+-- binds. A config that walks a result set (ipairs(hl.get_monitors())) has to
+-- see an empty one here: a stub that answers every index forever never lets
+-- the scan end, and the menu waits on it.
 local noop
 noop = setmetatable({}, {
-  __index = function()
+  __index = function(_, key)
+    if type(key) == "number" then
+      return nil
+    end
+
     return noop
   end,
   __call = function()
