@@ -98,7 +98,7 @@ Item {
     var wanted = focusedDisplayName
     if (displayMode === "specific" && displayNames.indexOf(displayName) >= 0) wanted = configuredDisplayName
     else if (displayNames.indexOf(deckDisplayName) >= 0) wanted = deckDisplayName
-    return routeAround(wanted)
+    return wanted
   }
   onDisplayNamesChanged: {
     if (deckDisplayName && displayNames.indexOf(deckDisplayName) < 0)
@@ -107,11 +107,11 @@ Item {
   onDisplayModeChanged: { if (toasts.count > 0) deckDisplayName = configuredDisplayName }
   onDisplayNameChanged: { if (displayMode === "specific" && toasts.count > 0) deckDisplayName = configuredDisplayName }
   function pinDeckDisplay() {
-    if (toasts.count === 0) deckDisplayName = routeAround(configuredDisplayName)
+    if (toasts.count === 0) deckDisplayName = configuredDisplayName
   }
 
   function showsOn(name) {
-    return (displayMode === "all" && !awayFrom(name)) || name === targetDisplayName
+    return displayMode === "all" || name === targetDisplayName
   }
 
   // ------------------------------------------------------------- quiet
@@ -203,10 +203,8 @@ Item {
   // Hyprland refuses direct scanout while any overlay-layer surface exists on
   // a monitor, so an idle canvas makes fullscreen games composite each frame.
   // "all"/"steam" step aside under fullscreen (Steam) windows until a card
-  // arrives; the "-away" variants send cards to another display instead.
-  readonly property string fullscreenScope: fullscreenOverlay.indexOf("steam") === 0 ? "steam"
-    : fullscreenOverlay.indexOf("all") === 0 ? "all" : ""
-  readonly property bool fullscreenAway: fullscreenScope !== "" && /-away$/.test(fullscreenOverlay)
+  // arrives.
+  readonly property string fullscreenScope: fullscreenOverlay === "off" ? "" : fullscreenOverlay
   // Bumped after Hyprland's window snapshot refreshes, so fullscreenOn() re-evaluates.
   property int hyprRevision: 0
 
@@ -244,15 +242,6 @@ Item {
       if (/^steam_app_\d+$/.test(appClass)) return true
     }
     return false
-  }
-
-  function awayFrom(name) { return fullscreenAway && fullscreenOn(name) }
-  function routeAround(name) {
-    if (!awayFrom(name)) return name
-    if (focusedDisplayName !== name && !awayFrom(focusedDisplayName)) return focusedDisplayName
-    for (var i = 0; i < displayNames.length; i++)
-      if (!awayFrom(displayNames[i])) return displayNames[i]
-    return ""
   }
 
   Connections {
@@ -1738,8 +1727,7 @@ Item {
         displays: service.displayNames, focusedDisplay: service.focusedDisplayName,
         targetDisplay: service.targetDisplayName,
         notificationDisplays: service.displayNames.filter(function(name) { return service.showsOn(name) }),
-        fullscreenOverlay: service.fullscreenOverlay, surfaces: service.surfaceStates(),
-        avoidedDisplays: service.displayNames.filter(function(n) { return service.awayFrom(n) }) })
+        fullscreenOverlay: service.fullscreenOverlay, surfaces: service.surfaceStates() })
     }
   }
 

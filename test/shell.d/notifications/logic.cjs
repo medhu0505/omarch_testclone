@@ -347,7 +347,7 @@ function runIn(scope, ...names) {
 
 // Admission, close and replay run for real; only the ListModel, QObject
 // signals, the deferred event loop and external effects are faked.
-const capacityFunctions = ['pinDeckDisplay', 'showsOn', 'fullscreenOn', 'awayFrom', 'routeAround', 'rememberRecent', 'recentForPanel',
+const capacityFunctions = ['pinDeckDisplay', 'showsOn', 'fullscreenOn', 'rememberRecent', 'recentForPanel',
   'durationFor', 'liveCount', 'reserveLive', 'releaseLive',
   'nextKey', 'rowIndexFor', 'keyForOriginal', 'handleNotification', 'watchNotification', 'showRow', 'release', 'closeToast',
   'finishClose', 'clearAll', 'clearDeck', 'dismissNewest', 'releaseHeld', 'restoreRows', 'actionsOf', 'dismissOne',
@@ -369,7 +369,7 @@ function newCapacityScope() {
     liveEntries: [], historyEntries: [], historyHours: 24, unsaved: {}, liveLoaded: false,
     saveTimer: { running: false, start() {} },
     configuredDisplayName: 'fixture-display', deckDisplayName: '',
-    fullscreenAway: false, fullscreenScope: '', hyprRevision: 0,
+    fullscreenScope: '', hyprRevision: 0,
     displayNames: ['fixture-display'], focusedDisplayName: 'fixture-display',
     Quickshell: { screens: [] }, Hyprland: { monitorFor: screen => screen.monitor },
     snoozeRevision: 0, snoozes: {},
@@ -427,27 +427,24 @@ function newCapacityScope() {
 }
 const summaries = rows => Array.from(rows, row => row.summary)
 
-{ // Route away from fullscreen outputs, but not merely maximised windows.
+{ // Step aside for real fullscreen windows, not merely maximised ones.
   const s = newCapacityScope()
   const game = { lastIpcObject: { fullscreen: 1, class: 'steam_app_31' } }
-  const work = { lastIpcObject: { fullscreen: 0, class: 'editor' } }
-  s.displayNames = ['game', 'work']
-  s.focusedDisplayName = 'game'
+  const work = { lastIpcObject: { fullscreen: 2, class: 'editor' } }
   s.Quickshell.screens = [game, work].map((window, i) => ({
-    name: s.displayNames[i],
+    name: ['game', 'work'][i],
     monitor: { activeWorkspace: { hasFullscreen: true, toplevels: { values: [window] } } },
   }))
-  s.fullscreenAway = true
   s.fullscreenScope = 'all'
-  assert.equal(s.routeAround('game'), 'game')
+  assert.equal(s.fullscreenOn('game'), false)
   game.lastIpcObject.fullscreen = 2
-  assert.equal(s.routeAround('game'), 'work')
-  work.lastIpcObject.fullscreen = 2
-  assert.equal(s.routeAround('game'), '')
+  assert.equal(s.fullscreenOn('game'), true)
+  assert.equal(s.fullscreenOn('work'), true)
   s.fullscreenScope = 'steam'
-  assert.equal(s.routeAround('game'), 'work')
-  s.fullscreenAway = false
-  assert.equal(s.routeAround('game'), 'game')
+  assert.equal(s.fullscreenOn('game'), true)
+  assert.equal(s.fullscreenOn('work'), false)
+  s.fullscreenScope = ''
+  assert.equal(s.fullscreenOn('game'), false)
 }
 
 { // Rapid single dismissals must skip rows still playing their exit animation.
