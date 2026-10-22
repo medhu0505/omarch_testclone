@@ -157,3 +157,20 @@ expected=$(printf '%s\n' /usr/bin/env -u BROWSER chromium --name "Work Chromium"
 [[ $(sed '1,/^--$/d' "$launch_log") == "$expected" ]] ||
   fail "a private launch expands %c and keeps its flag an option despite the Exec line's --"
 pass "a private launch finds the browser behind env options and keeps its flag an option"
+
+spaced_desktop="userapp-Firefox Developer Edition-U5J9W3.desktop"
+cat >"$test_home/.local/share/applications/$spaced_desktop" <<'DESKTOP'
+[Desktop Entry]
+Exec=chromium %u
+DESKTOP
+cat >"$mock_bin/omarchy-cmd-default-browser" <<SH
+#!/bin/bash
+echo "$spaced_desktop"
+SH
+chmod +x "$mock_bin/omarchy-cmd-default-browser"
+
+rm -f "$launch_log"
+launch "https://example.test/spaced"
+[[ $(sed '1,/^--$/d' "$launch_log") == $'chromium\nhttps://example.test/spaced' ]] ||
+  fail "a desktop id with spaces launches its entry's command"
+pass "a desktop id with spaces launches its entry's command"

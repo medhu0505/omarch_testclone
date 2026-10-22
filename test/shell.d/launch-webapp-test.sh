@@ -55,3 +55,19 @@ expected=$(printf '%s\n' -- brave --class=Brave "--desktop=$test_home/.local/sha
 [[ $(<"$launch_log") == "$expected" ]] ||
   fail "webapp launcher expands %c and %k and keeps --app ahead of the Exec line's closing --"
 pass "webapp launcher expands %c and %k and keeps --app an option"
+
+cat >"$test_home/.local/share/applications/brave-browser Work.desktop" <<'DESKTOP'
+[Desktop Entry]
+Exec=brave %U
+DESKTOP
+cat >"$mock_bin/xdg-settings" <<'SH'
+#!/bin/bash
+echo "brave-browser Work.desktop"
+SH
+
+HOME="$test_home" PATH="$mock_bin:$ROOT/bin:$PATH" OMARCHY_TEST_WEBAPP_LAUNCH="$launch_log" \
+  bash "$ROOT/bin/omarchy-launch-webapp" "https://example.test/spaced"
+
+expected=$(printf '%s\n' -- brave --app=https://example.test/spaced)
+[[ $(<"$launch_log") == "$expected" ]] || fail "webapp launcher finds a desktop id with spaces"
+pass "webapp launcher finds a desktop id with spaces"
