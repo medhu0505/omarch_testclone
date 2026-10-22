@@ -74,6 +74,17 @@ function readMenuJsonc(raw) {
   return out
 }
 
+// The rows a watched menu file leaves after a read. An update, a checkout or
+// an editor's save can be read mid-write, and that read must not replace good
+// rows with nothing, so it keeps the previous ones until a later read finds
+// the file whole. The shipped menu is never legitimately empty, so for it
+// (required) an empty read is mid-write too.
+function keepMenuRows(previous, raw, required) {
+  var items = readMenuJsonc(raw)
+  if (!items || (required && items.length === 0)) return previous
+  return items
+}
+
 // The root row has no JSONC entry, so the merge injects it when neither
 // source supplies one; only then does rootLabel (the catalog's translation
 // of "Go") apply. A root row from either source keeps its own label, so a
@@ -682,7 +693,7 @@ if (typeof module !== "undefined") {
     normalizeAliases: normalizeAliases,
     normalizeItem: normalizeItem,
     parseMenuJsonc: parseMenuJsonc,
-    readMenuJsonc: readMenuJsonc,
+    keepMenuRows: keepMenuRows,
     mergeMenuSources: mergeMenuSources,
     mergeAppRows: mergeAppRows,
     swapProviderRows: swapProviderRows,

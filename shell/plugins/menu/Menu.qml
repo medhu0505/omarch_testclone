@@ -24,7 +24,8 @@ Item {
     try { payload = JSON.parse(payloadJson || "{}") } catch (e) { payload = ({}) }
 
     if (payload.fontFamily) root.fontFamily = payload.fontFamily
-    // Backstop for a torn read nothing re-read: an empty menu is never right.
+    // A shell that started mid-update may never have read the shipped menu
+    // whole; reading it again here keeps the menu from opening empty.
     if (root.defaultMenuItems.length === 0) defaultMenuFile.reload()
 
     if (payload.mode === "select" || payload.mode === "input") {
@@ -39,7 +40,6 @@ Item {
   }
 
   function refresh() {
-    root.tornSources = ({})
     defaultMenuFile.reload()
     userMenuFile.reload()
     languageFile.reload()
@@ -270,96 +270,12 @@ Item {
     return MenuModel.parseMenuJsonc(raw)
   }
 
-  // Null when the text is not a catalog, as for a file caught mid-write. No
-  // catalog is empty, so a file caught just after truncation is torn too.
   function parseCatalog(raw) {
-    if (!String(raw || "").trim()) return null
     try {
-      var parsed = JSON.parse(raw)
-      return (parsed && typeof parsed === "object" && !Array.isArray(parsed)) ? parsed : null
+      var parsed = JSON.parse(raw || "{}")
+      return (parsed && typeof parsed === "object" && !Array.isArray(parsed)) ? parsed : ({})
     } catch (e) {
-      return null
-    }
-  }
-
-  // An update, a checkout or an editor replaces these files while the shell
-  // watches them, so a read can land on an empty or half-written file. That
-  // read must never replace a good menu with nothing: keep the last good
-  // rows and read the sources again shortly, once the write has finished.
-  // The shipped menu is never legitimately empty, so empty counts as torn.
-  function applyDefaultMenu(raw) {
-    var items = MenuModel.readMenuJsonc(raw)
-    if (!items || items.length === 0) {
-      root.rereadSource("default")
-      if (root.defaultMenuSettled) return
-      items = []
-    } else {
-      root.sourceRead("default")
-    }
-    root.defaultMenuItems = items
-    root.defaultMenuSettled = true
-    root.rebuildItemsFromSources()
-  }
-
-  function applyUserMenu(raw) {
-    var items = MenuModel.readMenuJsonc(raw)
-    if (!items) {
-      root.rereadSource("user")
-      if (root.userMenuSettled) return
-      items = []
-    } else {
-      root.sourceRead("user")
-    }
-    root.userMenuItems = items
-    root.userMenuSettled = true
-    root.rebuildItemsFromSources()
-  }
-
-  function applyCatalog(raw) {
-    var catalog = root.parseCatalog(raw)
-    if (!catalog) {
-      root.rereadSource("catalog")
-      return
-    }
-    root.sourceRead("catalog")
-    root.menuCatalog = catalog
-    root.rebuildItemsFromSources(true)
-  }
-
-  // Torn source → rereads so far. A few seconds of rereads covers any write;
-  // a file still broken after that is left until it changes again.
-  property var tornSources: ({})
-
-  function rereadSource(name) {
-    var attempts = root.tornSources[name] || 0
-    if (attempts >= 10) return
-    var next = Object.assign({}, root.tornSources)
-    next[name] = attempts + 1
-    root.tornSources = next
-    menuSourceReread.restart()
-  }
-
-  // A fresh change (or a refresh, or a new catalog path) is a new write, so it
-  // gets a fresh budget even when an earlier one ran out.
-  function sourceChanged(name) {
-    root.sourceRead(name)
-  }
-
-  function sourceRead(name) {
-    if (!(name in root.tornSources)) return
-    var next = Object.assign({}, root.tornSources)
-    delete next[name]
-    root.tornSources = next
-  }
-
-  Timer {
-    id: menuSourceReread
-    interval: 300
-    onTriggered: {
-      var torn = root.tornSources
-      if (torn.default) defaultMenuFile.reload()
-      if (torn.user) userMenuFile.reload()
-      if (torn.catalog) menuCatalogFile.reload()
+      return ({})
     }
   }
 
@@ -368,7 +284,6 @@ Item {
     if (!/^[a-z]{2,3}(-[A-Za-z]{2})?$/.test(code)) code = "en"
     if (root.language === code) return
     root.language = code
-    root.sourceChanged("catalog")
     menuCatalogFile.reload()
   }
 
@@ -1236,11 +1151,10 @@ Item {
     path: root.defaultMenuPath
     watchChanges: true
     printErrors: false
-    onLoaded: root.applyDefaultMenu(text())
-    // Missing only while a checkout or update replaces it. A user file that
-    // loaded first held its evaluation for this one.
-    onLoadFailed: { root.rereadSource("default"); root.defaultMenuSettled = true; if (root.userMenuSettled) root.evaluateGuards() }
-    onFileChanged: { root.sourceChanged("default"); reload() }
+    onLoaded: { root.defaultMenuItems = MenuModel.keepMenuRows(root.defaultMenuItems, text(), true); root.defaultMenuSettled = true; root.rebuildItemsFromSources() }
+    // A user file that loaded first held its evaluation for this one.
+    onLoadFailed: { root.defaultMenuSettled = true; if (root.userMenuSettled) root.evaluateGuards() }
+    onFileChanged: reload()
   }
 
   FileView {
@@ -1248,9 +1162,9 @@ Item {
     path: root.userMenuPath
     watchChanges: true
     printErrors: false
-    onLoaded: root.applyUserMenu(text())
+    onLoaded: { root.userMenuItems = MenuModel.keepMenuRows(root.userMenuItems, text(), false); root.userMenuSettled = true; root.rebuildItemsFromSources() }
     onLoadFailed: { root.userMenuItems = []; root.userMenuSettled = true; root.rebuildItemsFromSources() }
-    onFileChanged: { root.sourceChanged("user"); reload() }
+    onFileChanged: reload()
   }
 
   // The language choice and its catalog are watched the same way, so
@@ -1270,11 +1184,9 @@ Item {
     path: root.omarchyPath + "/default/i18n/" + root.language + "/menu.json"
     watchChanges: true
     printErrors: false
-    onLoaded: root.applyCatalog(text())
-    // A language may have no catalog, so a missing one clears it, and is read
-    // again in case it was only being replaced.
-    onLoadFailed: { root.menuCatalog = ({}); root.rebuildItemsFromSources(true); root.rereadSource("catalog") }
-    onFileChanged: { root.sourceChanged("catalog"); reload() }
+    onLoaded: { root.menuCatalog = root.parseCatalog(text()); root.rebuildItemsFromSources(true) }
+    onLoadFailed: { root.menuCatalog = ({}); root.rebuildItemsFromSources(true) }
+    onFileChanged: reload()
   }
 
   // ---------------------------------------------------------------- guards
