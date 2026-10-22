@@ -46,6 +46,22 @@ assertEqual(
   'power shows battery icon when unplugged before battery state refreshes'
 )
 
+assertEqual(power.healthLevel('72%'), 72, 'power reads the health percentage out of its display string')
+assertEqual(power.healthLevel(undefined), 0, 'power treats missing health as unknown rather than zero percent')
+assertEqual(power.healthVerdict('95%'), 'Great', 'power calls a near-new pack great')
+assertEqual(power.healthVerdict('103%'), 'Great', 'power handles a pack charging past its design capacity')
+assertEqual(power.healthVerdict('90%'), 'Great', 'power keeps the practically-new boundary on the great side')
+assertEqual(power.healthVerdict('89%'), 'Normal', 'power calls a lightly worn pack normal')
+assertEqual(power.healthVerdict('80%'), 'Normal', 'power keeps the vendor service threshold on the normal side')
+assertEqual(power.healthVerdict('79%'), 'Worn', 'power calls a pack below the service threshold worn')
+assertEqual(power.healthVerdict('70%'), 'Worn', 'power keeps a third of the pack gone on the worn side')
+assertEqual(power.healthVerdict('69%'), 'Bad', 'power calls a pack past a third of its capacity bad')
+assertEqual(power.healthVerdict('41%'), 'Bad', 'power calls a badly degraded pack bad')
+assertEqual(power.healthVerdict(undefined), '', 'power gives no verdict without a health figure')
+assertEqual(power.healthHint('75%'), 'Worth planning a replacement', 'power tells a worn pack owner to plan ahead')
+assertEqual(power.healthHint('50%'), 'Time to replace it', 'power tells a spent pack owner to act')
+assertEqual(power.healthHint(undefined), '', 'power gives no hint without a health figure')
+
 assert(/if \(b === Qt\.RightButton\) root\.togglePercentage\(\)/.test(panelSource), 'power right click toggles the bar percentage')
 assert(/Object\.assign\([^\n]+showPercentage: !root\.showPercentage[^\n]+\)[\s\S]*updateEntryInline/.test(panelSource), 'power persists the bar percentage setting')
 // BarIconButton lays its label out before the icon; bar-icon-geometry-test.sh checks the order.
@@ -53,4 +69,46 @@ assert(/text: root\.batteryIcon\(\)\n\s*labelText: root\.showPercentage && !vert
 assert(/openPanelIndicatorWidth:.*showPercentage.*button\.glyphPaintedWidth : 0/.test(panelSource), 'power spans the open-panel mark across the painted percentage block')
 assert(/IpcHandler[\s\S]*?function togglePercentage\(\) \{ root\.togglePercentage\(\) \}/.test(panelSource), 'power exposes togglePercentage over IPC')
 assert(/manageIpc: false/.test(panelSource), 'power owns its IPC handler so it can extend the target methods')
+
+assert(/hasHealthInfo: !!\(batteryInfo\.design && batteryInfo\.health\)/.test(panelSource), 'power shows health rows only when both figures are present')
+assert(/label: Commons\.I18n\.t\("power\.batterySize"\)[\s\S]{0,200}root\.hasHealthInfo \? root\.batteryInfo\.design : root\.batteryInfo\.size/.test(panelSource), 'power labels the nameplate capacity as the battery size, falling back to what it holds')
+assert(/label: Commons\.I18n\.t\("power\.currentCapacity"\)[\s\S]{0,120}root\.batteryInfo\.size/.test(panelSource), 'power shows what the pack charges to today beside its nameplate size')
+assert(/text: Commons\.I18n\.t\("power\.batteryHealth"\)/.test(panelSource), 'power gives battery health its own section')
+assert(/label: Commons\.I18n\.t\("power\.chargeCycles"\)[\s\S]{0,120}visible: !root\.hasHealthInfo/.test(panelSource), 'power keeps the cycle count in the stats grid when there is no health section to hold it')
+assertEqual(power.healthVerdict('95%', (key, english) => 'translated ' + key), 'translated power.healthGreat', 'power translates the health verdict through tr')
+assertEqual(power.healthHint('75%', (key, english) => 'translated ' + key), 'translated power.healthPlanReplacement', 'power translates the health hint through tr')
+assert(/healthVerdict: Model\.healthVerdict\(batteryInfo\.health, Commons\.I18n\.t\)/.test(panelSource), 'power passes the translator to health verdicts')
+assert(/healthHint: Model\.healthHint\(batteryInfo\.health, Commons\.I18n\.t\)/.test(panelSource), 'power passes the translator to health hints')
+assert(/text: root\.reading\(root\.batteryInfo\.health\)/.test(panelSource), 'power localizes the displayed health percentage')
+
+const scrollFunction = panelSource.match(/^  function ensureProfileVisible\(\) \{[\s\S]*?^  \}/m)
+assert(scrollFunction, 'power exposes profile visibility handling for the loaded panel')
+
+function profileScroll(options = {}) {
+  const flick = {
+    contentY: 0,
+    contentHeight: 600,
+    height: 200,
+    contentItem: {},
+    ...options
+  }
+  const context = {
+    cursorActive: options.cursorActive !== false,
+    panel: { loadedContent: options.loaded === false ? null : {
+      scrollArea: { contentItem: flick },
+      profileRow: { height: options.rowHeight || 60, mapToItem: () => ({ y: options.top ?? 520 }) }
+    } },
+    Style: { space: value => value }
+  }
+  require('vm').runInNewContext(scrollFunction[0] + '\nensureProfileVisible()', context)
+  return flick.contentY
+}
+
+assertEqual(profileScroll(), 386, 'power scrolls an offscreen profile into view')
+assertEqual(profileScroll({ top: 540 }), 400, 'power stops scrolling at the end of the content')
+assertEqual(profileScroll({ top: 100, contentY: 300 }), 94, 'power brings a profile above the viewport back into view')
+assertEqual(profileScroll({ top: 120, contentY: 100 }), 100, 'power leaves a fully visible profile in place')
+assertEqual(profileScroll({ top: 100, contentHeight: 200 }), 0, 'power leaves fitting content at the top')
+assertEqual(profileScroll({ cursorActive: false }), 0, 'power keeps mouse scrolling independent of keyboard selection')
+assertEqual(profileScroll({ loaded: false }), 0, 'power handles profile selection before the content loads')
 JS
