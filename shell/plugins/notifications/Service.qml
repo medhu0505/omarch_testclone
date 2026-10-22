@@ -1288,7 +1288,6 @@ Item {
       // after the press so the button's tick is seen.
       if (codes.indexOf(" ") <= 0) codeTaken.keys = codeTaken.keys.concat([String(key)])
     }
-    else if (kind === "phone") copyText(value, false)
     else Security.openExternalUrl(value)
   }
 
@@ -1710,14 +1709,12 @@ Item {
       return wanted
     }
 
-    // Take one of the front card's offers: code, link or phone.
+    // Take one of the front card's offers: code or link.
     function offer(kind: string): string {
       if (toasts.count === 0) return "nothing"
       var row = toasts.get(0)
       var want = String(kind || "code")
-      var value = want === "code" ? String(row.code || "")
-                : want === "phone" ? String(row.phone || "")
-                : String(row.link || "")
+      var value = want === "code" ? String(row.code || "") : String(row.link || "")
       if (!value) return "none"
       service.takeOffer(want, value, String(row.key))
       return "performed"

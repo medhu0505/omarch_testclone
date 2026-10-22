@@ -411,7 +411,6 @@
   "notifications.closeSnoozeOptions": "Close snooze options",
   "notifications.codesException": "Verification codes still get through.",
   "notifications.copyCode": "Copy code",
-  "notifications.copyNumber": "Copy number",
   "notifications.copyThisCode": "Copy %1",
   "notifications.display": "Notification display",
   "notifications.displayActive": "Active display",
@@ -443,7 +442,6 @@
     "other": "%1 hours"
   },
   "notifications.hoursShort": "%1h",
-  "notifications.join": "Join",
   "notifications.minutes": {
     "one": "%1 minute",
     "other": "%1 minutes"
