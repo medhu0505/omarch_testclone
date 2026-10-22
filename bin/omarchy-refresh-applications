@@ -6,6 +6,14 @@
 mkdir -p ~/.local/share/applications
 cp "$OMARCHY_PATH"/applications/*.desktop ~/.local/share/applications/
 
+# Launchers a regional install left out stay out (omarchy-region-preinstalls).
+skipped="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/preinstalls-skipped"
+if [[ -r $skipped ]]; then
+  while IFS= read -r name; do
+    [[ -n $name && $name != */* ]] && rm -f ~/.local/share/applications/"$name".desktop
+  done <"$skipped"
+fi
+
 if omarchy-cmd-present alacritty; then
   cp "$OMARCHY_PATH/default/alacritty/Alacritty.desktop" ~/.local/share/applications/
 fi

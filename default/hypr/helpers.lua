@@ -135,6 +135,40 @@ function o.preinstalled_bindings_enabled()
   return not file_exists((os.getenv("HOME") or "") .. "/.local/state/omarchy/preinstalls-removed")
 end
 
+-- Descriptions of preinstalled bindings this user's regional install left out.
+local preinstalls_skipped = nil
+
+local function preinstall_skipped(description)
+  if preinstalls_skipped == nil then
+    preinstalls_skipped = {}
+    local state = os.getenv("XDG_STATE_HOME")
+    if state == nil or state == "" then
+      state = (os.getenv("HOME") or "") .. "/.local/state"
+    end
+    local file = io.open(state .. "/omarchy/preinstalls-skipped", "r")
+    if file then
+      for line in file:lines() do
+        local name = line:match("^%s*(.-)%s*$")
+        if name ~= "" then
+          preinstalls_skipped[name] = true
+        end
+      end
+      file:close()
+    end
+  end
+
+  return preinstalls_skipped[description] == true
+end
+
+-- A binding for a preinstalled app, unless the user's region left the app out.
+function o.bind_preinstalled(keys, description, dispatcher, options)
+  if preinstall_skipped(description) then
+    return
+  end
+
+  o.bind(keys, description, dispatcher, options)
+end
+
 function o.bind(keys, description, dispatcher, options)
   local opts = options or {}
 

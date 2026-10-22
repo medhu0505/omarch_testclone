@@ -1,0 +1,8 @@
+# Packages a China install adds to the defaults. The installer adds those its ISO
+# carries and skips the rest, such as one with no build for the machine yet.
+wechat-bin
+linuxqq
+wps-office-cn
+dingtalk-bin
+feishu-bin
+maplemono-nf-cn

@@ -519,7 +519,7 @@ scan_strings=$(python3 "$ROOT/scripts/i18n-sync.py" --root "$fix" extract-scan |
 assert_bash_equal "$scan_strings" '["Brand new string"]' "extract-scan finds embedded English literals"
 
 # Keybinding descriptions come from the bind calls: plain strings, a
-# concatenation becomes a %1 pattern, bind_hold describes press and release,
+# concatenation becomes a %1 pattern, bind_hold describes press and release, preinstalled binds count,
 # and a nil description or a commented-out bind adds nothing.
 mkdir -p "$fix/default/hypr/bindings"
 cat >"$fix/default/hypr/bindings/test.lua" <<'LUA'
@@ -529,6 +529,7 @@ for workspace = 1, 9 do
 end
 o.bind_hold("F9", "Start dictation", "omarchy-dictation start", "Stop dictation", "omarchy-dictation stop")
 o.bind_toggle("SUPER + CTRL + N", "Toggle nightlight", "nightlight")
+o.bind_preinstalled("SUPER + SHIFT + Y", "YouTube", { webapp = "https://youtube.com/" })
 o.bind(
   "SUPER + CTRL + code:10",
   "Bar panel " .. panel,
@@ -538,7 +539,7 @@ o.bind("switch:on:Lid Switch", nil, "omarchy-system-lid-close", { locked = true 
 -- o.bind("SUPER + X", "Commented out", "true")
 LUA
 keybinding_texts=$(cd "$fix" && python3 -c 'import importlib.util,json,sys; from pathlib import Path; spec=importlib.util.spec_from_file_location("s", sys.argv[1]); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); print(json.dumps(sorted(m.keybinding_descriptions(Path(".")))))' "$ROOT/scripts/i18n-sync.py")
-assert_bash_equal "$keybinding_texts" '["Bar panel %1", "Keybindings", "Start dictation", "Stop dictation", "Switch to workspace %1", "Toggle nightlight"]' "keybinding descriptions are extracted from the bind calls"
+assert_bash_equal "$keybinding_texts" '["Bar panel %1", "Keybindings", "Start dictation", "Stop dictation", "Switch to workspace %1", "Toggle nightlight", "YouTube"]' "keybinding descriptions are extracted from the bind calls"
 
 # Any display-text property name counts, both arms of a ternary count, and a
 # bare list item counts; identifiers and lines marked "i18n: ignore" do not.
