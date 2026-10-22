@@ -29,6 +29,13 @@ cat >"$mock_bin/omarchy-sudo-allowed" <<'SH'
 #!/bin/bash
 [[ $TEST_ADMIN == "yes" ]]
 SH
+# There is always something to update; the check is logged, since it syncs the
+# package databases.
+cat >"$mock_bin/checkupdates" <<'SH'
+#!/bin/bash
+echo checkupdates >>"$TEST_NOTIFICATIONS"
+exit 0
+SH
 chmod +x "$mock_bin"/*
 
 notifications="$test_tmp/notifications"
@@ -46,7 +53,8 @@ pass "an administrator is asked to update the system"
 
 run_first_run_step no yes
 grep -F 'Update System' "$notifications" >/dev/null && fail "an account that isn't an administrator is not asked to update" "$(cat "$notifications")"
-pass "other accounts are not asked to update"
+grep -Fx checkupdates "$notifications" >/dev/null && fail "an account that isn't an administrator doesn't check for updates" "$(cat "$notifications")"
+pass "other accounts are not asked to update, and don't check for one"
 
 run_first_run_step no no
 grep -F 'Setup Wi-Fi' "$notifications" >/dev/null || fail "every account is offered Wi-Fi setup when offline" "$(cat "$notifications")"
