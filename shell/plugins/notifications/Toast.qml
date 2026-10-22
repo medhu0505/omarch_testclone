@@ -73,7 +73,7 @@ Item {
   signal dismissed()
   signal snoozeRequested(int seconds)
   signal silenceRequested()
-  signal offerTaken(string kind, string value)
+  signal codeCopied(string code)
   signal actionInvoked(string identifier)
 
   readonly property bool critical: row.urgency === 2
@@ -186,14 +186,14 @@ Item {
     if (kind === "snooze") { menuOpen = false; snoozeRequested(Number(deed.value)); return }
     if (kind === "silence") { menuOpen = false; silenceRequested(); return }
     if (kind === "action") { actionInvoked(String(deed.value)); return }
-    offerTaken(kind, String(deed.value))
-    takenKind = kind + ":" + String(deed.value)
+    codeCopied(String(deed.value))
+    copiedCode = String(deed.value)
     tick.restart()
   }
 
-  // "kind:value" of the last press, ticked for a moment: copying is silent.
-  property string takenKind: ""
-  Timer { id: tick; interval: 1400; onTriggered: card.takenKind = "" }
+  // The code last copied, ticked for a moment: copying is silent.
+  property string copiedCode: ""
+  Timer { id: tick; interval: 1400; onTriggered: card.copiedCode = "" }
 
   // One ticker drives both the countdown and the expiry, so they cannot drift;
   // pausing holds the remaining time rather than restarting it.

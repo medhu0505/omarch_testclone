@@ -1225,9 +1225,9 @@ Item {
     closeToast(key, "activated")
   }
 
-  // ------------------------------------------------------------- offers
+  // -------------------------------------------------------------- codes
   //
-  // Acting on what Detect.js found in a card: copy the code, open the link.
+  // Copying the code Detect.js found in a card.
   Process { id: clipProc; running: false }
 
   function runClip(args) {
@@ -1267,17 +1267,14 @@ Item {
     }
   }
 
-  function takeOffer(kind, value, key) {
-    if (kind === "code") {
-      var at = rowIndexFor(String(key || ""))
-      var codes = at >= 0 ? String(toasts.get(at).codes) : ""
-      if (at < 0 || codes.split(" ").indexOf(String(value)) < 0) return
-      copyText(value, true)
-      // A copied code finishes its card unless it carried several, a moment
-      // after the press so the button's tick is seen.
-      if (codes.indexOf(" ") <= 0) codeTaken.keys = codeTaken.keys.concat([String(key)])
-    }
-    else Security.openExternalUrl(value)
+  function copyCode(value, key) {
+    var at = rowIndexFor(String(key || ""))
+    var codes = at >= 0 ? String(toasts.get(at).codes) : ""
+    if (at < 0 || codes.split(" ").indexOf(String(value)) < 0) return
+    copyText(value, true)
+    // A copied code finishes its card unless it carried several, a moment
+    // after the press so the button's tick is seen.
+    if (codes.indexOf(" ") <= 0) codeTaken.keys = codeTaken.keys.concat([String(key)])
   }
 
   Timer {
@@ -1698,14 +1695,12 @@ Item {
       return wanted
     }
 
-    // Take one of the front card's offers: code or link.
-    function offer(kind: string): string {
+    // Copy the front card's code.
+    function copyCode(): string {
       if (toasts.count === 0) return "nothing"
       var row = toasts.get(0)
-      var want = String(kind || "code")
-      var value = want === "code" ? String(row.code || "") : String(row.link || "")
-      if (!value) return "none"
-      service.takeOffer(want, value, String(row.key))
+      if (!String(row.code || "")) return "none"
+      service.copyCode(String(row.code), String(row.key))
       return "performed"
     }
 
@@ -1873,7 +1868,7 @@ Item {
               hoverX: service.hoverX
               hoverY: service.hoverY
               onActionInvoked: function(identifier) { service.invokeAction(model.key, identifier) }
-              onOfferTaken: function(kind, value) { service.takeOffer(kind, value, model.key) }
+              onCodeCopied: function(code) { service.copyCode(code, model.key) }
               iconOverrides: service.iconOverrides
               now: service.nowTick
               expanded: service.expanded
