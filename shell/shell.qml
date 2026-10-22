@@ -459,6 +459,7 @@ ShellRoot {
     var api = pluginBarStateApiComponent.createObject(null, { ownerPluginId: pluginId })
     if (!api) return null
     api.barHidden = Qt.binding(function() { return shell.bar ? shell.bar.barHidden === true : false })
+    api.barMoveActive = Qt.binding(function() { return shell.bar ? shell.bar.barMoveActive === true : false })
     api.barSize = Qt.binding(function() { return shell.bar ? Math.max(0, shell.bar.barSize || 0) : 0 })
     api.barSizes = Qt.binding(function() { return shell.bar ? shell.detachedBarSizes(shell.bar.screenBarSizes) : ({}) })
     api.fontFamily = Qt.binding(function() { return shell.bar ? String(shell.bar.fontFamily || "") : "" })

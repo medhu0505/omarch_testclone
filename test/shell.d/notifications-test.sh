@@ -71,3 +71,17 @@ grep -q 'WlrLayershell.namespace: "omarchy-notifications"' "$service" ||
 grep -q 'omarchy-notifications' "$ROOT/default/hypr/toggles/window-glassy.lua" ||
   fail "glassy toggle still matches the notification layer namespace"
 pass "notification surface keeps the omarchy-notifications layer namespace"
+
+# The deck on Overlay would take the pointer from a bar being moved and end the
+# drag where the cards start, so its input region empties for the move.
+grep -qF 'readonly property bool barMoveActive: !!(barRef && barRef.barMoveActive)' "$service" ||
+  fail "toast cards take no input while the bar is being moved" "no barMoveActive from the bar"
+grep -qF 'mask: Region { item: surface.showingNotifications && !service.barMoveActive ? deck : null }' "$service" ||
+  fail "toast cards take no input while the bar is being moved" "deck mask ignores barMoveActive"
+# A cloned notifications plugin reads the bar through PluginBarStateApi, so
+# the move flag has to reach that view too.
+grep -qF 'property bool barMoveActive: false' "$ROOT/shell/services/PluginBarStateApi.qml" ||
+  fail "cloned toast cards take no input while the bar is being moved" "PluginBarStateApi has no barMoveActive"
+grep -qF 'api.barMoveActive = Qt.binding(function() { return shell.bar ? shell.bar.barMoveActive === true : false })' "$ROOT/shell/shell.qml" ||
+  fail "cloned toast cards take no input while the bar is being moved" "plugin bar state does not follow barMoveActive"
+pass "toast cards take no input while the bar is being moved"
