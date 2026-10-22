@@ -38,6 +38,8 @@ Item {
   property string selectedAccountLabel: ""
   property string switchingAccountId: ""
   property string settingExitNodeId: ""
+  property bool exitNodeOffline: false
+  property string exitNodeName: ""
   property bool accountsAccessDenied: false
   property string actionStatus: ""
   property string lastError: ""
@@ -220,6 +222,8 @@ Item {
     selectedAccountLabel = ""
     switchingAccountId = ""
     settingExitNodeId = ""
+    exitNodeOffline = false
+    exitNodeName = ""
     accountsAccessDenied = false
   }
 
@@ -251,6 +255,8 @@ Item {
     peers = parsed.running ? parsed.peers : []
     tailnetExitNodes = parsed.running ? parsed.exitNodes : []
     exitNodes = parsed.running ? tailnetExitNodes.concat(mullvadRegions) : []
+    exitNodeOffline = parsed.exitNodeOffline
+    exitNodeName = parsed.exitNodeName
 
     if (needsLogin) statusText = "Needs login"
     else if (running) {
@@ -343,6 +349,15 @@ Item {
     _exitNodeError = ""
     settingExitNodeId = String(peer.id || "")
     exitNodeProcess.command = ["tailscale", "set", "--exit-node=" + target]
+    exitNodeProcess.running = true
+  }
+
+  // Works without the node's peer row, which can vanish while it is offline.
+  function clearExitNode() {
+    if (!installed || !running || exitNodeProcess.running) return
+    _exitNodeOutput = ""
+    _exitNodeError = ""
+    exitNodeProcess.command = ["tailscale", "set", "--exit-node="]
     exitNodeProcess.running = true
   }
 
