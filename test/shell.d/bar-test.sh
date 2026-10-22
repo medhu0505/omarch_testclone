@@ -68,23 +68,9 @@ assert(
   'putting a bar widget over IPC goes through the registry put'
 )
 
-// Hiding must not unmap the bar. An unmapped layer surface has to be rebuilt on
-// every reveal, which measured ~150ms against ~20ms to tear it down; parking it
-// past the screen edge keeps show and hide symmetric at ~12ms.
-assert(
-  /visible: !remapGuard\.remapping/.test(barSource),
-  'bar stays mapped while hidden so revealing it does not rebuild the surface'
-)
-assert(
-  /exclusionMode: root\.barHidden \? ExclusionMode\.Ignore : ExclusionMode\.Auto/.test(barSource),
-  'a hidden bar reserves no space for itself'
-)
-for (const edge of ['top', 'bottom', 'left', 'right']) {
-  assert(
-    new RegExp(`${edge}: root\\.barHidden && root\\.position === "${edge}" \\? -barWindow\\.thickness : 0`).test(barSource),
-    `a hidden bar parks past the ${edge} edge by its whole thickness`
-  )
-}
+// Hide/reveal surface lifetime and geometry are exercised in the disposable
+// desktop by test/acceptance.d/bar-reveal-test.sh. Static parking assertions
+// cannot establish progress when a Wayland frame callback is pending.
 
 const moduleSlot = barSource.slice(barSource.indexOf('component ModuleSlot'), barSource.indexOf('component CustomCommandModule'))
 const dragSpacer = barSource.slice(barSource.indexOf('component DragSpacer'), barSource.indexOf('component CenterGestureArea'))

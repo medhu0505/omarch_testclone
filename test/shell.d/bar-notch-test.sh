@@ -187,7 +187,7 @@ for (const position of ['bottom', 'left', 'right'])
   assertEqual(bar.cutoutPending(pro16, position, 'eDP-1', 2592, 1676, 2, null), false, `a ${position} bar never waits`)
 assert(
   /readonly property bool cutoutPending: BarModel\.cutoutPending\(root\.displayCutouts, root\.position, screen\.name, screen\.width, screen\.height, screen\.devicePixelRatio, panelMode\)/.test(barSource) &&
-    /visible: !remapGuard\.remapping && \(cutoutWaitOver \|\| !cutoutPending\)/.test(barSource),
+    /visible: !root\.barHidden && !remapGuard\.remapping && \(cutoutWaitOver \|\| !cutoutPending\)/.test(barSource),
   'a bar surface maps only once its floor is known, and still remaps on a screen move'
 )
 assert(

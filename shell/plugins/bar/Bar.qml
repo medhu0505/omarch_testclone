@@ -1534,31 +1534,21 @@ Item {
   component BarPanel: PanelWindow {
     id: barWindow
 
-    // Hiding parks the bar just past its screen edge instead of unmapping it.
-    // Unmapping frees the layer surface and the whole scene graph, so every
-    // reveal has to rebuild them — new surface, re-shaped glyphs, re-uploaded
-    // textures — which measures ~150ms against ~20ms to tear down. Parking
-    // keeps the surface alive, so showing is only a margin change.
+    // A parked layer can wait indefinitely for its frame callback, leaving a
+    // reveal's margin change uncommitted. Unmap while hidden so revealing uses
+    // a fresh layer surface rather than depending on that callback. This trades
+    // the parked surface's cheap reveal for rebuilding its backing scene graph.
     //
     // A top bar that can't tell its notch floor yet waits for Hyprland's mode
     // before it maps (see BarModel.cutoutPending), so it maps at its floor
     // instead of growing once the windows are laid out. The wait ends once, for
     // good: when the mode settles it, or after two seconds without one.
-    visible: !remapGuard.remapping && (cutoutWaitOver || !cutoutPending)
+    visible: !root.barHidden && !remapGuard.remapping && (cutoutWaitOver || !cutoutPending)
     exclusionMode: root.barHidden ? ExclusionMode.Ignore : ExclusionMode.Auto
 
     ScreenMoveRemap {
       id: remapGuard
       window: barWindow
-    }
-
-    // Parked by its full thickness, which a notch floor may make more than
-    // barSize, so no strip of it stays on screen.
-    margins {
-      top: root.barHidden && root.position === "top" ? -barWindow.thickness : 0
-      bottom: root.barHidden && root.position === "bottom" ? -barWindow.thickness : 0
-      left: root.barHidden && root.position === "left" ? -barWindow.thickness : 0
-      right: root.barHidden && root.position === "right" ? -barWindow.thickness : 0
     }
 
     anchors {
