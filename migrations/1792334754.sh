@@ -12,9 +12,10 @@ fi
 # gateway running it, is theirs to move aside. Failing here would stop every
 # update until they did, so the rest of the move is left to launching OpenClaw
 # from Omarchy, which finishes it once the way is clear. A service the old
-# package installed has been moved to the runtime by then, since it no longer
-# starts from the seed package. A setup that failed, the npm registry out of
-# reach for one, stays pending as before.
+# package installed, which no longer starts from the seed package, is moved to
+# the runtime first, unless a gateway running another OpenClaw keeps one from
+# being set up at all. A setup that failed, the npm registry out of reach for
+# one, stays pending as before.
 status=0
 omarchy-install-openclaw-cli --now || status=$?
 if ((status == 79)); then

@@ -175,12 +175,13 @@ touch "$seed/openclaw.tgz"
 # Scratch copies of the actual scripts, with only the package's path and
 # /usr/local/bin swapped.
 mkdir -p "$test_tmp/usr-local-bin"
-for script in bin/omarchy-install-openclaw-cli migrations/1792334754.sh migrations/1790397381.sh; do
+for script in bin/omarchy-install-openclaw-cli migrations/1792334754.sh migrations/1792426284.sh migrations/1790397381.sh; do
   sed -e "s|/usr/share/openclaw|$seed|g" -e "s|/usr/local/bin|$test_tmp/usr-local-bin|g" -e "s|/usr/bin/openclaw|$test_tmp/usr-bin/openclaw|g" \
     "$ROOT/$script" >"$mock_bin/${script##*/}"
 done
 mv "$mock_bin/1792334754.sh" "$test_tmp/migration.sh"
 mv "$mock_bin/1790397381.sh" "$test_tmp/retired-migration.sh"
+mv "$mock_bin/1792426284.sh" "$test_tmp/repair-migration.sh"
 chmod +x "$mock_bin/omarchy-install-openclaw-cli"
 
 new_home() {
@@ -885,6 +886,24 @@ grep -q '^runtime doctor' "$events" && [[ -e $test_home/active-openclaw-gateway.
   fail "the retried migration repairs and starts the gateway the failed run stopped" "$(cat "$events")"
 grep -q mine "$command" || fail "the user's own command is kept through the retry"
 pass "a gateway a failed move left stopped is repaired by the next migration, with the user's command still in the way"
+
+# 4.5.0-rc1's 1792334754 finished without moving anything beside the user's own
+# command, so a machine that took it still has the old package's gateway. The
+# repair migration moves it.
+new_home migration-repair
+touch "$test_tmp/package-installed"
+units="$test_home/.config/systemd/user"
+mkdir -p "$units"
+printf 'ExecStart=/usr/bin/node /usr/lib/node_modules/openclaw/dist/index.js gateway --port 18789\n' >"$units/openclaw-gateway.service"
+touch "$test_home/active-openclaw-gateway.service" "$test_home/enabled-openclaw-gateway.service"
+printf '#!/bin/bash\necho mine\n' >"$command"
+chmod +x "$command"
+run bash -euo pipefail "$test_tmp/repair-migration.sh" ||
+  fail "the repair migration finishes beside the user's command" "$(cat "$test_tmp/output")"
+! grep -qF /usr/lib/node_modules "$units/openclaw-gateway.service" && [[ -e $test_home/active-openclaw-gateway.service ]] ||
+  fail "the repair migration moves the gateway rc1 left on the old package" "$(cat "$units/openclaw-gateway.service")"
+grep -q mine "$command" || fail "the repair migration keeps the user's own command"
+pass "the repair migration moves a service 4.5.0-rc1 left on the old package beside the user's own command"
 
 new_home migration-update
 touch "$test_tmp/package-installed"
