@@ -131,3 +131,9 @@ printf 'png' >"$WORKDIR/outbox/Translated Image.png"
 receive 1 env OMARCHY_LANGUAGE_FILE="$WORKDIR/language"
 assert_notification "$downloads/Translated Image.png" "Modtaget Translated Image.png" "Gemt til $downloads"
 pass "taildrop receive preserves localized glyph notifications"
+
+# A save location under HOME reads as ~, not the expanded path.
+printf 'png' >"$WORKDIR/outbox/home.png"
+receive 1 env HOME="$WORKDIR"
+assert_notification "$downloads/home.png" "Received home.png" "Saved to ~/downloads"
+pass "taildrop receive shortens a save location under HOME"
