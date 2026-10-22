@@ -416,6 +416,7 @@ Item {
                   // On means notifications are coming through.
                   ToggleSwitch {
                     anchors.verticalCenter: parent.verticalCenter
+                    accessibleName: I18n.t("notifications.title")
                     checked: !root.quiet
                     foreground: root.panelFg
                     onToggled: root.toggleQuiet()
@@ -835,6 +836,7 @@ Item {
       ToggleSwitch {
         id: toggle
         anchors.verticalCenter: parent.verticalCenter
+        accessibleName: switchRow.label
         checked: switchRow.checked
         foreground: root.panelFg
         onToggled: switchRow.toggled()
