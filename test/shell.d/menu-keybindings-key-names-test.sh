@@ -153,3 +153,45 @@ tr -s ' ' <<<"$output" | grep -qF 'SHIFT + XF86MonBrightnessUp → Keyboard brig
   fail "without key names the brightness key keeps its own name" "$output"
 grep -qF 'SHIFT + F2' <<<"$output" && fail "without key names nothing is renamed F2" "$output"
 pass "keybindings menu keeps keysym names without a platform package"
+
+# Inside a mode every key takes the platform's name, the chord that enters it
+# included, so the mode's rows still sort under that chord's own row.
+mkdir -p "$mock_bin/modes"
+cat >"$mock_bin/modes/hyprctl" <<'SH'
+#!/bin/bash
+[[ $1 == "binds" ]] || exit 0
+cat <<'BINDS'
+bind
+	modmask: 0
+	submap: brightness
+	key: XF86MonBrightnessDown
+	keycode: 0
+	description: Dim display
+	dispatcher: exec
+	arg: omarchy-brightness-display -5%
+
+bind
+	modmask: 1
+	submap: brightness
+	key: H
+	keycode: 0
+	description: Dim keyboard
+	dispatcher: exec
+	arg: omarchy-brightness-keyboard down
+
+bind
+	modmask: 64
+	submap:
+	key: XF86MonBrightnessUp
+	keycode: 0
+	description: Brightness mode
+	dispatcher: submap
+	arg: brightness
+BINDS
+SH
+chmod +x "$mock_bin/modes/hyprctl"
+
+output=$(PATH="$mock_bin/modes:$mock_bin:$PATH" XDG_CACHE_HOME="$cache_dir" "$platform/bin/with-names" --print | tr -s ' ')
+[[ $(grep -A2 '^SUPER + F2 → Brightness mode' <<<"$output" | tail -n +2) == $'SUPER + F2 > F1 → Dim display\nSUPER + F2 > SHIFT + H → Dim keyboard' ]] ||
+  fail "a mode's rows name its keys as the platform does and sit under the chord that enters it" "$output"
+pass "keybindings menu shows a platform's key names inside a mode"
