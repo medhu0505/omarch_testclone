@@ -49,12 +49,13 @@ Item {
         && localHoverY >= origin.y && localHoverY <= origin.y + item.height
   }
 
-  // "now", then minutes, then the clock time, then "yesterday", then the day.
+  // Nothing while it is fresh, then minutes, then the clock time, then
+  // "yesterday", then the day.
   function ago() {
     var t = Number(row.ts || 0) * 1000
     if (!t) return ""
     var s = Math.max(0, (now - t) / 1000)
-    if (s < 50) return I18n.t("notifications.now")
+    if (s < 300) return ""
     if (s < 3600) return I18n.t("notifications.minutesAgo").arg(I18n.formatNumber(Math.round(s / 60)))
     var then = new Date(t)
     var locale = Qt.locale(I18n.formatLocale)
