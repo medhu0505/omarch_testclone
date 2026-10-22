@@ -50,6 +50,7 @@ hl = setmetatable({
 })
 
 require("default.hypr.helpers")
+require("default.hypr.monitor-workspaces")
 require("default.hypr.bindings.tiling")
 
 local toggle_split = bindings["SUPER + J"]
