@@ -3,14 +3,29 @@
 # omarchy:summary=Remove T3 Code along with its configuration and workspaces.
 # omarchy:requires-sudo=true
 
-set -e
+set -euo pipefail
+
+t3code_home="${T3CODE_HOME:-$HOME/.t3}"
+resolved_t3code_home=$(realpath -m -- "$t3code_home")
+resolved_home=$(realpath -m -- "$HOME")
+
+# Match the installer's configured home, but never let it take the user's
+# home or a parent of it. Resolve aliases for validation only, so removal
+# still unlinks a symlinked home instead of recursively deleting its target.
+if [[ $resolved_t3code_home == "/" || $resolved_home == "$resolved_t3code_home" || $resolved_home == "$resolved_t3code_home/"* ]]; then
+  echo "Refusing to remove T3 Code: its data directory is your home or an ancestor." >&2
+  exit 1
+fi
+while [[ $t3code_home == */ ]]; do
+  t3code_home=${t3code_home%/}
+done
 
 # Installs from before the AppImage came from these packages.
 omarchy-pkg-drop t3code-bin t3code-nightly-bin
 
 # A `t3` link to one of T3 Code's launchers would only dangle once it is gone.
 case $(readlink "$HOME/.local/bin/t3" || true) in
-"$HOME/.t3/bin/t3" | /usr/bin/t3 | /usr/bin/t3-nightly) rm -f "$HOME/.local/bin/t3" ;;
+"${T3CODE_HOME:-$HOME/.t3}/bin/t3" | /usr/bin/t3 | /usr/bin/t3-nightly) rm -f "$HOME/.local/bin/t3" ;;
 esac
 
 # The app registers its own hidden link handler next to Omarchy's launcher.
@@ -23,12 +38,12 @@ update-desktop-database "$HOME/.local/share/applications" &>/dev/null || true
 
 # T3 Code drives agents that keep their own state -- ~/.claude.json, ~/.grok,
 # ~/.local/share/opencode -- and those outlive it, so only its own goes.
-rm -rf \
+rm -rf -- \
   "$HOME/.local/share/t3code" \
   "$HOME/.cache/t3code-updater" \
   "$HOME/.config/t3code" \
   "$HOME/.config/t3code-v2" \
-  "$HOME/.t3"
+  "$t3code_home"
 rm -f "$HOME/.config/t3code-flags.conf"
 
 echo ""
