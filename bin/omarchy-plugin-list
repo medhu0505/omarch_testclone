@@ -27,6 +27,17 @@ done
 
 plugins=$(omarchy-shell shell listPlugins)
 
+# The qs ipc client prints Qt diagnostics on stdout -- since Qt 6.12, the
+# non-UTF-8 locale warning lands there ahead of the payload (#15834). Skip to
+# the JSON array; a call that never produced one is an error, not an empty
+# plugin list.
+stripped=$(printf '%s\n' "$plugins" | sed -n '/^\[/,$p')
+if [[ -z $stripped ]]; then
+  echo "omarchy-plugin-list: omarchy-shell returned no plugin list" >&2
+  exit 1
+fi
+plugins=$stripped
+
 if [[ $json == "true" ]]; then
   printf '%s\n' "$plugins"
   exit 0
