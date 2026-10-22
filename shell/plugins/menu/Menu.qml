@@ -1668,6 +1668,7 @@ Item {
 
           Column {
             anchors.centerIn: parent
+            width: parent.width
             spacing: Style.space(8)
             visible: displayModel.count === 0 && root.mode !== "input"
 
@@ -1678,7 +1679,7 @@ Item {
               font.family: root.fontFamily
               font.pixelSize: Style.font.displayLarge
               horizontalAlignment: Text.AlignHCenter
-              width: Style.space(320)
+              width: parent.width
             }
 
             Text {
@@ -1689,7 +1690,8 @@ Item {
               font.family: root.fontFamily
               font.pixelSize: Style.font.title
               horizontalAlignment: Text.AlignHCenter
-              width: Style.space(320)
+              width: parent.width
+              elide: Text.ElideRight
             }
           }
         }
