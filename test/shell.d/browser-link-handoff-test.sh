@@ -39,6 +39,12 @@ grep -qxF "NoDisplay=true" "$applications/omarchy-browser.desktop" ||
   fail "the link entry stays out of the app launcher"
 pass "the link entry opens links through omarchy-launch-browser, out of the launcher's sight"
 
+# GLib, and so the portal's OpenURI, only hands a launched app the caller's
+# activation token when its entry asks for startup notification.
+grep -qxF "StartupNotify=true" "$applications/omarchy-browser.desktop" ||
+  fail "the link entry receives the activation token of whatever opened the link"
+pass "the link entry receives the activation token of whatever opened the link"
+
 omarchy-default-browser firefox || fail "setting the default browser succeeds behind the link entry"
 grep -qxF "x-scheme-handler/https=firefox.desktop" "$XDG_CONFIG_HOME/mimeapps.list" ||
   fail "setting the default browser records it in mimeapps.list" "$(cat "$XDG_CONFIG_HOME/mimeapps.list")"

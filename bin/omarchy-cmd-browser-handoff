@@ -40,6 +40,14 @@ done
 socket="$config/$profile/SingletonSocket"
 [[ -S $socket && -O $socket ]] || exit 1
 
+# The token from whatever opened the link is the compositor's proof that a click
+# asked for focus. A browser process moves XDG_ACTIVATION_TOKEN into this switch
+# before it hands off, so do the same; without it the running browser asks for
+# focus with a token of its own.
+if [[ -n ${XDG_ACTIVATION_TOKEN:-} ]]; then
+  set -- --xdg-activation-token="$XDG_ACTIVATION_TOKEN" "$@"
+fi
+
 reply=$({
   printf 'START\0%s\0browser' "$PWD"
   printf '\0%s' "$@"
