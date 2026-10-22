@@ -34,9 +34,8 @@ Singleton {
   // again after it went away with the last device, when the watch on the old
   // directory is gone and has to be set up on the new one. udev's records for
   // input devices are the c13: entries, character major 13.
-  // setpriv ends the watch with the shell: Quickshell does not take its
-  // children along when it stops, and a quiet /dev/input never makes the
-  // orphaned inotifywait notice.
+  // setpriv ends the watch if the shell is killed rather than stopped: a quiet
+  // /dev/input never makes an orphaned inotifywait notice.
   Process {
     id: watcher
     command: ["setpriv", "--pdeathsig", "TERM", "bash", "-c",

@@ -125,7 +125,7 @@ Singleton {
 
   // The volume keys, the mute key and other apps change the node too. pactl
   // translates its events, so they are read in the C locale. setpriv ends it
-  // with the shell, which does not take its children along when it stops.
+  // if the shell is killed rather than stopped.
   Process {
     id: events
     command: ["setpriv", "--pdeathsig", "TERM", "pactl", "subscribe"]
