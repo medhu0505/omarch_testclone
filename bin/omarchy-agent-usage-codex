@@ -392,12 +392,15 @@ def scan_opencode_sessions():
     #     well-formed JSON are skipped here; the per-row try/except below
     #     stays as the final safety net for rows that pass the SQL filter
     #     but fail json.loads.
+    # One snapshot for every query, so a migration committing between them
+    # cannot slip a row past the v1 dedupe below.
+    conn.execute("BEGIN")
     tables = {name for (name,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     # A database can hold v1 rows, v2 rows, or both. v2 writes
-    # `session_message`: the role is its own `type` column and the provider and
-    # model nest under data.model. Its migration copies each v1 row there under
-    # the same id and session and keeps the original, so a v1 row counts only
-    # when v2 has no copy of it.
+    # `session_message`: the role is its own `type` column, compactions carry
+    # usage of their own, and the provider and model nest under data.model. Its
+    # migration copies each v1 row there under the same id and session and keeps
+    # the original, so a v1 row counts only when v2 has no copy of it.
     queries = []
     if "message" in tables:
       queries.append(
@@ -411,7 +414,7 @@ def scan_opencode_sessions():
     if "session_message" in tables:
       queries.append(
         "SELECT session_id, data, type FROM session_message"
-        " WHERE type = 'assistant'"
+        " WHERE type IN ('assistant', 'compaction')"
         " AND data LIKE '%\"providerID\"%:%\"openai\"%'"
         " AND CASE WHEN json_valid(data) THEN json_extract(data, '$.model.providerID') END = 'openai'"
       )
@@ -439,7 +442,7 @@ def scan_opencode_sessions():
             model_id = model_info.get("id")
           # Exact match: opencode provider ids are free-form, and a custom
           # "openai-local" gateway is not this subscription.
-          if role != "assistant" or str(provider or "") != "openai":
+          if role not in ("assistant", "compaction") or str(provider or "") != "openai":
             continue
           tokens = entry.get("tokens") or {}
           cache = tokens.get("cache") or {}

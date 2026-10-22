@@ -222,8 +222,10 @@ pass "Codex collector counts OpenAI usage, reasoning included, from opencode ses
 pass "Codex collector ignores prefix-colliding providers, user messages, and malformed rows"
 
 # opencode v2 writes session_message instead of message: the role is its own
-# column and the provider and model nest under data.model. Its migration copies
-# a v1 row there under the same id and keeps the original, which counts once.
+# column, compactions carry usage of their own, and the provider and model nest
+# under data.model. Its migration copies a v1 row there under the same id and
+# keeps the original, which counts once; a v1 row without a copy still counts,
+# in the same session as the v2 rows beside it.
 OPENCODE_V2_HOME=$(signed_in_home)
 cp "$TEST_HOME/bin/codex" "$OPENCODE_V2_HOME/bin/codex"
 
@@ -244,6 +246,11 @@ conn.execute("INSERT INTO message VALUES ('msg_1', 'ses_1', ?, ?, ?)", (now_ms, 
   "tokens": {"input": 1, "output": 1, "reasoning": 0, "cache": {"read": 0, "write": 0}},
   "time": {"created": now_ms},
 })))
+conn.execute("INSERT INTO message VALUES ('msg_6', 'ses_v2', ?, ?, ?)", (now_ms, now_ms, json.dumps({
+  "role": "assistant", "providerID": "openai", "modelID": "gpt-5.2-codex",
+  "tokens": {"input": 10, "output": 0, "reasoning": 0, "cache": {"read": 0, "write": 0}},
+  "time": {"created": now_ms},
+})))
 conn.execute("""CREATE TABLE session_message (
   id text PRIMARY KEY, session_id text NOT NULL, type text NOT NULL,
   seq integer NOT NULL, time_created integer NOT NULL, time_updated integer NOT NULL, data text NOT NULL)""")
@@ -261,8 +268,9 @@ conn.executemany("INSERT INTO session_message VALUES (?, ?, ?, ?, ?, ?, ?)", [
   v2_message("v_2", "openai", "gpt-5.6-terra", type="user", input=999),
   v2_message("v_3", "openai-local", "gpt-5.6-terra", input=999),
   v2_message("v_4", "anthropic", "claude-opus-5", input=999),
+  v2_message("v_6", "openai", "gpt-5.6-terra", type="compaction", input=5),
 ])
-conn.execute("INSERT INTO session_message VALUES ('v_5', 'ses_v2', 'assistant', 1, ?, ?, 'not json')", (now_ms, now_ms))
+conn.execute("""INSERT INTO session_message VALUES ('v_5', 'ses_v2', 'assistant', 1, ?, ?, '{"model": {"providerID": "openai"')""", (now_ms, now_ms))
 conn.commit()
 conn.close()
 PY
@@ -270,26 +278,27 @@ PY
 result=$(HOME="$OPENCODE_V2_HOME" CODEX_HOME="$OPENCODE_V2_HOME/.codex" XDG_DATA_HOME="$OPENCODE_V2_HOME/.local/share" \
   XDG_CACHE_HOME="$OPENCODE_V2_HOME/.cache" PATH="$OPENCODE_V2_HOME/bin:$PATH" "$collector" --force)
 
-[[ $(jq -r '(.todayTotalTokens|tostring) + "/" + (.todaySessions|tostring)' <<<"$result") == "120/2" ]] ||
+[[ $(jq -r '(.todayTotalTokens|tostring) + "/" + (.todaySessions|tostring)' <<<"$result") == "135/2" ]] ||
   fail "Codex collector counts OpenAI usage from opencode v2 sessions" "$result"
 pass "Codex collector counts OpenAI usage from opencode v2 sessions"
 
-[[ $(jq -c '.modelUsage["gpt-5.6-terra"]' <<<"$result") == '{"inputTokens":4,"outputTokens":103,"cacheReadInputTokens":8,"cacheCreationInputTokens":3}' ]] ||
+[[ $(jq -c '.modelUsage["gpt-5.6-terra"]' <<<"$result") == '{"inputTokens":9,"outputTokens":103,"cacheReadInputTokens":8,"cacheCreationInputTokens":3}' ]] ||
   fail "Codex collector reads the model from opencode v2's nested model" "$result"
 pass "Codex collector reads the model from opencode v2's nested model"
 
-[[ $(jq -c '.modelUsage["gpt-5.2-codex"]' <<<"$result") == '{"inputTokens":1,"outputTokens":1,"cacheReadInputTokens":0,"cacheCreationInputTokens":0}' ]] ||
+[[ $(jq -c '.modelUsage["gpt-5.2-codex"]' <<<"$result") == '{"inputTokens":11,"outputTokens":1,"cacheReadInputTokens":0,"cacheCreationInputTokens":0}' ]] ||
   fail "Codex collector counts a migrated opencode v1 row once" "$result"
 pass "Codex collector counts a migrated opencode v1 row once"
 
 # A fresh v2 install has no legacy message table at all.
 python3 -c 'import sqlite3, sys; c = sqlite3.connect(sys.argv[1]); c.execute("DROP TABLE message"); c.commit()' \
-  "$OPENCODE_V2_HOME/.local/share/opencode/opencode.db"
+  "$OPENCODE_V2_HOME/.local/share/opencode/opencode.db" ||
+  fail "dropping the legacy opencode message table"
 
 result=$(HOME="$OPENCODE_V2_HOME" CODEX_HOME="$OPENCODE_V2_HOME/.codex" XDG_DATA_HOME="$OPENCODE_V2_HOME/.local/share" \
   XDG_CACHE_HOME="$OPENCODE_V2_HOME/.cache" PATH="$OPENCODE_V2_HOME/bin:$PATH" "$collector" --force)
 
-[[ $(jq -r '(.todayTotalTokens|tostring) + "/" + (.todaySessions|tostring)' <<<"$result") == "120/2" ]] ||
+[[ $(jq -r '(.todayTotalTokens|tostring) + "/" + (.todaySessions|tostring)' <<<"$result") == "125/2" ]] ||
   fail "Codex collector counts a v2-only opencode database" "$result"
 pass "Codex collector counts a v2-only opencode database"
 
