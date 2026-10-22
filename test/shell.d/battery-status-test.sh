@@ -158,6 +158,105 @@ danish_time=$(OMARCHY_LANGUAGE_FILE="$tmp_dir/language" OMARCHY_POWER_SUPPLY_PAT
 grep -Fx $'time\t1 t 30 min' <<<"$danish_time" >/dev/null || fail "battery status durations follow the Omarchy language" "$danish_time"
 pass "battery status reads in the Omarchy language"
 
+# Firmware that reports current as an unsigned 16-bit field turns a ~0.5 A
+# draw into a ~-1100 W sysfs reading; the panel must keep UPower's rate then.
+mkdir -p "$tmp_dir/power/BAT0"
+sed -i 's/native-path:          CMB0/native-path:          BAT0/' "$tmp_dir/bin/upower"
+printf -- '-65041000\n' >"$tmp_dir/power/BAT0/current_now"
+printf '17343000\n' >"$tmp_dir/power/BAT0/voltage_now"
+
+shell_output=$(OMARCHY_POWER_SUPPLY_PATH="$tmp_dir/power" PATH="$tmp_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell)
+
+grep -Fx $'rate\t7.3W' <<<"$shell_output" >/dev/null ||
+  fail "battery status falls back to UPower when the sysfs rate is implausible" "$shell_output"
+pass "battery status falls back to UPower when the sysfs rate is implausible"
+
+# Drivers following the power-supply ABI report discharge as negative current;
+# a plausible reading is still shown, as its magnitude.
+printf -- '-900000\n' >"$tmp_dir/power/BAT0/current_now"
+printf '12000000\n' >"$tmp_dir/power/BAT0/voltage_now"
+
+shell_output=$(OMARCHY_POWER_SUPPLY_PATH="$tmp_dir/power" PATH="$tmp_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell)
+
+grep -Fx $'rate\t10.8W' <<<"$shell_output" >/dev/null ||
+  fail "battery status shows a negative sysfs discharge rate as its magnitude" "$shell_output"
+pass "battery status shows a negative sysfs discharge rate as its magnitude"
+
+# A plausible load step must still come through: the only remaining guard is
+# the absolute cap, not how far sysfs sits from UPower's lagging rate.
+printf '60000000\n' >"$tmp_dir/power/BAT0/power_now"
+cat >"$tmp_dir/bin/upower" <<'STUB'
+#!/bin/bash
+
+if [[ $1 == "-e" ]]; then
+  echo "/org/freedesktop/UPower/devices/battery_BAT0"
+  exit 0
+fi
+
+if [[ $1 == "-i" ]]; then
+  cat <<'INFO'
+  native-path:          BAT0
+  power supply:         yes
+  state:                discharging
+  energy:               28.3 Wh
+  energy-full:          56.7 Wh
+  energy-rate:          8 W
+  time to empty:        2.5 hours
+  percentage:           51%
+INFO
+  exit 0
+fi
+
+exit 1
+STUB
+chmod +x "$tmp_dir/bin/upower"
+
+shell_output=$(OMARCHY_POWER_SUPPLY_PATH="$tmp_dir/power" PATH="$tmp_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell)
+
+grep -Fx $'rate\t60W' <<<"$shell_output" >/dev/null ||
+  fail "battery status accepts a plausible sysfs rate far above UPower's" "$shell_output"
+pass "battery status accepts a plausible sysfs rate far above UPower's"
+
+# When sysfs is rejected and UPower reports no real rate, the panel shows no
+# rate at all rather than a misleading 0W.
+rm -f "$tmp_dir/power/BAT0/power_now"
+printf -- '-65041000\n' >"$tmp_dir/power/BAT0/current_now"
+printf '17343000\n' >"$tmp_dir/power/BAT0/voltage_now"
+cat >"$tmp_dir/bin/upower" <<'STUB'
+#!/bin/bash
+
+if [[ $1 == "-e" ]]; then
+  echo "/org/freedesktop/UPower/devices/battery_BAT0"
+  exit 0
+fi
+
+if [[ $1 == "-i" ]]; then
+  cat <<'INFO'
+  native-path:          BAT0
+  power supply:         yes
+  state:                discharging
+  energy:               28.3 Wh
+  energy-full:          56.7 Wh
+  energy-rate:          0 W
+  percentage:           51%
+INFO
+  exit 0
+fi
+
+exit 1
+STUB
+chmod +x "$tmp_dir/bin/upower"
+
+shell_output=$(OMARCHY_POWER_SUPPLY_PATH="$tmp_dir/power" PATH="$tmp_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status" --shell)
+
+if grep -q '^rate' <<<"$shell_output"; then
+  fail "battery status omits the rate when no trustworthy reading exists" "$shell_output"
+fi
+plain_output=$(OMARCHY_POWER_SUPPLY_PATH="$tmp_dir/power" PATH="$tmp_dir/bin:$PATH" "$ROOT/bin/omarchy-battery-status")
+[[ $plain_output == *"56Wh" && $plain_output != *"/"* ]] ||
+  fail "battery status omits the rate segment in plain output too" "$plain_output"
+pass "battery status omits the rate when no trustworthy reading exists"
+
 if matches=$(rg -n 'omarchy-battery-(capacity|remaining|remaining-time)' "$ROOT/bin" "$ROOT/test" "$ROOT/shell" "$ROOT/docs"); then
   fail "battery status owns capacity and remaining calculations" "$matches"
 fi
