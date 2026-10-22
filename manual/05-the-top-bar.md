@@ -25,7 +25,7 @@ Nearly every widget does something on left, right, and middle click, and several
 | Network | Network panel | — | — |
 | Bluetooth | Bluetooth panel | Toggle the radio | — |
 | Display | Display panel | — | Scroll: brightness |
-| Power | Power panel | Toggle the battery percentage | — |
+| Power | Power panel | Cycle the battery percentage and time left | — |
 | Media | Play/pause | Cover-art popup | Middle: next · scroll: prev/next |
 | Agents | Agents panel | Launch your agent | Middle: next subscription |
 | Tray | Hover to reveal the drawer | Right on the chevron to manage | — |

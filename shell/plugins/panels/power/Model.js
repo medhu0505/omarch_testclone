@@ -110,6 +110,43 @@ function profileLabel(name, tr) {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
+// What the bar shows beside the icon: nothing, the percentage, or the
+// percentage and the time left. A config from before the label setting keeps
+// what showPercentage showed.
+function barLabelMode(label, showPercentage) {
+  if (label === "none" || label === "percentage" || label === "time") return label
+  return showPercentage === true ? "percentage" : "none"
+}
+
+function nextBarLabelMode(mode) {
+  if (mode === "none") return "percentage"
+  if (mode === "percentage") return "time"
+  return "none"
+}
+
+// Whole minutes, written the way omarchy-battery-status writes the panel's
+// time left.
+function durationLabel(seconds, tr, fmt) {
+  var t = typeof tr === "function" ? tr : function(key, english) { return english }
+  var f = typeof fmt === "function" ? fmt : String
+  var minutes = Math.round(Number(seconds) / 60)
+  if (!(minutes > 0)) return ""
+  if (minutes < 60) return t("power.durationMinutes", "%1m").replace("%1", f(minutes))
+  if (minutes % 60 === 0) return t("power.durationHours", "%1h").replace("%1", f(minutes / 60))
+  return t("power.durationHoursMinutes", "%1h %2m").replace("%1", f(Math.floor(minutes / 60))).replace("%2", f(minutes % 60))
+}
+
+// Without a time (a full or held battery, or UPower still measuring) the
+// time mode shows the percentage alone.
+function barLabel(mode, fraction, time, tr, fmt) {
+  var t = typeof tr === "function" ? tr : function(key, english) { return english }
+  var f = typeof fmt === "function" ? fmt : String
+  if (mode !== "percentage" && mode !== "time") return ""
+  var percentage = f(Math.round(fraction * 100)) + "%"
+  if (mode !== "time" || !time) return percentage
+  return t("power.barPercentageTime", "%1 · %2").replace("%1", percentage).replace("%2", time)
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     clampIndex: clampIndex,
@@ -122,6 +159,10 @@ if (typeof module !== "undefined") {
     batteryIcon: batteryIcon,
     modeLabel: modeLabel,
     profileLabel: profileLabel,
-    localizeReading: localizeReading
+    localizeReading: localizeReading,
+    barLabelMode: barLabelMode,
+    nextBarLabelMode: nextBarLabelMode,
+    durationLabel: durationLabel,
+    barLabel: barLabel
   }
 }

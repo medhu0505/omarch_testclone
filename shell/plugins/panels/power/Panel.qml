@@ -12,7 +12,7 @@ Panel {
   moduleName: "omarchy.power"
   ipcTarget: "omarchy.power"
   // manageIpc: false so this panel can own the single IpcHandler the target
-  // permits — needed for the togglePercentage method below.
+  // permits — needed for the label methods below.
   manageIpc: false
   property var batteryInfo: ({})
   property var systemInfo: ({})
@@ -20,11 +20,11 @@ Panel {
   property string activeProfile: ""
   property int profileIndex: 0
   property bool cursorActive: false
-  readonly property bool showPercentage: setting("showPercentage", false) === true
+  readonly property string labelMode: Model.barLabelMode(setting("label", null), setting("showPercentage", false))
   // With the percentage shown the button paints a text block wider than an
   // icon, so the open-panel mark takes the painted width instead of the
   // icon-sized fraction of the slot the fallback assumes.
-  readonly property real openPanelIndicatorWidth: showPercentage && !button.vertical ? button.glyphPaintedWidth : 0
+  readonly property real openPanelIndicatorWidth: labelMode !== "none" && !button.vertical ? button.glyphPaintedWidth : 0
   readonly property bool batteryPresent: {
     var device = UPower.displayDevice
     return !!(device && device.isPresent)
@@ -86,6 +86,14 @@ Panel {
   readonly property bool charging: {
     var d = UPower.displayDevice
     return d && d.isPresent && !UPower.onBattery && !root.batteryFlowIdle
+  }
+
+  // UPower's estimate to empty on battery or to full on AC, which updates
+  // live, unlike the panel's time left; none while the charge holds still.
+  readonly property string barTimeText: {
+    var d = UPower.displayDevice
+    if (labelMode !== "time" || !d || !d.isPresent || root.batteryFlowIdle) return ""
+    return Model.durationLabel(root.discharging ? d.timeToEmpty : d.timeToFull, Commons.I18n.t, Commons.I18n.formatNumber)
   }
 
   readonly property color batteryFillColor: {
@@ -176,9 +184,24 @@ Panel {
     actionProc.running = true
   }
 
-  function togglePercentage() {
-    root.settings = Object.assign({}, root.settings, { showPercentage: !root.showPercentage })
+  // The label setting is written in place of the showPercentage it replaces.
+  function setLabel(mode) {
+    var next = Object.assign({}, root.settings, { label: Model.barLabelMode(mode, false) })
+    delete next.showPercentage
+    root.settings = next
     if (root.bar && root.bar.shell) root.bar.shell.updateEntryInline(root.moduleName, root.settings)
+  }
+
+  function cycleLabel() {
+    setLabel(Model.nextBarLabelMode(root.labelMode))
+  }
+
+  function togglePercentage() {
+    setLabel(root.labelMode === "none" ? "percentage" : "none")
+  }
+
+  function toggleTime() {
+    setLabel(root.labelMode === "time" ? "percentage" : "time")
   }
 
   ShellIpc {
@@ -190,6 +213,9 @@ Panel {
     function hide() { root.close() }
     function toggle() { root.toggle() }
     function togglePercentage() { root.togglePercentage() }
+    function toggleTime() { root.toggleTime() }
+    function cycleLabel() { root.cycleLabel() }
+    function label(): string { return root.labelMode }
   }
 
   onOpenedChanged: {
@@ -288,13 +314,24 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     text: root.batteryIcon()
-    labelText: root.showPercentage && !vertical ? Commons.I18n.formatNumber(Math.round(root.batteryFraction * 100)) + "%" : ""
-    slotSize: Style.bar.iconSlot * (root.showPercentage && !vertical ? 2 : 1)
+    labelText: !vertical ? Model.barLabel(root.labelMode, root.batteryFraction, root.barTimeText, Commons.I18n.t, Commons.I18n.formatNumber) : ""
+    // The percentage fits the two slots it always had; with the time beside
+    // it the slot follows the label instead.
+    slotSize: labelText === "" ? Style.bar.iconSlot
+      : root.barTimeText === "" ? Style.bar.iconSlot * 2
+      : Style.bar.iconSlot + labelMetrics.advanceWidth + Style.space(4)
     tooltipText: ""
     onPressed: function(b) {
       if (!root.batteryPresent) return
-      if (b === Qt.RightButton) root.togglePercentage()
+      if (b === Qt.RightButton) root.cycleLabel()
       else root.toggle()
+    }
+
+    TextMetrics {
+      id: labelMetrics
+      text: button.labelText
+      font.family: button.fontFamily
+      font.pixelSize: button.fontSize
     }
   }
 
