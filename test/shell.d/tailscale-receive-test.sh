@@ -81,7 +81,7 @@ assert_notification() {
     $urgency_found || fail "taildrop receive sets an urgency" "$name"
     case ${name,,} in
     *.png)
-      [[ $image == "$path" && -z $glyph ]] || fail "taildrop receive previews images" "$name: image=$image glyph=$glyph"
+      [[ $image == "$path" && $glyph == 󰒊 ]] || fail "taildrop receive previews images over the send glyph" "$name: image=$image glyph=$glyph"
       ;;
     *)
       [[ -z $image && $glyph == 󰒊 ]] || fail "taildrop receive gives other files the send glyph" "$name: image=$image glyph=$glyph"
@@ -103,7 +103,7 @@ assert_notification() {
 assert_notification "$downloads/photo.png"
 assert_notification "$downloads/Vacation Photo.PNG"
 assert_notification "$downloads/notes with space.pdf"
-pass "taildrop receive previews images and gives other files the send glyph"
+pass "taildrop receive previews images over the send glyph and gives other files the glyph"
 pass "taildrop receive keeps critical urgency and literal click-to-open paths"
 
 [[ -f $downloads/unrelated.txt ]] || fail "taildrop receive leaves unrelated downloads alone"
