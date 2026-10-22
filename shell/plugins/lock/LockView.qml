@@ -79,6 +79,18 @@ Item {
     return event.key === Qt.Key_U || event.key === Qt.Key_Backspace
   }
 
+  function handlePasswordKey(event) {
+    wakeRequested()
+    if (event.isAutoRepeat && dropsAutoRepeat(event.key)) {
+      event.accepted = true
+      return
+    }
+    if (clearsPassword(event)) {
+      passwordTextEdited("")
+      event.accepted = true
+    }
+  }
+
   function syncPasswordText() {
     if (passwordInput.text === passwordText) return
     syncingPasswordText = true
@@ -216,17 +228,7 @@ Item {
           if (submitted.length > 0) root.submitPassword(submitted)
         }
 
-        Keys.onPressed: function(event) {
-          root.wakeRequested()
-          if (event.isAutoRepeat && root.dropsAutoRepeat(event.key)) {
-            event.accepted = true
-            return
-          }
-          if (root.clearsPassword(event)) {
-            root.passwordTextEdited("")
-            event.accepted = true
-          }
-        }
+        Keys.onPressed: function(event) { root.handlePasswordKey(event) }
       }
 
       Text {
