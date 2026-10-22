@@ -108,12 +108,15 @@ fi
 # failures (unknown target/function, bad arguments) go to stdout with exit 0.
 # qs ipc also splits a bracketed list literal ("[a,b]", even "[x]") into as many
 # arguments as it has items, where the socket path delivers every field whole.
-# An argument shaped like one keeps a trailing space so it stays a single value;
-# JSON parsing on the far side tolerates the space.
+# An empty one goes as CLI11's [[]] escape, which arrives as exactly []. No
+# escape keeps a longer one exact, so it keeps a trailing space to stay a single
+# value; JSON parsing on the far side tolerates the space.
 ipc_timeout=${OMARCHY_SHELL_IPC_TIMEOUT:-2s}
 ipc_args=()
 for arg in "$@"; do
-  if [[ $arg == \[*\] ]]; then
+  if [[ $arg == "[]" ]]; then
+    arg="[[]]"
+  elif [[ $arg == \[*\] ]]; then
     arg="$arg "
   fi
   ipc_args+=("$arg")
