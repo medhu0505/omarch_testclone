@@ -4,6 +4,8 @@ Networking in Omarchy is handled by NetworkManager, and you drive it from the ne
 
 That panel scans for Wi-Fi networks, shows signal strength, and connects. Ethernet needs nothing at all — plug it in and it works. If you'd rather stay in the terminal, `nmtui` gives you the same controls, and there's an `omarchy network` command group too.
 
+When NetworkManager detects a network that requires browser sign-in, the panel offers **Open Captive Portal**. Once connection details appear, the copy icon beside **Sign-in link** copies the same fixed HTTP entry address used by that button, which the network can redirect to its login page.
+
 ## Sharing your Wi-Fi
 
 Rather than reading a long password out loud, run _Setup > Network > QR Code_ while you're on Wi-Fi. That puts a QR code on screen that any phone camera can scan to join. It's one of those things you'll use more than you'd expect once you know it's there.

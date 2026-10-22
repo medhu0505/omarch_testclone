@@ -123,6 +123,7 @@ Panel {
   // header actions ⇄ portal ⇄ band ⇄ DNS row ⇄ Wi-Fi networks. h/l move
   // within header actions, band pills, or DNS providers.
   property string focusSection: "dns"  // "header" | "portal" | "band" | "dns" | "wifi"
+  property int portalActionIndex: 0  // open | copy link
   property int headerIndex: 0
   readonly property bool canDisconnect: !!connectedWifiNetwork
   readonly property bool headerHasDisconnect: false
@@ -505,6 +506,7 @@ Panel {
     Full: NetworkConnectivity.Full, None: NetworkConnectivity.None
   }, connectivityChecksEnabled)
   readonly property bool hasCaptivePortal: connectivity === "portal"
+  readonly property bool canCopyCaptivePortalLink: hasCaptivePortal && !!info.iface
   readonly property bool restricted: hasCaptivePortal || connectivity === "limited"
   readonly property string icon: Model.connectionIcon(kind, signalStrength, connectivity)
   // Keyed on the device rather than the SSID: on an OWE transition-mode
@@ -516,11 +518,14 @@ Panel {
 
   onConnectionKeyChanged: Qt.callLater(checkConnectivity)
   onConnectivityChecksEnabledChanged: Qt.callLater(checkConnectivity)
+  onCanCopyCaptivePortalLinkChanged: if (!canCopyCaptivePortalLink) portalActionIndex = 0
   onHasCaptivePortalChanged: {
     if (hasCaptivePortal && opened && passwordSsid === "") {
+      portalActionIndex = 0
       focusSection = "portal"
       cursorActive = true
     } else if (!hasCaptivePortal && focusSection === "portal") {
+      portalActionIndex = 0
       focusSection = headerActionCount > 0 ? "header" : "dns"
       headerIndex = 0
     }
@@ -540,6 +545,11 @@ Panel {
     // URL: let the browser handle the redirect without trusting portal input.
     Quickshell.execDetached(["omarchy-launch-browser", Model.captivePortalUrl])
     close()
+  }
+
+  function copyCaptivePortalLink() {
+    // Match the browser action's trusted entry point, not a portal-supplied redirect.
+    if (canCopyCaptivePortalLink) copyToClipboard(Model.captivePortalUrl)
   }
 
   // Keep checking while login is needed, even with the panel closed in favour
@@ -1194,6 +1204,7 @@ Panel {
         }
         if (dx !== 0) {
           if (root.focusSection === "header") root.selectHeaderByDelta(dx)
+          else if (root.focusSection === "portal") root.portalActionIndex = Math.max(0, Math.min(root.canCopyCaptivePortalLink ? 1 : 0, root.portalActionIndex + dx))
           else if (root.focusSection === "band") { if (!root.bandAutoFocused) root.selectBandByDelta(dx) }
           else if (root.focusSection === "dns") root.selectDnsByDelta(dx)
           else if (root.focusSection === "wifi") root.selectWifiActionByDelta(dx)
@@ -1202,7 +1213,10 @@ Panel {
       onActivateRequested: {
         if (root.cursorActive) {
           if (root.focusSection === "header") root.activateHeader()
-          else if (root.focusSection === "portal") root.openCaptivePortal()
+          else if (root.focusSection === "portal") {
+            if (root.portalActionIndex === 0) root.openCaptivePortal()
+            else root.copyCaptivePortalLink()
+          }
           else if (root.focusSection === "band") root.activateBand()
           else if (root.focusSection === "dns") root.activateDns()
           else root.activateSelected()
@@ -1372,11 +1386,12 @@ Panel {
           verticalPadding: Style.space(10)
           bordered: true
           active: true
-          hasCursor: root.cursorActive && root.focusSection === "portal"
+          hasCursor: root.cursorActive && root.focusSection === "portal" && root.portalActionIndex === 0
           onHovered: function(on) {
             if (!on) return
             root.cursorActive = true
             root.focusSection = "portal"
+            root.portalActionIndex = 0
           }
           onClicked: root.openCaptivePortal()
         }
@@ -1441,6 +1456,30 @@ Panel {
             text: root.info.gateway || "--"
             copyable: !!root.info.gateway
             tooltipText: Commons.I18n.t("network.copyGateway")
+          }
+
+          InfoLabel {
+            id: portalCopyLabel
+            visible: root.canCopyCaptivePortalLink
+            text: Commons.I18n.t("network.portalLink")
+          }
+          PanelActionButton {
+            id: portalCopy
+            visible: root.canCopyCaptivePortalLink
+            Layout.columnSpan: 3
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+            iconText: "󰆏"
+            tooltipText: Commons.I18n.t("network.copyPortalLink")
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            hasCursor: root.cursorActive && root.focusSection === "portal" && root.portalActionIndex === 1
+            onHovered: function(on) {
+              if (!on) return
+              root.cursorActive = true
+              root.focusSection = "portal"
+              root.portalActionIndex = 1
+            }
+            onClicked: root.copyCaptivePortalLink()
           }
         }
       }

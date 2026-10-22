@@ -50,7 +50,7 @@ ShellRoot {
       test.check(panel.testEnsureContent() !== null && panel.testContent !== null, "panel content builds on demand")
       test.check(panel.kind === "wifi", "connected Wi-Fi fixture")
       test.check(panel.connectivity === "full", "normal connectivity")
-      test.check(!panel.testButton.visible && !panel.testBarButton.active, "no false portal banner")
+      test.check(!panel.testButton.visible && !panel.testCopy.visible && !panel.testCopyLabel.visible && !panel.testBarButton.active, "no false portal banner or link")
       test.check(!panel.testPoll.running, "normal connectivity adds no polling")
       test.check(NetworkMock.checks > 0, "checks at connection/startup")
       var before = NetworkMock.checks
@@ -62,12 +62,20 @@ ShellRoot {
   }
 
   function portalChecks() {
+    // Preview mode starts with synthetic route details. Clear them so both
+    // modes exercise the missing-route fallback before testing the copy row.
+    panel.info = ({})
+    check(!panel.canCopyCaptivePortalLink && !panel.testCopy.visible, "missing interface keeps copy action hidden")
+    check(panel.testTitle.text === "Guest Wi-Fi", "connected SSID survives missing route details")
+    // Give the portal-only details row a synthetic interface; never read the host.
+    panel.info = { iface: "test-wifi", type: "wifi", ssid: "Guest Wi-Fi", ip: "192.0.2.10", gateway: "192.0.2.1" }
     check(panel.hasCaptivePortal && panel.restricted, "native portal activates restricted mode")
     check(panel.testButton.visible, "portal button visible")
+    check(panel.testCopy.visible && panel.testCopyLabel.visible, "copy link row appears only for portal")
     check(panel.testButton.text === "Open Captive Portal", "prominent action label")
     check(panel.icon === "󰤩" && panel.testBarButton.active, "blocked bar icon and warning color")
     check(panel.testMeta.text === "SIGN-IN REQUIRED", "status replaces cheerful connection phrase")
-    check(panel.testTitle.text === "Guest Wi-Fi", "connected SSID survives missing route details")
+    check(panel.testTitle.text === "Guest Wi-Fi", "connected SSID stays visible with route details")
     check(panel.testPoll.running && panel.testPoll.interval === 10000, "restricted recheck runs while closed")
     var before = NetworkMock.checks
     panel.testPoll.triggered()
@@ -88,6 +96,11 @@ ShellRoot {
     check(panel.focusSection === "band", "down from portal reaches available band")
     panel.testKeys.moveRequested(0, -1)
     check(panel.focusSection === "portal", "up from band reaches portal")
+    panel.testKeys.moveRequested(1, 0)
+    check(panel.portalActionIndex === 1 && panel.testCopy.hasCursor, "right selects the compact copy action")
+    panel.testKeys.activateRequested()
+    panel.testKeys.moveRequested(-1, 0)
+    check(panel.portalActionIndex === 0 && panel.testButton.hasCursor, "left returns to the open action")
     panel.testKeys.activateRequested()
     NetworkMock.connectivity = NetworkConnectivity.Full
     Qt.callLater(recoveryChecks)
@@ -96,18 +109,19 @@ ShellRoot {
   function recoveryChecks() {
     check(!panel.hasCaptivePortal && !panel.restricted, "login recovery clears restriction")
     check(!panel.testPoll.running, "recovery stops extra checks")
-    check(!panel.testButton.visible && !panel.testBarButton.active, "recovery hides button and warning color")
+    check(!panel.testButton.visible && !panel.testCopy.visible && !panel.testCopyLabel.visible && !panel.testBarButton.active, "recovery hides portal actions and warning color")
     check(panel.focusSection === "header", "disappearing button leaves valid cursor")
     check(panel.icon !== "󰤩", "signal icon returns")
     // No browser launch when the portal is gone (runner asserts one launch).
     panel.openCaptivePortal()
+    panel.copyCaptivePortalLink()
     NetworkMock.connectivity = NetworkConnectivity.Limited
     Qt.callLater(limitedChecks)
   }
 
   function limitedChecks() {
     check(panel.restricted && !panel.hasCaptivePortal, "outage is not mislabelled as a portal")
-    check(!panel.testButton.visible && panel.testMeta.text === "LIMITED INTERNET ACCESS", "limited state has no login button")
+    check(!panel.testButton.visible && !panel.testCopy.visible && panel.testMeta.text === "LIMITED INTERNET ACCESS", "limited state has no portal actions")
     NetworkMock.connectivity = NetworkConnectivity.Portal
     NetworkMock.connectivityCheckEnabled = false
     Qt.callLater(disabledChecks)
@@ -127,7 +141,7 @@ ShellRoot {
 
   function disconnectedChecks() {
     check(panel.kind === "disconnected" && !panel.hasCaptivePortal, "disconnect clears stale portal")
-    check(!panel.testButton.visible && panel.icon === "󰤮", "disconnected icon not portal icon")
+    check(!panel.testButton.visible && !panel.testCopy.visible && panel.icon === "󰤮", "disconnected icon not portal icon")
     if (failed) { Qt.quit(); return }
     console.log("RESULT pass")
     var preview = Quickshell.env("NETWORK_TEST_PREVIEW")
