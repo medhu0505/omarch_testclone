@@ -395,32 +395,32 @@ def scan_opencode_sessions():
     tables = {name for (name,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     # A database can hold v1 rows, v2 rows, or both. v2 writes
     # `session_message`: the role is its own `type` column and the provider and
-    # model nest under data.model. An upgraded database keeps its v1 rows, so
-    # both tables are scanned; the prefix keeps their session ids apart.
+    # model nest under data.model. Its migration copies each v1 row there under
+    # the same id and session and keeps the original, so a v1 row counts only
+    # when v2 has no copy of it.
     queries = []
     if "message" in tables:
-      queries.append((
-        "opencode:",
+      queries.append(
         "SELECT session_id, data, NULL FROM message"
         " WHERE data LIKE '%\"role\"%:%\"assistant\"%'"
         " AND data LIKE '%\"providerID\"%:%\"openai\"%'"
         " AND CASE WHEN json_valid(data) THEN json_extract(data, '$.role') END = 'assistant'"
         " AND CASE WHEN json_valid(data) THEN json_extract(data, '$.providerID') END = 'openai'"
-      ))
+        + (" AND NOT EXISTS (SELECT 1 FROM session_message WHERE session_message.id = message.id)" if "session_message" in tables else "")
+      )
     if "session_message" in tables:
-      queries.append((
-        "opencode-v2:",
+      queries.append(
         "SELECT session_id, data, type FROM session_message"
         " WHERE type = 'assistant'"
         " AND data LIKE '%\"providerID\"%:%\"openai\"%'"
         " AND CASE WHEN json_valid(data) THEN json_extract(data, '$.model.providerID') END = 'openai'"
-      ))
+      )
     # A database with neither table is a schema we do not understand (a
     # migration in flight, or a corrupt file), not a database with no usage.
     # Report the scan as incomplete so a zero snapshot is not cached.
     if not queries:
       return False
-    for session_prefix, query in queries:
+    for query in queries:
       for session_id, raw, row_type in conn.execute(query):
         # One malformed row must not abort the scan, so every shape assumption
         # lives inside the try.
@@ -454,7 +454,7 @@ def scan_opencode_sessions():
           model = model_name(str(model_id or "").rstrip("/").split("/")[-1])
         except Exception:
           continue
-        add_usage(day, session_prefix + str(session_id), model, input_tokens, output_tokens, cache_read, cache_write)
+        add_usage(day, "opencode:" + str(session_id), model, input_tokens, output_tokens, cache_read, cache_write)
   except sqlite3.Error:
     # Transient lock, schema migration, corruption: the numbers stop here,
     # incomplete.
