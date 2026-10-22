@@ -39,6 +39,7 @@ stub_hyprctl() {
     echo 'BINDS'
     echo '  ;;'
     echo '  devices) echo "active keymap: English (US)" ;;'
+    echo '  -j) [[ $2 == getoption ]] && cat "'"$stub_bin"'/option-${3#input:}" 2>/dev/null ;;'
     echo 'esac'
   } >"$stub_bin/hyprctl"
   chmod +x "$stub_bin/hyprctl"
@@ -120,7 +121,7 @@ pass "no entry outgrows the width the menu gives it"
 # the entry: XF86Calculator alone belongs in the tail the menu keeps for media
 # keys, while the calculator itself sits in the body of the list.
 stub_hyprctl <<BINDS
-$(exec_bind 68 "SUPER CTRL + Q" "Calculator" "omacalc")
+$(exec_bind 65 "SUPER SHIFT + Q" "Calculator" "omacalc")
 $(exec_bind 0 "XF86Calculator" "Calculator" "omacalc")
 $(exec_bind 8 "ALT + TAB" "Reveal active window on top" "true")
 BINDS
@@ -149,6 +150,21 @@ rendered=$(keybindings)
 grep -q 'SUPER + ~  *→ Toggle scratchpad' <<<"$rendered" ||
   fail "a keycode resolves to the symbol printed on the key too" "$rendered"
 pass "a keycode resolves to the symbol printed on the key too"
+
+# Resize sits on the two keys right of 0, named by the leading layout rather
+# than by US: on JIS they print - and ^, and Shift + - is =, not +.
+echo '{"str": "jp"}' >"$stub_bin/option-kb_layout"
+stub_hyprctl <<BINDS
+$(lua_bind 64 "SUPER + code:20" "Expand window left")
+$(lua_bind 64 "SUPER + code:21" "Shrink window left")
+BINDS
+
+rendered=$(keybindings)
+rm "$stub_bin/option-kb_layout"
+grep -q 'SUPER + MINUS  *→ Expand window left' <<<"$rendered" &&
+  grep -q 'SUPER + ^  *→ Shrink window left' <<<"$rendered" ||
+  fail "a keycode is named by what the leading layout prints on it" "$rendered"
+pass "a keycode is named by what the leading layout prints on it"
 
 # A chord refused for width opens a row of its own, and the next chord tries
 # that row rather than reaching back past it and printing out of order.
@@ -251,6 +267,25 @@ keybindings >/dev/null
 grep -qP '→ Terminal\texec\tomarchy-launch-terminal$' "$tmpdir"/cache/omarchy/keybindings-*.records ||
   fail "picking the terminal bind from the menu launches a terminal" "$(cat "$tmpdir"/cache/omarchy/keybindings-*.records)"
 pass "picking the terminal bind from the menu launches a terminal"
+
+# A plugin that walks the window list while it loads must not wedge the scan,
+# and the binds after it must still be recovered from the Lua source.
+{
+  printf 'for _ in ipairs(hl.get_windows()) do\n  local window = nil\nend\n'
+  cat "$home/.config/hypr/hyprland.lua"
+} >"$tmpdir/hyprland.lua"
+mv "$tmpdir/hyprland.lua" "$home/.config/hypr/hyprland.lua"
+
+rm -rf "$tmpdir/cache"
+# A wedged scan is stopped by the menu's own timeout before the Terminal bind,
+# which the check below catches; the outer timeout only turns a hang into a fail.
+timeout --kill-after=1s 60s env -i PATH="$stub_bin:$ROOT/bin:$PATH" HOME="$home" \
+  XDG_CACHE_HOME="$tmpdir/cache" OMARCHY_PATH="$ROOT" \
+  bash "$menu" --print >/dev/null 2>&1 ||
+  fail "a plugin iterating windows at load time does not wedge the keybindings scan"
+grep -qP '→ Terminal\texec\tomarchy-launch-terminal$' "$tmpdir"/cache/omarchy/keybindings-*.records ||
+  fail "a plugin iterating windows at load time does not wedge the keybindings scan (it stopped before the Terminal bind)"
+pass "a plugin iterating windows at load time does not wedge the keybindings scan"
 
 # Rows show their description in the Omarchy language: a numbered one
 # matches its %1 pattern, an unknown one stays as written, and the chord
