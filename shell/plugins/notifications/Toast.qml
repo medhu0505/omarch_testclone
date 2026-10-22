@@ -8,7 +8,6 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
 
-import "Markup.js" as Markup
 import "Security.js" as Security
 import "Delivery.js" as Delivery
 import "Store.js" as Store
@@ -570,60 +569,28 @@ Item {
           font.pixelSize: Style.font.title * card.fontScale
         }
 
-        // Rich text cannot elide, so a body over the current line cap is
-        // flattened into the plain rendering, which can end in an ellipsis.
-        Item {
+        // StyledText, not RichText: it covers the tags Markup lets through,
+        // keeps links clickable, and can still end a long body in an ellipsis.
+        Text {
           id: bodyBox
-          clip: true
           width: parent.width
-          // Laid-out height, never lineCount: in RichText mode lineCount counts
-          // paragraphs, not wrapped lines.
-          readonly property real lineH: Math.max(1, metrics.height)
-          readonly property real cap: lineH * card.bodyLines
-          // A body a hair over the cap is worth one more pixel, not flattening.
-          readonly property bool overflow: rich.contentHeight > cap + lineH * 0.4
-          readonly property real shown: overflow ? plain.contentHeight : rich.contentHeight
-          // Not clamped to `cap`: plain.maximumLineCount enforces the limit, and
-          // clamping to the arithmetic slices the last line instead of eliding.
-          height: Math.ceil(shown)
-
           // The closed height, read only by the icon so it does not move.
-          readonly property real restHeight:
-              Math.min(Math.ceil(lineH * 2), Math.ceil(rich.contentHeight))
+          readonly property real restHeight: Math.ceil(Math.max(1, metrics.height) * Math.min(2, lineCount))
           visible: card.hasBody
           opacity: card.showsContent ? 1 : 0
           Behavior on opacity { NumberAnimation { duration: card.fade } }
 
-          Text {
-            id: rich
-            width: parent.width
-            visible: !bodyBox.overflow
-            textFormat: Text.RichText
-            text: card.redacted ? I18n.t("notifications.redactedBody") : Markup.colourLinks(String(card.row.bodyRich || card.row.body || ""),
-                                     String(Commons.Color.notifications.countdown))
-            color: card.bodyColor
-            font.family: "Liberation Sans"
-            font.pixelSize: Style.font.title * card.fontScale
-            wrapMode: Text.Wrap
-            // Second gate: Markup already drops anchors it will not vouch for.
-            onLinkActivated: function(url) {
-              Security.openExternalUrl(url)
-            }
-          }
-
-          Text {
-            textFormat: Text.PlainText
-            id: plain
-            width: parent.width
-            visible: bodyBox.overflow
-            text: card.redacted ? I18n.t("notifications.redactedBody") : String(card.row.bodyLine || card.row.body || "")
-            color: card.bodyColor
-            font.family: "Liberation Sans"
-            font.pixelSize: Style.font.title * card.fontScale
-            wrapMode: Text.Wrap
-            maximumLineCount: card.bodyLines
-            elide: Text.ElideRight
-          }
+          textFormat: Text.StyledText
+          text: card.redacted ? I18n.t("notifications.redactedBody") : String(card.row.bodyRich || "")
+          color: card.bodyColor
+          linkColor: Commons.Color.notifications.countdown
+          font.family: "Liberation Sans"
+          font.pixelSize: Style.font.title * card.fontScale
+          wrapMode: Text.Wrap
+          maximumLineCount: card.bodyLines
+          elide: Text.ElideRight
+          // Second gate: Markup already drops anchors it will not vouch for.
+          onLinkActivated: function(url) { Security.openExternalUrl(url) }
         }
       }
     }
