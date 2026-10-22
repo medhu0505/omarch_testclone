@@ -11,7 +11,9 @@ echo "Put splash back so the Plymouth LUKS prompt stays graphical"
 
 defaults_conf="${OMARCHY_LIMINE_DEFAULTS_CONF:-/etc/limine-entry-tool.d/omarchy-defaults.conf}"
 running_cmdline="${OMARCHY_RUNNING_CMDLINE:-/proc/cmdline}"
+limine_defaults="${OMARCHY_LIMINE_DEFAULT_CONF:-/etc/default/limine}"
 rebuild_marker="${OMARCHY_LIMINE_REBUILD_MARKER:-/var/lib/omarchy/migrations/1792673722}"
+rebuild_lock="${OMARCHY_LIMINE_REBUILD_LOCK:-/var/lib/omarchy/migrations/limine-rebuild.lock}"
 
 omarchy-cmd-present limine-mkinitcpio || exit 0
 [[ -f $defaults_conf && -r $defaults_conf ]] || exit 0
@@ -60,6 +62,20 @@ fi
 [[ -r $running_cmdline ]] || exit 0
 [[ " $(<"$running_cmdline") " != *" splash "* ]] || exit 0
 
+# omarchy-migrate runs migrations per user, so a machine where the booted
+# command line lacks splash has every user's migration wanting this rebuild at
+# once, and two limine-mkinitcpio runs writing the same boot images leave one
+# nothing can boot. One machine-wide lock, held until the migration exits,
+# makes the marker check below mean what it says.
+if omarchy-cmd-present flock; then
+  # touch, not install: install replaces the file, and two runs replacing it
+  # would each lock an inode of their own.
+  sudo mkdir -p "$(dirname "$rebuild_lock")" || exit 1
+  sudo touch "$rebuild_lock" || exit 1
+  exec {rebuild_lock_fd}<"$rebuild_lock" || exit 1
+  flock -w 300 "$rebuild_lock_fd" || exit 1
+fi
+
 # The running kernel keeps its command line until reboot, so a marker records
 # the machine-wide rebuild: another user's migration must not repeat it before
 # then, while a missing marker still retries an interrupted rebuild.
@@ -78,6 +94,24 @@ sudo limine-mkinitcpio 2>&1 | tee "$rebuild_log"
 if grep -q 'mkinitcpio failed for kernel' "$rebuild_log"; then
   echo "A boot image was not rebuilt. Fix the error above, then run omarchy-migrate again before rebooting." >&2
   exit 1
+fi
+
+# A plain KERNEL_CMDLINE[default]= in /etc/default/limine replaces what
+# omarchy-defaults.conf appends, which limine-entry-tool's own README suggests,
+# so the rebuilt image can still boot without splash. That command line is the
+# administrator's: say how to keep Omarchy's defaults rather than edit it, and
+# leave the migration complete so the queue keeps moving.
+defaults_replaced=false
+replaced_with_splash=false
+if [[ -r $limine_defaults ]]; then
+  while IFS= read -r line; do
+    [[ $line == 'KERNEL_CMDLINE[default]='* ]] || continue
+    defaults_replaced=true
+    [[ " ${line//\"/} " != *" splash "* ]] || replaced_with_splash=true
+  done <"$limine_defaults"
+fi
+if [[ $defaults_replaced == true && $replaced_with_splash == false ]]; then
+  echo "The Limine kernel command line leaves out splash; use += rather than = in /etc/default/limine to keep Omarchy's defaults"
 fi
 
 sudo install -Dm644 /dev/null "$rebuild_marker"

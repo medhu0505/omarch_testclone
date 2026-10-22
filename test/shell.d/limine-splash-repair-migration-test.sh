@@ -22,6 +22,7 @@ printf '#!/bin/bash\n[[ ${SUDO_DENY:-} == 1 ]] && exit 1\nexec "$@"\n' >"$stub_b
 cat >"$stub_bin/limine-mkinitcpio" <<'STUB'
 #!/bin/bash
 echo rebuilt >>"${REBUILDS:?}"
+[[ -z ${REBUILD_SLOW:-} ]] || sleep 0.3
 [[ -z ${REBUILD_ERRORS:-} ]] || exit 1
 [[ -z ${REBUILD_REPORTS_FAILURE:-} ]] || echo "mkinitcpio failed for kernel 7.2.8-9-omarchy (exit code 1)"
 exit 0
@@ -29,6 +30,7 @@ STUB
 chmod +x "$stub_bin"/*
 
 conf="$test_dir/omarchy-defaults.conf"
+defaults_file="$test_dir/default-limine"
 
 # The drift the issue reports: a backed-up copy of Omarchy's own line that lost
 # splash while keeping every parameter the older guards look for.
@@ -48,6 +50,7 @@ run() { # booted cmdline; further KEY=VALUE arguments go to env
   printf '%s\n' "$1" >"$test_dir/cmdline"
   env PATH="$stub_bin:$ROOT/bin:$PATH" REBUILDS="$test_dir/rebuilds" \
     OMARCHY_RUNNING_CMDLINE="$test_dir/cmdline" OMARCHY_LIMINE_DEFAULTS_CONF="$conf" \
+    OMARCHY_LIMINE_DEFAULT_CONF="$defaults_file" OMARCHY_LIMINE_REBUILD_LOCK="$test_dir/rebuild.lock" \
     OMARCHY_LIMINE_REBUILD_MARKER="$test_dir/marker" "${@:2}" \
     bash -euo pipefail "$migration" >"$test_dir/out"
 }
@@ -156,6 +159,54 @@ if run 'root=PARTUUID=1 rw quiet loglevel=0' REBUILD_REPORTS_FAILURE=1; then
 fi
 [[ ! -e $test_dir/marker ]] || fail "a kernel it could not rebuild was marked as done"
 pass "a kernel the rebuild could not build leaves the migration pending"
+
+# A plain KERNEL_CMDLINE[default]= in /etc/default/limine replaces Omarchy's
+# defaults, so no rebuild can add splash. That line is the administrator's: the
+# migration completes and says how to keep Omarchy's defaults.
+reset
+write_drifted
+printf 'KERNEL_CMDLINE[default]=" root=PARTUUID=1 rw quiet loglevel=0"\n' >"$defaults_file"
+if ! run 'root=PARTUUID=1 rw quiet loglevel=0'; then
+  fail "a command line the administrator owns stopped the migration"
+fi
+[[ -e $test_dir/marker ]] || fail "a command line the administrator owns left the migration pending"
+grep -Fq 'use += rather than =' "$test_dir/out" ||
+  fail "a command line the administrator owns got no advice"
+pass "a command line the administrator owns is reported, and does not stop the queue"
+
+# The same file that keeps splash is not worth a warning.
+reset
+write_drifted
+printf 'KERNEL_CMDLINE[default]=" root=PARTUUID=1 rw quiet splash"\n' >"$defaults_file"
+run 'root=PARTUUID=1 rw quiet loglevel=0'
+grep -Fq 'use += rather than =' "$test_dir/out" &&
+  fail "a command line that keeps splash still got the += advice"
+rm -f "$defaults_file"
+pass "a command line that keeps splash gets no advice"
+
+# Two users running the migration at the same moment must rebuild once: the
+# lock is what makes the marker check mean anything, since checking a marker and
+# rebuilding are not one step.
+reset
+write_drifted
+printf 'root=PARTUUID=1 rw quiet loglevel=0\n' >"$test_dir/cmdline"
+: >"$test_dir/rebuilds"
+run_alongside() {
+  env PATH="$stub_bin:$ROOT/bin:$PATH" REBUILDS="$test_dir/rebuilds" REBUILD_SLOW=1 \
+    OMARCHY_RUNNING_CMDLINE="$test_dir/cmdline" OMARCHY_LIMINE_DEFAULTS_CONF="$conf" \
+    OMARCHY_LIMINE_DEFAULT_CONF="$defaults_file" OMARCHY_LIMINE_REBUILD_LOCK="$test_dir/rebuild.lock" \
+    OMARCHY_LIMINE_REBUILD_MARKER="$test_dir/marker" \
+    bash -euo pipefail "$migration" >/dev/null 2>&1
+}
+run_alongside & first=$!
+run_alongside & second=$!
+first_status=0
+second_status=0
+wait "$first" || first_status=$?
+wait "$second" || second_status=$?
+[[ $(rebuilds) == 1 ]] || fail "two runs at once rebuilt the boot image twice"
+[[ $first_status == 0 && $second_status == 0 ]] || fail "a run of two at once failed"
+pass "two runs at once rebuild the boot image once"
 
 # The repair itself needs sudo; a denied prompt must not be recorded as done.
 reset
