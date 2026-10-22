@@ -1214,7 +1214,7 @@ Item {
     var handled = allowDefaultActionOnCardClick && invokeSenderAction(key, "default")
     if (!handled && row) {
       // Source first, link last: a Slack message quoting a link is still a
-      // Slack notification, and that link has its own button.
+      // Slack notification, and that link is clickable in its text.
       var win = windowForPid(row.senderPid) || windowForSource(row.source)
       if (win) focusWindow(win)
       else if (Markup.hostname(row.source))

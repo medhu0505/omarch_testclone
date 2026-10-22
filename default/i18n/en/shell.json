@@ -455,7 +455,6 @@
   "notifications.noneSnoozed": "No snoozed sources. Right-click a notification to snooze its source.",
   "notifications.notNow": "Not now",
   "notifications.openInApp": "Open in app",
-  "notifications.openLink": "Open link",
   "notifications.preferences": "Preferences",
   "notifications.recentHeader": "RECENT · %1",
   "notifications.redactedBody": "Code hidden",

@@ -115,8 +115,6 @@ Item {
       out.push({ kind: "code", value: foundCodes[c],
                  label: foundCodes.length > 1 ? I18n.t("notifications.copyThisCode").arg(foundCodes[c])
                                               : I18n.t("notifications.copyCode") })
-    if (String(row.link || ""))
-      out.push({ kind: "link", label: I18n.t("notifications.openLink"), value: String(row.link) })
     for (var i = 0; i < actions.length; i++)
       out.push({ kind: "action", label: String(actions[i].text || ""), value: String(actions[i].id) })
     return out
@@ -127,7 +125,6 @@ Item {
   readonly property var marks: {
     var out = []
     if (String(row.code || "")) out.push("\u{f0306}")
-    if (String(row.link || "")) out.push("\u{f0339}")
     if (actions.length > 0) out.push("\u{f0cfd}")
     return out
   }
