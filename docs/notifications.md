@@ -48,7 +48,7 @@ The shell keeps its state in `~/.local/state/omarchy/notifications/` (0700), thr
 
 Writes go through one short timer, started (not restarted) by a change, so a burst of arrivals writes each file once and a flood writes at most four times a second; no file is written before it has been read. `FileView` writes atomically, which keeps the mode of the file it replaces, so the files are created at 0600 before anything writes them.
 
-At startup one process makes the directory and those files, and removes older layouts' leftovers, which hold old message content: the per-file `live/` and `history/` directories and `policy.json` of the Python store, the previous engine's `<ms>-<id>.json` popups and `images/`, fetched site icons in `icons/`, `~/.cache/omarchy/notification-icons/`, and the `reply-demo/` fixture of an earlier demo. A symlink in place of a state file is replaced, and nothing is followed through a symlink. Persistence starts no other process.
+At startup one process makes the directory and those files, and removes the previous engine's leftovers, which hold old message content: its `<ms>-<id>.json` popups and its `history/` and `images/` directories. A symlink in place of a state file is replaced, and nothing is followed through a symlink. Persistence starts no other process.
 
 ## Icons
 

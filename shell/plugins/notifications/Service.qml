@@ -1465,25 +1465,23 @@ Item {
     onLoadFailed: service.applyQuiet(null)
   }
 
-  // Once at startup: the private directory and its files, and the leftovers
-  // of older layouts, which hold old message content (per-file rows, the
-  // previous engine's popups and images, fetched site icons and their
-  // published copies, the reply demo's fixture). rm and find never follow a
-  // symlink they are given.
+  // Once at startup: the private directory and its files, and the previous
+  // engine's leftovers, which hold old message content (its per-file popups,
+  // history and images). rm and find never follow a symlink they are given.
   Process {
     id: storePrepare
     command: ["bash", "-c",
       "umask 077\n" +
       "dir=$1\n" +
       "mkdir -p -- \"$dir\" && chmod 700 -- \"$dir\" || exit 1\n" +
-      "rm -rf -- \"$dir/live\" \"$dir/history\" \"$dir/images\" \"$dir/icons\" \"$dir/reply-demo\" \"$dir/policy.json\" \"$2\"\n" +
-      "find \"$dir/\" -maxdepth 1 -type f \\( -regex '.*/[0-9]+-[^/]+\\.json' -o -name '.omarchy-notification-*' \\) -delete\n" +
+      "rm -rf -- \"$dir/history\" \"$dir/images\"\n" +
+      "find \"$dir/\" -maxdepth 1 -type f -regex '.*/[0-9]+-[^/]+\\.json' -delete\n" +
       "for name in live.json history.json quiet.json; do\n" +
       "  file=$dir/$name\n" +
       "  if [[ -L $file ]]; then rm -f -- \"$file\"; fi\n" +
       "  if [[ -f $file ]]; then chmod 600 -- \"$file\"; elif [[ ! -e $file ]]; then : >\"$file\"; fi\n" +
       "done\n",
-      "omarchy-notifications-state", service.stateDir, Quickshell.env("HOME") + "/.cache/omarchy/notification-icons"]
+      "omarchy-notifications-state", service.stateDir]
     onExited: function(code) { service.storeReady = code === 0 }
   }
 
