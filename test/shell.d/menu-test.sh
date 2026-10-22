@@ -68,6 +68,22 @@ assertDeepEqual(
   'menu normalizes parsed items'
 )
 
+// A file caught mid-write must read as "not a menu", never as an empty one,
+// or it replaces the whole menu with nothing.
+const shippedMenu = fs.readFileSync(path.join(root, 'default/omarchy/omarchy-menu.jsonc'), 'utf8')
+assertEqual(menu.readMenuJsonc(shippedMenu.slice(0, Math.floor(shippedMenu.length / 2))), null, 'menu reads a half-written file as torn')
+assertEqual(menu.readMenuJsonc('{"items": {"root": {'), null, 'menu reads a truncated file as torn')
+assertEqual(menu.readMenuJsonc('[]'), null, 'menu reads an array as torn')
+assertDeepEqual(menu.readMenuJsonc(''), [], 'menu reads an empty file as an empty menu')
+assertDeepEqual(menu.readMenuJsonc('// only comments\n'), [], 'menu reads a comments-only file as an empty menu')
+assert(menu.readMenuJsonc(shippedMenu).length > 0, 'menu reads the shipped file')
+assertDeepEqual(menu.parseMenuJsonc('{"items": {'), [], 'menu still parses a torn file to no rows for callers without a fallback')
+assert(/onLoaded: root\.applyDefaultMenu\(text\(\)\)/.test(menuQml), 'menu routes the shipped file through the torn-read guard')
+assert(/onLoaded: root\.applyUserMenu\(text\(\)\)/.test(menuQml), 'menu routes the user extension through the torn-read guard')
+assert(/onLoaded: root\.applyCatalog\(text\(\)\)/.test(menuQml), 'menu routes the catalog through the torn-read guard')
+assert(/if \(!items \|\| items\.length === 0\) \{\s*root\.rereadSource\("default"\)\s*if \(root\.defaultMenuSettled\) return/.test(menuQml), 'menu keeps its last good rows when the shipped file reads torn or empty')
+assert(/if \(root\.defaultMenuItems\.length === 0\) defaultMenuFile\.reload\(\)/.test(menuQml), 'menu rereads the shipped file when opened empty')
+
 const user = [
   menu.normalizeItem('style.theme', { label: 'Theme picker', aliases: ['theme', 'colors'], action: 'custom-theme' }),
   menu.normalizeItem('tools', { label: 'Tools' })
@@ -916,9 +932,9 @@ assert(
 // alone ran the whole guard batch twice.
 assert(
   /function rebuildItemsFromSources\(skipGuards\)[\s\S]*?if \(!skipGuards && root\.defaultMenuSettled && root\.userMenuSettled\) root\.evaluateGuards\(\)/.test(menuQml)
-    && /onLoaded: \{ root\.defaultMenuItems = [^}]*root\.defaultMenuSettled = true; root\.rebuildItemsFromSources\(\) \}/.test(menuQml)
-    && /onLoadFailed: \{ root\.defaultMenuSettled = true; if \(root\.userMenuSettled\) root\.evaluateGuards\(\) \}/.test(menuQml)
-    && /onLoaded: \{ root\.userMenuItems = [^}]*root\.userMenuSettled = true; root\.rebuildItemsFromSources\(\) \}/.test(menuQml)
+    && /function applyDefaultMenu\(raw\)[\s\S]*?root\.defaultMenuItems = items\s*root\.defaultMenuSettled = true\s*root\.rebuildItemsFromSources\(\)/.test(menuQml)
+    && /onLoadFailed: \{ root\.rereadSource\("default"\); root\.defaultMenuSettled = true; if \(root\.userMenuSettled\) root\.evaluateGuards\(\) \}/.test(menuQml)
+    && /function applyUserMenu\(raw\)[\s\S]*?root\.userMenuItems = items\s*root\.userMenuSettled = true\s*root\.rebuildItemsFromSources\(\)/.test(menuQml)
     && /onLoadFailed: \{ root\.userMenuItems = \[\]; root\.userMenuSettled = true; root\.rebuildItemsFromSources\(\) \}/.test(menuQml),
   'menu evaluates guards once both menu files have answered, not once per file at startup'
 )

@@ -44,6 +44,13 @@ function normalizeItem(id, raw) {
 }
 
 function parseMenuJsonc(raw) {
+  return readMenuJsonc(raw) || []
+}
+
+// Like parseMenuJsonc, but null when the text is not a menu at all: what a
+// reader sees of a file caught mid-write by an update, a checkout or an
+// editor's save. A file of nothing but comments is still an empty menu.
+function readMenuJsonc(raw) {
   var stripped = stripJsonc(raw)
   if (!stripped.trim()) return []
 
@@ -51,9 +58,9 @@ function parseMenuJsonc(raw) {
   try {
     parsed = JSON.parse(stripped)
   } catch (e) {
-    return []
+    return null
   }
-  if (typeof parsed !== "object" || parsed === null) return []
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null
 
   var source = (parsed.items && typeof parsed.items === "object" && !Array.isArray(parsed.items))
     ? parsed.items
@@ -675,6 +682,7 @@ if (typeof module !== "undefined") {
     normalizeAliases: normalizeAliases,
     normalizeItem: normalizeItem,
     parseMenuJsonc: parseMenuJsonc,
+    readMenuJsonc: readMenuJsonc,
     mergeMenuSources: mergeMenuSources,
     mergeAppRows: mergeAppRows,
     swapProviderRows: swapProviderRows,
