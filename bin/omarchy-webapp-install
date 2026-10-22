@@ -50,8 +50,44 @@ install_user_icon() {
 }
 
 download_icon() {
-  curl -fsSL --max-time 10 -o "$2" "$1" 2>/dev/null &&
-    [[ -s $2 && $(file -b --mime-type "$2") == image/* ]]
+  local mime
+  curl -fsSL --max-time 10 -o "$2" "$1" 2>/dev/null || return 1
+  [[ -s $2 ]] || return 1
+  mime=$(file -b --mime-type "$2")
+  [[ $mime == image/* ]] || return 1
+
+  # A site can serve WebP or ICO data under an image/* MIME type. The icon
+  # theme spec finds an icon only under a .png/.svg/.xpm name, and GTK 4.24
+  # draws a .png file that holds other image data as blank, so convert
+  # anything else to a real PNG. ImageMagick picks its reader from the file
+  # name's extension, so name the input coder explicitly instead of letting
+  # it read WebP/ICO data through the .png name's PNG reader. A conversion
+  # that fails drops the file so the caller's next icon source still gets
+  # its try, rather than leaving a blank icon behind.
+  local ext frame
+  case $mime in
+  image/png) return 0 ;;
+  image/webp) ext=webp ;;
+  image/vnd.microsoft.icon | image/x-icon) ext=ico ;;
+  image/jpeg) ext=jpeg ;;
+  image/gif) ext=gif ;;
+  image/bmp | image/x-bmp | image/x-ms-bmp) ext=bmp ;;
+  image/tiff) ext=tiff ;;
+  image/avif) ext=avif ;;
+  *)
+    rm -f "$2" # Not a container we can convert: let the next source try.
+    return 1
+    ;;
+  esac
+
+  # A favicon .ico holds several sizes and a GIF can animate; magick writes each
+  # frame to its own -N.png, so convert only the largest (the first among equals).
+  # fx prints large areas as 1.04858e+06, which only sort -g reads as a number.
+  frame=$(magick identify -format '%[fx:w*h] %p\n' "$ext:$2" 2>/dev/null | sort -k1,1gr -k2,2n | head -1 | cut -d' ' -f2)
+  if [[ -z $frame ]] || ! magick "$ext:$2[$frame]" "png:$2" 2>/dev/null; then
+    rm -f "$2"
+    return 1
+  fi
 }
 
 # Chromium --app= treats javascript:, file:, and data: as a document to
