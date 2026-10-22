@@ -63,9 +63,22 @@ regex() {
 
 remove_block() {
   local file="$1" open="$2" close="$3"
+  local begin end added_newline=false created_file=false
 
-  [[ -f $file ]] && grep -qF "$open omarchy-zen begin$close" "$file" || return 0
-  sed -i "/^$(regex "$open omarchy-zen begin$close")\$/,/^$(regex "$open omarchy-zen end$close")\$/d" "$file"
+  [[ -f $file ]] && grep -qF "$open omarchy-zen begin" "$file" || return 0
+  # Edit the target of a linked dotfile, leaving the profile's link in place.
+  file=$(readlink -f "$file") || return 1
+  begin=$(regex "$open omarchy-zen begin")
+  end=$(regex "$open omarchy-zen end$close")
+  grep -qxF "$open omarchy-zen begin after a line without a newline$close" "$file" && added_newline=true
+  grep -qxF "$open omarchy-zen begin in a new file$close" "$file" && created_file=true
+  sed -i "/^$begin/,/^$end\$/d" "$file" || return 1
+  if [[ $added_newline == "true" && -s $file && -z $(tail -c 1 "$file") ]]; then
+    truncate -s -1 "$file" || return 1
+  fi
+  if [[ $created_file == "true" && ! -s $file ]]; then
+    rm -f "$file"
+  fi
 }
 
 write_theme() {
@@ -81,12 +94,14 @@ write_theme() {
 
 # @import only works ahead of every other rule, so the block goes first.
 add_import() {
-  local file="$1/chrome/userChrome.css" tmp
+  local file tmp begin="/* omarchy-zen begin */"
 
-  remove_block "$file" "/*" " */"
+  file=$(readlink -f "$1/chrome/userChrome.css") || return 1
+  remove_block "$file" "/*" " */" || return 1
+  [[ -f $file ]] || begin="/* omarchy-zen begin in a new file */"
   tmp=$(mktemp "$file.XXXXXX") || return 1
   {
-    printf '%s\n%s\n%s\n' "/* omarchy-zen begin */" '@import url("omarchy.css");' "/* omarchy-zen end */"
+    printf '%s\n%s\n%s\n' "$begin" '@import url("omarchy.css");' "/* omarchy-zen end */"
     if [[ -f $file ]]; then
       cat "$file"
     fi
@@ -96,30 +111,29 @@ add_import() {
 # Zen draws see-through only with its Linux transparency pref, which opaque
 # leaves off.
 add_prefs() {
-  local file="$1/user.js" transparency="true"
+  local file transparency="true" begin="// omarchy-zen begin"
 
+  file=$(readlink -f "$1/user.js") || return 1
   [[ $2 == "opaque" ]] && transparency="false"
-  remove_block "$file" "//" ""
-  # Keep the block off a last line that has no newline.
-  if [[ -s $file && -n $(tail -c 1 "$file") ]]; then
+  remove_block "$file" "//" "" || return 1
+  # Record the file or newline we add, so --remove can undo only our changes.
+  if [[ ! -f $file ]]; then
+    begin="// omarchy-zen begin in a new file"
+  elif [[ -s $file && -n $(tail -c 1 "$file") ]]; then
+    begin="// omarchy-zen begin after a line without a newline"
     echo >>"$file"
   fi
   printf '%s\n%s\n%s\n%s\n' \
-    "// omarchy-zen begin" \
+    "$begin" \
     'user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);' \
     "user_pref(\"zen.widget.linux.transparency\", $transparency);" \
     "// omarchy-zen end" >>"$file"
 }
 
-# A file left empty held nothing but Omarchy's block, so it goes too.
+# Markers distinguish files we created from existing empty user files.
 remove_profile() {
-  local file
-
   remove_block "$1/chrome/userChrome.css" "/*" " */"
   remove_block "$1/user.js" "//" ""
-  for file in "$1/chrome/userChrome.css" "$1/user.js"; do
-    [[ -f $file && ! -s $file ]] && rm -f "$file"
-  done
   rm -f "$1/chrome/omarchy.css"
   rmdir "$1/chrome" 2>/dev/null || true
 }
