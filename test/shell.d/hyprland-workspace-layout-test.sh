@@ -579,7 +579,7 @@ moves() {
 for direction in next back; do
   printf 'o.workspace_mode({ workspace = "3", mode = "floating" })\n' >"$layout_file"
   : >"$log_file"
-  if [[ $direction == next ]]; then toggle; else toggle_back back; fi
+  if [[ $direction == "next" ]]; then toggle; else toggle_back back; fi
   [[ $(restored) == "0xaaa 0xeee" ]] ||
     fail "leaving floating ($direction) restores only this workspace's minimized windows" "restored: $(restored)"$'\n'"$(cat "$log_file")"
   [[ $(moves) == 2 ]] ||
@@ -592,7 +592,7 @@ pass "leaving floating in either direction restores only the workspace's own min
 for direction in next back; do
   printf 'o.workspace_mode({ workspace = "3", mode = "floating" })\n' >"$layout_file"
   : >"$log_file"
-  if [[ $direction == next ]]; then
+  if [[ $direction == "next" ]]; then
     toggle HYPRCTL_EVAL_FAILS=1
   else
     HYPRCTL_EVAL_FAILS=1 toggle_back back
