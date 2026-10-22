@@ -27,6 +27,8 @@ o.bind_toggle("SUPER + CTRL + comma", "Toggle silencing notifications", "notific
 o.bind("SUPER + ALT + comma", "Invoke last notification", { ipc = "notifications.invokeLast" })
 o.bind("SUPER + SHIFT + ALT + comma", "Open notification history", { ipc = "notifications.showHistory" })
 
+o.bind_toggle("SUPER + ALT + U", "Toggle weather units", "weather-unit")
+
 o.bind_toggle("SUPER + CTRL + I", "Toggle locking on idle", "idle")
 o.bind("SUPER + CTRL + Delete", "Toggle laptop display", "omarchy-hyprland-monitor-internal toggle")
 o.bind("SUPER + CTRL + ALT + Delete", "Toggle laptop display mirroring", "omarchy-hyprland-monitor-internal-mirror toggle")
