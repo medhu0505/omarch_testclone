@@ -62,6 +62,24 @@ ShellRoot {
           root.assertTrue(!view.dropsAutoRepeat(kept[j]), "auto-repeat of key " + kept[j] + " still edits the field")
         }
 
+        var clears = [
+          { key: Qt.Key_Escape, modifiers: Qt.NoModifier },
+          { key: Qt.Key_U, modifiers: Qt.ControlModifier },
+          { key: Qt.Key_Backspace, modifiers: Qt.ControlModifier }
+        ]
+        for (var k = 0; k < clears.length; k++) {
+          root.assertTrue(view.clearsPassword(clears[k]), "key " + clears[k].key + " with modifiers " + clears[k].modifiers + " clears the password")
+        }
+
+        var edits = [
+          { key: Qt.Key_Backspace, modifiers: Qt.NoModifier },
+          { key: Qt.Key_U, modifiers: Qt.NoModifier },
+          { key: Qt.Key_A, modifiers: Qt.ControlModifier }
+        ]
+        for (var m = 0; m < edits.length; m++) {
+          root.assertTrue(!view.clearsPassword(edits[m]), "key " + edits[m].key + " with modifiers " + edits[m].modifiers + " does not clear the password")
+        }
+
         view.destroy()
       } catch (error) {
         root.fail("lock autorepeat fixture threw: " + error)
