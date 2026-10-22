@@ -83,6 +83,14 @@ assert(/onLoaded: root\.applyUserMenu\(text\(\)\)/.test(menuQml), 'menu routes t
 assert(/onLoaded: root\.applyCatalog\(text\(\)\)/.test(menuQml), 'menu routes the catalog through the torn-read guard')
 assert(/if \(!items \|\| items\.length === 0\) \{\s*root\.rereadSource\("default"\)\s*if \(root\.defaultMenuSettled\) return/.test(menuQml), 'menu keeps its last good rows when the shipped file reads torn or empty')
 assert(/if \(root\.defaultMenuItems\.length === 0\) defaultMenuFile\.reload\(\)/.test(menuQml), 'menu rereads the shipped file when opened empty')
+// A spent reread budget must not leave a later torn read without retries.
+assert(
+  ['default', 'user', 'catalog'].every(name => menuQml.includes(`onFileChanged: { root.sourceChanged("${name}"); reload() }`)),
+  'menu gives every changed source a fresh reread budget'
+)
+assert(/function refresh\(\) \{\s*root\.tornSources = \(\{\}\)/.test(menuQml), 'menu refresh resets every reread budget')
+assert(/root\.language = code\s*root\.sourceChanged\("catalog"\)/.test(menuQml), 'menu gives a new language catalog a fresh reread budget')
+assert(/function parseCatalog\(raw\) \{\s*if \(!String\(raw \|\| ""\)\.trim\(\)\) return null/.test(menuQml), 'menu reads an empty catalog as torn')
 
 const user = [
   menu.normalizeItem('style.theme', { label: 'Theme picker', aliases: ['theme', 'colors'], action: 'custom-theme' }),

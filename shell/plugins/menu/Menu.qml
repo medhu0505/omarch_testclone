@@ -39,6 +39,7 @@ Item {
   }
 
   function refresh() {
+    root.tornSources = ({})
     defaultMenuFile.reload()
     userMenuFile.reload()
     languageFile.reload()
@@ -269,10 +270,12 @@ Item {
     return MenuModel.parseMenuJsonc(raw)
   }
 
-  // Null when the text is not a catalog, as for a file caught mid-write.
+  // Null when the text is not a catalog, as for a file caught mid-write. No
+  // catalog is empty, so a file caught just after truncation is torn too.
   function parseCatalog(raw) {
+    if (!String(raw || "").trim()) return null
     try {
-      var parsed = JSON.parse(raw || "{}")
+      var parsed = JSON.parse(raw)
       return (parsed && typeof parsed === "object" && !Array.isArray(parsed)) ? parsed : null
     } catch (e) {
       return null
@@ -336,6 +339,12 @@ Item {
     menuSourceReread.restart()
   }
 
+  // A fresh change (or a refresh, or a new catalog path) is a new write, so it
+  // gets a fresh budget even when an earlier one ran out.
+  function sourceChanged(name) {
+    root.sourceRead(name)
+  }
+
   function sourceRead(name) {
     if (!(name in root.tornSources)) return
     var next = Object.assign({}, root.tornSources)
@@ -359,6 +368,7 @@ Item {
     if (!/^[a-z]{2,3}(-[A-Za-z]{2})?$/.test(code)) code = "en"
     if (root.language === code) return
     root.language = code
+    root.sourceChanged("catalog")
     menuCatalogFile.reload()
   }
 
@@ -1230,7 +1240,7 @@ Item {
     // Missing only while a checkout or update replaces it. A user file that
     // loaded first held its evaluation for this one.
     onLoadFailed: { root.rereadSource("default"); root.defaultMenuSettled = true; if (root.userMenuSettled) root.evaluateGuards() }
-    onFileChanged: reload()
+    onFileChanged: { root.sourceChanged("default"); reload() }
   }
 
   FileView {
@@ -1240,7 +1250,7 @@ Item {
     printErrors: false
     onLoaded: root.applyUserMenu(text())
     onLoadFailed: { root.userMenuItems = []; root.userMenuSettled = true; root.rebuildItemsFromSources() }
-    onFileChanged: reload()
+    onFileChanged: { root.sourceChanged("user"); reload() }
   }
 
   // The language choice and its catalog are watched the same way, so
@@ -1264,7 +1274,7 @@ Item {
     // A language may have no catalog, so a missing one clears it, and is read
     // again in case it was only being replaced.
     onLoadFailed: { root.menuCatalog = ({}); root.rebuildItemsFromSources(true); root.rereadSource("catalog") }
-    onFileChanged: reload()
+    onFileChanged: { root.sourceChanged("catalog"); reload() }
   }
 
   // ---------------------------------------------------------------- guards
