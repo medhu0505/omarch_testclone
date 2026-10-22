@@ -19,7 +19,8 @@ stub curl 'printf "curl %s\n" "${@: -1}" >> "$TEST_LOG"; exit "${TEST_CURL_STATU
 # the background. With TEST_WEBAPP_BLOCKS it then stays in the foreground, as
 # the real launcher does when no browser is running to take the handoff.
 stub omarchy-launch-webapp 'printf "webapp %s\n" "$*" >> "$TEST_WEBAPP_LOG"
-if [[ -n ${TEST_WEBAPP_BLOCKS:-} ]]; then exec -a captive-portal-test-browser /usr/bin/sleep 30; fi'
+if [[ -n ${TEST_WEBAPP_BLOCKS:-} ]]; then exec -a captive-portal-test-browser /usr/bin/sleep 30; fi
+exit "${TEST_WEBAPP_STATUS:-0}"'
 stub omarchy-notification-send 'printf "notify %s\n" "$*" >> "$TEST_LOG"'
 stub sleep ':'
 # Lists the portal window from the TEST_WINDOW_AFTER-th look (the first by
@@ -104,3 +105,12 @@ TEST_WEBAPP_BLOCKS=1 run_portal '{"ExitNodeStatus":{"ID":"node","Online":true}}'
 pkill -f '^captive-portal-test-browser' || true
 portal_opened && [[ $(tail -1 "$stage/log") == "notify -g  Tailscale exit node restored" ]] || fail "re-checks and restores the exit node while the browser is still open" "$(<"$stage/log")"
 pass "does not wait on a launcher that stays in the foreground"
+
+# A browser that fails to start leaves nothing to sign in with: stop and
+# restore the exit node rather than wait behind the portal with it paused.
+# Status 1 is the command giving up itself; timeout's 124 would mean it hung.
+status=0
+TEST_WEBAPP_STATUS=1 TEST_NMCLI_PORTAL_CHECKS=100000 run_portal '{"ExitNodeStatus":{"ID":"node","Online":true}}' || status=$?
+(( status == 1 )) || fail "gives up when the portal window fails to open" "exit status $status"
+[[ $(tail -1 "$stage/log") == "notify -g  Tailscale exit node restored" ]] || fail "restores the exit node when the portal window fails to open" "$(<"$stage/log")"
+pass "gives up and restores the exit node when the portal window fails to open"
