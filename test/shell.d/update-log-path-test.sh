@@ -52,10 +52,26 @@ out=$(XDG_RUNTIME_DIR="$runtime_dir" "$SUDO_TEST_ROOT/bin/omarchy-update-analyze
 [[ $out == *"Initramfs generation may have failed"* ]] ||
   fail "analyze-logs reads the runtime-directory transcript" "got: $out"
 
-printf 'Updating linux initcpios\n' >"/tmp/omarchy-update-$UID.log"
+# The copy falls back to this test's directory, not the real /tmp, so a
+# transcript an earlier update left there is never touched.
+sed -i \
+  -e "s|:-/tmp}|:-$test_tmp}|" \
+  -e "s|/tmp/omarchy-update.log|$test_tmp/omarchy-update.log|" \
+  "$SUDO_TEST_ROOT/bin/omarchy-update-analyze-logs"
+printf 'Updating linux initcpios\n' >"$test_tmp/omarchy-update-$UID.log"
 out=$(env -u XDG_RUNTIME_DIR "$SUDO_TEST_ROOT/bin/omarchy-update-analyze-logs")
 [[ $out == *"Initramfs generation may have failed"* ]] ||
   fail "analyze-logs reads the /tmp fallback transcript" "got: $out"
-rm -f -- "/tmp/omarchy-update-$UID.log"
+
+rm -f -- "$runtime_dir/omarchy-update-$UID.log" "$test_tmp/omarchy-update-$UID.log"
+printf 'Updating linux initcpios\n' >"$test_tmp/omarchy-update.log"
+out=$(XDG_RUNTIME_DIR="$runtime_dir" "$SUDO_TEST_ROOT/bin/omarchy-update-analyze-logs" 2>&1)
+[[ $out == *"Initramfs generation may have failed"* && $out != *"No such file"* ]] ||
+  fail "analyze-logs falls back to the legacy /tmp/omarchy-update.log transcript" "got: $out"
+
+rm -f -- "$test_tmp/omarchy-update.log"
+out=$(XDG_RUNTIME_DIR="$runtime_dir" "$SUDO_TEST_ROOT/bin/omarchy-update-analyze-logs" 2>&1)
+[[ -z $out ]] ||
+  fail "analyze-logs exits quietly when no transcript exists" "got: $out"
 
 pass "update transcript path is per-user"
