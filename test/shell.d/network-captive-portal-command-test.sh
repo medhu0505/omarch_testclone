@@ -15,7 +15,11 @@ stub() {
 }
 stub tailscale 'printf "%s\n" "$TEST_TAILSCALE_STATUS"'
 stub curl 'printf "curl %s\n" "${@: -1}" >> "$TEST_LOG"; exit "${TEST_CURL_STATUS:-0}"'
-stub omarchy-launch-webapp 'printf "webapp %s\n" "$*" >> "$TEST_LOG"'
+# Records the launch apart from the main log, since the command starts it in
+# the background. With TEST_WEBAPP_BLOCKS it then stays in the foreground, as
+# the real launcher does when no browser is running to take the handoff.
+stub omarchy-launch-webapp 'printf "webapp %s\n" "$*" >> "$TEST_WEBAPP_LOG"
+if [[ -n ${TEST_WEBAPP_BLOCKS:-} ]]; then exec -a captive-portal-test-browser /usr/bin/sleep 30; fi'
 stub omarchy-notification-send 'printf "notify %s\n" "$*" >> "$TEST_LOG"'
 stub sleep ':'
 # Lists the portal window from the TEST_WINDOW_AFTER-th look (the first by
@@ -36,36 +40,42 @@ if [[ ${LC_ALL:-} != "C" ]]; then echo vollständig; elif (( count > ${TEST_NMCL
 # Runs in a session locale other than C, where the nmcli stub answers in
 # translation, so every run below only finishes if the command reads C.
 run_portal() {
-  rm -f "$stage/log" "$stage/count" "$stage/closed" "$stage/looks"
-  TEST_LOG="$stage/log" TEST_NMCLI_COUNT="$stage/count" TEST_CLOSED="$stage/closed" TEST_LOOKS="$stage/looks" XDG_RUNTIME_DIR="$stage" \
+  rm -f "$stage/log" "$stage/webapp" "$stage/count" "$stage/closed" "$stage/looks"
+  TEST_LOG="$stage/log" TEST_WEBAPP_LOG="$stage/webapp" TEST_NMCLI_COUNT="$stage/count" TEST_CLOSED="$stage/closed" TEST_LOOKS="$stage/looks" XDG_RUNTIME_DIR="$stage" \
     TEST_TAILSCALE_STATUS="$1" TEST_CURL_STATUS="${2:-0}" LC_ALL=C.UTF-8 \
     OMARCHY_PATH="$ROOT" PATH="$stage/bin:$ROOT/bin:$PATH" timeout 20 "$ROOT/bin/omarchy-network-captive-portal" "http://ping.omacom.io/nm-check.txt"
 }
 
 toggle="http://local-tailscaled.sock/localapi/v0/set-use-exit-node-enabled"
 webapp="webapp http://ping.omacom.io/nm-check.txt"
+
+# The launch runs in the background, so give it a moment to be recorded.
+portal_opened() {
+  for (( i = 0; i < 50; i++ )); do
+    [[ -s $stage/webapp ]] && break
+    /usr/bin/sleep 0.1
+  done
+  [[ $(cat "$stage/webapp" 2>/dev/null) == "$webapp" ]]
+}
 close='hyprctl dispatch hl.dsp.window.close({ window = "class:^chrome-ping[.]omacom[.]io__.*$" })'
 
 run_portal '{"ExitNodeStatus":{"ID":"node","Online":true}}'
 expected="curl $toggle?enabled=false
 notify -g  Tailscale exit node paused It comes back once you're signed in
-$webapp
 $close
 curl $toggle?enabled=true
 notify -g  Tailscale exit node restored"
-[[ $(<"$stage/log") == "$expected" ]] || fail "pauses the exit node, opens the portal window, then closes it and restores the node once online" "$(<"$stage/log")"
+portal_opened && [[ $(<"$stage/log") == "$expected" ]] || fail "pauses the exit node, opens the portal window, then closes it and restores the node once online" "$(<"$stage/log")"
 pass "pauses the exit node, opens the portal window, then closes it and restores the node once online"
 [[ $(<"$stage/count") == 3 ]] || fail "re-checks until connectivity is full, then stops" "$(<"$stage/count")"
 pass "re-checks until connectivity is full, then stops"
 
 run_portal '{"ExitNodeStatus":null}'
-[[ $(<"$stage/log") == "$webapp
-$close" ]] || fail "leaves Tailscale alone without an exit node" "$(<"$stage/log")"
+portal_opened && [[ $(<"$stage/log") == "$close" ]] || fail "leaves Tailscale alone without an exit node" "$(<"$stage/log")"
 pass "leaves Tailscale alone without an exit node"
 
 run_portal '{"ExitNodeStatus":{"ID":"node","Online":true}}' 1
-[[ $(<"$stage/log") == "curl $toggle?enabled=false
-$webapp
+portal_opened && [[ $(<"$stage/log") == "curl $toggle?enabled=false
 $close" ]] || fail "does not restore an exit node it failed to pause" "$(<"$stage/log")"
 pass "does not restore an exit node it failed to pause"
 
@@ -80,12 +90,17 @@ exec 8>"$stage/omarchy-network-captive-portal.lock"
 flock -n 8
 run_portal '{"ExitNodeStatus":{"ID":"node","Online":true}}'
 exec 8>&-
-[[ $(<"$stage/log") == "$webapp" ]] || fail "a second click only reopens the portal" "$(<"$stage/log")"
+portal_opened && [[ ! -e $stage/log ]] || fail "a second click only reopens the portal" "$(<"$stage/log")"
 pass "a second click only reopens the portal"
-
 
 # Online before the browser maps its window: the window still closes.
 TEST_WINDOW_AFTER=4 TEST_NMCLI_PORTAL_CHECKS=0 run_portal '{"ExitNodeStatus":null}'
-[[ $(<"$stage/log") == "$webapp
-$close" ]] || fail "closes a portal window that maps after the sign-in completed" "$(<"$stage/log")"
+portal_opened && [[ $(<"$stage/log") == "$close" ]] || fail "closes a portal window that maps after the sign-in completed" "$(<"$stage/log")"
 pass "closes a portal window that maps after the sign-in completed"
+
+# No browser running to take the handoff: the launcher stays in the foreground
+# until the browser exits, and the wait for the sign-in must not wait on it.
+TEST_WEBAPP_BLOCKS=1 run_portal '{"ExitNodeStatus":{"ID":"node","Online":true}}' || fail "does not wait on a launcher that stays in the foreground"
+pkill -f '^captive-portal-test-browser' || true
+portal_opened && [[ $(tail -1 "$stage/log") == "notify -g  Tailscale exit node restored" ]] || fail "re-checks and restores the exit node while the browser is still open" "$(<"$stage/log")"
+pass "does not wait on a launcher that stays in the foreground"

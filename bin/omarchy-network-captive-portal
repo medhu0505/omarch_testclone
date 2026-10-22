@@ -36,9 +36,12 @@ restore_exit_node() {
 
 # The portal signs in inside a floating web app window (see
 # default/hypr/apps/captive-portal.lua), named by Chromium after the URL's
-# host, which closes once the internet is reachable.
+# host, which closes once the internet is reachable. Launched in the
+# background: with no browser running to take the handoff, the launcher stays
+# in the foreground until the browser exits, and the wait for the sign-in
+# must start right away.
 open_portal_window() {
-  omarchy-launch-webapp "$url" 9>&-
+  setsid omarchy-launch-webapp "$url" 9>&- >/dev/null 2>&1 &
 }
 
 close_portal_window() {
