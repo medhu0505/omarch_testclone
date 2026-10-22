@@ -18,6 +18,7 @@ Item {
   id: card
 
   property real fontScale: 1
+  property string textFontFamily: "Liberation Sans"
   property bool showCountdown: false
   property var row: ({})
   property var iconOverrides: ({})          // slug -> file URL, from the service
@@ -453,7 +454,7 @@ Item {
                    - Style.space(8))
             text: card.redacted ? I18n.t("notifications.redactedSummary") : String(card.row.summary || "")
             color: card.critical ? Commons.Color.urgent : Commons.Color.notifications.text
-            font.family: "Liberation Sans"
+            font.family: card.textFontFamily
             font.pixelSize: Style.font.title * card.fontScale
             font.bold: true
             wrapMode: Text.Wrap
@@ -573,7 +574,7 @@ Item {
 
         FontMetrics {
           id: metrics
-          font.family: "Liberation Sans"
+          font.family: card.textFontFamily
           font.pixelSize: Style.font.title * card.fontScale
         }
 
@@ -609,7 +610,7 @@ Item {
             text: card.redacted ? I18n.t("notifications.redactedBody") : Markup.colourLinks(String(card.row.bodyRich || card.row.body || ""),
                                      String(Commons.Color.notifications.countdown))
             color: card.bodyColor
-            font.family: "Liberation Sans"
+            font.family: card.textFontFamily
             font.pixelSize: Style.font.title * card.fontScale
             wrapMode: Text.Wrap
             // Second gate: Markup already drops anchors it will not vouch for.
@@ -625,7 +626,7 @@ Item {
             visible: bodyBox.overflow
             text: card.redacted ? I18n.t("notifications.redactedBody") : String(card.row.bodyLine || card.row.body || "")
             color: card.bodyColor
-            font.family: "Liberation Sans"
+            font.family: card.textFontFamily
             font.pixelSize: Style.font.title * card.fontScale
             wrapMode: Text.Wrap
             maximumLineCount: card.bodyLines

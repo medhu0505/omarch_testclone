@@ -31,6 +31,24 @@ Item {
 
   property string omarchyPath: Quickshell.env("OMARCHY_PATH")
 
+  // Text font for notification summary/body, from shell.json `notifications.font`
+  // (see `omarchy notification font`). "default" follows the theme font,
+  // "system" follows the live system monospace family, and anything else
+  // is a custom installed family name. shellConfig is reactive, so edits apply
+  // without a shell restart; "system" stays live through the bar binding.
+  readonly property string notificationFontSetting: {
+    var cfg = shell && shell.shellConfig ? shell.shellConfig.notifications : null
+    var f = cfg ? cfg.font : null
+    return (typeof f === "string" && f.length > 0) ? f : "default"
+  }
+  readonly property string notificationTextFontFamily: {
+    if (service.notificationFontSetting === "system")
+      return (shell && shell.bar && shell.bar.fontFamily) || Style.font.family
+    if (service.notificationFontSetting === "default")
+      return Commons.Color.notifications.fontFamily
+    return service.notificationFontSetting
+  }
+
   // ------------------------------------------------------------- settings
   //
   // shell.json's `notifications` object; Settings.resolve fills every default.
@@ -1882,6 +1900,7 @@ Item {
               hovered: service.hoverKey === model.key
               actions: service.actionsOf(model.key, service.refsRevision)
               fontScale: service.fontScale
+              textFontFamily: service.notificationTextFontFamily
               showCountdown: service.showCountdown
               actionsAlign: service.actionsAlign
               hoverX: service.hoverX
