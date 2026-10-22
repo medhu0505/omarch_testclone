@@ -20,7 +20,8 @@ Item {
   readonly property bool active: _desired === -1 ? running : (_desired === 1)
   property bool refreshing: false
   property string backendState: "Unknown"
-  property string statusText: "Checking…"
+  // statusText answers the IPC status() call, so it stays English.
+  property string statusText: "Checking…"  // i18n: ignore
   property string selfName: ""
   property string selfDnsName: ""
   property string selfIp: ""
@@ -132,7 +133,7 @@ Item {
   }
 
   function displayHostName(hostName, dnsName) {
-    return Model.displayHostName(hostName, dnsName)
+    return Model.displayHostName(hostName, dnsName, I18n.t)
   }
 
   function osIcon(os) {
@@ -140,7 +141,7 @@ Item {
   }
 
   function accountLabel(account) {
-    return Model.accountLabel(account)
+    return Model.accountLabel(account, I18n.t)
   }
 
   function copyToClipboard(value, label) {
@@ -273,11 +274,11 @@ Item {
   }
 
   function parseStatus(raw) {
-    var parsed = Model.parseStatus(raw)
+    var parsed = Model.parseStatus(raw, I18n.t)
     if (!parsed.ok) {
       resetUnavailable(parsed.message || "Status error")
-      lastError = parsed.error || "Failed to parse tailscale status"
-      console.warn("tailscale", lastError)
+      lastError = I18n.t("tailscale.statusParseFailed")
+      console.warn("tailscale", parsed.error || "Failed to parse tailscale status")
       return
     }
     if (parsed.unavailable) {
@@ -328,7 +329,7 @@ Item {
   }
 
   function parseAccounts(raw) {
-    var parsed = Model.parseAccounts(raw)
+    var parsed = Model.parseAccounts(raw, I18n.t)
     accounts = parsed.accounts
     selectedAccountId = parsed.selectedAccountId
     selectedAccountLabel = parsed.selectedAccountLabel
@@ -372,7 +373,7 @@ Item {
     }
     _loginOutput = ""
     _loginError = ""
-    if (needsLogin) actionStatus = "Starting Tailscale login…"
+    if (needsLogin) actionStatus = I18n.t("tailscale.startingLogin")
     else _desired = 1
     _loginInProgress = needsLogin
     _loginUrlOpened = false
@@ -417,7 +418,7 @@ Item {
     if (!installed || operatorProcess.running || userName === "") return
     _operatorOutput = ""
     _operatorError = ""
-    actionStatus = "Authorizing Tailscale operator..."
+    actionStatus = I18n.t("tailscale.authorizingOperator")
     operatorProcess.command = ["pkexec", "tailscale", "set", "--operator=" + userName]
     operatorProcess.running = true
   }
@@ -517,7 +518,7 @@ Item {
       if (!root._loginInProgress || root._loginUrlOpened) return
       if (!root.openAuthUrlFrom(root.authUrl, true)) {
         root._loginInProgress = false
-        root.actionStatus = "Tailscale login link not available yet"
+        root.actionStatus = I18n.t("tailscale.loginLinkUnavailable")
       }
     }
   }
@@ -572,9 +573,9 @@ Item {
         root.parseAccounts("")
         if (/profiles access denied/i.test(stderr) || /profiles access denied/i.test(stdout)) {
           root.accountsAccessDenied = true
-          root.lastError = "Authorize Tailscale operator to show connections"
+          root.lastError = I18n.t("tailscale.authorizeToShowConnections")
         } else {
-          root.lastError = elideStatus(stderr || stdout || "Could not list Tailscale connections")
+          root.lastError = elideStatus(stderr || stdout || I18n.t("tailscale.listConnectionsFailed"))
         }
       }
     }
@@ -604,7 +605,7 @@ Item {
       var stderr = String(actionStderr.text || root._actionError || "")
       if (exitCode !== 0) {
         root._desired = -1
-        root.lastError = elideStatus(stderr || stdout || "Tailscale command failed")
+        root.lastError = elideStatus(stderr || stdout || I18n.t("tailscale.commandFailed"))
         root.actionStatus = root.lastError
         actionStatusTimer.restart()
       } else {
@@ -627,7 +628,7 @@ Item {
       if (exitCode !== 0 && !opened) {
         root._desired = -1
         root._loginInProgress = false
-        root.lastError = elideStatus(combined || "tailscale up failed")
+        root.lastError = elideStatus(combined || I18n.t("tailscale.upFailed"))
         root.actionStatus = root.lastError
         actionStatusTimer.restart()
       } else if (!opened) {
@@ -648,7 +649,7 @@ Item {
       var stdout = String(switchStdout.text || root._switchOutput || "")
       var stderr = String(switchStderr.text || root._switchError || "")
       if (exitCode !== 0) {
-        root.lastError = elideStatus(stderr || stdout || "Account switch failed")
+        root.lastError = elideStatus(stderr || stdout || I18n.t("tailscale.switchFailed"))
         root.actionStatus = root.lastError
         actionStatusTimer.restart()
       } else {
@@ -671,7 +672,7 @@ Item {
       var stdout = String(exitNodeStdout.text || root._exitNodeOutput || "")
       var stderr = String(exitNodeStderr.text || root._exitNodeError || "")
       if (exitCode !== 0) {
-        root.lastError = elideStatus(stderr || stdout || "Exit node selection failed")
+        root.lastError = elideStatus(stderr || stdout || I18n.t("tailscale.exitNodeFailed"))
         root.actionStatus = root.lastError
         actionStatusTimer.restart()
       } else {
@@ -693,13 +694,13 @@ Item {
       var stdout = String(operatorStdout.text || root._operatorOutput || "")
       var stderr = String(operatorStderr.text || root._operatorError || "")
       if (exitCode !== 0) {
-        root.lastError = elideStatus(stderr || stdout || "Tailscale authorization failed")
+        root.lastError = elideStatus(stderr || stdout || I18n.t("tailscale.authorizationFailed"))
         root.actionStatus = root.lastError
         actionStatusTimer.restart()
       } else {
         root.accountsAccessDenied = false
         root.lastError = ""
-        root.actionStatus = "Tailscale operator authorized"
+        root.actionStatus = I18n.t("tailscale.operatorAuthorized")
         actionStatusTimer.restart()
         root._lastAccountsRefreshMs = 0
       }
