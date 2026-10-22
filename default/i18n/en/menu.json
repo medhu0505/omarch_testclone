@@ -514,6 +514,9 @@
   "setup.default.agent.cursor-agent": {
     "label": "Cursor CLI"
   },
+  "setup.default.agent.devin": {
+    "label": "Devin"
+  },
   "setup.default.agent.grok": {
     "label": "Grok"
   },
