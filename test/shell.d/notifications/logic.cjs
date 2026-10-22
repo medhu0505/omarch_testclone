@@ -393,7 +393,7 @@ function newCapacityScope() {
       md5: value => require('node:crypto').createHash('md5').update(value).digest('hex') },
     Style: { space: n => n },
     holding: () => s.pointerHolding === true,
-    snapshot: () => ({}), deckHeight: 0, retarget: () => {}, layout: { placements: {} },
+    snapshot: () => ({}), deckHeight: 0, retarget: () => {}, land: () => {}, layout: { placements: {} },
   }
   // Bare QML properties and service-qualified accesses are the same object.
   s.service = s

@@ -736,7 +736,18 @@ Item {
     sceneRun.restart()
   }
 
-  // A leaving card fades exactly where it was while the others close over it.
+  // Arrivals and departures skip the clock: everything jumps to its place.
+  // Leaving rows come out of the model a tick later, never from inside the
+  // delegate handler that dismissed them.
+  function land(snap) {
+    sceneRun.stop()
+    was = snap
+    layoutRevision += 1
+    t = 1
+    Qt.callLater(sceneSettled)
+  }
+
+  // A leaving card is invisible where it was while the others close over it.
   function restingPlace(key) {
     var prev = was[key]
     // front: true keeps its text on the way out instead of blanking a frame.
@@ -745,14 +756,18 @@ Item {
              hidden: false, count: 1 }
   }
 
+  signal settled()
+
   // Leaving rows stay in the model until the gap has closed.
   function sceneSettled() {
     var keys = []
     for (var key in leaving) keys.push(key)
-    if (!keys.length) return
-    for (var i = 0; i < keys.length; i++) finishClose(keys[i], leaving[keys[i]])
-    t = 1
-    was = snapshot()
+    if (keys.length) {
+      for (var i = 0; i < keys.length; i++) finishClose(keys[i], leaving[keys[i]])
+      t = 1
+      was = snapshot()
+    }
+    settled()
   }
 
   readonly property var layout: {
@@ -934,14 +949,8 @@ Item {
       } else {
         service.pinDeckDisplay()
         toasts.insert(0, row)
-        // Where it comes from: under the bar, transparent.
-        var landing = service.layout.placements[key]
-        service.retarget(key, {
-          y: (landing ? landing.y : 0) - Style.space(30),
-          scale: landing ? landing.scale : 1,
-          opacity: 0,
-          height: landing ? landing.height : 0
-        }, snap, deckNow)
+        // Arrivals don't slide in: the card and the deck are simply there.
+        service.land(snap)
       }
     })
   }
@@ -964,7 +973,8 @@ Item {
 
   // ------------------------------------------------------------- departure
   //
-  // A leaving row keeps its model slot but no layout room, so the gap closes as it fades.
+  // A leaving row keeps its model slot but no layout room until sceneSettled
+  // removes it, which happens right away: dismissals don't fade.
   property var leaving: ({})
 
   function closeToast(key, reason) {
@@ -978,7 +988,7 @@ Item {
     for (var k in leaving) next[k] = leaving[k]
     next[key] = reason || "dismissed"
     leaving = next
-    retarget(key, snap[key], snap, deckNow)
+    land(snap)
   }
 
   function finishClose(key, reason) {
@@ -1811,8 +1821,8 @@ Item {
             // Cards move under a still pointer after a dismissal: re-hit-test
             // once settled, or a second click invokes a stale card.
             Connections {
-              target: sceneRun
-              function onFinished() {
+              target: service
+              function onSettled() {
                 Qt.callLater(function() {
                   if (hoverArea.containsMouse)
                     hoverArea.hoverAt(hoverArea.mouseX, hoverArea.mouseY)
